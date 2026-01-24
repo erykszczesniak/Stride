@@ -1,0 +1,94 @@
+package com.strava.backend.mapper;
+
+import com.strava.backend.domain.Activity;
+import com.strava.backend.dto.HeaderResponse;
+import com.strava.backend.dto.activity.*;
+import com.strava.backend.exception.InputFieldException;
+import com.strava.backend.service.ActivityService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
+public class ActivityMapper {
+
+    private final CommonMapper commonMapper;
+    private final ActivityService activityService;
+
+    public FullActivityResponse getActivityById(Long activityId, Long currentUserId) {
+        Activity activity = activityService.getActivityById(activityId);
+        return mapToFullActivityResponse(activity, currentUserId);
+    }
+
+    public HeaderResponse<ActivityResponse> getActivitiesByUserId(Long userId, Long currentUserId, Pageable pageable) {
+        Page<Activity> activities = activityService.getActivitiesByUserId(userId, pageable);
+        List<ActivityResponse> responses = activities.getContent().stream()
+                .map(activity -> mapToActivityResponse(activity, currentUserId))
+                .collect(Collectors.toList());
+        return HeaderResponse.of(responses, activities.getTotalPages(), activities.getTotalElements());
+    }
+
+    public HeaderResponse<ActivityResponse> getFeedActivities(Long userId, Pageable pageable) {
+        Page<Activity> activities = activityService.getFeedActivities(userId, pageable);
+        List<ActivityResponse> responses = activities.getContent().stream()
+                .map(activity -> mapToActivityResponse(activity, userId))
+                .collect(Collectors.toList());
+        return HeaderResponse.of(responses, activities.getTotalPages(), activities.getTotalElements());
+    }
+
+    public ActivityResponse createActivity(Long userId, ActivityRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new InputFieldException(bindingResult);
+        }
+        Activity activity = activityService.createActivity(userId, request);
+        return mapToActivityResponse(activity, userId);
+    }
+
+    public ActivityResponse updateActivity(Long activityId, Long userId, ActivityRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new InputFieldException(bindingResult);
+        }
+        Activity activity = activityService.updateActivity(activityId, userId, request);
+        return mapToActivityResponse(activity, userId);
+    }
+
+    public void deleteActivity(Long activityId, Long userId) {
+        activityService.deleteActivity(activityId, userId);
+    }
+
+    public ActivityStatsResponse getMonthlyStats(Long userId) {
+        return activityService.getMonthlyStats(userId);
+    }
+
+    public WeeklyStatsResponse getWeeklyStats(Long userId) {
+        return activityService.getWeeklyStats(userId);
+    }
+
+    private ActivityResponse mapToActivityResponse(Activity activity, Long currentUserId) {
+        ActivityResponse response = commonMapper.convertToResponse(activity, ActivityResponse.class);
+        response.setLikesCount(activity.getLikesCount());
+        response.setCommentsCount(activity.getCommentsCount());
+        response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
+        return response;
+    }
+
+    private FullActivityResponse mapToFullActivityResponse(Activity activity, Long currentUserId) {
+        FullActivityResponse response = commonMapper.convertToResponse(activity, FullActivityResponse.class);
+        response.setLikesCount(activity.getLikesCount());
+        response.setCommentsCount(activity.getCommentsCount());
+        response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
+
+        List<CommentResponse> comments = activity.getComments().stream()
+                .map(comment -> commonMapper.convertToResponse(comment, CommentResponse.class))
+                .collect(Collectors.toList());
+        response.setComments(comments);
+
+        return response;
+    }
+}
