@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: strava-backend
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:mem:stravadb}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: ${DATABASE_DRIVER:org.h2.Driver}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  graphql:
+    graphiql:
+      enabled: true
+    schema:
+      locations: classpath:graphql/
+      printer:
+        enabled: true
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${SERVER_PORT:8080}
+
+jwt:
+  secret: ${JWT_SECRET:REDACTED_JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:604800}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+  oauth2:
+    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+
+logging:
+  level:
+    com.strava: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
