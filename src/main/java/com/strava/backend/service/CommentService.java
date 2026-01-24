@@ -1,0 +1,18 @@
+package com.strava.backend.service;
+
+import com.strava.backend.domain.Comment;
+
+import java.util.List;
+
+public interface CommentService {
+
+    List<Comment> getCommentsByActivityId(Long activityId);
+
+    Comment getCommentById(Long commentId);
+
+    Comment createComment(Long activityId, Long userId, String content);
+
+    Comment updateComment(Long commentId, Long userId, String content);
+
+    void deleteComment(Long commentId, Long userId);
+}
