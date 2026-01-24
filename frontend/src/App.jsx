@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Activities from "./pages/Activities";
 import ActivityDetails from "./pages/ActivityDetails";
+import RecordActivity from "./pages/RecordActivity";
 import Profile from "./pages/Profile";
 import Goals from "./pages/Goals";
 import Challenges from "./pages/Challenges";
@@ -14,6 +15,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/activities" element={<Activities />} />
+        <Route path="/activities/new" element={<RecordActivity />} />
         <Route path="/activities/:id" element={<ActivityDetails />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:id" element={<Profile />} />
