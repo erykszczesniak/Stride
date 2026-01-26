@@ -345,4 +345,86 @@ class UserControllerTest {
                     .andExpect(jsonPath("$").isEmpty());
         }
     }
+
+    @Nested
+    @DisplayName("GET /api/v1/users/suggested")
+    class GetSuggestedUsersTests {
+
+        @Test
+        @DisplayName("Should return suggested users list")
+        void shouldReturnSuggestedUsersList() throws Exception {
+            // Given
+            User suggested1 = TestDataFactory.createUser(2L, "jane@example.com", "Jane", "Smith");
+            User suggested2 = TestDataFactory.createUser(3L, "bob@example.com", "Bob", "Brown");
+
+            BaseUserResponse suggestedResponse1 = new BaseUserResponse();
+            suggestedResponse1.setId(2L);
+            suggestedResponse1.setFirstName("Jane");
+            suggestedResponse1.setLastName("Smith");
+
+            BaseUserResponse suggestedResponse2 = new BaseUserResponse();
+            suggestedResponse2.setId(3L);
+            suggestedResponse2.setFirstName("Bob");
+            suggestedResponse2.setLastName("Brown");
+
+            given(userService.getSuggestedUsers(1L, 5)).willReturn(List.of(suggested1, suggested2));
+            given(commonMapper.convertToResponse(suggested1, BaseUserResponse.class)).willReturn(suggestedResponse1);
+            given(commonMapper.convertToResponse(suggested2, BaseUserResponse.class)).willReturn(suggestedResponse2);
+
+            // When/Then
+            mockMvc.perform(get("/api/v1/users/suggested")
+                            .param("userId", "1")
+                            .param("limit", "5"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(2))
+                    .andExpect(jsonPath("$[0].firstName").value("Jane"))
+                    .andExpect(jsonPath("$[1].id").value(3))
+                    .andExpect(jsonPath("$[1].firstName").value("Bob"));
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no suggestions")
+        void shouldReturnEmptyListWhenNoSuggestions() throws Exception {
+            // Given
+            given(userService.getSuggestedUsers(1L, 5)).willReturn(List.of());
+
+            // When/Then
+            mockMvc.perform(get("/api/v1/users/suggested")
+                            .param("userId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$").isEmpty());
+        }
+
+        @Test
+        @DisplayName("Should use default user ID and limit when not provided")
+        void shouldUseDefaultValuesWhenNotProvided() throws Exception {
+            // Given
+            given(userService.getSuggestedUsers(1L, 5)).willReturn(List.of());
+
+            // When/Then
+            mockMvc.perform(get("/api/v1/users/suggested"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("Should respect custom limit parameter")
+        void shouldRespectCustomLimitParameter() throws Exception {
+            // Given
+            User suggested = TestDataFactory.createUser(2L, "jane@example.com", "Jane", "Smith");
+            BaseUserResponse suggestedResponse = new BaseUserResponse();
+            suggestedResponse.setId(2L);
+            suggestedResponse.setFirstName("Jane");
+            suggestedResponse.setLastName("Smith");
+
+            given(userService.getSuggestedUsers(1L, 10)).willReturn(List.of(suggested));
+            given(commonMapper.convertToResponse(suggested, BaseUserResponse.class)).willReturn(suggestedResponse);
+
+            // When/Then
+            mockMvc.perform(get("/api/v1/users/suggested")
+                            .param("userId", "1")
+                            .param("limit", "10"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(2));
+        }
+    }
 }

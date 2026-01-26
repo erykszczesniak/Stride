@@ -28,4 +28,6 @@ public interface UserService {
     List<User> getFollowing(Long userId);
 
     boolean isFollowing(Long userId, Long followerId);
+
+    List<User> getSuggestedUsers(Long userId, int limit);
 }

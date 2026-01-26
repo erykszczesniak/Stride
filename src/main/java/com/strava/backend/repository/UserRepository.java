@@ -50,4 +50,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     long countUsersCreatedSince(@Param("since") LocalDateTime since);
 
     Page<User> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    @Query("SELECT u FROM User u WHERE u.id != :userId AND u.id NOT IN " +
+           "(SELECT f.id FROM User currentUser JOIN currentUser.following f WHERE currentUser.id = :userId) " +
+           "ORDER BY SIZE(u.followers) DESC")
+    List<User> findSuggestedUsers(@Param("userId") Long userId, Pageable pageable);
 }

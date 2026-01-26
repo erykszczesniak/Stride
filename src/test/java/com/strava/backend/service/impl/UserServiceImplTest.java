@@ -26,6 +26,8 @@ import static com.strava.backend.constants.ErrorMessage.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -308,6 +310,53 @@ class UserServiceImplTest {
             boolean result = userService.isFollowing(1L, 2L);
 
             assertThat(result).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("getSuggestedUsers Tests")
+    class GetSuggestedUsersTests {
+
+        @Test
+        @DisplayName("Should return suggested users")
+        void shouldReturnSuggestedUsers() {
+            User suggested1 = TestDataFactory.createUser(3L, "bob@example.com", "Bob", "Brown");
+            User suggested2 = TestDataFactory.createUser(4L, "alice@example.com", "Alice", "Johnson");
+
+            when(userRepository.findSuggestedUsers(eq(1L), any(Pageable.class)))
+                    .thenReturn(List.of(suggested1, suggested2));
+
+            List<User> result = userService.getSuggestedUsers(1L, 5);
+
+            assertThat(result).hasSize(2);
+            assertThat(result).contains(suggested1, suggested2);
+            verify(userRepository).findSuggestedUsers(eq(1L), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no suggestions available")
+        void shouldReturnEmptyListWhenNoSuggestions() {
+            when(userRepository.findSuggestedUsers(eq(1L), any(Pageable.class)))
+                    .thenReturn(List.of());
+
+            List<User> result = userService.getSuggestedUsers(1L, 5);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should respect limit parameter")
+        void shouldRespectLimitParameter() {
+            User suggested = TestDataFactory.createUser(3L, "bob@example.com", "Bob", "Brown");
+
+            when(userRepository.findSuggestedUsers(eq(1L), any(Pageable.class)))
+                    .thenReturn(List.of(suggested));
+
+            List<User> result = userService.getSuggestedUsers(1L, 1);
+
+            assertThat(result).hasSize(1);
+            verify(userRepository).findSuggestedUsers(eq(1L), argThat(pageable ->
+                    pageable.getPageSize() == 1 && pageable.getPageNumber() == 0));
         }
     }
 }

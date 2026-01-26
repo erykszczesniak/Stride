@@ -7,6 +7,7 @@ import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -104,5 +105,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean isFollowing(Long userId, Long followerId) {
         return userRepository.isFollowing(userId, followerId);
+    }
+
+    @Override
+    public List<User> getSuggestedUsers(Long userId, int limit) {
+        return userRepository.findSuggestedUsers(userId, PageRequest.of(0, limit));
     }
 }

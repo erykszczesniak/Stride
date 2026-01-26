@@ -95,4 +95,15 @@ public class UserController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(following);
     }
+
+    @GetMapping(SUGGESTED)
+    public ResponseEntity<List<BaseUserResponse>> getSuggestedUsers(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(defaultValue = "5") int limit) {
+        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        List<BaseUserResponse> suggested = userService.getSuggestedUsers(currentUserId, limit).stream()
+                .map(user -> commonMapper.convertToResponse(user, BaseUserResponse.class))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(suggested);
+    }
 }

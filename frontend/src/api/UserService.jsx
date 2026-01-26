@@ -35,6 +35,11 @@ class UserService {
   getFollowing(userId, page = 0, size = 20) {
     return apiClient.get(`/users/${userId}/following?page=${page}&size=${size}`);
   }
+
+  // Get suggested users to follow
+  getSuggestedUsers(userId, limit = 5) {
+    return apiClient.get(`/users/suggested?userId=${userId}&limit=${limit}`);
+  }
 }
 
 export default new UserService();

@@ -175,6 +175,44 @@ Pobierz listę obserwowanych przez użytkownika.
 curl http://localhost:8080/api/v1/users/1/following
 ```
 
+### GET /api/v1/users/suggested
+Pobierz sugerowanych użytkowników do obserwowania. Zwraca użytkowników, których aktualny użytkownik jeszcze nie obserwuje, posortowanych według liczby obserwujących (najpopularniejsi pierwsi).
+
+```bash
+curl "http://localhost:8080/api/v1/users/suggested?userId=1&limit=5"
+```
+
+**Parametry:**
+| Parametr | Typ | Wymagany | Domyślnie | Opis |
+|----------|-----|----------|-----------|------|
+| userId | Long | Nie | 1 | ID aktualnego użytkownika |
+| limit | int | Nie | 5 | Maksymalna liczba sugerowanych użytkowników |
+
+**Response:**
+```json
+[
+  {
+    "id": 4,
+    "firstName": "Admin",
+    "lastName": "User",
+    "avatar": null,
+    "fullName": "Admin User"
+  },
+  {
+    "id": 5,
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "avatar": "https://example.com/avatar.jpg",
+    "fullName": "Jane Smith"
+  }
+]
+```
+
+**Logika sugestii:**
+- Wyklucza aktualnego użytkownika
+- Wyklucza użytkowników już obserwowanych
+- Sortuje według liczby obserwujących (malejąco)
+
 ---
 
 ## 3. Activities
