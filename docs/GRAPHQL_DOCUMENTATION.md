@@ -107,6 +107,29 @@ curl -X POST http://localhost:8080/graphql \
   -d '{"query": "{ users(page: 0, size: 10) { id firstName lastName email } }"}'
 ```
 
+#### suggestedUsers(limit: Int)
+Pobierz sugerowanych użytkowników do obserwowania. Zwraca użytkowników, których aktualny użytkownik jeszcze nie obserwuje, posortowanych według liczby obserwujących.
+
+```graphql
+query {
+  suggestedUsers(limit: 5) {
+    id
+    firstName
+    lastName
+    avatar
+    followersCount
+    activitiesCount
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X POST http://localhost:8080/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ suggestedUsers(limit: 5) { id firstName lastName avatar followersCount } }"}'
+```
+
 ---
 
 ### 2. Activity Queries
