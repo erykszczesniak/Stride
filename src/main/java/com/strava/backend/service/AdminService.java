@@ -1,5 +1,6 @@
 package com.strava.backend.service;
 
+import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.admin.AdminStatsResponse;
 import com.strava.backend.enums.Role;
@@ -19,4 +20,10 @@ public interface AdminService {
     void toggleUserActive(Long userId);
 
     void deleteUser(Long userId);
+
+    Page<Activity> getAllActivities(Pageable pageable);
+
+    Page<Activity> searchActivities(String search, Pageable pageable);
+
+    void deleteActivity(Long activityId);
 }

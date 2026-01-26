@@ -1,9 +1,11 @@
 package com.strava.backend.controller;
 
 import com.strava.backend.dto.HeaderResponse;
+import com.strava.backend.dto.admin.AdminActivityResponse;
 import com.strava.backend.dto.admin.AdminStatsResponse;
 import com.strava.backend.dto.admin.AdminUserResponse;
 import com.strava.backend.dto.admin.UpdateUserRoleRequest;
+import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.UserRepository;
@@ -79,5 +81,29 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long userId) {
         adminService.deleteUser(userId);
         return ResponseEntity.ok(Map.of("message", "User deleted"));
+    }
+
+    @GetMapping(ACTIVITIES)
+    public ResponseEntity<HeaderResponse<AdminActivityResponse>> getAllActivities(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 20) Pageable pageable) {
+        var activities = (search != null && !search.isBlank())
+                ? adminService.searchActivities(search, pageable)
+                : adminService.getAllActivities(pageable);
+        var response = activities.map(activity -> {
+            AdminActivityResponse activityResponse = commonMapper.convertToResponse(activity, AdminActivityResponse.class);
+            activityResponse.setUser(commonMapper.convertToResponse(activity.getUser(), BaseUserResponse.class));
+            return activityResponse;
+        });
+        return ResponseEntity.ok(HeaderResponse.of(
+                response.getContent(),
+                response.getTotalPages(),
+                response.getTotalElements()));
+    }
+
+    @DeleteMapping(ACTIVITIES + ACTIVITY_ID)
+    public ResponseEntity<Map<String, String>> deleteActivity(@PathVariable Long activityId) {
+        adminService.deleteActivity(activityId);
+        return ResponseEntity.ok(Map.of("message", "Activity deleted"));
     }
 }

@@ -142,4 +142,15 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
     @Query("SELECT COUNT(a) FROM Activity a WHERE a.createdAt >= :since")
     long countActivitiesCreatedSince(@Param("since") LocalDateTime since);
+
+    @Query("SELECT COALESCE(SUM(a.distance), 0) FROM Activity a")
+    Double sumAllDistances();
+
+    @Query("SELECT COUNT(a) FROM Activity a WHERE a.createdAt >= :startOfMonth")
+    long countActivitiesThisMonth(@Param("startOfMonth") LocalDateTime startOfMonth);
+
+    Page<Activity> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    @Query("SELECT a FROM Activity a WHERE UPPER(a.title) LIKE UPPER(CONCAT('%', :search, '%')) ORDER BY a.createdAt DESC")
+    Page<Activity> searchByTitle(@Param("search") String search, Pageable pageable);
 }

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { FiPlus, FiBell, FiSearch } from "react-icons/fi";
+import { FiPlus, FiBell, FiSearch, FiSettings } from "react-icons/fi";
 import {
   Nav,
   Logo,
@@ -67,6 +67,7 @@ const Navbar = () => {
             <DropdownMenu>
               <DropdownItem to="/profile">My Profile</DropdownItem>
               <DropdownItem to="/goals">Goals</DropdownItem>
+              <DropdownItem to="/admin">Admin Panel</DropdownItem>
               <DropdownItem to="/settings">Settings</DropdownItem>
               <DropdownItem to="/logout">Log Out</DropdownItem>
             </DropdownMenu>

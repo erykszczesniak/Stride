@@ -18,4 +18,6 @@ public class AdminStatsResponse {
     private long totalEvents;
     private long newUsersThisWeek;
     private long activitiesThisWeek;
+    private Double totalDistanceKm;
+    private long activitiesThisMonth;
 }

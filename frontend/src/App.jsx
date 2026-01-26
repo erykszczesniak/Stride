@@ -9,6 +9,7 @@ import Challenges from "./pages/Challenges";
 import Clubs from "./pages/Clubs";
 import Events from "./pages/Events";
 import Explore from "./pages/Explore";
+import Admin from "./pages/Admin";
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
         <Route path="/challenges" element={<Challenges />} />
         <Route path="/clubs" element={<Clubs />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Router>
   );
