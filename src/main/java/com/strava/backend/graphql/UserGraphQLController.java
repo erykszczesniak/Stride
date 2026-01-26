@@ -42,6 +42,12 @@ public class UserGraphQLController {
         return userService.getUserById(DEFAULT_USER_ID);
     }
 
+    @QueryMapping
+    public List<User> suggestedUsers(@Argument Integer limit) {
+        int maxResults = limit != null ? limit : 5;
+        return userService.getSuggestedUsers(DEFAULT_USER_ID, maxResults);
+    }
+
     @MutationMapping
     public User updateProfile(@Argument("input") UpdateUserRequest input) {
         return userService.updateUser(DEFAULT_USER_ID, input);

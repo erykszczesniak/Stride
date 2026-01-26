@@ -3,6 +3,7 @@ type Query {
     user(id: ID!): User
     users(page: Int, size: Int): [User]
     currentUser: User
+    suggestedUsers(limit: Int): [User]
 
     # Activity queries
     activity(id: ID!): Activity
