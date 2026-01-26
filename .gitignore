@@ -32,3 +32,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Session backups ###
+strava_session_backup.jsonl
