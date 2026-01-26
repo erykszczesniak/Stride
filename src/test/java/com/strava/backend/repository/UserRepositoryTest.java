@@ -294,4 +294,87 @@ class UserRepositoryTest {
             assertThat(users).isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("findSuggestedUsers Tests")
+    class FindSuggestedUsersTests {
+
+        @Test
+        @DisplayName("Should return users not followed by current user")
+        void shouldReturnUsersNotFollowedByCurrentUser() {
+            // user1 follows user2
+            user1.getFollowing().add(user2);
+            user2.getFollowers().add(user1);
+            entityManager.merge(user1);
+            entityManager.merge(user2);
+            entityManager.flush();
+
+            var suggested = userRepository.findSuggestedUsers(user1.getId(), PageRequest.of(0, 10));
+
+            // Should only return user3 (admin), not user2 (already followed) or user1 (self)
+            assertThat(suggested).hasSize(1);
+            assertThat(suggested.get(0).getEmail()).isEqualTo("admin@example.com");
+        }
+
+        @Test
+        @DisplayName("Should not include current user in suggestions")
+        void shouldNotIncludeCurrentUserInSuggestions() {
+            var suggested = userRepository.findSuggestedUsers(user1.getId(), PageRequest.of(0, 10));
+
+            assertThat(suggested).extracting(User::getId)
+                    .doesNotContain(user1.getId());
+        }
+
+        @Test
+        @DisplayName("Should return all other users when not following anyone")
+        void shouldReturnAllOtherUsersWhenNotFollowingAnyone() {
+            var suggested = userRepository.findSuggestedUsers(user1.getId(), PageRequest.of(0, 10));
+
+            // Should return user2 and user3, but not user1
+            assertThat(suggested).hasSize(2);
+            assertThat(suggested).extracting(User::getEmail)
+                    .containsExactlyInAnyOrder("jane@example.com", "admin@example.com");
+        }
+
+        @Test
+        @DisplayName("Should respect limit parameter")
+        void shouldRespectLimitParameter() {
+            var suggested = userRepository.findSuggestedUsers(user1.getId(), PageRequest.of(0, 1));
+
+            assertThat(suggested).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Should return empty list when following everyone")
+        void shouldReturnEmptyListWhenFollowingEveryone() {
+            // user1 follows both user2 and user3
+            user1.getFollowing().add(user2);
+            user1.getFollowing().add(user3);
+            user2.getFollowers().add(user1);
+            user3.getFollowers().add(user1);
+            entityManager.merge(user1);
+            entityManager.merge(user2);
+            entityManager.merge(user3);
+            entityManager.flush();
+
+            var suggested = userRepository.findSuggestedUsers(user1.getId(), PageRequest.of(0, 10));
+
+            assertThat(suggested).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should order by follower count descending")
+        void shouldOrderByFollowerCountDescending() {
+            // Give user2 more followers than user3
+            user2.getFollowers().add(user3);
+            entityManager.merge(user2);
+            entityManager.flush();
+
+            var suggested = userRepository.findSuggestedUsers(user1.getId(), PageRequest.of(0, 10));
+
+            // user2 should come first (has 1 follower), user3 has 0 followers
+            assertThat(suggested).hasSize(2);
+            assertThat(suggested.get(0).getEmail()).isEqualTo("jane@example.com");
+        }
+    }
 }
