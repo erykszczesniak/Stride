@@ -5,7 +5,7 @@
 
 ---
 
-## Testowanie
+## Testing
 
 ### cURL
 
@@ -34,7 +34,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 1. User Queries
 
 #### currentUser
-Pobierz aktualnego użytkownika (domyślnie userId=1).
+Get the current user (defaults to userId=1).
 
 ```graphql
 query {
@@ -63,7 +63,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### user(id: ID!)
-Pobierz użytkownika po ID.
+Get a user by ID.
 
 ```graphql
 query {
@@ -87,7 +87,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### users(page: Int, size: Int)
-Pobierz listę użytkowników.
+Get a list of users.
 
 ```graphql
 query {
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### suggestedUsers(limit: Int)
-Pobierz sugerowanych użytkowników do obserwowania. Zwraca użytkowników, których aktualny użytkownik jeszcze nie obserwuje, posortowanych według liczby obserwujących.
+Get suggested users to follow. Returns users that the current user is not yet following, sorted by follower count.
 
 ```graphql
 query {
@@ -135,7 +135,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 2. Activity Queries
 
 #### activity(id: ID!)
-Pobierz aktywność po ID.
+Get an activity by ID.
 
 ```graphql
 query {
@@ -180,7 +180,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### activities(userId: ID, page: Int, size: Int)
-Pobierz aktywności użytkownika.
+Get user activities.
 
 ```graphql
 query {
@@ -205,7 +205,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### feedActivities(page: Int, size: Int)
-Pobierz feed aktywności.
+Get activity feed.
 
 ```graphql
 query {
@@ -233,7 +233,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### activityStats(userId: ID!)
-Pobierz statystyki aktywności (miesięczne).
+Get activity statistics (monthly).
 
 ```graphql
 query {
@@ -257,7 +257,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### weeklyStats(userId: ID!)
-Pobierz tygodniowe statystyki.
+Get weekly statistics.
 
 ```graphql
 query {
@@ -286,7 +286,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 3. Goal Queries
 
 #### goals(userId: ID!)
-Pobierz wszystkie cele użytkownika.
+Get all user goals.
 
 ```graphql
 query {
@@ -315,7 +315,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### activeGoals(userId: ID!)
-Pobierz aktywne cele użytkownika.
+Get active user goals.
 
 ```graphql
 query {
@@ -342,7 +342,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 4. Challenge Queries
 
 #### challenge(id: ID!)
-Pobierz wyzwanie po ID.
+Get a challenge by ID.
 
 ```graphql
 query {
@@ -371,7 +371,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### activeChallenges(page: Int, size: Int)
-Pobierz aktywne wyzwania.
+Get active challenges.
 
 ```graphql
 query {
@@ -395,7 +395,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### userChallenges(userId: ID!)
-Pobierz wyzwania użytkownika.
+Get user challenges.
 
 ```graphql
 query {
@@ -422,7 +422,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 5. Club Queries
 
 #### club(id: ID!)
-Pobierz klub po ID.
+Get a club by ID.
 
 ```graphql
 query {
@@ -453,7 +453,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### clubs(page: Int, size: Int)
-Pobierz listę klubów.
+Get a list of clubs.
 
 ```graphql
 query {
@@ -475,7 +475,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### userClubs(userId: ID!)
-Pobierz kluby użytkownika.
+Get user clubs.
 
 ```graphql
 query {
@@ -500,7 +500,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 6. Event Queries
 
 #### event(id: ID!)
-Pobierz event po ID.
+Get an event by ID.
 
 ```graphql
 query {
@@ -528,7 +528,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### upcomingEvents(page: Int, size: Int)
-Pobierz nadchodzące eventy.
+Get upcoming events.
 
 ```graphql
 query {
@@ -551,7 +551,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### userEvents(userId: ID!)
-Pobierz eventy użytkownika.
+Get user events.
 
 ```graphql
 query {
@@ -576,7 +576,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 7. Dashboard Query
 
 #### dashboard
-Pobierz pełne dane dashboardu.
+Get full dashboard data.
 
 ```graphql
 query {
@@ -646,7 +646,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 1. Activity Mutations
 
 #### createActivity
-Utwórz nową aktywność.
+Create a new activity.
 
 ```graphql
 mutation {
@@ -679,7 +679,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### updateActivity
-Zaktualizuj aktywność.
+Update an activity.
 
 ```graphql
 mutation {
@@ -706,7 +706,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### deleteActivity
-Usuń aktywność.
+Delete an activity.
 
 ```graphql
 mutation {
@@ -722,7 +722,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### likeActivity
-Polub aktywność.
+Like an activity.
 
 ```graphql
 mutation {
@@ -741,7 +741,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### unlikeActivity
-Cofnij polubienie.
+Remove like from an activity.
 
 ```graphql
 mutation {
@@ -760,7 +760,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### addComment
-Dodaj komentarz do aktywności.
+Add a comment to an activity.
 
 ```graphql
 mutation {
@@ -788,7 +788,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 2. User Mutations
 
 #### updateProfile
-Zaktualizuj profil użytkownika.
+Update user profile.
 
 ```graphql
 mutation {
@@ -815,7 +815,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### followUser
-Zacznij obserwować użytkownika.
+Start following a user.
 
 ```graphql
 mutation {
@@ -831,7 +831,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### unfollowUser
-Przestań obserwować użytkownika.
+Stop following a user.
 
 ```graphql
 mutation {
@@ -851,7 +851,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 3. Goal Mutations
 
 #### createGoal
-Utwórz nowy cel.
+Create a new goal.
 
 ```graphql
 mutation {
@@ -878,7 +878,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### updateGoal
-Zaktualizuj cel.
+Update a goal.
 
 ```graphql
 mutation {
@@ -901,7 +901,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### deleteGoal
-Usuń cel.
+Delete a goal.
 
 ```graphql
 mutation {
@@ -921,7 +921,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 4. Challenge Mutations
 
 #### joinChallenge
-Dołącz do wyzwania.
+Join a challenge.
 
 ```graphql
 mutation {
@@ -937,7 +937,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### leaveChallenge
-Opuść wyzwanie.
+Leave a challenge.
 
 ```graphql
 mutation {
@@ -957,7 +957,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 5. Club Mutations
 
 #### joinClub
-Dołącz do klubu.
+Join a club.
 
 ```graphql
 mutation {
@@ -973,7 +973,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### leaveClub
-Opuść klub.
+Leave a club.
 
 ```graphql
 mutation {
@@ -993,7 +993,7 @@ curl -X POST http://localhost:8080/graphql \
 ### 6. Event Mutations
 
 #### registerForEvent
-Zarejestruj się na event.
+Register for an event.
 
 ```graphql
 mutation {
@@ -1009,7 +1009,7 @@ curl -X POST http://localhost:8080/graphql \
 ```
 
 #### unregisterFromEvent
-Wyrejestruj się z eventu.
+Unregister from an event.
 
 ```graphql
 mutation {
@@ -1054,9 +1054,9 @@ DISTANCE, TIME, ELEVATION, ACTIVITIES_COUNT, SEGMENT
 
 ---
 
-## Obsługa błędów
+## Error Handling
 
-GraphQL zwraca błędy w formacie:
+GraphQL returns errors in the following format:
 
 ```json
 {
@@ -1077,12 +1077,12 @@ GraphQL zwraca błędy w formacie:
 
 ## Tips
 
-1. **GraphiQL** - najwygodniejszy sposób testowania, ma autouzupełnianie i dokumentację
-2. **Fragmenty** - używaj fragmentów dla powtarzających się pól
-3. **Aliasy** - możesz używać aliasów dla wielu zapytań tego samego typu
-4. **Variables** - używaj zmiennych dla dynamicznych wartości
+1. **GraphiQL** - the most convenient way to test, has autocomplete and documentation
+2. **Fragments** - use fragments for repeating fields
+3. **Aliases** - you can use aliases for multiple queries of the same type
+4. **Variables** - use variables for dynamic values
 
-### Przykład z aliasami:
+### Example with aliases:
 
 ```graphql
 query {
@@ -1091,7 +1091,7 @@ query {
 }
 ```
 
-### Przykład z fragmentami:
+### Example with fragments:
 
 ```graphql
 fragment UserFields on User {
