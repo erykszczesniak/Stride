@@ -2,11 +2,11 @@
 
 **Base URL:** `http://localhost:8080`
 
-**Uwaga:** Autoryzacja jest tymczasowo wyłączona. Wszystkie endpointy przyjmują opcjonalny parametr `userId` - jeśli nie podany, używany jest `DEFAULT_USER_ID = 1`.
+**Note:** Authorization is temporarily disabled. All endpoints accept an optional `userId` parameter - if not provided, `DEFAULT_USER_ID = 1` is used.
 
 ---
 
-## Spis Treści
+## Table of Contents
 
 1. [Authentication](#1-authentication)
 2. [Users](#2-users)
@@ -29,7 +29,7 @@
 **Base Path:** `/api/v1/auth`
 
 ### POST /api/v1/auth/login
-Logowanie użytkownika.
+Login user.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
@@ -55,7 +55,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 ```
 
 ### POST /api/v1/auth/register
-Rejestracja nowego użytkownika.
+Register a new user.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register \
@@ -69,7 +69,7 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 ```
 
 ### POST /api/v1/auth/refresh
-Odświeżenie tokena JWT.
+Refresh JWT token.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/refresh \
@@ -80,7 +80,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 ```
 
 ### POST /api/v1/auth/forgot-password
-Żądanie resetu hasła.
+Request password reset.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/forgot-password \
@@ -91,7 +91,7 @@ curl -X POST http://localhost:8080/api/v1/auth/forgot-password \
 ```
 
 ### POST /api/v1/auth/reset-password
-Reset hasła z kodem.
+Reset password with code.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/reset-password \
@@ -109,31 +109,31 @@ curl -X POST http://localhost:8080/api/v1/auth/reset-password \
 **Base Path:** `/api/v1/users`
 
 ### GET /api/v1/users/me
-Pobierz aktualnego użytkownika.
+Get current user.
 
 ```bash
 curl http://localhost:8080/api/v1/users/me
 
-# lub z konkretnym userId
+# or with specific userId
 curl "http://localhost:8080/api/v1/users/me?userId=2"
 ```
 
 ### GET /api/v1/users/{userId}
-Pobierz użytkownika po ID.
+Get user by ID.
 
 ```bash
 curl http://localhost:8080/api/v1/users/1
 ```
 
 ### GET /api/v1/users
-Pobierz listę wszystkich użytkowników (z paginacją).
+Get list of all users (with pagination).
 
 ```bash
 curl "http://localhost:8080/api/v1/users?page=0&size=20"
 ```
 
 ### PUT /api/v1/users/me
-Aktualizuj profil użytkownika.
+Update user profile.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/users/me \
@@ -148,45 +148,45 @@ curl -X PUT http://localhost:8080/api/v1/users/me \
 ```
 
 ### POST /api/v1/users/{userId}/follow
-Zacznij obserwować użytkownika.
+Follow a user.
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/users/2/follow?currentUserId=1"
 ```
 
 ### DELETE /api/v1/users/{userId}/follow
-Przestań obserwować użytkownika.
+Unfollow a user.
 
 ```bash
 curl -X DELETE "http://localhost:8080/api/v1/users/2/follow?currentUserId=1"
 ```
 
 ### GET /api/v1/users/{userId}/followers
-Pobierz listę obserwujących użytkownika.
+Get user's followers list.
 
 ```bash
 curl http://localhost:8080/api/v1/users/1/followers
 ```
 
 ### GET /api/v1/users/{userId}/following
-Pobierz listę obserwowanych przez użytkownika.
+Get list of users followed by user.
 
 ```bash
 curl http://localhost:8080/api/v1/users/1/following
 ```
 
 ### GET /api/v1/users/suggested
-Pobierz sugerowanych użytkowników do obserwowania. Zwraca użytkowników, których aktualny użytkownik jeszcze nie obserwuje, posortowanych według liczby obserwujących (najpopularniejsi pierwsi).
+Get suggested users to follow. Returns users that the current user is not following yet, sorted by follower count (most popular first).
 
 ```bash
 curl "http://localhost:8080/api/v1/users/suggested?userId=1&limit=5"
 ```
 
-**Parametry:**
-| Parametr | Typ | Wymagany | Domyślnie | Opis |
-|----------|-----|----------|-----------|------|
-| userId | Long | Nie | 1 | ID aktualnego użytkownika |
-| limit | int | Nie | 5 | Maksymalna liczba sugerowanych użytkowników |
+**Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| userId | Long | No | 1 | Current user ID |
+| limit | int | No | 5 | Maximum number of suggested users |
 
 **Response:**
 ```json
@@ -208,10 +208,10 @@ curl "http://localhost:8080/api/v1/users/suggested?userId=1&limit=5"
 ]
 ```
 
-**Logika sugestii:**
-- Wyklucza aktualnego użytkownika
-- Wyklucza użytkowników już obserwowanych
-- Sortuje według liczby obserwujących (malejąco)
+**Suggestion logic:**
+- Excludes current user
+- Excludes already followed users
+- Sorted by follower count (descending)
 
 ---
 
@@ -220,51 +220,51 @@ curl "http://localhost:8080/api/v1/users/suggested?userId=1&limit=5"
 **Base Path:** `/api/v1/activities`
 
 ### GET /api/v1/activities/{activityId}
-Pobierz aktywność po ID.
+Get activity by ID.
 
 ```bash
 curl http://localhost:8080/api/v1/activities/1
 ```
 
 ### GET /api/v1/activities/feed
-Pobierz feed aktywności (własne + obserwowanych).
+Get activity feed (own + followed users).
 
 ```bash
 curl "http://localhost:8080/api/v1/activities/feed?page=0&size=10"
 ```
 
 ### GET /api/v1/activities/my
-Pobierz własne aktywności.
+Get own activities.
 
 ```bash
 curl "http://localhost:8080/api/v1/activities/my?page=0&size=10"
 ```
 
 ### GET /api/v1/activities/user/{targetUserId}
-Pobierz aktywności konkretnego użytkownika.
+Get activities of a specific user.
 
 ```bash
 curl "http://localhost:8080/api/v1/activities/user/2?page=0&size=10"
 ```
 
 ### GET /api/v1/activities/public
-Pobierz publiczne aktywności.
+Get public activities.
 
 ```bash
 curl "http://localhost:8080/api/v1/activities/public?page=0&size=10"
 ```
 
 ### GET /api/v1/activities/by-type
-Pobierz aktywności po typie.
+Get activities by type.
 
 ```bash
 curl "http://localhost:8080/api/v1/activities/by-type?activityType=RUN&page=0&size=10"
 ```
 
-**Dostępne typy:** `RUN`, `RIDE`, `SWIM`, `WALK`, `HIKE`, `WORKOUT`, `YOGA`, `OTHER`, `ALPINE_SKI`, `BACKCOUNTRY_SKI`, `CROSSFIT`, `ELLIPTICAL`, `ICE_SKATE`, `INLINE_SKATE`, `KAYAKING`, `KITESURF`, `NORDIC_SKI`, `ROCK_CLIMBING`, `ROLLER_SKI`, `ROWING`, `SNOWBOARD`, `SNOWSHOE`, `STAIR_STEPPER`, `STAND_UP_PADDLING`, `SURFING`, `VIRTUAL_RIDE`, `VIRTUAL_RUN`, `WEIGHT_TRAINING`, `WINDSURF`
+**Available types:** `RUN`, `RIDE`, `SWIM`, `WALK`, `HIKE`, `WORKOUT`, `YOGA`, `OTHER`, `ALPINE_SKI`, `BACKCOUNTRY_SKI`, `CROSSFIT`, `ELLIPTICAL`, `ICE_SKATE`, `INLINE_SKATE`, `KAYAKING`, `KITESURF`, `NORDIC_SKI`, `ROCK_CLIMBING`, `ROLLER_SKI`, `ROWING`, `SNOWBOARD`, `SNOWSHOE`, `STAIR_STEPPER`, `STAND_UP_PADDLING`, `SURFING`, `VIRTUAL_RIDE`, `VIRTUAL_RUN`, `WEIGHT_TRAINING`, `WINDSURF`
 
 ### POST /api/v1/activities
-Utwórz nową aktywność.
+Create a new activity.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/activities \
@@ -286,7 +286,7 @@ curl -X POST http://localhost:8080/api/v1/activities \
 ```
 
 ### PUT /api/v1/activities/{activityId}
-Zaktualizuj aktywność.
+Update an activity.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/activities/1 \
@@ -302,28 +302,28 @@ curl -X PUT http://localhost:8080/api/v1/activities/1 \
 ```
 
 ### DELETE /api/v1/activities/{activityId}
-Usuń aktywność.
+Delete an activity.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/activities/1
 ```
 
 ### POST /api/v1/activities/{activityId}/like
-Polub aktywność.
+Like an activity.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/activities/1/like
 ```
 
 ### DELETE /api/v1/activities/{activityId}/like
-Cofnij polubienie aktywności.
+Unlike an activity.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/activities/1/like
 ```
 
 ### GET /api/v1/activities/stats/monthly
-Pobierz miesięczne statystyki.
+Get monthly statistics.
 
 ```bash
 curl http://localhost:8080/api/v1/activities/stats/monthly
@@ -343,7 +343,7 @@ curl http://localhost:8080/api/v1/activities/stats/monthly
 ```
 
 ### GET /api/v1/activities/stats/weekly
-Pobierz tygodniowe statystyki.
+Get weekly statistics.
 
 ```bash
 curl http://localhost:8080/api/v1/activities/stats/weekly
@@ -368,14 +368,14 @@ curl http://localhost:8080/api/v1/activities/stats/weekly
 **Base Path:** `/api/v1/activities/{activityId}/comments`
 
 ### GET /api/v1/activities/{activityId}/comments
-Pobierz komentarze aktywności.
+Get activity comments.
 
 ```bash
 curl http://localhost:8080/api/v1/activities/1/comments
 ```
 
 ### POST /api/v1/activities/{activityId}/comments
-Dodaj komentarz do aktywności.
+Add a comment to an activity.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/activities/1/comments \
@@ -386,7 +386,7 @@ curl -X POST http://localhost:8080/api/v1/activities/1/comments \
 ```
 
 ### PUT /api/v1/activities/{activityId}/comments/{commentId}
-Zaktualizuj komentarz.
+Update a comment.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/activities/1/comments/1 \
@@ -397,7 +397,7 @@ curl -X PUT http://localhost:8080/api/v1/activities/1/comments/1 \
 ```
 
 ### DELETE /api/v1/activities/{activityId}/comments/{commentId}
-Usuń komentarz.
+Delete a comment.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/activities/1/comments/1
@@ -410,28 +410,28 @@ curl -X DELETE http://localhost:8080/api/v1/activities/1/comments/1
 **Base Path:** `/api/v1/goals`
 
 ### GET /api/v1/goals
-Pobierz aktywne cele użytkownika.
+Get user's active goals.
 
 ```bash
 curl http://localhost:8080/api/v1/goals
 ```
 
 ### GET /api/v1/goals/all
-Pobierz wszystkie cele użytkownika.
+Get all user's goals.
 
 ```bash
 curl http://localhost:8080/api/v1/goals/all
 ```
 
 ### GET /api/v1/goals/{goalId}
-Pobierz cel po ID.
+Get goal by ID.
 
 ```bash
 curl http://localhost:8080/api/v1/goals/1
 ```
 
 ### POST /api/v1/goals
-Utwórz nowy cel.
+Create a new goal.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/goals \
@@ -446,11 +446,11 @@ curl -X POST http://localhost:8080/api/v1/goals \
   }'
 ```
 
-**Typy celów:** `DISTANCE`, `TIME`, `ACTIVITIES`, `ELEVATION`
-**Okresy:** `WEEKLY`, `MONTHLY`, `YEARLY`
+**Goal types:** `DISTANCE`, `TIME`, `ACTIVITIES`, `ELEVATION`
+**Periods:** `WEEKLY`, `MONTHLY`, `YEARLY`
 
 ### PUT /api/v1/goals/{goalId}
-Zaktualizuj cel.
+Update a goal.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/goals/1 \
@@ -465,14 +465,14 @@ curl -X PUT http://localhost:8080/api/v1/goals/1 \
 ```
 
 ### DELETE /api/v1/goals/{goalId}
-Usuń cel.
+Delete a goal.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/goals/1
 ```
 
 ### POST /api/v1/goals/progress
-Przelicz postęp celów użytkownika.
+Recalculate user's goals progress.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/goals/progress
@@ -485,35 +485,35 @@ curl -X POST http://localhost:8080/api/v1/goals/progress
 **Base Path:** `/api/v1/clubs`
 
 ### GET /api/v1/clubs
-Pobierz listę publicznych klubów.
+Get list of public clubs.
 
 ```bash
 curl "http://localhost:8080/api/v1/clubs?page=0&size=20"
 ```
 
 ### GET /api/v1/clubs/{clubId}
-Pobierz klub po ID.
+Get club by ID.
 
 ```bash
 curl http://localhost:8080/api/v1/clubs/1
 ```
 
 ### GET /api/v1/clubs/my
-Pobierz kluby użytkownika.
+Get user's clubs.
 
 ```bash
 curl http://localhost:8080/api/v1/clubs/my
 ```
 
 ### GET /api/v1/clubs/search
-Szukaj klubów.
+Search clubs.
 
 ```bash
 curl "http://localhost:8080/api/v1/clubs/search?q=runners&page=0&size=20"
 ```
 
 ### POST /api/v1/clubs
-Utwórz nowy klub.
+Create a new club.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/clubs \
@@ -529,7 +529,7 @@ curl -X POST http://localhost:8080/api/v1/clubs \
 ```
 
 ### PUT /api/v1/clubs/{clubId}
-Zaktualizuj klub.
+Update a club.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/clubs/1 \
@@ -544,28 +544,28 @@ curl -X PUT http://localhost:8080/api/v1/clubs/1 \
 ```
 
 ### DELETE /api/v1/clubs/{clubId}
-Usuń klub (tylko właściciel).
+Delete a club (owner only).
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/clubs/1
 ```
 
 ### POST /api/v1/clubs/{clubId}/join
-Dołącz do klubu.
+Join a club.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/clubs/1/join
 ```
 
 ### POST /api/v1/clubs/{clubId}/leave
-Opuść klub.
+Leave a club.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/clubs/1/leave
 ```
 
 ### GET /api/v1/clubs/{clubId}/members
-Pobierz członków klubu.
+Get club members.
 
 ```bash
 curl http://localhost:8080/api/v1/clubs/1/members
@@ -578,42 +578,42 @@ curl http://localhost:8080/api/v1/clubs/1/members
 **Base Path:** `/api/v1/challenges`
 
 ### GET /api/v1/challenges
-Pobierz aktywne wyzwania.
+Get active challenges.
 
 ```bash
 curl "http://localhost:8080/api/v1/challenges?page=0&size=20"
 ```
 
 ### GET /api/v1/challenges/upcoming
-Pobierz nadchodzące wyzwania.
+Get upcoming challenges.
 
 ```bash
 curl "http://localhost:8080/api/v1/challenges/upcoming?page=0&size=20"
 ```
 
 ### GET /api/v1/challenges/{challengeId}
-Pobierz wyzwanie po ID.
+Get challenge by ID.
 
 ```bash
 curl http://localhost:8080/api/v1/challenges/1
 ```
 
 ### GET /api/v1/challenges/my
-Pobierz wyzwania użytkownika.
+Get user's challenges.
 
 ```bash
 curl http://localhost:8080/api/v1/challenges/my
 ```
 
 ### GET /api/v1/challenges/search
-Szukaj wyzwań.
+Search challenges.
 
 ```bash
 curl "http://localhost:8080/api/v1/challenges/search?q=marathon&page=0&size=20"
 ```
 
 ### POST /api/v1/challenges
-Utwórz nowe wyzwanie.
+Create a new challenge.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/challenges \
@@ -630,10 +630,10 @@ curl -X POST http://localhost:8080/api/v1/challenges \
   }'
 ```
 
-**Typy wyzwań:** `DISTANCE`, `TIME`, `ELEVATION`, `ACTIVITIES_COUNT`, `SEGMENT`
+**Challenge types:** `DISTANCE`, `TIME`, `ELEVATION`, `ACTIVITIES_COUNT`, `SEGMENT`
 
 ### PUT /api/v1/challenges/{challengeId}
-Zaktualizuj wyzwanie.
+Update a challenge.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/challenges/1 \
@@ -649,28 +649,28 @@ curl -X PUT http://localhost:8080/api/v1/challenges/1 \
 ```
 
 ### DELETE /api/v1/challenges/{challengeId}
-Usuń wyzwanie.
+Delete a challenge.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/challenges/1
 ```
 
 ### POST /api/v1/challenges/{challengeId}/participate
-Dołącz do wyzwania.
+Join a challenge.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/challenges/1/participate
 ```
 
 ### DELETE /api/v1/challenges/{challengeId}/participate
-Opuść wyzwanie.
+Leave a challenge.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/challenges/1/participate
 ```
 
 ### GET /api/v1/challenges/{challengeId}/leaderboard
-Pobierz ranking wyzwania.
+Get challenge leaderboard.
 
 ```bash
 curl http://localhost:8080/api/v1/challenges/1/leaderboard
@@ -696,28 +696,28 @@ curl http://localhost:8080/api/v1/challenges/1/leaderboard
 **Base Path:** `/api/v1/events`
 
 ### GET /api/v1/events
-Pobierz nadchodzące publiczne eventy.
+Get upcoming public events.
 
 ```bash
 curl "http://localhost:8080/api/v1/events?page=0&size=20"
 ```
 
 ### GET /api/v1/events/{eventId}
-Pobierz event po ID.
+Get event by ID.
 
 ```bash
 curl http://localhost:8080/api/v1/events/1
 ```
 
 ### GET /api/v1/events/my
-Pobierz eventy użytkownika.
+Get user's events.
 
 ```bash
 curl http://localhost:8080/api/v1/events/my
 ```
 
 ### POST /api/v1/events
-Utwórz nowy event.
+Create a new event.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/events \
@@ -736,7 +736,7 @@ curl -X POST http://localhost:8080/api/v1/events \
 ```
 
 ### PUT /api/v1/events/{eventId}
-Zaktualizuj event.
+Update an event.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/events/1 \
@@ -752,21 +752,21 @@ curl -X PUT http://localhost:8080/api/v1/events/1 \
 ```
 
 ### DELETE /api/v1/events/{eventId}
-Usuń event.
+Delete an event.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/events/1
 ```
 
 ### POST /api/v1/events/{eventId}/register
-Zarejestruj się na event.
+Register for an event.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/events/1/register
 ```
 
 ### DELETE /api/v1/events/{eventId}/register
-Wyrejestruj się z eventu.
+Unregister from an event.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/events/1/register
@@ -779,7 +779,7 @@ curl -X DELETE http://localhost:8080/api/v1/events/1/register
 **Base Path:** `/api/v1/dashboard`
 
 ### GET /api/v1/dashboard
-Pobierz dane dashboardu.
+Get dashboard data.
 
 ```bash
 curl http://localhost:8080/api/v1/dashboard
@@ -816,7 +816,7 @@ curl http://localhost:8080/api/v1/dashboard
 **Base Path:** `/api/v1/search`
 
 ### GET /api/v1/search
-Globalne wyszukiwanie (użytkownicy, aktywności, kluby, wyzwania, eventy).
+Global search (users, activities, clubs, challenges, events).
 
 ```bash
 curl "http://localhost:8080/api/v1/search?query=marathon&limit=5"
@@ -834,35 +834,35 @@ curl "http://localhost:8080/api/v1/search?query=marathon&limit=5"
 ```
 
 ### GET /api/v1/search/users
-Szukaj użytkowników.
+Search users.
 
 ```bash
 curl "http://localhost:8080/api/v1/search/users?query=john&limit=10"
 ```
 
 ### GET /api/v1/search/activities
-Szukaj aktywności.
+Search activities.
 
 ```bash
 curl "http://localhost:8080/api/v1/search/activities?query=morning%20run&limit=10"
 ```
 
 ### GET /api/v1/search/clubs
-Szukaj klubów.
+Search clubs.
 
 ```bash
 curl "http://localhost:8080/api/v1/search/clubs?query=runners&limit=10"
 ```
 
 ### GET /api/v1/search/challenges
-Szukaj wyzwań.
+Search challenges.
 
 ```bash
 curl "http://localhost:8080/api/v1/search/challenges?query=january&limit=10"
 ```
 
 ### GET /api/v1/search/events
-Szukaj eventów.
+Search events.
 
 ```bash
 curl "http://localhost:8080/api/v1/search/events?query=marathon&limit=10"
@@ -875,7 +875,7 @@ curl "http://localhost:8080/api/v1/search/events?query=marathon&limit=10"
 **Base Path:** `/api/v1/admin`
 
 ### GET /api/v1/admin/stats
-Pobierz statystyki administracyjne.
+Get admin statistics.
 
 ```bash
 curl http://localhost:8080/api/v1/admin/stats
@@ -895,21 +895,21 @@ curl http://localhost:8080/api/v1/admin/stats
 ```
 
 ### GET /api/v1/admin/users
-Pobierz listę użytkowników (admin).
+Get user list (admin).
 
 ```bash
 curl "http://localhost:8080/api/v1/admin/users?page=0&size=20"
 ```
 
 ### GET /api/v1/admin/users/{userId}
-Pobierz szczegóły użytkownika (admin).
+Get user details (admin).
 
 ```bash
 curl http://localhost:8080/api/v1/admin/users/1
 ```
 
 ### PUT /api/v1/admin/users/{userId}/role
-Zmień rolę użytkownika.
+Change user role.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/admin/users/1/role \
@@ -919,17 +919,17 @@ curl -X PUT http://localhost:8080/api/v1/admin/users/1/role \
   }'
 ```
 
-**Dostępne role:** `USER`, `ADMIN`
+**Available roles:** `USER`, `ADMIN`
 
 ### PUT /api/v1/admin/users/{userId}/toggle-active
-Przełącz status aktywności użytkownika.
+Toggle user active status.
 
 ```bash
 curl -X PUT http://localhost:8080/api/v1/admin/users/1/toggle-active
 ```
 
 ### DELETE /api/v1/admin/users/{userId}
-Usuń użytkownika.
+Delete a user.
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/admin/users/1
@@ -942,28 +942,28 @@ curl -X DELETE http://localhost:8080/api/v1/admin/users/1
 **Base Path:** `/api/v1/export`
 
 ### GET /api/v1/export/activities/json
-Eksportuj aktywności do JSON.
+Export activities to JSON.
 
 ```bash
 curl -o activities.json http://localhost:8080/api/v1/export/activities/json
 ```
 
 ### GET /api/v1/export/activities/csv
-Eksportuj aktywności do CSV.
+Export activities to CSV.
 
 ```bash
 curl -o activities.csv http://localhost:8080/api/v1/export/activities/csv
 ```
 
 ### GET /api/v1/export/activities/txt
-Eksportuj aktywności do TXT (raport tekstowy).
+Export activities to TXT (text report).
 
 ```bash
 curl -o activities.txt http://localhost:8080/api/v1/export/activities/txt
 ```
 
 ### GET /api/v1/export/activities/gpx/{activityId}
-Eksportuj pojedynczą aktywność do GPX.
+Export single activity to GPX.
 
 ```bash
 curl -o activity.gpx http://localhost:8080/api/v1/export/activities/gpx/1
@@ -976,7 +976,7 @@ curl -o activity.gpx http://localhost:8080/api/v1/export/activities/gpx/1
 **Endpoint:** `/graphql`
 **GraphiQL Interface:** `/graphiql`
 
-### Przykładowe Query
+### Example Query
 
 ```bash
 curl -X POST http://localhost:8080/graphql \
@@ -1016,42 +1016,42 @@ curl -X POST http://localhost:8080/graphql \
   }'
 ```
 
-### Pełna dokumentacja GraphQL
+### Full GraphQL Documentation
 
-Więcej przykładów znajdziesz w GraphiQL pod adresem: `http://localhost:8080/graphiql`
-
----
-
-## Kody odpowiedzi
-
-| Kod | Opis |
-|-----|------|
-| 200 | OK - sukces |
-| 201 | Created - zasób utworzony |
-| 204 | No Content - sukces bez zwracanej treści |
-| 400 | Bad Request - błędne dane wejściowe |
-| 401 | Unauthorized - brak autoryzacji |
-| 403 | Forbidden - brak uprawnień |
-| 404 | Not Found - zasób nie istnieje |
-| 409 | Conflict - konflikt (np. duplikat) |
-| 500 | Internal Server Error - błąd serwera |
+More examples can be found in GraphiQL at: `http://localhost:8080/graphiql`
 
 ---
 
-## Paginacja
+## Response Codes
 
-Endpointy z listami obsługują paginację przez parametry:
-- `page` - numer strony (od 0)
-- `size` - liczba elementów na stronie (domyślnie 10-20)
-
-Nagłówki odpowiedzi:
-- `page-total-count` - liczba stron
-- `page-total-elements` - łączna liczba elementów
+| Code | Description |
+|------|-------------|
+| 200 | OK - Success |
+| 201 | Created - Resource created |
+| 204 | No Content - Success without returned content |
+| 400 | Bad Request - Invalid input data |
+| 401 | Unauthorized - Not authenticated |
+| 403 | Forbidden - No permission |
+| 404 | Not Found - Resource does not exist |
+| 409 | Conflict - Conflict (e.g., duplicate) |
+| 500 | Internal Server Error - Server error |
 
 ---
 
-## Testowanie w Postman/Insomnia
+## Pagination
 
-1. Ustaw Base URL: `http://localhost:8080`
+List endpoints support pagination with parameters:
+- `page` - page number (starting from 0)
+- `size` - number of elements per page (default 10-20)
+
+Response headers:
+- `page-total-count` - total number of pages
+- `page-total-elements` - total number of elements
+
+---
+
+## Testing in Postman/Insomnia
+
+1. Set Base URL: `http://localhost:8080`
 2. Content-Type: `application/json`
-3. Dla testowania bez autoryzacji dodaj `?userId=1` do URL
+3. For testing without authorization add `?userId=1` to URL

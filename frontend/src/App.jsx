@@ -8,12 +8,14 @@ import Goals from "./pages/Goals";
 import Challenges from "./pages/Challenges";
 import Clubs from "./pages/Clubs";
 import Events from "./pages/Events";
+import Explore from "./pages/Explore";
 
 const App = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/explore" element={<Explore />} />
         <Route path="/activities" element={<Activities />} />
         <Route path="/activities/new" element={<RecordActivity />} />
         <Route path="/activities/:id" element={<ActivityDetails />} />
