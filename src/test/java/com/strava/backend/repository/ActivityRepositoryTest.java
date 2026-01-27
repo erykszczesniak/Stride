@@ -350,6 +350,124 @@ class ActivityRepositoryTest {
     }
 
     @Nested
+    @DisplayName("searchUserActivities Tests")
+    class SearchUserActivitiesTests {
+
+        @Test
+        @DisplayName("Should find user activities by title")
+        void shouldFindUserActivitiesByTitle() {
+            Page<Activity> results = activityRepository.searchUserActivities(
+                    testUser.getId(), "Morning", PageRequest.of(0, 10));
+
+            assertThat(results.getContent()).hasSize(1);
+            assertThat(results.getContent().get(0).getTitle()).isEqualTo("Morning Run");
+        }
+
+        @Test
+        @DisplayName("Should find user activities by description")
+        void shouldFindUserActivitiesByDescription() {
+            Page<Activity> results = activityRepository.searchUserActivities(
+                    testUser.getId(), "cycling", PageRequest.of(0, 10));
+
+            assertThat(results.getContent()).hasSize(1);
+            assertThat(results.getContent().get(0).getTitle()).isEqualTo("Evening Ride");
+        }
+
+        @Test
+        @DisplayName("Should only find activities belonging to user")
+        void shouldOnlyFindActivitiesBelongingToUser() {
+            Page<Activity> results = activityRepository.searchUserActivities(
+                    testUser.getId(), "Pool", PageRequest.of(0, 10));
+
+            assertThat(results.getContent()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should be case insensitive")
+        void shouldBeCaseInsensitive() {
+            Page<Activity> results = activityRepository.searchUserActivities(
+                    testUser.getId(), "MORNING", PageRequest.of(0, 10));
+
+            assertThat(results.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Should return empty when no matches")
+        void shouldReturnEmptyWhenNoMatches() {
+            Page<Activity> results = activityRepository.searchUserActivities(
+                    testUser.getId(), "nonexistent", PageRequest.of(0, 10));
+
+            assertThat(results.getContent()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("sumDistanceByUserId Tests")
+    class SumDistanceByUserIdTests {
+
+        @Test
+        @DisplayName("Should sum all distances for user")
+        void shouldSumAllDistancesForUser() {
+            Double totalDistance = activityRepository.sumDistanceByUserId(testUser.getId());
+
+            assertThat(totalDistance).isEqualTo(35.0); // 10.0 + 25.0
+        }
+
+        @Test
+        @DisplayName("Should return zero for user with no activities")
+        void shouldReturnZeroForUserWithNoActivities() {
+            User newUser = User.builder()
+                    .email("empty@example.com")
+                    .firstName("Empty")
+                    .lastName("User")
+                    .password("password123")
+                    .authProvider(AuthProvider.LOCAL)
+                    .role(Role.USER)
+                    .active(true)
+                    .build();
+            entityManager.persist(newUser);
+            entityManager.flush();
+
+            Double totalDistance = activityRepository.sumDistanceByUserId(newUser.getId());
+
+            assertThat(totalDistance).isEqualTo(0.0);
+        }
+    }
+
+    @Nested
+    @DisplayName("sumDurationByUserId Tests")
+    class SumDurationByUserIdTests {
+
+        @Test
+        @DisplayName("Should sum all durations for user")
+        void shouldSumAllDurationsForUser() {
+            Long totalDuration = activityRepository.sumDurationByUserId(testUser.getId());
+
+            assertThat(totalDuration).isEqualTo(9000L); // 3600 + 5400
+        }
+
+        @Test
+        @DisplayName("Should return zero for user with no activities")
+        void shouldReturnZeroForUserWithNoActivities() {
+            User newUser = User.builder()
+                    .email("noduration@example.com")
+                    .firstName("No")
+                    .lastName("Duration")
+                    .password("password123")
+                    .authProvider(AuthProvider.LOCAL)
+                    .role(Role.USER)
+                    .active(true)
+                    .build();
+            entityManager.persist(newUser);
+            entityManager.flush();
+
+            Long totalDuration = activityRepository.sumDurationByUserId(newUser.getId());
+
+            assertThat(totalDuration).isEqualTo(0L);
+        }
+    }
+
+    @Nested
     @DisplayName("Challenge Progress Queries Tests")
     class ChallengeProgressQueriesTests {
 

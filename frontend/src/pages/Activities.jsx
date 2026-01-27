@@ -1,12 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { FiPlus } from "react-icons/fi";
+import React, { useEffect, useState, useCallback } from "react";
+import { FiPlus, FiSearch, FiActivity, FiMapPin, FiClock } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
 import ActivityService from "../api/ActivityService";
 import {
-  Section,
-  SectionHeader,
-  SectionTitle,
   ActivitiesList,
   EmptyState,
   EmptyIcon,
@@ -29,10 +26,45 @@ const PageTitle = styled.h1`
   color: #333;
 `;
 
+const SearchContainer = styled.div`
+  position: relative;
+  margin-bottom: 20px;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 15px;
+  background-color: #f8f9fa;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #fc4c02;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.1);
+  }
+
+  &::placeholder {
+    color: #999;
+  }
+`;
+
+const SearchIcon = styled.div`
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+`;
+
 const FilterTabs = styled.div`
   display: flex;
   gap: 8px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 `;
 
 const FilterTab = styled.button`
@@ -51,43 +83,123 @@ const FilterTab = styled.button`
   }
 `;
 
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const StatCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+`;
+
+const StatIcon = styled.div`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: ${(props) => props.color || "#fc4c02"}20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${(props) => props.color || "#fc4c02"};
+`;
+
+const StatContent = styled.div`
+  flex: 1;
+`;
+
+const StatValue = styled.div`
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+`;
+
+const StatLabel = styled.div`
+  font-size: 13px;
+  color: #999;
+  margin-top: 2px;
+`;
+
 const Activities = () => {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stats, setStats] = useState({
+    totalActivities: 0,
+    totalDistanceKm: 0,
+    totalDurationSeconds: 0,
+  });
   const userId = 1;
 
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        setLoading(true);
-        const res = await ActivityService.getMyActivities(userId, 0, 20);
-        setActivities(Array.isArray(res.data) ? res.data : []);
-      } catch (error) {
-        console.error("Error fetching activities:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchActivities = useCallback(async () => {
+    try {
+      setLoading(true);
+      const activityType = filter === "all" ? null : filter;
+      const res = await ActivityService.getMyActivities(userId, 0, 50, searchQuery, activityType);
+      setActivities(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, searchQuery, filter]);
 
-    fetchActivities();
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await ActivityService.getMyTotalStats(userId);
+      setStats(res.data);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const handleLikeActivity = async (activityId) => {
     try {
       await ActivityService.likeActivity(activityId, userId);
-      const res = await ActivityService.getMyActivities(userId, 0, 20);
-      setActivities(Array.isArray(res.data) ? res.data : []);
+      fetchActivities();
     } catch (error) {
       console.error("Error liking activity:", error);
     }
   };
 
-  const filteredActivities = filter === "all"
-    ? activities
-    : activities.filter(a => a.activityType === filter);
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
-  if (loading) {
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+  };
+
+  const formatDuration = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  if (loading && activities.length === 0) {
     return (
       <Layout>
         <LoadingSpinner />
@@ -105,24 +217,75 @@ const Activities = () => {
         </AddButton>
       </PageHeader>
 
+      <SearchContainer>
+        <SearchIcon>
+          <FiSearch size={18} />
+        </SearchIcon>
+        <SearchInput
+          type="text"
+          placeholder="Search activities..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+      </SearchContainer>
+
       <FilterTabs>
-        <FilterTab active={filter === "all"} onClick={() => setFilter("all")}>
+        <FilterTab active={filter === "all"} onClick={() => handleFilterChange("all")}>
           All
         </FilterTab>
-        <FilterTab active={filter === "RUN"} onClick={() => setFilter("RUN")}>
-          Running
+        <FilterTab active={filter === "RUN"} onClick={() => handleFilterChange("RUN")}>
+          Run
         </FilterTab>
-        <FilterTab active={filter === "RIDE"} onClick={() => setFilter("RIDE")}>
-          Cycling
+        <FilterTab active={filter === "RIDE"} onClick={() => handleFilterChange("RIDE")}>
+          Ride
         </FilterTab>
-        <FilterTab active={filter === "SWIM"} onClick={() => setFilter("SWIM")}>
-          Swimming
+        <FilterTab active={filter === "SWIM"} onClick={() => handleFilterChange("SWIM")}>
+          Swim
+        </FilterTab>
+        <FilterTab active={filter === "HIKE"} onClick={() => handleFilterChange("HIKE")}>
+          Hike
+        </FilterTab>
+        <FilterTab active={filter === "WALK"} onClick={() => handleFilterChange("WALK")}>
+          Walk
+        </FilterTab>
+        <FilterTab active={filter === "WORKOUT"} onClick={() => handleFilterChange("WORKOUT")}>
+          Workout
         </FilterTab>
       </FilterTabs>
 
-      {filteredActivities.length > 0 ? (
+      <StatsGrid>
+        <StatCard>
+          <StatIcon color="#fc4c02">
+            <FiActivity size={24} />
+          </StatIcon>
+          <StatContent>
+            <StatValue>{stats.totalActivities}</StatValue>
+            <StatLabel>Activities</StatLabel>
+          </StatContent>
+        </StatCard>
+        <StatCard>
+          <StatIcon color="#2196f3">
+            <FiMapPin size={24} />
+          </StatIcon>
+          <StatContent>
+            <StatValue>{stats.totalDistanceKm?.toFixed(1) || 0}</StatValue>
+            <StatLabel>Total km</StatLabel>
+          </StatContent>
+        </StatCard>
+        <StatCard>
+          <StatIcon color="#4caf50">
+            <FiClock size={24} />
+          </StatIcon>
+          <StatContent>
+            <StatValue>{formatDuration(stats.totalDurationSeconds || 0)}</StatValue>
+            <StatLabel>Hours</StatLabel>
+          </StatContent>
+        </StatCard>
+      </StatsGrid>
+
+      {activities.length > 0 ? (
         <ActivitiesList>
-          {filteredActivities.map((activity) => (
+          {activities.map((activity) => (
             <ActivityCard
               key={activity.id}
               activity={activity}
@@ -133,11 +296,17 @@ const Activities = () => {
       ) : (
         <EmptyState>
           <EmptyIcon>🏃</EmptyIcon>
-          <EmptyText>No activities found. Start tracking your workouts!</EmptyText>
-          <AddButton to="/activities/new">
-            <FiPlus size={18} />
-            Add Activity
-          </AddButton>
+          <EmptyText>
+            {searchQuery
+              ? "No activities found matching your search."
+              : "No activities found. Start tracking your workouts!"}
+          </EmptyText>
+          {!searchQuery && (
+            <AddButton to="/activities/new">
+              <FiPlus size={18} />
+              Add Activity
+            </AddButton>
+          )}
         </EmptyState>
       )}
     </Layout>
