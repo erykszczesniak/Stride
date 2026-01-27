@@ -10,6 +10,7 @@ import Clubs from "./pages/Clubs";
 import Events from "./pages/Events";
 import Explore from "./pages/Explore";
 import Admin from "./pages/Admin";
+import Settings from "./pages/Settings";
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
         <Route path="/clubs" element={<Clubs />} />
         <Route path="/events" element={<Events />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </Router>
   );

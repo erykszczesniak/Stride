@@ -13,6 +13,8 @@ public class UserResponse extends BaseUserResponse {
     private String bio;
     private String city;
     private String country;
+    private Double weight;
+    private Double height;
     private Role role;
     private LocalDateTime createdAt;
     private int followersCount;

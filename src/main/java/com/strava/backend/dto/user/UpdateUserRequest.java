@@ -18,4 +18,6 @@ public class UpdateUserRequest {
     private String bio;
     private String city;
     private String country;
+    private Double weight;
+    private Double height;
 }

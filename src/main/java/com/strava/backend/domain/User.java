@@ -41,6 +41,10 @@ public class User {
 
     private String country;
 
+    private Double weight; // in kg
+
+    private Double height; // in cm
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AuthProvider authProvider;
