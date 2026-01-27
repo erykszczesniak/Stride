@@ -55,6 +55,8 @@ public class UserServiceImpl implements UserService {
         user.setBio(request.getBio());
         user.setCity(request.getCity());
         user.setCountry(request.getCountry());
+        user.setWeight(request.getWeight());
+        user.setHeight(request.getHeight());
         return userRepository.save(user);
     }
 

@@ -80,6 +80,8 @@ class UserControllerTest {
         userResponse.setBio("Test bio");
         userResponse.setCity("Warsaw");
         userResponse.setCountry("Poland");
+        userResponse.setWeight(70.5);
+        userResponse.setHeight(175.0);
 
         baseUserResponse = new BaseUserResponse();
         baseUserResponse.setId(1L);
@@ -104,6 +106,20 @@ class UserControllerTest {
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.email").value("john@example.com"))
                     .andExpect(jsonPath("$.firstName").value("John"));
+        }
+
+        @Test
+        @DisplayName("Should return current user with weight and height")
+        void shouldReturnCurrentUserWithWeightAndHeight() throws Exception {
+            // Given
+            given(userMapper.getCurrentUser(1L)).willReturn(userResponse);
+
+            // When/Then
+            mockMvc.perform(get("/api/v1/users/me")
+                            .param("userId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.weight").value(70.5))
+                    .andExpect(jsonPath("$.height").value(175.0));
         }
 
         @Test
@@ -196,6 +212,32 @@ class UserControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.firstName").value("Jane"));
+        }
+
+        @Test
+        @DisplayName("Should update user weight and height")
+        void shouldUpdateUserWeightAndHeight() throws Exception {
+            // Given
+            UpdateUserRequest request = new UpdateUserRequest();
+            request.setFirstName("John");
+            request.setLastName("Doe");
+            request.setWeight(80.0);
+            request.setHeight(185.0);
+
+            userResponse.setWeight(80.0);
+            userResponse.setHeight(185.0);
+
+            given(userMapper.updateUser(eq(1L), any(UpdateUserRequest.class), any()))
+                    .willReturn(userResponse);
+
+            // When/Then
+            mockMvc.perform(put("/api/v1/users/me")
+                            .param("userId", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.weight").value(80.0))
+                    .andExpect(jsonPath("$.height").value(185.0));
         }
     }
 
