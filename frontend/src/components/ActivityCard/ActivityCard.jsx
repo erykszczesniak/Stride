@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { FiHeart, FiMessageCircle, FiShare2 } from "react-icons/fi";
 import {
   FaRunning,
@@ -25,6 +25,7 @@ import {
   ActionButton,
   ActionsGroup,
 } from "./ActivityCardStyles";
+import ShareModal from "../ShareModal/ShareModal";
 
 const activityIcons = {
   RUN: <FaRunning />,
@@ -80,6 +81,7 @@ const getTimeAgo = (dateString) => {
 };
 
 const ActivityCard = ({ activity, onLike }) => {
+  const [showShareModal, setShowShareModal] = useState(false);
   const colors = activityColors[activity.activityType] || activityColors.RUN;
   const icon = activityIcons[activity.activityType] || activityIcons.RUN;
 
@@ -89,64 +91,78 @@ const ActivityCard = ({ activity, onLike }) => {
     if (onLike) onLike(activity.id);
   };
 
+  const handleShare = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowShareModal(true);
+  };
+
   return (
-    <Card to={`/activities/${activity.id}`}>
-      <CardHeader>
-        <UserAvatar>
-          {activity.user?.avatarUrl ? (
-            <img src={activity.user.avatarUrl} alt={activity.user.firstName} />
-          ) : (
-            activity.user?.firstName?.charAt(0) || "U"
-          )}
-        </UserAvatar>
-        <UserInfo>
-          <UserName>
-            {activity.user?.firstName} {activity.user?.lastName}
-          </UserName>
-          <ActivityTime>{getTimeAgo(activity.createdAt)}</ActivityTime>
-        </UserInfo>
-        <ActivityType bgColor={colors.bg} color={colors.color}>
-          {icon} {activity.activityType}
-        </ActivityType>
-      </CardHeader>
+    <>
+      <Card to={`/activities/${activity.id}`}>
+        <CardHeader>
+          <UserAvatar>
+            {activity.user?.avatarUrl ? (
+              <img src={activity.user.avatarUrl} alt={activity.user.firstName} />
+            ) : (
+              activity.user?.firstName?.charAt(0) || "U"
+            )}
+          </UserAvatar>
+          <UserInfo>
+            <UserName>
+              {activity.user?.firstName} {activity.user?.lastName}
+            </UserName>
+            <ActivityTime>{getTimeAgo(activity.createdAt)}</ActivityTime>
+          </UserInfo>
+          <ActivityType bgColor={colors.bg} color={colors.color}>
+            {icon} {activity.activityType}
+          </ActivityType>
+        </CardHeader>
 
-      <ActivityTitle>{activity.title}</ActivityTitle>
+        <ActivityTitle>{activity.title}</ActivityTitle>
 
-      <StatsRow>
-        <StatItem>
-          <StatLabel>Distance</StatLabel>
-          <StatValue>{formatDistance(activity.distance || 0)}</StatValue>
-        </StatItem>
-        <StatItem>
-          <StatLabel>Duration</StatLabel>
-          <StatValue>{formatDuration(activity.duration || 0)}</StatValue>
-        </StatItem>
-        <StatItem>
-          <StatLabel>Pace</StatLabel>
-          <StatValue>{formatPace(activity.duration, activity.distance)}</StatValue>
-        </StatItem>
-        {activity.elevationGain > 0 && (
+        <StatsRow>
           <StatItem>
-            <StatLabel>Elevation</StatLabel>
-            <StatValue>{activity.elevationGain}m</StatValue>
+            <StatLabel>Distance</StatLabel>
+            <StatValue>{formatDistance(activity.distance || 0)}</StatValue>
           </StatItem>
-        )}
-      </StatsRow>
+          <StatItem>
+            <StatLabel>Duration</StatLabel>
+            <StatValue>{formatDuration(activity.duration || 0)}</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatLabel>Pace</StatLabel>
+            <StatValue>{formatPace(activity.duration, activity.distance)}</StatValue>
+          </StatItem>
+          {activity.elevationGain > 0 && (
+            <StatItem>
+              <StatLabel>Elevation</StatLabel>
+              <StatValue>{activity.elevationGain}m</StatValue>
+            </StatItem>
+          )}
+        </StatsRow>
 
-      <CardFooter>
-        <ActionsGroup>
-          <ActionButton onClick={handleLike} active={activity.likedByCurrentUser}>
-            <FiHeart size={16} /> {activity.likesCount || 0}
+        <CardFooter>
+          <ActionsGroup>
+            <ActionButton onClick={handleLike} active={activity.likedByCurrentUser}>
+              <FiHeart size={16} /> {activity.likesCount || 0}
+            </ActionButton>
+            <ActionButton>
+              <FiMessageCircle size={16} /> {activity.commentsCount || 0}
+            </ActionButton>
+          </ActionsGroup>
+          <ActionButton onClick={handleShare}>
+            <FiShare2 size={16} />
           </ActionButton>
-          <ActionButton>
-            <FiMessageCircle size={16} /> {activity.commentsCount || 0}
-          </ActionButton>
-        </ActionsGroup>
-        <ActionButton>
-          <FiShare2 size={16} />
-        </ActionButton>
-      </CardFooter>
-    </Card>
+        </CardFooter>
+      </Card>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        activityId={activity.id}
+      />
+    </>
   );
 };
 
