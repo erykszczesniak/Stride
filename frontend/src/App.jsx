@@ -11,6 +11,7 @@ import Events from "./pages/Events";
 import Explore from "./pages/Explore";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
+import TrainingPlans from "./pages/TrainingPlans";
 
 const App = () => {
   return (
@@ -29,6 +30,7 @@ const App = () => {
         <Route path="/events" element={<Events />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/training" element={<TrainingPlans />} />
       </Routes>
     </Router>
   );

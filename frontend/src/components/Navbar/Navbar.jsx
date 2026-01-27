@@ -67,6 +67,7 @@ const Navbar = () => {
             <DropdownMenu>
               <DropdownItem to="/profile">My Profile</DropdownItem>
               <DropdownItem to="/goals">Goals</DropdownItem>
+              <DropdownItem to="/training">Training Plans</DropdownItem>
               <DropdownItem to="/admin">Admin Panel</DropdownItem>
               <DropdownItem to="/settings">Settings</DropdownItem>
               <DropdownItem to="/logout">Log Out</DropdownItem>
