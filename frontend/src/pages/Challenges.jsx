@@ -59,10 +59,21 @@ const Tab = styled.button`
   background-color: ${(props) => (props.active ? "white" : "transparent")};
   color: ${(props) => (props.active ? "#333" : "#666")};
   box-shadow: ${(props) => (props.active ? "0 1px 3px rgba(0,0,0,0.1)" : "none")};
+  position: relative;
 
   &:hover {
     color: #333;
   }
+`;
+
+const TabBadge = styled.span`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: #fc4c02;
+  border-radius: 50%;
 `;
 
 const ChallengeCard = styled.div`
@@ -612,6 +623,7 @@ const Challenges = () => {
         </Tab>
         <Tab active={activeTab === "explore"} onClick={() => setActiveTab("explore")}>
           Explore
+          {exploreChallenges.length > 0 && <TabBadge />}
         </Tab>
         <Tab active={activeTab === "leaderboard"} onClick={() => setActiveTab("leaderboard")}>
           Leaderboard
