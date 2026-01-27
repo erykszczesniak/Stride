@@ -159,6 +159,44 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("Should update user weight and height")
+        void shouldUpdateUserWeightAndHeight() {
+            UpdateUserRequest request = new UpdateUserRequest();
+            request.setFirstName("John");
+            request.setLastName("Doe");
+            request.setWeight(75.5);
+            request.setHeight(180.0);
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+            User result = userService.updateUser(1L, request);
+
+            assertThat(result.getWeight()).isEqualTo(75.5);
+            assertThat(result.getHeight()).isEqualTo(180.0);
+            verify(userRepository).save(testUser);
+        }
+
+        @Test
+        @DisplayName("Should update user with null weight and height")
+        void shouldUpdateUserWithNullWeightAndHeight() {
+            UpdateUserRequest request = new UpdateUserRequest();
+            request.setFirstName("John");
+            request.setLastName("Doe");
+            request.setWeight(null);
+            request.setHeight(null);
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+            User result = userService.updateUser(1L, request);
+
+            assertThat(result.getWeight()).isNull();
+            assertThat(result.getHeight()).isNull();
+            verify(userRepository).save(testUser);
+        }
+
+        @Test
         @DisplayName("Should throw exception when user not found")
         void shouldThrowExceptionWhenUserNotFound() {
             UpdateUserRequest request = TestDataFactory.createUpdateUserRequest();

@@ -31,6 +31,8 @@ public class TestDataFactory {
                 .bio("Test bio")
                 .city("Warsaw")
                 .country("Poland")
+                .weight(70.5)
+                .height(175.0)
                 .followers(new HashSet<>())
                 .following(new HashSet<>())
                 .activities(new HashSet<>())
@@ -134,6 +136,8 @@ public class TestDataFactory {
         request.setBio("Updated bio");
         request.setCity("Krakow");
         request.setCountry("Poland");
+        request.setWeight(65.0);
+        request.setHeight(170.0);
         return request;
     }
 
