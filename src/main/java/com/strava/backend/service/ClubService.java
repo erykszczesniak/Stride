@@ -31,4 +31,10 @@ public interface ClubService {
     boolean isUserMember(Long clubId, Long userId);
 
     Page<Club> searchClubs(String searchText, Pageable pageable);
+
+    Page<Club> getClubsBySportType(com.strava.backend.enums.ActivityType sportType, Pageable pageable);
+
+    long countPublicClubs();
+
+    long countTotalMembers();
 }

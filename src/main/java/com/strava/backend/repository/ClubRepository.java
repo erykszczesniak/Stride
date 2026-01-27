@@ -39,4 +39,14 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
     @Query("SELECT c FROM Club c WHERE c.city = :city AND c.isPrivate = false " +
            "ORDER BY SIZE(c.members) DESC")
     List<Club> findPublicClubsByCity(@Param("city") String city);
+
+    @Query("SELECT c FROM Club c WHERE c.sportType = :sportType AND c.isPrivate = false " +
+           "ORDER BY SIZE(c.members) DESC")
+    Page<Club> findPublicClubsBySportType(@Param("sportType") com.strava.backend.enums.ActivityType sportType, Pageable pageable);
+
+    @Query("SELECT COUNT(c) FROM Club c WHERE c.isPrivate = false")
+    long countPublicClubs();
+
+    @Query("SELECT COALESCE(SUM(SIZE(c.members)), 0) FROM Club c WHERE c.isPrivate = false")
+    long sumAllMembers();
 }
