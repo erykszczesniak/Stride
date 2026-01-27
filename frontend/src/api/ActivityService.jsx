@@ -17,8 +17,20 @@ class ActivityService {
   }
 
   // Get current user's activities
-  getMyActivities(userId = 1, page = 0, size = 10) {
-    return apiClient.get(`/activities/my?userId=${userId}&page=${page}&size=${size}`);
+  getMyActivities(userId = 1, page = 0, size = 10, search = '', activityType = null) {
+    let url = `/activities/my?userId=${userId}&page=${page}&size=${size}`;
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    if (activityType) {
+      url += `&activityType=${activityType}`;
+    }
+    return apiClient.get(url);
+  }
+
+  // Get total stats for current user
+  getMyTotalStats(userId = 1) {
+    return apiClient.get(`/activities/my/stats?userId=${userId}`);
   }
 
   // Get public activities
