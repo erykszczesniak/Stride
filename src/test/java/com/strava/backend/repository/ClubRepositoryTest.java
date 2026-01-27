@@ -312,4 +312,53 @@ class ClubRepositoryTest {
             assertThat(clubs).isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("findPublicClubsBySportType Tests")
+    class FindPublicClubsBySportTypeTests {
+
+        @Test
+        @DisplayName("Should return public clubs by sport type")
+        void shouldReturnPublicClubsBySportType() {
+            Page<Club> clubs = clubRepository.findPublicClubsBySportType(ActivityType.RUN, PageRequest.of(0, 10));
+
+            assertThat(clubs.getContent()).hasSize(1);
+            assertThat(clubs.getContent().getFirst().getSportType()).isEqualTo(ActivityType.RUN);
+        }
+
+        @Test
+        @DisplayName("Should not return private clubs")
+        void shouldNotReturnPrivateClubs() {
+            Page<Club> clubs = clubRepository.findPublicClubsBySportType(ActivityType.RIDE, PageRequest.of(0, 10));
+
+            assertThat(clubs.getContent()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("countPublicClubs Tests")
+    class CountPublicClubsTests {
+
+        @Test
+        @DisplayName("Should count only public clubs")
+        void shouldCountOnlyPublicClubs() {
+            long count = clubRepository.countPublicClubs();
+
+            assertThat(count).isEqualTo(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("sumAllMembers Tests")
+    class SumAllMembersTests {
+
+        @Test
+        @DisplayName("Should sum members from public clubs")
+        void shouldSumMembersFromPublicClubs() {
+            long totalMembers = clubRepository.sumAllMembers();
+
+            // Public club has 2 members (owner + member)
+            assertThat(totalMembers).isEqualTo(2);
+        }
+    }
 }

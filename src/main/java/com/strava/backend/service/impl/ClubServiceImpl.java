@@ -152,4 +152,19 @@ public class ClubServiceImpl implements ClubService {
     public Page<Club> searchClubs(String searchText, Pageable pageable) {
         return clubRepository.searchClubs(searchText, pageable);
     }
+
+    @Override
+    public Page<Club> getClubsBySportType(com.strava.backend.enums.ActivityType sportType, Pageable pageable) {
+        return clubRepository.findPublicClubsBySportType(sportType, pageable);
+    }
+
+    @Override
+    public long countPublicClubs() {
+        return clubRepository.countPublicClubs();
+    }
+
+    @Override
+    public long countTotalMembers() {
+        return clubRepository.sumAllMembers();
+    }
 }

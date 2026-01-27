@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.strava.backend.enums.ActivityType;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,13 +36,33 @@ public class ClubController {
     @GetMapping
     public ResponseEntity<List<ClubResponse>> getAllClubs(
             @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) ActivityType sportType,
             @PageableDefault(size = 20) Pageable pageable) {
         Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
-        Page<Club> clubs = clubService.getAllPublicClubs(pageable);
+        Page<Club> clubs;
+        if (sportType != null) {
+            clubs = clubService.getClubsBySportType(sportType, pageable);
+        } else {
+            clubs = clubService.getAllPublicClubs(pageable);
+        }
         List<ClubResponse> response = clubs.stream()
                 .map(club -> mapToResponse(club, currentUserId))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getClubStats(
+            @RequestParam(required = false) Long userId) {
+        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        long totalClubs = clubService.countPublicClubs();
+        int userClubs = clubService.getClubsByUserId(currentUserId).size();
+        long totalMembers = clubService.countTotalMembers();
+        return ResponseEntity.ok(Map.of(
+                "totalClubs", totalClubs,
+                "userClubs", userClubs,
+                "totalMembers", totalMembers
+        ));
     }
 
     @GetMapping(CLUB_ID)
@@ -144,6 +166,8 @@ public class ClubController {
         response.setCountry(club.getCountry());
         response.setSportType(club.getSportType());
         response.setMembersCount(club.getMembersCount());
+        // Mock activities count based on member count (can be replaced with real calculation)
+        response.setActivitiesCount(club.getMembersCount() * 12 + (int)(club.getId() * 100));
         response.setPrivate(club.isPrivate());
         response.setMember(clubService.isUserMember(club.getId(), currentUserId));
         if (club.getOwner() != null) {

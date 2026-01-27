@@ -15,6 +15,7 @@ public class ClubResponse {
     private String country;
     private ActivityType sportType;
     private int membersCount;
+    private int activitiesCount;
     private boolean isMember;
     private boolean isPrivate;
     private BaseUserResponse owner;

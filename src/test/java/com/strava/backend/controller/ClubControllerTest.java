@@ -318,4 +318,43 @@ class ClubControllerTest {
                     .andExpect(jsonPath("$[0].name").value("Running Club"));
         }
     }
+
+    @Nested
+    @DisplayName("GET /api/v1/clubs/stats")
+    class GetClubStatsTests {
+
+        @Test
+        @DisplayName("Should return club stats")
+        void shouldReturnClubStats() throws Exception {
+            given(clubService.countPublicClubs()).willReturn(10L);
+            given(clubService.getClubsByUserId(1L)).willReturn(List.of(testClub, testClub));
+            given(clubService.countTotalMembers()).willReturn(100L);
+
+            mockMvc.perform(get("/api/v1/clubs/stats")
+                            .param("userId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalClubs").value(10))
+                    .andExpect(jsonPath("$.userClubs").value(2))
+                    .andExpect(jsonPath("$.totalMembers").value(100));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/clubs with sportType filter")
+    class GetClubsBySportTypeTests {
+
+        @Test
+        @DisplayName("Should filter clubs by sport type")
+        void shouldFilterClubsBySportType() throws Exception {
+            Page<Club> clubPage = new PageImpl<>(List.of(testClub));
+            given(clubService.getClubsBySportType(eq(ActivityType.RUN), any(Pageable.class))).willReturn(clubPage);
+            given(clubService.isUserMember(1L, 1L)).willReturn(false);
+
+            mockMvc.perform(get("/api/v1/clubs")
+                            .param("userId", "1")
+                            .param("sportType", "RUN"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].sportType").value("RUN"));
+        }
+    }
 }
