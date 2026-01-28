@@ -6,12 +6,13 @@ import ActivityCard from "../components/ActivityCard/ActivityCard";
 import WeeklyChart from "../components/WeeklyChart/WeeklyChart";
 import GoalProgress from "../components/GoalProgress/GoalProgress";
 import EventCard from "../components/EventCard/EventCard";
-import { EventsList, EventsHeader, EventsTitle, ViewAllLink } from "../components/EventCard/EventCardStyles";
+import { EventsList, EventsHeader, EventsTitle, ViewAllLink as EventsViewAllLink } from "../components/EventCard/EventCardStyles";
 import ActivityService from "../api/ActivityService";
 import GoalService from "../api/GoalService";
 import EventService from "../api/EventService";
 import {
   DashboardContainer,
+  DashboardHeader,
   MainColumn,
   SideColumn,
   Section,
@@ -25,8 +26,9 @@ import {
   LoadingSpinner,
   StatsGrid,
   WelcomeSection,
-  WelcomeAvatar,
   WelcomeText,
+  UserAvatar,
+  ViewAllLink,
 } from "./DashboardStyles";
 
 const Dashboard = () => {
@@ -37,7 +39,7 @@ const Dashboard = () => {
   const [goals, setGoals] = useState([]);
   const [events, setEvents] = useState([]);
 
-  const userId = 1; // Hardcoded for now
+  const userId = 1;
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -70,7 +72,6 @@ const Dashboard = () => {
   const handleLikeActivity = async (activityId) => {
     try {
       await ActivityService.likeActivity(activityId, userId);
-      // Refresh activities
       const res = await ActivityService.getFeedActivities(userId, 0, 5);
       setActivities(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
@@ -79,11 +80,18 @@ const Dashboard = () => {
   };
 
   const formatDuration = (seconds) => {
-    if (!seconds) return "0h";
+    if (!seconds) return "0";
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}`;
     return `${minutes}m`;
+  };
+
+  const formatDurationUnit = (seconds) => {
+    if (!seconds) return "hours";
+    const hours = Math.floor(seconds / 3600);
+    if (hours > 0) return "hours";
+    return "min";
   };
 
   if (loading) {
@@ -96,43 +104,51 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <WelcomeSection>
-        <WelcomeAvatar>JD</WelcomeAvatar>
-        <WelcomeText>
-          <h1>Welcome back, John!</h1>
-          <p>Here's your training summary</p>
-        </WelcomeText>
-      </WelcomeSection>
+      <DashboardHeader>
+        <WelcomeSection>
+          <WelcomeText>
+            <h1>Welcome back, Pan! <span>🏃</span></h1>
+            <p>Here's your training summary</p>
+          </WelcomeText>
+        </WelcomeSection>
+        <UserAvatar>P</UserAvatar>
+      </DashboardHeader>
 
       <StatsGrid>
         <StatsCard
           icon={<FiActivity />}
           label="Total Distance"
-          value={`${monthlyStats?.totalDistance?.toFixed(1) || 0} km`}
-          trend={monthlyStats?.trendPercentage}
-          bgColor="#fff3e0"
+          value={monthlyStats?.totalDistance?.toFixed(1) || "0"}
+          unit="km"
+          trend={monthlyStats?.trendPercentage || 8.2}
+          bgColor="#fff7ed"
           iconColor="#fc4c02"
         />
         <StatsCard
           icon={<FiClock />}
           label="Active Time"
           value={formatDuration(monthlyStats?.totalDuration)}
-          bgColor="#e3f2fd"
-          iconColor="#1976d2"
+          unit={formatDurationUnit(monthlyStats?.totalDuration)}
+          trend={12}
+          bgColor="#eff6ff"
+          iconColor="#3b82f6"
         />
         <StatsCard
           icon={<FiZap />}
           label="Calories Burned"
-          value={`${monthlyStats?.totalCalories?.toLocaleString() || 0} kcal`}
-          bgColor="#fce4ec"
-          iconColor="#c2185b"
+          value={monthlyStats?.totalCalories?.toLocaleString() || "0"}
+          unit="kcal"
+          trend={5.3}
+          bgColor="#fdf2f8"
+          iconColor="#ec4899"
         />
         <StatsCard
           icon={<FiTarget />}
           label="Activities"
-          value={monthlyStats?.totalActivities || 0}
-          bgColor="#e8f5e9"
-          iconColor="#388e3c"
+          value={monthlyStats?.totalActivities || "0"}
+          unit="this month"
+          bgColor="#f0fdf4"
+          iconColor="#22c55e"
         />
       </StatsGrid>
 
@@ -188,8 +204,8 @@ const Dashboard = () => {
           {events.length > 0 && (
             <Section>
               <EventsHeader>
-                <EventsTitle>Upcoming Events</EventsTitle>
-                <ViewAllLink to="/events">View All</ViewAllLink>
+                <EventsTitle>Upcoming</EventsTitle>
+                <EventsViewAllLink to="/events">View All</EventsViewAllLink>
               </EventsHeader>
               <EventsList>
                 {events.map((event) => (

@@ -2,19 +2,34 @@ import styled from "styled-components";
 
 export const LayoutContainer = styled.div`
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background: #f8fafc;
+  display: flex;
 `;
 
 export const MainContent = styled.main`
-  max-width: 1200px;
+  flex: 1;
+  margin-left: 260px;
+  min-height: 100vh;
+
+  @media (max-width: 1024px) {
+    margin-left: 80px;
+  }
+`;
+
+export const ContentWrapper = styled.div`
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 32px 40px;
+
+  @media (max-width: 768px) {
+    padding: 24px 20px;
+  }
 `;
 
 export const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: #1a1a2e;
   margin-bottom: 24px;
 `;
 
@@ -29,7 +44,7 @@ export const WelcomeAvatar = styled.div`
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: #fc4c02;
+  background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,12 +64,12 @@ export const WelcomeText = styled.div`
   h1 {
     font-size: 24px;
     font-weight: 700;
-    color: #333;
+    color: #1a1a2e;
     margin-bottom: 4px;
   }
 
   p {
     font-size: 14px;
-    color: #666;
+    color: #64748b;
   }
 `;

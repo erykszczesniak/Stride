@@ -5,15 +5,13 @@ export const Card = styled(Link)`
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: white;
+  background: #f8fafc;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   text-decoration: none;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #f1f5f9;
   }
 `;
 
@@ -22,63 +20,77 @@ export const DateBox = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 60px;
-  padding: 8px;
-  background-color: #fff3e0;
-  border-radius: 8px;
+  min-width: 56px;
+  padding: 10px;
+  background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%);
+  border-radius: 12px;
 `;
 
 export const DateMonth = styled.span`
   font-size: 11px;
   font-weight: 600;
-  color: #fc4c02;
+  color: rgba(255, 255, 255, 0.9);
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 export const DateDay = styled.span`
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
-  color: #fc4c02;
-  line-height: 1;
+  color: white;
+  line-height: 1.2;
 `;
 
 export const EventInfo = styled.div`
   flex: 1;
+  min-width: 0;
 `;
 
 export const EventName = styled.h4`
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+  line-height: 1.3;
 `;
 
 export const EventLocation = styled.p`
-  font-size: 13px;
-  color: #666;
+  font-size: 12px;
+  color: #64748b;
   display: flex;
   align-items: center;
   gap: 4px;
   margin-bottom: 8px;
+
+  svg {
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
 `;
 
 export const EventMeta = styled.div`
   display: flex;
-  gap: 16px;
+  gap: 12px;
 `;
 
 export const MetaItem = styled.span`
-  font-size: 12px;
-  color: #888;
+  font-size: 11px;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   gap: 4px;
+  font-weight: 500;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
 `;
 
 export const EventsList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 `;
 
 export const EventsHeader = styled.div`
@@ -89,18 +101,27 @@ export const EventsHeader = styled.div`
 `;
 
 export const EventsTitle = styled.h3`
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #1a1a2e;
 `;
 
 export const ViewAllLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   color: #fc4c02;
   text-decoration: none;
   font-weight: 500;
+  transition: gap 0.2s;
 
   &:hover {
-    text-decoration: underline;
+    gap: 8px;
+  }
+
+  &::after {
+    content: "›";
+    font-size: 16px;
   }
 `;
