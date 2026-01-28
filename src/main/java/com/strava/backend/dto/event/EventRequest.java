@@ -1,5 +1,6 @@
 package com.strava.backend.dto.event;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.strava.backend.enums.ActivityType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,6 +35,9 @@ public class EventRequest {
     private Double entryFee;
     private String currency;
     private String externalUrl;
+
+    @JsonProperty("isPublic")
     private boolean isPublic;
+
     private Long clubId;
 }
