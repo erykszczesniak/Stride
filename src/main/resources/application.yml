@@ -63,6 +63,10 @@ app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
 
+groq:
+  api-key: ${GROQ_API_KEY:REDACTED_GROQ_API_KEY}
+  model: ${GROQ_MODEL:openai/gpt-oss-120b}
+
 logging:
   level:
     com.strava: DEBUG
