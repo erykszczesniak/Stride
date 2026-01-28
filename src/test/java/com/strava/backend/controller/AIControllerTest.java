@@ -22,8 +22,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@DisplayName("AiController")
-class AiControllerTest {
+@DisplayName("AIController")
+class AIControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

@@ -11,7 +11,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/ai")
-public class AiController {
+public class AIController {
 
     private final GroqService groqService;
 
