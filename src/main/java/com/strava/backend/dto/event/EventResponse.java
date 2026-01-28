@@ -1,5 +1,6 @@
 package com.strava.backend.dto.event;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.strava.backend.enums.ActivityType;
 import lombok.Data;
 
@@ -18,6 +19,10 @@ public class EventResponse {
     private Double distance;
     private int registeredCount;
     private Integer maxParticipants;
+
+    @JsonProperty("isRegistered")
     private boolean isRegistered;
+
+    @JsonProperty("isPublic")
     private boolean isPublic;
 }
