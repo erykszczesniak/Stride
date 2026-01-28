@@ -8,6 +8,7 @@ import Goals from "./pages/Goals";
 import Challenges from "./pages/Challenges";
 import Clubs from "./pages/Clubs";
 import Events from "./pages/Events";
+import CreateEvent from "./pages/CreateEvent";
 import Explore from "./pages/Explore";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
@@ -28,6 +29,7 @@ const App = () => {
         <Route path="/challenges" element={<Challenges />} />
         <Route path="/clubs" element={<Clubs />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/events/new" element={<CreateEvent />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/training" element={<TrainingPlans />} />
