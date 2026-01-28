@@ -1,12 +1,14 @@
 import React from "react";
-import Navbar from "../Navbar/Navbar";
-import { LayoutContainer, MainContent } from "./LayoutStyles";
+import Sidebar from "../Sidebar/Sidebar";
+import { LayoutContainer, MainContent, ContentWrapper } from "./LayoutStyles";
 
 const Layout = ({ children }) => {
   return (
     <LayoutContainer>
-      <Navbar />
-      <MainContent>{children}</MainContent>
+      <Sidebar />
+      <MainContent>
+        <ContentWrapper>{children}</ContentWrapper>
+      </MainContent>
     </LayoutContainer>
   );
 };

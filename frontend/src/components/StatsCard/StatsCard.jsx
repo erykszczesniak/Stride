@@ -1,32 +1,35 @@
 import React from "react";
-import { FiTrendingUp, FiTrendingDown } from "react-icons/fi";
+import { FiTrendingUp } from "react-icons/fi";
 import {
   Card,
+  CardHeader,
   IconWrapper,
-  Content,
-  Label,
+  TrendBadge,
   Value,
-  Trend,
+  ValueNumber,
+  ValueUnit,
+  Label,
 } from "./StatsCardStyles";
 
-const StatsCard = ({ icon, label, value, trend, bgColor, iconColor }) => {
-  const isPositive = trend && !trend.startsWith("-");
-
+const StatsCard = ({ icon, label, value, unit, trend, bgColor, iconColor }) => {
   return (
     <Card>
-      <IconWrapper bgColor={bgColor} iconColor={iconColor}>
-        {icon}
-      </IconWrapper>
-      <Content>
-        <Label>{label}</Label>
-        <Value>{value}</Value>
+      <CardHeader>
+        <IconWrapper bgColor={bgColor} iconColor={iconColor}>
+          {icon}
+        </IconWrapper>
         {trend && (
-          <Trend positive={isPositive}>
-            {isPositive ? <FiTrendingUp size={14} /> : <FiTrendingDown size={14} />}
-            {trend} vs last month
-          </Trend>
+          <TrendBadge>
+            <FiTrendingUp size={12} />
+            +{trend}%
+          </TrendBadge>
         )}
-      </Content>
+      </CardHeader>
+      <Label>{label}</Label>
+      <Value>
+        <ValueNumber>{value}</ValueNumber>
+        {unit && <ValueUnit>{unit}</ValueUnit>}
+      </Value>
     </Card>
   );
 };
