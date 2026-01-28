@@ -1,8 +1,11 @@
 import React, { useState } from "react";
-import { FiTarget, FiCalendar, FiTrendingUp, FiZap, FiFileText, FiGrid, FiFile } from "react-icons/fi";
+import { FiTarget, FiCalendar, FiTrendingUp, FiZap, FiFileText, FiGrid, FiFile, FiDownload } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import AiService from "../api/AiService";
 import styled from "styled-components";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 const PageHeader = styled.div`
   display: flex;
@@ -539,6 +542,135 @@ const TrainingPlans = () => {
     }
   };
 
+  const exportToTxt = () => {
+    if (!generatedPlan) return;
+
+    let content = `TRAINING PLAN\n`;
+    content += `${"=".repeat(50)}\n\n`;
+    content += `${generatedPlan.description}\n\n`;
+
+    (generatedPlan.weeks || []).forEach((week) => {
+      content += `${"─".repeat(50)}\n`;
+      content += `WEEK ${week.week} - Total: ${week.totalDistance} km\n`;
+      content += `${week.description}\n\n`;
+
+      (week.workouts || []).forEach((workout) => {
+        content += `  ${workout.day}: ${workout.type.toUpperCase()}\n`;
+        content += `    Distance: ${workout.distance} km | Duration: ${workout.duration} min\n`;
+        content += `    ${workout.description}\n\n`;
+      });
+    });
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "training-plan.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToXlsx = () => {
+    if (!generatedPlan) return;
+
+    const workbook = XLSX.utils.book_new();
+
+    // Summary sheet
+    const summaryData = [
+      ["Training Plan"],
+      [generatedPlan.description],
+      [],
+      ["Week", "Total Distance (km)", "Description"]
+    ];
+    (generatedPlan.weeks || []).forEach((week) => {
+      summaryData.push([`Week ${week.week}`, week.totalDistance, week.description]);
+    });
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+
+    // Workouts sheet
+    const workoutsData = [
+      ["Week", "Day", "Type", "Distance (km)", "Duration (min)", "Description"]
+    ];
+    (generatedPlan.weeks || []).forEach((week) => {
+      (week.workouts || []).forEach((workout) => {
+        workoutsData.push([
+          week.week,
+          workout.day,
+          workout.type,
+          workout.distance,
+          workout.duration,
+          workout.description
+        ]);
+      });
+    });
+    const workoutsSheet = XLSX.utils.aoa_to_sheet(workoutsData);
+    XLSX.utils.book_append_sheet(workbook, workoutsSheet, "Workouts");
+
+    XLSX.writeFile(workbook, "training-plan.xlsx");
+  };
+
+  const exportToPdf = () => {
+    if (!generatedPlan) return;
+
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(20);
+    doc.setTextColor(124, 31, 162);
+    doc.text("Training Plan", 14, 20);
+
+    // Description
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    const descLines = doc.splitTextToSize(generatedPlan.description, 180);
+    doc.text(descLines, 14, 30);
+
+    let yPos = 40 + descLines.length * 5;
+
+    // Weeks
+    (generatedPlan.weeks || []).forEach((week) => {
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Week header
+      doc.setFontSize(14);
+      doc.setTextColor(124, 31, 162);
+      doc.text(`Week ${week.week} - ${week.totalDistance} km`, 14, yPos);
+      yPos += 6;
+
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(week.description, 14, yPos);
+      yPos += 8;
+
+      // Workouts table
+      const tableData = (week.workouts || []).map((w) => [
+        w.day,
+        w.type,
+        `${w.distance} km`,
+        `${w.duration} min`,
+        w.description
+      ]);
+
+      doc.autoTable({
+        startY: yPos,
+        head: [["Day", "Type", "Distance", "Duration", "Description"]],
+        body: tableData,
+        theme: "striped",
+        headStyles: { fillColor: [124, 31, 162] },
+        margin: { left: 14 },
+        tableWidth: 182
+      });
+
+      yPos = doc.lastAutoTable.finalY + 10;
+    });
+
+    doc.save("training-plan.pdf");
+  };
+
   const renderGoalSettingTab = () => (
     <>
       <FormCard>
@@ -707,9 +839,9 @@ const TrainingPlans = () => {
                 <FiTarget /> Your Training Plan
               </BannerTitle>
               <ExportButtons>
-                <ExportButton><FiFileText size={14} /> TXT</ExportButton>
-                <ExportButton><FiGrid size={14} /> XLSX</ExportButton>
-                <ExportButton><FiFile size={14} /> PDF</ExportButton>
+                <ExportButton onClick={exportToTxt}><FiFileText size={14} /> TXT</ExportButton>
+                <ExportButton onClick={exportToXlsx}><FiGrid size={14} /> XLSX</ExportButton>
+                <ExportButton onClick={exportToPdf}><FiFile size={14} /> PDF</ExportButton>
               </ExportButtons>
             </BannerHeader>
             <BannerText>{generatedPlan.description}</BannerText>
