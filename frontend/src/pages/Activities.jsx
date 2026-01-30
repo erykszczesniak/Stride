@@ -4,6 +4,7 @@ import Layout from "../components/Layout/Layout";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
+import ChallengeService from "../api/ChallengeService";
 import { Link } from "react-router-dom";
 import {
   ActivitiesList,
@@ -222,6 +223,85 @@ const FollowButton = styled.button`
   }
 `;
 
+const ChallengeCard = styled(Link)`
+  display: block;
+  background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  text-decoration: none;
+  margin-bottom: 20px;
+`;
+
+const ChallengeHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+`;
+
+const ChallengeIcon = styled.span`
+  font-size: 20px;
+`;
+
+const ChallengeTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+`;
+
+const ChallengeDescription = styled.p`
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+`;
+
+const ProgressBox = styled.div`
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+`;
+
+const ProgressHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const ProgressLabel = styled.span`
+  font-size: 13px;
+  opacity: 0.9;
+`;
+
+const ProgressValue = styled.span`
+  font-size: 15px;
+  font-weight: 700;
+`;
+
+const ProgressBar = styled.div`
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div`
+  height: 100%;
+  background: white;
+  border-radius: 3px;
+  width: ${(props) => Math.min(props.progress, 100)}%;
+  transition: width 0.3s ease;
+`;
+
+const ParticipantsCount = styled.p`
+  font-size: 13px;
+  opacity: 0.8;
+  margin: 0;
+`;
+
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -277,6 +357,7 @@ const Activities = () => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestedAthletes, setSuggestedAthletes] = useState([]);
+  const [activeChallenge, setActiveChallenge] = useState(null);
   const [stats, setStats] = useState({
     totalActivities: 0,
     totalDistanceKm: 0,
@@ -340,6 +421,18 @@ const Activities = () => {
     }
   }, [userId]);
 
+  const fetchActiveChallenge = useCallback(async () => {
+    try {
+      const res = await ChallengeService.getActiveChallenges(0, 1).catch(() => ({ data: [] }));
+      const challenges = Array.isArray(res.data) ? res.data : [];
+      if (challenges.length > 0) {
+        setActiveChallenge(challenges[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching active challenge:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchActivities();
   }, [fetchActivities]);
@@ -351,6 +444,10 @@ const Activities = () => {
   useEffect(() => {
     fetchSuggestedAthletes();
   }, [fetchSuggestedAthletes]);
+
+  useEffect(() => {
+    fetchActiveChallenge();
+  }, [fetchActiveChallenge]);
 
   const handleLikeActivity = async (activityId) => {
     try {
@@ -512,6 +609,28 @@ const Activities = () => {
         </FeedColumn>
 
         <SidebarColumn>
+          {activeChallenge && (
+            <ChallengeCard to={`/challenges`}>
+              <ChallengeHeader>
+                <ChallengeIcon>🔥</ChallengeIcon>
+                <ChallengeTitle>{activeChallenge.name}</ChallengeTitle>
+              </ChallengeHeader>
+              <ChallengeDescription>{activeChallenge.description}</ChallengeDescription>
+              <ProgressBox>
+                <ProgressHeader>
+                  <ProgressLabel>Your progress</ProgressLabel>
+                  <ProgressValue>
+                    {activeChallenge.currentProgress?.toFixed(1) || 0} / {activeChallenge.targetValue} {activeChallenge.unit || 'km'}
+                  </ProgressValue>
+                </ProgressHeader>
+                <ProgressBar>
+                  <ProgressFill progress={(activeChallenge.currentProgress / activeChallenge.targetValue) * 100} />
+                </ProgressBar>
+              </ProgressBox>
+              <ParticipantsCount>{activeChallenge.participantsCount?.toLocaleString() || 0} participants</ParticipantsCount>
+            </ChallengeCard>
+          )}
+
           {suggestedAthletes.length > 0 && (
             <SidebarCard>
               <SidebarTitle>Athletes to Follow</SidebarTitle>
