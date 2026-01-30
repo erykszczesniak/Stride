@@ -10,7 +10,6 @@ import Clubs from "./pages/Clubs";
 import Events from "./pages/Events";
 import CreateEvent from "./pages/CreateEvent";
 import EventDetails from "./pages/EventDetails";
-import Explore from "./pages/Explore";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import TrainingPlans from "./pages/TrainingPlans";
@@ -20,7 +19,6 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/explore" element={<Explore />} />
         <Route path="/activities" element={<Activities />} />
         <Route path="/activities/new" element={<RecordActivity />} />
         <Route path="/activities/:id" element={<ActivityDetails />} />
