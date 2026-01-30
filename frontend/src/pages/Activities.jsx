@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { FiPlus, FiSearch, FiActivity, FiMapPin, FiClock, FiUsers, FiGlobe, FiUser } from "react-icons/fi";
+import {
+  FiPlus,
+  FiSearch,
+  FiActivity,
+  FiMapPin,
+  FiClock,
+  FiUsers,
+  FiGlobe,
+  FiUser,
+} from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
 import ActivityService from "../api/ActivityService";
@@ -141,7 +150,9 @@ const SidebarCard = styled.div`
   background: white;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
 `;
 
@@ -320,7 +331,9 @@ const StatCard = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.06);
 `;
 
 const StatIconWrapper = styled.div`
@@ -372,25 +385,38 @@ const Activities = () => {
 
       let res;
       if (mainTab === "my") {
-        res = await ActivityService.getMyActivities(userId, 0, 50, searchQuery, activityType);
+        res = await ActivityService.getMyActivities(
+          userId,
+          0,
+          50,
+          searchQuery,
+          activityType,
+        );
       } else if (mainTab === "following") {
-        res = await ActivityService.getFeedActivities(userId, 0, 50).catch(() => ({ data: [] }));
+        res = await ActivityService.getFeedActivities(userId, 0, 50).catch(
+          () => ({ data: [] }),
+        );
       } else {
-        res = await ActivityService.getPublicActivities(0, 50).catch(() => ({ data: [] }));
+        res = await ActivityService.getPublicActivities(0, 50).catch(() => ({
+          data: [],
+        }));
       }
 
       let data = Array.isArray(res.data) ? res.data : [];
 
       // Apply client-side filtering for search and activity type on non-my tabs
       if (mainTab !== "my" && searchQuery) {
-        data = data.filter(a =>
-          a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.user?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase())
+        data = data.filter(
+          (a) =>
+            a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            a.user?.firstName
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            a.user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()),
         );
       }
       if (mainTab !== "my" && activityType) {
-        data = data.filter(a => a.activityType === activityType);
+        data = data.filter((a) => a.activityType === activityType);
       }
 
       setActivities(data);
@@ -414,7 +440,9 @@ const Activities = () => {
 
   const fetchSuggestedAthletes = useCallback(async () => {
     try {
-      const res = await UserService.getSuggestedUsers(userId, 5).catch(() => ({ data: [] }));
+      const res = await UserService.getSuggestedUsers(userId, 5).catch(() => ({
+        data: [],
+      }));
       setSuggestedAthletes(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error fetching suggested athletes:", error);
@@ -423,7 +451,11 @@ const Activities = () => {
 
   const fetchActiveChallenge = useCallback(async () => {
     try {
-      const res = await ChallengeService.getActiveChallenges(userId, 0, 10).catch(() => ({ data: [] }));
+      const res = await ChallengeService.getActiveChallenges(
+        userId,
+        0,
+        10,
+      ).catch(() => ({ data: [] }));
       const challenges = Array.isArray(res.data) ? res.data : [];
       if (challenges.length > 0) {
         setActiveChallenge(challenges[0]);
@@ -511,7 +543,10 @@ const Activities = () => {
           <FiGlobe />
           All
         </MainTab>
-        <MainTab active={mainTab === "following"} onClick={() => setMainTab("following")}>
+        <MainTab
+          active={mainTab === "following"}
+          onClick={() => setMainTab("following")}
+        >
           <FiUsers />
           Following
         </MainTab>
@@ -537,7 +572,10 @@ const Activities = () => {
         <FilterTab active={filter === "HIKE"} onClick={() => setFilter("HIKE")}>
           Hike
         </FilterTab>
-        <FilterTab active={filter === "WORKOUT"} onClick={() => setFilter("WORKOUT")}>
+        <FilterTab
+          active={filter === "WORKOUT"}
+          onClick={() => setFilter("WORKOUT")}
+        >
           Workout
         </FilterTab>
       </FilterTabs>
@@ -567,7 +605,9 @@ const Activities = () => {
               <FiClock size={24} />
             </StatIconWrapper>
             <StatContent>
-              <StatValue>{formatDuration(stats.totalDurationSeconds || 0)}</StatValue>
+              <StatValue>
+                {formatDuration(stats.totalDurationSeconds || 0)}
+              </StatValue>
               <StatLabel>Total Time</StatLabel>
             </StatContent>
           </StatCard>
@@ -593,10 +633,10 @@ const Activities = () => {
                 {searchQuery
                   ? "No activities found matching your search."
                   : mainTab === "following"
-                  ? "No activities from people you follow yet."
-                  : mainTab === "my"
-                  ? "No activities yet. Start tracking your workouts!"
-                  : "No activities found. Check back later!"}
+                    ? "No activities from people you follow yet."
+                    : mainTab === "my"
+                      ? "No activities yet. Start tracking your workouts!"
+                      : "No activities found. Check back later!"}
               </EmptyText>
               {mainTab === "my" && !searchQuery && (
                 <AddButton to="/activities/new">
@@ -609,28 +649,6 @@ const Activities = () => {
         </FeedColumn>
 
         <SidebarColumn>
-          {activeChallenge && (
-            <ChallengeCard to={`/challenges`}>
-              <ChallengeHeader>
-                <ChallengeIcon>🔥</ChallengeIcon>
-                <ChallengeTitle>{activeChallenge.name}</ChallengeTitle>
-              </ChallengeHeader>
-              <ChallengeDescription>{activeChallenge.description}</ChallengeDescription>
-              <ProgressBox>
-                <ProgressHeader>
-                  <ProgressLabel>Your progress</ProgressLabel>
-                  <ProgressValue>
-                    {activeChallenge.userProgress?.toFixed(1) || 0} / {activeChallenge.targetValue} {activeChallenge.challengeType === 'ELEVATION' ? 'm' : 'km'}
-                  </ProgressValue>
-                </ProgressHeader>
-                <ProgressBar>
-                  <ProgressFill progress={((activeChallenge.userProgress || 0) / activeChallenge.targetValue) * 100} />
-                </ProgressBar>
-              </ProgressBox>
-              <ParticipantsCount>{activeChallenge.participantsCount?.toLocaleString() || 0} participants</ParticipantsCount>
-            </ChallengeCard>
-          )}
-
           {suggestedAthletes.length > 0 && (
             <SidebarCard>
               <SidebarTitle>Athletes to Follow</SidebarTitle>
@@ -657,6 +675,40 @@ const Activities = () => {
                 ))}
               </AthletesList>
             </SidebarCard>
+          )}
+          {activeChallenge && (
+            <ChallengeCard to={`/challenges`}>
+              <ChallengeHeader>
+                <ChallengeIcon>🔥</ChallengeIcon>
+                <ChallengeTitle>{activeChallenge.name}</ChallengeTitle>
+              </ChallengeHeader>
+              <ChallengeDescription>
+                {activeChallenge.description}
+              </ChallengeDescription>
+              <ProgressBox>
+                <ProgressHeader>
+                  <ProgressLabel>Your progress</ProgressLabel>
+                  <ProgressValue>
+                    {activeChallenge.userProgress?.toFixed(1) || 0} /{" "}
+                    {activeChallenge.targetValue}{" "}
+                    {activeChallenge.challengeType === "ELEVATION" ? "m" : "km"}
+                  </ProgressValue>
+                </ProgressHeader>
+                <ProgressBar>
+                  <ProgressFill
+                    progress={
+                      ((activeChallenge.userProgress || 0) /
+                        activeChallenge.targetValue) *
+                      100
+                    }
+                  />
+                </ProgressBar>
+              </ProgressBox>
+              <ParticipantsCount>
+                {activeChallenge.participantsCount?.toLocaleString() || 0}{" "}
+                participants
+              </ParticipantsCount>
+            </ChallengeCard>
           )}
         </SidebarColumn>
       </ContentWrapper>
