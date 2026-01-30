@@ -423,7 +423,7 @@ const Activities = () => {
 
   const fetchActiveChallenge = useCallback(async () => {
     try {
-      const res = await ChallengeService.getActiveChallenges(0, 1).catch(() => ({ data: [] }));
+      const res = await ChallengeService.getActiveChallenges(userId, 0, 10).catch(() => ({ data: [] }));
       const challenges = Array.isArray(res.data) ? res.data : [];
       if (challenges.length > 0) {
         setActiveChallenge(challenges[0]);
@@ -431,7 +431,7 @@ const Activities = () => {
     } catch (error) {
       console.error("Error fetching active challenge:", error);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchActivities();
@@ -620,11 +620,11 @@ const Activities = () => {
                 <ProgressHeader>
                   <ProgressLabel>Your progress</ProgressLabel>
                   <ProgressValue>
-                    {activeChallenge.currentProgress?.toFixed(1) || 0} / {activeChallenge.targetValue} {activeChallenge.unit || 'km'}
+                    {activeChallenge.userProgress?.toFixed(1) || 0} / {activeChallenge.targetValue} {activeChallenge.challengeType === 'ELEVATION' ? 'm' : 'km'}
                   </ProgressValue>
                 </ProgressHeader>
                 <ProgressBar>
-                  <ProgressFill progress={(activeChallenge.currentProgress / activeChallenge.targetValue) * 100} />
+                  <ProgressFill progress={((activeChallenge.userProgress || 0) / activeChallenge.targetValue) * 100} />
                 </ProgressBar>
               </ProgressBox>
               <ParticipantsCount>{activeChallenge.participantsCount?.toLocaleString() || 0} participants</ParticipantsCount>
