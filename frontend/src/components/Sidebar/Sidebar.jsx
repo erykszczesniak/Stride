@@ -2,7 +2,6 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiHome,
-  FiCompass,
   FiActivity,
   FiUser,
   FiTarget,
@@ -34,7 +33,6 @@ const Sidebar = () => {
 
   const mainNavItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
-    { path: "/explore", label: "Explore", icon: FiCompass },
     { path: "/activities", label: "Activities", icon: FiActivity },
     { path: "/profile", label: "Profile", icon: FiUser },
     { path: "/challenges", label: "Challenges", icon: FiAward },

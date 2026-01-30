@@ -32,9 +32,6 @@ const Navbar = () => {
         <NavLink to="/" className={isActive("/") ? "active" : ""}>
           Dashboard
         </NavLink>
-        <NavLink to="/explore" className={isActive("/explore") ? "active" : ""}>
-          Explore
-        </NavLink>
         <NavLink to="/activities" className={isActive("/activities") ? "active" : ""}>
           Activities
         </NavLink>
