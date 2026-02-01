@@ -5,6 +5,7 @@ import { FaRunning, FaBicycle, FaSwimmer, FaHiking } from "react-icons/fa";
 import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
+import { useAuth } from "../context/AuthContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import styled from "styled-components";
 
@@ -353,6 +354,7 @@ const formatDuration = (seconds) => {
 
 const ActivityDetails = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activity, setActivity] = useState(null);
   const [comments, setComments] = useState([]);
@@ -360,14 +362,17 @@ const ActivityDetails = () => {
   const [submitting, setSubmitting] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState("");
-  const currentUserId = 1;
+  const [likedByMe, setLikedByMe] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
     const fetchActivity = async () => {
       try {
         setLoading(true);
-        const res = await ActivityService.getActivityById(id, currentUserId);
+        const res = await ActivityService.getActivityById(id);
         setActivity(res.data);
+        setLikedByMe(res.data.likedByMe || false);
+        setLikesCount(res.data.likesCount || 0);
       } catch (error) {
         console.error("Error fetching activity:", error);
       } finally {
@@ -393,13 +398,29 @@ const ActivityDetails = () => {
     }
   }, [id]);
 
+  const handleLike = async () => {
+    try {
+      if (likedByMe) {
+        await ActivityService.unlikeActivity(id);
+        setLikedByMe(false);
+        setLikesCount(prev => prev - 1);
+      } else {
+        await ActivityService.likeActivity(id);
+        setLikedByMe(true);
+        setLikesCount(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || submitting) return;
 
     setSubmitting(true);
     try {
-      const res = await CommentService.createComment(id, newComment.trim(), currentUserId);
+      const res = await CommentService.createComment(id, newComment.trim());
       setComments([...comments, res.data]);
       setNewComment("");
     } catch (error) {
@@ -423,7 +444,7 @@ const ActivityDetails = () => {
     if (!editContent.trim()) return;
 
     try {
-      const res = await CommentService.updateComment(id, commentId, editContent.trim(), currentUserId);
+      const res = await CommentService.updateComment(id, commentId, editContent.trim());
       setComments(comments.map(c => c.id === commentId ? res.data : c));
       setEditingCommentId(null);
       setEditContent("");
@@ -436,7 +457,7 @@ const ActivityDetails = () => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
 
     try {
-      await CommentService.deleteComment(id, commentId, currentUserId);
+      await CommentService.deleteComment(id, commentId);
       setComments(comments.filter(c => c.id !== commentId));
     } catch (error) {
       console.error("Error deleting comment:", error);
@@ -531,9 +552,9 @@ const ActivityDetails = () => {
         </StatsGrid>
 
         <ActionsBar>
-          <ActionButton>
-            <FiHeart size={18} />
-            {activity.likesCount || 0} Likes
+          <ActionButton onClick={handleLike} style={{ color: likedByMe ? '#fc4c02' : '#666' }}>
+            <FiHeart size={18} fill={likedByMe ? '#fc4c02' : 'none'} />
+            {likesCount} Likes
           </ActionButton>
           <ActionButton>
             <FiMessageCircle size={18} />
@@ -606,7 +627,7 @@ const ActivityDetails = () => {
                   ) : (
                     <>
                       <CommentText>{comment.content}</CommentText>
-                      {comment.user?.id === currentUserId && (
+                      {comment.user?.id === user?.id && (
                         <CommentActions>
                           <CommentActionButton onClick={() => handleEditComment(comment)}>
                             <FiEdit2 size={12} />

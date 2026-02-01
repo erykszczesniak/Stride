@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Layout from '../components/Layout/Layout';
 import ActivityService from '../api/ActivityService';
 import {
   Container,
@@ -92,7 +93,7 @@ const RecordActivity = () => {
       };
 
       // Create activity
-      await ActivityService.createActivity(1, activityData);
+      await ActivityService.createActivity(activityData);
 
       // Navigate to activities page or dashboard
       navigate('/activities');
@@ -103,6 +104,7 @@ const RecordActivity = () => {
   };
 
   return (
+    <Layout>
     <Container>
       <Header>
         <Title>Record Activity</Title>
@@ -227,6 +229,7 @@ const RecordActivity = () => {
         💾 Save Activity
       </SaveButton>
     </Container>
+    </Layout>
   );
 };
 
