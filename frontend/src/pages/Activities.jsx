@@ -376,7 +376,6 @@ const Activities = () => {
     totalDistanceKm: 0,
     totalDurationSeconds: 0,
   });
-  const userId = 1;
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -386,14 +385,13 @@ const Activities = () => {
       let res;
       if (mainTab === "my") {
         res = await ActivityService.getMyActivities(
-          userId,
           0,
           50,
           searchQuery,
           activityType,
         );
       } else if (mainTab === "following") {
-        res = await ActivityService.getFeedActivities(userId, 0, 50).catch(
+        res = await ActivityService.getFeedActivities(0, 50).catch(
           () => ({ data: [] }),
         );
       } else {
@@ -425,37 +423,33 @@ const Activities = () => {
     } finally {
       setLoading(false);
     }
-  }, [userId, searchQuery, filter, mainTab]);
+  }, [searchQuery, filter, mainTab]);
 
   const fetchStats = useCallback(async () => {
     if (mainTab === "my") {
       try {
-        const res = await ActivityService.getMyTotalStats(userId);
+        const res = await ActivityService.getMyTotalStats();
         setStats(res.data);
       } catch (error) {
         console.error("Error fetching stats:", error);
       }
     }
-  }, [userId, mainTab]);
+  }, [mainTab]);
 
   const fetchSuggestedAthletes = useCallback(async () => {
     try {
-      const res = await UserService.getSuggestedUsers(userId, 5).catch(() => ({
+      const res = await UserService.getSuggestedUsers(5).catch(() => ({
         data: [],
       }));
       setSuggestedAthletes(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error fetching suggested athletes:", error);
     }
-  }, [userId]);
+  }, []);
 
   const fetchActiveChallenge = useCallback(async () => {
     try {
-      const res = await ChallengeService.getActiveChallenges(
-        userId,
-        0,
-        10,
-      ).catch(() => ({ data: [] }));
+      const res = await ChallengeService.getActiveChallenges(0, 10).catch(() => ({ data: [] }));
       const challenges = Array.isArray(res.data) ? res.data : [];
       if (challenges.length > 0) {
         setActiveChallenge(challenges[0]);
@@ -463,7 +457,7 @@ const Activities = () => {
     } catch (error) {
       console.error("Error fetching active challenge:", error);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     fetchActivities();
@@ -483,7 +477,7 @@ const Activities = () => {
 
   const handleLikeActivity = async (activityId) => {
     try {
-      await ActivityService.likeActivity(activityId, userId);
+      await ActivityService.likeActivity(activityId);
       fetchActivities();
     } catch (error) {
       console.error("Error liking activity:", error);
@@ -492,7 +486,7 @@ const Activities = () => {
 
   const handleFollow = async (athleteId) => {
     try {
-      await UserService.followUser(userId, athleteId);
+      await UserService.followUser(athleteId);
       fetchSuggestedAthletes();
     } catch (error) {
       console.error("Error following user:", error);

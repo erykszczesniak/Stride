@@ -164,3 +164,35 @@ export const BottomSection = styled.div`
   border-top: 1px solid #f0f0f0;
   margin-top: auto;
 `;
+
+export const LogoutButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    background: #fef2f2;
+    color: #dc2626;
+
+    svg {
+      color: #dc2626;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    justify-content: center;
+    padding: 12px;
+  }
+`;

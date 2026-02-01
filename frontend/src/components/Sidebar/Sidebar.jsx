@@ -13,6 +13,7 @@ import {
   FiAward,
 } from "react-icons/fi";
 import { RiAdminLine } from "react-icons/ri";
+import { useAuth } from "../../context/AuthContext";
 import {
   SidebarContainer,
   Logo,
@@ -25,11 +26,13 @@ import {
   NavLabel,
   ActiveDot,
   BottomSection,
+  LogoutButton,
 } from "./SidebarStyles";
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const mainNavItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
@@ -42,10 +45,10 @@ const Sidebar = () => {
     { path: "/admin", label: "Admin Panel", icon: RiAdminLine },
   ];
 
-  const bottomNavItems = [
-    { path: "/settings", label: "Settings", icon: FiSettings },
-    { path: "/logout", label: "Sign Out", icon: FiLogOut },
-  ];
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   const isActive = (path) => {
     if (path === "/") return location.pathname === "/";
@@ -83,18 +86,21 @@ const Sidebar = () => {
       </NavSection>
 
       <BottomSection>
-        {bottomNavItems.map((item) => (
-          <NavItem
-            key={item.path}
-            to={item.path}
-            className={isActive(item.path) ? "active" : ""}
-          >
-            <NavIcon>
-              <item.icon size={20} />
-            </NavIcon>
-            <NavLabel>{item.label}</NavLabel>
-          </NavItem>
-        ))}
+        <NavItem
+          to="/settings"
+          className={isActive("/settings") ? "active" : ""}
+        >
+          <NavIcon>
+            <FiSettings size={20} />
+          </NavIcon>
+          <NavLabel>Settings</NavLabel>
+        </NavItem>
+        <LogoutButton onClick={handleLogout}>
+          <NavIcon>
+            <FiLogOut size={20} />
+          </NavIcon>
+          <NavLabel>Sign Out</NavLabel>
+        </LogoutButton>
       </BottomSection>
     </SidebarContainer>
   );

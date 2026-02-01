@@ -6,12 +6,15 @@ import com.strava.backend.dto.user.UpdateUserRequest;
 import com.strava.backend.dto.user.UserResponse;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.mapper.UserMapper;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,16 +29,21 @@ import static com.strava.backend.constants.PathConstants.*;
 @RequestMapping(API_V1_USERS)
 public class UserController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final UserMapper userMapper;
     private final UserService userService;
     private final CommonMapper commonMapper;
 
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
+
     @GetMapping(ME)
-    public ResponseEntity<UserResponse> getCurrentUser(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<UserResponse> getCurrentUser() {
+        Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.ok(userMapper.getCurrentUser(currentUserId));
     }
 
@@ -55,28 +63,23 @@ public class UserController {
 
     @PutMapping(ME)
     public ResponseEntity<UserResponse> updateCurrentUser(
-            @RequestParam(required = false) Long userId,
             @Valid @RequestBody UpdateUserRequest request,
             BindingResult bindingResult) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.ok(userMapper.updateUser(currentUserId, request, bindingResult));
     }
 
     @PostMapping(USER_ID + FOLLOW)
-    public ResponseEntity<Map<String, String>> followUser(
-            @PathVariable Long userId,
-            @RequestParam(required = false) Long currentUserId) {
-        Long followerUserId = currentUserId != null ? currentUserId : DEFAULT_USER_ID;
-        userService.followUser(followerUserId, userId);
+    public ResponseEntity<Map<String, String>> followUser(@PathVariable Long userId) {
+        Long currentUserId = getAuthenticatedUserId();
+        userService.followUser(currentUserId, userId);
         return ResponseEntity.ok(Map.of("message", "User followed"));
     }
 
     @DeleteMapping(USER_ID + FOLLOW)
-    public ResponseEntity<Map<String, String>> unfollowUser(
-            @PathVariable Long userId,
-            @RequestParam(required = false) Long currentUserId) {
-        Long followerUserId = currentUserId != null ? currentUserId : DEFAULT_USER_ID;
-        userService.unfollowUser(followerUserId, userId);
+    public ResponseEntity<Map<String, String>> unfollowUser(@PathVariable Long userId) {
+        Long currentUserId = getAuthenticatedUserId();
+        userService.unfollowUser(currentUserId, userId);
         return ResponseEntity.ok(Map.of("message", "User unfollowed"));
     }
 
@@ -98,9 +101,8 @@ public class UserController {
 
     @GetMapping(SUGGESTED)
     public ResponseEntity<List<BaseUserResponse>> getSuggestedUsers(
-            @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "5") int limit) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         List<BaseUserResponse> suggested = userService.getSuggestedUsers(currentUserId, limit).stream()
                 .map(user -> commonMapper.convertToResponse(user, BaseUserResponse.class))
                 .collect(Collectors.toList());

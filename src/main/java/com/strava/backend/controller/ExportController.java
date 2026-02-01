@@ -6,10 +6,13 @@ import com.strava.backend.domain.Activity;
 import com.strava.backend.dto.activity.ActivityResponse;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
+import com.strava.backend.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,15 +26,20 @@ import static com.strava.backend.constants.PathConstants.API_V1;
 @RequestMapping(API_V1 + "/export")
 public class ExportController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final ActivityRepository activityRepository;
     private final CommonMapper commonMapper;
 
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
+
     @GetMapping("/activities/json")
-    public ResponseEntity<byte[]> exportActivitiesAsJson(
-            @RequestParam(required = false) Long userId) throws Exception {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<byte[]> exportActivitiesAsJson() throws Exception {
+        Long currentUserId = getAuthenticatedUserId();
         List<Activity> activities = activityRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
         List<ActivityResponse> responses = commonMapper.convertToResponseList(activities, ActivityResponse.class);
 
@@ -48,9 +56,8 @@ public class ExportController {
     }
 
     @GetMapping("/activities/csv")
-    public ResponseEntity<byte[]> exportActivitiesAsCsv(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<byte[]> exportActivitiesAsCsv() {
+        Long currentUserId = getAuthenticatedUserId();
         List<Activity> activities = activityRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
 
         StringBuilder csv = new StringBuilder();
@@ -78,9 +85,8 @@ public class ExportController {
     }
 
     @GetMapping("/activities/txt")
-    public ResponseEntity<byte[]> exportActivitiesAsTxt(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<byte[]> exportActivitiesAsTxt() {
+        Long currentUserId = getAuthenticatedUserId();
         List<Activity> activities = activityRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
 
         StringBuilder txt = new StringBuilder();
@@ -127,9 +133,7 @@ public class ExportController {
     }
 
     @GetMapping("/activities/gpx/{activityId}")
-    public ResponseEntity<byte[]> exportActivityAsGpx(
-            @PathVariable Long activityId,
-            @RequestParam(required = false) Long userId) {
+    public ResponseEntity<byte[]> exportActivityAsGpx(@PathVariable Long activityId) {
         Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new RuntimeException("Activity not found"));
 

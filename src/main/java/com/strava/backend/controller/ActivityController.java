@@ -5,6 +5,7 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.mapper.ActivityMapper;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ActivityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,26 +28,29 @@ import static com.strava.backend.constants.PathConstants.*;
 @RequestMapping(API_V1_ACTIVITIES)
 public class ActivityController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final ActivityMapper activityMapper;
     private final ActivityService activityService;
     private final ActivityRepository activityRepository;
     private final CommonMapper commonMapper;
 
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
+
     @GetMapping(ACTIVITY_ID)
-    public ResponseEntity<FullActivityResponse> getActivityById(
-            @PathVariable Long activityId,
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<FullActivityResponse> getActivityById(@PathVariable Long activityId) {
+        Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.ok(activityMapper.getActivityById(activityId, currentUserId));
     }
 
     @GetMapping(FEED)
     public ResponseEntity<List<ActivityResponse>> getFeedActivities(
-            @RequestParam(required = false) Long userId,
             @PageableDefault(size = 10) Pageable pageable) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         var response = activityMapper.getFeedActivities(currentUserId, pageable);
         return ResponseEntity.ok()
                 .headers(response.getHeaders())
@@ -53,10 +59,9 @@ public class ActivityController {
 
     @PostMapping
     public ResponseEntity<ActivityResponse> createActivity(
-            @RequestParam(required = false) Long userId,
             @Valid @RequestBody ActivityRequest request,
             BindingResult bindingResult) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(activityMapper.createActivity(currentUserId, request, bindingResult));
     }
@@ -64,61 +69,51 @@ public class ActivityController {
     @PutMapping(ACTIVITY_ID)
     public ResponseEntity<ActivityResponse> updateActivity(
             @PathVariable Long activityId,
-            @RequestParam(required = false) Long userId,
             @Valid @RequestBody ActivityRequest request,
             BindingResult bindingResult) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.ok(
                 activityMapper.updateActivity(activityId, currentUserId, request, bindingResult));
     }
 
     @DeleteMapping(ACTIVITY_ID)
-    public ResponseEntity<Void> deleteActivity(
-            @PathVariable Long activityId,
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<Void> deleteActivity(@PathVariable Long activityId) {
+        Long currentUserId = getAuthenticatedUserId();
         activityMapper.deleteActivity(activityId, currentUserId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping(ACTIVITY_ID + LIKE)
-    public ResponseEntity<Map<String, String>> likeActivity(
-            @PathVariable Long activityId,
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<Map<String, String>> likeActivity(@PathVariable Long activityId) {
+        Long currentUserId = getAuthenticatedUserId();
         activityService.likeActivity(activityId, currentUserId);
         return ResponseEntity.ok(Map.of("message", "Activity liked"));
     }
 
     @DeleteMapping(ACTIVITY_ID + LIKE)
-    public ResponseEntity<Map<String, String>> unlikeActivity(
-            @PathVariable Long activityId,
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<Map<String, String>> unlikeActivity(@PathVariable Long activityId) {
+        Long currentUserId = getAuthenticatedUserId();
         activityService.unlikeActivity(activityId, currentUserId);
         return ResponseEntity.ok(Map.of("message", "Activity unliked"));
     }
 
     @GetMapping(STATS + MONTHLY)
-    public ResponseEntity<ActivityStatsResponse> getMonthlyStats(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<ActivityStatsResponse> getMonthlyStats() {
+        Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.ok(activityMapper.getMonthlyStats(currentUserId));
     }
 
     @GetMapping(STATS + WEEKLY)
-    public ResponseEntity<WeeklyStatsResponse> getWeeklyStats(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<WeeklyStatsResponse> getWeeklyStats() {
+        Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.ok(activityMapper.getWeeklyStats(currentUserId));
     }
 
     @GetMapping("/user/{targetUserId}")
     public ResponseEntity<List<ActivityResponse>> getUserActivities(
             @PathVariable Long targetUserId,
-            @RequestParam(required = false) Long userId,
             @PageableDefault(size = 10) Pageable pageable) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         var response = activityMapper.getActivitiesByUserId(targetUserId, currentUserId, pageable);
         return ResponseEntity.ok()
                 .headers(response.getHeaders())
@@ -127,11 +122,10 @@ public class ActivityController {
 
     @GetMapping("/my")
     public ResponseEntity<List<ActivityResponse>> getMyActivities(
-            @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) ActivityType activityType,
             @PageableDefault(size = 10) Pageable pageable) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
 
         if (search != null && !search.trim().isEmpty()) {
             var activities = activityRepository.searchUserActivities(currentUserId, search.trim(), pageable);
@@ -169,9 +163,8 @@ public class ActivityController {
     }
 
     @GetMapping("/my/stats")
-    public ResponseEntity<Map<String, Object>> getMyTotalStats(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<Map<String, Object>> getMyTotalStats() {
+        Long currentUserId = getAuthenticatedUserId();
         int totalActivities = activityRepository.countByUserId(currentUserId);
         Double totalDistance = activityRepository.sumDistanceByUserId(currentUserId);
         Long totalDuration = activityRepository.sumDurationByUserId(currentUserId);
@@ -185,10 +178,9 @@ public class ActivityController {
 
     @GetMapping("/by-type")
     public ResponseEntity<List<ActivityResponse>> getActivitiesByType(
-            @RequestParam(required = false) Long userId,
             @RequestParam ActivityType activityType,
             @PageableDefault(size = 10) Pageable pageable) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         var activities = activityRepository.findByUserIdAndActivityType(currentUserId, activityType, pageable);
         var responses = commonMapper.convertToResponseList(activities.getContent(), ActivityResponse.class);
         return ResponseEntity.ok(responses);
@@ -196,9 +188,8 @@ public class ActivityController {
 
     @GetMapping("/public")
     public ResponseEntity<List<ActivityResponse>> getPublicActivities(
-            @RequestParam(required = false) Long userId,
             @PageableDefault(size = 10) Pageable pageable) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         var activities = activityService.getPublicActivities(pageable);
         var responses = activities.getContent().stream()
                 .map(activity -> {
