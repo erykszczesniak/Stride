@@ -302,16 +302,15 @@ const Clubs = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [joiningId, setJoiningId] = useState(null);
-  const userId = 1;
 
   const fetchClubs = useCallback(async () => {
     try {
       setLoading(true);
       let res;
       if (searchQuery.trim()) {
-        res = await ClubService.searchClubs(searchQuery, userId);
+        res = await ClubService.searchClubs(searchQuery);
       } else {
-        res = await ClubService.getAllClubs(userId, selectedCategory || null);
+        res = await ClubService.getAllClubs(selectedCategory || null);
       }
       setClubs(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
@@ -319,16 +318,16 @@ const Clubs = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, userId]);
+  }, [searchQuery, selectedCategory]);
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await ClubService.getClubStats(userId);
+      const res = await ClubService.getClubStats();
       setStats(res.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     fetchClubs();
@@ -338,7 +337,7 @@ const Clubs = () => {
   const handleJoinClub = async (clubId) => {
     setJoiningId(clubId);
     try {
-      await ClubService.joinClub(clubId, userId);
+      await ClubService.joinClub(clubId);
       await fetchClubs();
       await fetchStats();
     } catch (error) {

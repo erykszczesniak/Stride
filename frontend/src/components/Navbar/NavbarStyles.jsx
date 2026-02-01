@@ -123,3 +123,21 @@ export const DropdownItem = styled(Link)`
 export const AvatarWrapper = styled.div`
   position: relative;
 `;
+
+export const DropdownButton = styled.button`
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  color: #dc2626;
+  text-decoration: none;
+  font-size: 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #fef2f2;
+  }
+`;

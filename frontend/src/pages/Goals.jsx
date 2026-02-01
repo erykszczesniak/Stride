@@ -28,13 +28,12 @@ const GoalsList = styled.div`
 const Goals = () => {
   const [loading, setLoading] = useState(true);
   const [goals, setGoals] = useState([]);
-  const userId = 1;
 
   useEffect(() => {
     const fetchGoals = async () => {
       try {
         setLoading(true);
-        const res = await GoalService.getUserGoals(userId);
+        const res = await GoalService.getUserGoals();
         setGoals(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
         console.error("Error fetching goals:", error);
@@ -44,7 +43,7 @@ const Goals = () => {
     };
 
     fetchGoals();
-  }, [userId]);
+  }, []);
 
   if (loading) {
     return (

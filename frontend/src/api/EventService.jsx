@@ -1,49 +1,40 @@
 import apiClient from "./ApiClient";
 
 class EventService {
-  // Get all events
   getAllEvents(page = 0, size = 10) {
     return apiClient.get(`/events?page=${page}&size=${size}`);
   }
 
-  // Get event by ID
-  getEventById(eventId, userId = 1) {
-    return apiClient.get(`/events/${eventId}?userId=${userId}`);
+  getEventById(eventId) {
+    return apiClient.get(`/events/${eventId}`);
   }
 
-  // Get upcoming events
   getUpcomingEvents(page = 0, size = 5) {
     return apiClient.get(`/events/upcoming?page=${page}&size=${size}`);
   }
 
-  // Get user's events
-  getUserEvents(userId = 1, page = 0, size = 10) {
-    return apiClient.get(`/events/user?userId=${userId}&page=${page}&size=${size}`);
+  getMyEvents() {
+    return apiClient.get(`/events/my`);
   }
 
-  // Create event
-  createEvent(userId = 1, eventData) {
-    return apiClient.post(`/events?userId=${userId}`, eventData);
+  createEvent(eventData) {
+    return apiClient.post(`/events`, eventData);
   }
 
-  // Update event
-  updateEvent(eventId, userId = 1, eventData) {
-    return apiClient.put(`/events/${eventId}?userId=${userId}`, eventData);
+  updateEvent(eventId, eventData) {
+    return apiClient.put(`/events/${eventId}`, eventData);
   }
 
-  // Delete event
-  deleteEvent(eventId, userId = 1) {
-    return apiClient.delete(`/events/${eventId}?userId=${userId}`);
+  deleteEvent(eventId) {
+    return apiClient.delete(`/events/${eventId}`);
   }
 
-  // Register for event
-  registerForEvent(eventId, userId = 1) {
-    return apiClient.post(`/events/${eventId}/register?userId=${userId}`);
+  registerForEvent(eventId) {
+    return apiClient.post(`/events/${eventId}/register`);
   }
 
-  // Unregister from event
-  unregisterFromEvent(eventId, userId = 1) {
-    return apiClient.delete(`/events/${eventId}/register?userId=${userId}`);
+  unregisterFromEvent(eventId) {
+    return apiClient.delete(`/events/${eventId}/register`);
   }
 }
 

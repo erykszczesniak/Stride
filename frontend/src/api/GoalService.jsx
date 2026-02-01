@@ -1,34 +1,28 @@
 import apiClient from "./ApiClient";
 
 class GoalService {
-  // Get all goals for user
-  getUserGoals(userId = 1) {
-    return apiClient.get(`/goals?userId=${userId}`);
+  getUserGoals() {
+    return apiClient.get(`/goals`);
   }
 
-  // Get active goals
-  getActiveGoals(userId = 1) {
-    return apiClient.get(`/goals/active?userId=${userId}`);
+  getAllGoals() {
+    return apiClient.get(`/goals/all`);
   }
 
-  // Get goal by ID
-  getGoalById(goalId, userId = 1) {
-    return apiClient.get(`/goals/${goalId}?userId=${userId}`);
+  getGoalById(goalId) {
+    return apiClient.get(`/goals/${goalId}`);
   }
 
-  // Create goal
-  createGoal(userId = 1, goalData) {
-    return apiClient.post(`/goals?userId=${userId}`, goalData);
+  createGoal(goalData) {
+    return apiClient.post(`/goals`, goalData);
   }
 
-  // Update goal
-  updateGoal(goalId, userId = 1, goalData) {
-    return apiClient.put(`/goals/${goalId}?userId=${userId}`, goalData);
+  updateGoal(goalId, goalData) {
+    return apiClient.put(`/goals/${goalId}`, goalData);
   }
 
-  // Delete goal
-  deleteGoal(goalId, userId = 1) {
-    return apiClient.delete(`/goals/${goalId}?userId=${userId}`);
+  deleteGoal(goalId) {
+    return apiClient.delete(`/goals/${goalId}`);
   }
 }
 

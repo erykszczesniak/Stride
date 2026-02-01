@@ -1,15 +1,14 @@
 import apiClient from "./ApiClient";
 
 class SettingsService {
-  getCurrentUser(userId = 1) {
-    return apiClient.get(`/users/me?userId=${userId}`);
+  getCurrentUser() {
+    return apiClient.get(`/users/me`);
   }
 
-  updateProfile(userId = 1, profileData) {
-    return apiClient.put(`/users/me?userId=${userId}`, profileData);
+  updateProfile(profileData) {
+    return apiClient.put(`/users/me`, profileData);
   }
 
-  // Local storage methods for preferences
   getPreferences() {
     const defaults = {
       emailNotifications: true,

@@ -53,12 +53,13 @@ const Profile = () => {
     try {
       setLoading(true);
 
-      // If no ID provided, fetch current user (default to user 1)
-      const userId = id || 1;
+      // If no ID provided, fetch current user's profile
       setIsOwnProfile(!id);
 
       // Fetch user data from backend
-      const userData = await UserService.getUserById(userId);
+      const userData = id
+        ? await UserService.getUserById(id)
+        : await UserService.getCurrentUser();
       const userInfo = userData.data;
 
       // Format user data
@@ -74,17 +75,15 @@ const Profile = () => {
         joinedDate: new Date(userInfo.createdAt).getFullYear(),
       });
 
+      // Use the user ID from the response for fetching related data
+      const userId = userInfo.id;
+
       // Fetch user activities
-      const activitiesData = await ActivityService.getUserActivities(
-        userId,
-        1,
-        0,
-        10,
-      );
+      const activitiesData = await ActivityService.getUserActivities(userId, 0, 10);
       setActivities(activitiesData.data || []);
 
       // Fetch monthly stats
-      const monthlyData = await ActivityService.getMonthlyStats(userId);
+      const monthlyData = await ActivityService.getMonthlyStats();
       setStats(monthlyData.data);
 
       // Fetch followers and following count

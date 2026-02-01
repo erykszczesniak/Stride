@@ -328,27 +328,26 @@ const Challenges = () => {
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
-  const userId = 1;
 
   const fetchMyChallenges = useCallback(async () => {
     try {
-      const res = await ChallengeService.getMyChallenges(userId);
+      const res = await ChallengeService.getMyChallenges();
       setMyChallenges(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error fetching my challenges:", error);
     }
-  }, [userId]);
+  }, []);
 
   const fetchExploreChallenges = useCallback(async () => {
     try {
-      const res = await ChallengeService.getActiveChallenges(userId);
+      const res = await ChallengeService.getActiveChallenges();
       const challenges = Array.isArray(res.data) ? res.data : [];
       // Filter out challenges user is already participating in
       setExploreChallenges(challenges.filter(c => !c.participating));
     } catch (error) {
       console.error("Error fetching explore challenges:", error);
     }
-  }, [userId]);
+  }, []);
 
   const fetchLeaderboard = useCallback(async (challengeId) => {
     try {
@@ -379,7 +378,7 @@ const Challenges = () => {
   const handleJoinChallenge = async (challengeId) => {
     setJoiningId(challengeId);
     try {
-      await ChallengeService.joinChallenge(challengeId, userId);
+      await ChallengeService.joinChallenge(challengeId);
       await Promise.all([fetchMyChallenges(), fetchExploreChallenges()]);
     } catch (error) {
       console.error("Error joining challenge:", error);
@@ -572,7 +571,7 @@ const Challenges = () => {
               </LeaderboardItem>
             ) : (
               leaderboard.map((entry, index) => {
-                const isCurrentUser = entry.userId === userId;
+                const isCurrentUser = entry.isCurrentUser;
                 const isTop3 = index < 3;
                 return (
                   <LeaderboardItem key={entry.userId} isCurrentUser={isCurrentUser}>

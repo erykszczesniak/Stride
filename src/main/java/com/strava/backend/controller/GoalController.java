@@ -3,11 +3,14 @@ package com.strava.backend.controller;
 import com.strava.backend.domain.Goal;
 import com.strava.backend.dto.goal.GoalRequest;
 import com.strava.backend.dto.goal.GoalResponse;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.GoalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,14 +23,19 @@ import static com.strava.backend.constants.PathConstants.*;
 @RequestMapping(API_V1_GOALS)
 public class GoalController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final GoalService goalService;
 
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
+
     @GetMapping
-    public ResponseEntity<List<GoalResponse>> getActiveGoals(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<List<GoalResponse>> getActiveGoals() {
+        Long currentUserId = getAuthenticatedUserId();
         List<Goal> goals = goalService.getActiveGoalsByUserId(currentUserId);
         List<GoalResponse> response = goals.stream()
                 .map(this::mapToResponse)
@@ -36,9 +44,8 @@ public class GoalController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<GoalResponse>> getAllGoals(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<List<GoalResponse>> getAllGoals() {
+        Long currentUserId = getAuthenticatedUserId();
         List<Goal> goals = goalService.getAllGoalsByUserId(currentUserId);
         List<GoalResponse> response = goals.stream()
                 .map(this::mapToResponse)
@@ -53,10 +60,8 @@ public class GoalController {
     }
 
     @PostMapping
-    public ResponseEntity<GoalResponse> createGoal(
-            @RequestParam(required = false) Long userId,
-            @Valid @RequestBody GoalRequest request) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<GoalResponse> createGoal(@Valid @RequestBody GoalRequest request) {
+        Long currentUserId = getAuthenticatedUserId();
         Goal goal = goalService.createGoal(currentUserId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(goal));
     }
@@ -64,26 +69,22 @@ public class GoalController {
     @PutMapping(GOAL_ID)
     public ResponseEntity<GoalResponse> updateGoal(
             @PathVariable Long goalId,
-            @RequestParam(required = false) Long userId,
             @Valid @RequestBody GoalRequest request) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long currentUserId = getAuthenticatedUserId();
         Goal goal = goalService.updateGoal(goalId, currentUserId, request);
         return ResponseEntity.ok(mapToResponse(goal));
     }
 
     @DeleteMapping(GOAL_ID)
-    public ResponseEntity<Void> deleteGoal(
-            @PathVariable Long goalId,
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<Void> deleteGoal(@PathVariable Long goalId) {
+        Long currentUserId = getAuthenticatedUserId();
         goalService.deleteGoal(goalId, currentUserId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping(PROGRESS)
-    public ResponseEntity<Void> updateGoalProgress(
-            @RequestParam(required = false) Long userId) {
-        Long currentUserId = userId != null ? userId : DEFAULT_USER_ID;
+    public ResponseEntity<Void> updateGoalProgress() {
+        Long currentUserId = getAuthenticatedUserId();
         goalService.updateGoalProgress(currentUserId);
         return ResponseEntity.ok().build();
     }

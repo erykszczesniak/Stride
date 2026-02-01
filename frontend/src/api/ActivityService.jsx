@@ -1,24 +1,20 @@
 import apiClient from "./ApiClient";
 
 class ActivityService {
-  // Get activity by ID
-  getActivityById(activityId, userId = 1) {
-    return apiClient.get(`/activities/${activityId}?userId=${userId}`);
+  getActivityById(activityId) {
+    return apiClient.get(`/activities/${activityId}`);
   }
 
-  // Get feed activities
-  getFeedActivities(userId = 1, page = 0, size = 10) {
-    return apiClient.get(`/activities/feed?userId=${userId}&page=${page}&size=${size}`);
+  getFeedActivities(page = 0, size = 10) {
+    return apiClient.get(`/activities/feed?page=${page}&size=${size}`);
   }
 
-  // Get user's activities
-  getUserActivities(targetUserId, userId = 1, page = 0, size = 10) {
-    return apiClient.get(`/activities/user/${targetUserId}?userId=${userId}&page=${page}&size=${size}`);
+  getUserActivities(targetUserId, page = 0, size = 10) {
+    return apiClient.get(`/activities/user/${targetUserId}?page=${page}&size=${size}`);
   }
 
-  // Get current user's activities
-  getMyActivities(userId = 1, page = 0, size = 10, search = '', activityType = null) {
-    let url = `/activities/my?userId=${userId}&page=${page}&size=${size}`;
+  getMyActivities(page = 0, size = 10, search = '', activityType = null) {
+    let url = `/activities/my?page=${page}&size=${size}`;
     if (search) {
       url += `&search=${encodeURIComponent(search)}`;
     }
@@ -28,49 +24,40 @@ class ActivityService {
     return apiClient.get(url);
   }
 
-  // Get total stats for current user
-  getMyTotalStats(userId = 1) {
-    return apiClient.get(`/activities/my/stats?userId=${userId}`);
+  getMyTotalStats() {
+    return apiClient.get(`/activities/my/stats`);
   }
 
-  // Get public activities
   getPublicActivities(page = 0, size = 10) {
     return apiClient.get(`/activities/public?page=${page}&size=${size}`);
   }
 
-  // Create activity
-  createActivity(userId = 1, activityData) {
-    return apiClient.post(`/activities?userId=${userId}`, activityData);
+  createActivity(activityData) {
+    return apiClient.post(`/activities`, activityData);
   }
 
-  // Update activity
-  updateActivity(activityId, userId = 1, activityData) {
-    return apiClient.put(`/activities/${activityId}?userId=${userId}`, activityData);
+  updateActivity(activityId, activityData) {
+    return apiClient.put(`/activities/${activityId}`, activityData);
   }
 
-  // Delete activity
-  deleteActivity(activityId, userId = 1) {
-    return apiClient.delete(`/activities/${activityId}?userId=${userId}`);
+  deleteActivity(activityId) {
+    return apiClient.delete(`/activities/${activityId}`);
   }
 
-  // Like activity
-  likeActivity(activityId, userId = 1) {
-    return apiClient.post(`/activities/${activityId}/like?userId=${userId}`);
+  likeActivity(activityId) {
+    return apiClient.post(`/activities/${activityId}/like`);
   }
 
-  // Unlike activity
-  unlikeActivity(activityId, userId = 1) {
-    return apiClient.delete(`/activities/${activityId}/like?userId=${userId}`);
+  unlikeActivity(activityId) {
+    return apiClient.delete(`/activities/${activityId}/like`);
   }
 
-  // Get monthly stats
-  getMonthlyStats(userId = 1) {
-    return apiClient.get(`/activities/stats/monthly?userId=${userId}`);
+  getMonthlyStats() {
+    return apiClient.get(`/activities/stats/monthly`);
   }
 
-  // Get weekly stats
-  getWeeklyStats(userId = 1) {
-    return apiClient.get(`/activities/stats/weekly?userId=${userId}`);
+  getWeeklyStats() {
+    return apiClient.get(`/activities/stats/weekly`);
   }
 }
 

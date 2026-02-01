@@ -10,6 +10,7 @@ import { EventsList, EventsHeader, EventsTitle, ViewAllLink as EventsViewAllLink
 import ActivityService from "../api/ActivityService";
 import GoalService from "../api/GoalService";
 import EventService from "../api/EventService";
+import { useAuth } from "../context/AuthContext";
 import {
   DashboardContainer,
   DashboardHeader,
@@ -32,6 +33,7 @@ import {
 } from "./DashboardStyles";
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [monthlyStats, setMonthlyStats] = useState(null);
   const [weeklyStats, setWeeklyStats] = useState(null);
@@ -39,18 +41,16 @@ const Dashboard = () => {
   const [goals, setGoals] = useState([]);
   const [events, setEvents] = useState([]);
 
-  const userId = 1;
-
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
 
         const [monthlyRes, weeklyRes, activitiesRes, goalsRes, eventsRes] = await Promise.all([
-          ActivityService.getMonthlyStats(userId).catch(() => ({ data: null })),
-          ActivityService.getWeeklyStats(userId).catch(() => ({ data: null })),
-          ActivityService.getFeedActivities(userId, 0, 5).catch(() => ({ data: [] })),
-          GoalService.getActiveGoals(userId).catch(() => ({ data: [] })),
+          ActivityService.getMonthlyStats().catch(() => ({ data: null })),
+          ActivityService.getWeeklyStats().catch(() => ({ data: null })),
+          ActivityService.getFeedActivities(0, 5).catch(() => ({ data: [] })),
+          GoalService.getUserGoals().catch(() => ({ data: [] })),
           EventService.getUpcomingEvents(0, 3).catch(() => ({ data: [] })),
         ]);
 
@@ -67,12 +67,12 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [userId]);
+  }, []);
 
   const handleLikeActivity = async (activityId) => {
     try {
-      await ActivityService.likeActivity(activityId, userId);
-      const res = await ActivityService.getFeedActivities(userId, 0, 5);
+      await ActivityService.likeActivity(activityId);
+      const res = await ActivityService.getFeedActivities(0, 5);
       setActivities(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error liking activity:", error);
@@ -107,11 +107,11 @@ const Dashboard = () => {
       <DashboardHeader>
         <WelcomeSection>
           <WelcomeText>
-            <h1>Welcome back, Pan! <span>🏃</span></h1>
+            <h1>Welcome back, {user?.firstName || 'Athlete'}! <span>🏃</span></h1>
             <p>Here's your training summary</p>
           </WelcomeText>
         </WelcomeSection>
-        <UserAvatar>P</UserAvatar>
+        <UserAvatar>{user?.firstName?.[0] || 'A'}</UserAvatar>
       </DashboardHeader>
 
       <StatsGrid>
