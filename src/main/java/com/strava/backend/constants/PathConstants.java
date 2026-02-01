@@ -40,6 +40,7 @@ public final class PathConstants {
     public static final String UNLIKE = "/unlike";
     public static final String COMMENTS = "/comments";
     public static final String COMMENT_ID = "/{commentId}";
+    public static final String REACTIONS = "/reactions";
 
     // Clubs
     public static final String CLUBS = "/clubs";

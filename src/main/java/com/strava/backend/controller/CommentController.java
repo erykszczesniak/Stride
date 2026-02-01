@@ -2,6 +2,7 @@ package com.strava.backend.controller;
 
 import com.strava.backend.dto.activity.CommentRequest;
 import com.strava.backend.dto.activity.CommentResponse;
+import com.strava.backend.dto.activity.ReactionRequest;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.CommentService;
@@ -68,5 +69,52 @@ public class CommentController {
         Long currentUserId = getAuthenticatedUserId();
         commentService.deleteComment(commentId, currentUserId);
         return ResponseEntity.ok(Map.of("message", "Comment deleted"));
+    }
+
+    @PostMapping(ACTIVITY_ID + COMMENTS + COMMENT_ID + REACTIONS)
+    public ResponseEntity<Map<String, Object>> addReaction(
+            @PathVariable Long activityId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody ReactionRequest request) {
+        Long currentUserId = getAuthenticatedUserId();
+        commentService.addReaction(commentId, currentUserId, request.getEmoji());
+        var counts = commentService.getReactionCounts(commentId);
+        var userReactions = commentService.getUserReactions(commentId, currentUserId);
+        return ResponseEntity.ok(Map.of(
+                "message", "Reaction added",
+                "reactions", counts,
+                "userReactions", userReactions
+        ));
+    }
+
+    @DeleteMapping(ACTIVITY_ID + COMMENTS + COMMENT_ID + REACTIONS)
+    public ResponseEntity<Map<String, Object>> removeReaction(
+            @PathVariable Long activityId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody ReactionRequest request) {
+        Long currentUserId = getAuthenticatedUserId();
+        commentService.removeReaction(commentId, currentUserId, request.getEmoji());
+        var counts = commentService.getReactionCounts(commentId);
+        var userReactions = commentService.getUserReactions(commentId, currentUserId);
+        return ResponseEntity.ok(Map.of(
+                "message", "Reaction removed",
+                "reactions", counts,
+                "userReactions", userReactions
+        ));
+    }
+
+    @GetMapping(ACTIVITY_ID + COMMENTS + COMMENT_ID + REACTIONS)
+    public ResponseEntity<Map<String, Object>> getReactions(
+            @PathVariable Long activityId,
+            @PathVariable Long commentId) {
+        Long currentUserId = getAuthenticatedUserId();
+        var counts = commentService.getReactionCounts(commentId);
+        var userReactions = currentUserId != null
+                ? commentService.getUserReactions(commentId, currentUserId)
+                : List.of();
+        return ResponseEntity.ok(Map.of(
+                "reactions", counts,
+                "userReactions", userReactions
+        ));
     }
 }

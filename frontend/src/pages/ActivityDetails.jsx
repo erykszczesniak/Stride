@@ -260,6 +260,91 @@ const CommentActions = styled.div`
   display: flex;
   gap: 8px;
   margin-top: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
+const ReactionBar = styled.div`
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+`;
+
+const ReactionBadge = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid ${props => props.active ? '#fc4c02' : '#e5e5e5'};
+  background: ${props => props.active ? 'rgba(252, 76, 2, 0.1)' : 'white'};
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #fc4c02;
+    background: rgba(252, 76, 2, 0.05);
+  }
+
+  span.emoji {
+    font-size: 14px;
+  }
+
+  span.count {
+    color: #666;
+    font-weight: 500;
+  }
+`;
+
+const AddReactionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px dashed #ccc;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  position: relative;
+
+  &:hover {
+    border-color: #fc4c02;
+    background: rgba(252, 76, 2, 0.05);
+  }
+`;
+
+const EmojiPicker = styled.div`
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+`;
+
+const EmojiOption = styled.button`
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f5f5f5;
+    transform: scale(1.2);
+  }
 `;
 
 const CommentActionButton = styled.button`
@@ -364,6 +449,11 @@ const ActivityDetails = () => {
   const [editContent, setEditContent] = useState("");
   const [likedByMe, setLikedByMe] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [commentReactions, setCommentReactions] = useState({});
+  const [userReactions, setUserReactions] = useState({});
+  const [showEmojiPicker, setShowEmojiPicker] = useState(null);
+
+  const availableEmojis = ['👍', '❤️', '🔥', '👏', '💪', '🎉'];
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -371,7 +461,7 @@ const ActivityDetails = () => {
         setLoading(true);
         const res = await ActivityService.getActivityById(id);
         setActivity(res.data);
-        setLikedByMe(res.data.likedByMe || false);
+        setLikedByMe(res.data.likedByCurrentUser || false);
         setLikesCount(res.data.likesCount || 0);
       } catch (error) {
         console.error("Error fetching activity:", error);
@@ -387,7 +477,13 @@ const ActivityDetails = () => {
     const fetchComments = async () => {
       try {
         const res = await CommentService.getActivityComments(id);
-        setComments(res.data || []);
+        const commentsData = res.data || [];
+        setComments(commentsData);
+
+        // Fetch reactions for each comment
+        for (const comment of commentsData) {
+          fetchReactions(comment.id);
+        }
       } catch (error) {
         console.error("Error fetching comments:", error);
       }
@@ -421,7 +517,10 @@ const ActivityDetails = () => {
     setSubmitting(true);
     try {
       const res = await CommentService.createComment(id, newComment.trim());
-      setComments([...comments, res.data]);
+      const newCommentData = res.data;
+      setComments([...comments, newCommentData]);
+      setCommentReactions(prev => ({ ...prev, [newCommentData.id]: {} }));
+      setUserReactions(prev => ({ ...prev, [newCommentData.id]: [] }));
       setNewComment("");
     } catch (error) {
       console.error("Error creating comment:", error);
@@ -461,6 +560,46 @@ const ActivityDetails = () => {
       setComments(comments.filter(c => c.id !== commentId));
     } catch (error) {
       console.error("Error deleting comment:", error);
+    }
+  };
+
+  const fetchReactions = async (commentId) => {
+    try {
+      const res = await CommentService.getReactions(id, commentId);
+      setCommentReactions(prev => ({ ...prev, [commentId]: res.data.reactions || {} }));
+      setUserReactions(prev => ({ ...prev, [commentId]: res.data.userReactions || [] }));
+    } catch (error) {
+      console.error("Error fetching reactions:", error);
+    }
+  };
+
+  const handleAddReaction = async (commentId, emoji) => {
+    try {
+      const res = await CommentService.addReaction(id, commentId, emoji);
+      setCommentReactions(prev => ({ ...prev, [commentId]: res.data.reactions || {} }));
+      setUserReactions(prev => ({ ...prev, [commentId]: res.data.userReactions || [] }));
+      setShowEmojiPicker(null);
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+    }
+  };
+
+  const handleRemoveReaction = async (commentId, emoji) => {
+    try {
+      const res = await CommentService.removeReaction(id, commentId, emoji);
+      setCommentReactions(prev => ({ ...prev, [commentId]: res.data.reactions || {} }));
+      setUserReactions(prev => ({ ...prev, [commentId]: res.data.userReactions || [] }));
+    } catch (error) {
+      console.error("Error removing reaction:", error);
+    }
+  };
+
+  const handleToggleReaction = (commentId, emoji) => {
+    const userEmojis = userReactions[commentId] || [];
+    if (userEmojis.includes(emoji)) {
+      handleRemoveReaction(commentId, emoji);
+    } else {
+      handleAddReaction(commentId, emoji);
     }
   };
 
@@ -627,6 +766,30 @@ const ActivityDetails = () => {
                   ) : (
                     <>
                       <CommentText>{comment.content}</CommentText>
+                      <ReactionBar>
+                        {Object.entries(commentReactions[comment.id] || {}).map(([emoji, count]) => (
+                          <ReactionBadge
+                            key={emoji}
+                            active={(userReactions[comment.id] || []).includes(emoji)}
+                            onClick={() => handleToggleReaction(comment.id, emoji)}
+                          >
+                            <span className="emoji">{emoji}</span>
+                            <span className="count">{count}</span>
+                          </ReactionBadge>
+                        ))}
+                        <AddReactionButton onClick={() => setShowEmojiPicker(showEmojiPicker === comment.id ? null : comment.id)}>
+                          +
+                          {showEmojiPicker === comment.id && (
+                            <EmojiPicker onClick={(e) => e.stopPropagation()}>
+                              {availableEmojis.map(emoji => (
+                                <EmojiOption key={emoji} onClick={() => handleAddReaction(comment.id, emoji)}>
+                                  {emoji}
+                                </EmojiOption>
+                              ))}
+                            </EmojiPicker>
+                          )}
+                        </AddReactionButton>
+                      </ReactionBar>
                       {comment.user?.id === user?.id && (
                         <CommentActions>
                           <CommentActionButton onClick={() => handleEditComment(comment)}>
