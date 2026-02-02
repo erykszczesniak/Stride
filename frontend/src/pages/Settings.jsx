@@ -48,6 +48,9 @@ const Settings = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    bio: "",
+    city: "",
+    country: "",
     weight: "",
     height: "",
   });
@@ -70,11 +73,14 @@ const Settings = () => {
   const loadUserData = async () => {
     try {
       setLoading(true);
-      const response = await SettingsService.getCurrentUser(1);
+      const response = await SettingsService.getCurrentUser();
       setUser(response.data);
       setFormData({
         firstName: response.data.firstName || "",
         lastName: response.data.lastName || "",
+        bio: response.data.bio || "",
+        city: response.data.city || "",
+        country: response.data.country || "",
         weight: response.data.weight || "",
         height: response.data.height || "",
       });
@@ -103,9 +109,12 @@ const Settings = () => {
     setSaving(true);
     try {
       // Save profile data to backend
-      await SettingsService.updateProfile(1, {
+      await SettingsService.updateProfile({
         firstName: formData.firstName,
         lastName: formData.lastName,
+        bio: formData.bio || null,
+        city: formData.city || null,
+        country: formData.country || null,
         weight: formData.weight ? parseFloat(formData.weight) : null,
         height: formData.height ? parseFloat(formData.height) : null,
       });
@@ -224,6 +233,40 @@ const Settings = () => {
                       />
                     </FormRow>
                   </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>Bio</FormLabel>
+                    <FormInput
+                      type="text"
+                      name="bio"
+                      placeholder="Tell us about yourself..."
+                      value={formData.bio}
+                      onChange={handleFormChange}
+                    />
+                  </FormGroup>
+
+                  <FormRow>
+                    <FormGroup>
+                      <FormLabel>City</FormLabel>
+                      <FormInput
+                        type="text"
+                        name="city"
+                        placeholder="Enter city"
+                        value={formData.city}
+                        onChange={handleFormChange}
+                      />
+                    </FormGroup>
+                    <FormGroup>
+                      <FormLabel>Country</FormLabel>
+                      <FormInput
+                        type="text"
+                        name="country"
+                        placeholder="Enter country"
+                        value={formData.country}
+                        onChange={handleFormChange}
+                      />
+                    </FormGroup>
+                  </FormRow>
 
                   <FormRow>
                     <FormGroup>

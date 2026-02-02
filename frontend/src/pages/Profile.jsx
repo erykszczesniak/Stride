@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
 import Layout from "../components/Layout/Layout";
@@ -36,6 +36,7 @@ import {
 
 const Profile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState(null);
@@ -219,7 +220,7 @@ const Profile = () => {
             )}
             <ProfileLocation>📅 Joined {user.joinedDate}</ProfileLocation>
           </ProfileInfo>
-          {isOwnProfile && <EditButton>⚙️ Edit Profile</EditButton>}
+          {isOwnProfile && <EditButton onClick={() => navigate('/settings')}>⚙️ Edit Profile</EditButton>}
         </ProfileContent>
 
         <ProfileStats>

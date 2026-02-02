@@ -22,6 +22,7 @@
         <jjwt.version>0.12.3</jjwt.version>
         <modelmapper.version>3.2.0</modelmapper.version>
         <graphql-java.version>21.3</graphql-java.version>
+        <lombok.version>1.18.36</lombok.version>
     </properties>
 
     <dependencies>

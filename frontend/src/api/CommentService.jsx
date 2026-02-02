@@ -16,6 +16,18 @@ class CommentService {
   deleteComment(activityId, commentId) {
     return apiClient.delete(`/activities/${activityId}/comments/${commentId}`);
   }
+
+  getReactions(activityId, commentId) {
+    return apiClient.get(`/activities/${activityId}/comments/${commentId}/reactions`);
+  }
+
+  addReaction(activityId, commentId, emoji) {
+    return apiClient.post(`/activities/${activityId}/comments/${commentId}/reactions`, { emoji });
+  }
+
+  removeReaction(activityId, commentId, emoji) {
+    return apiClient.delete(`/activities/${activityId}/comments/${commentId}/reactions`, { data: { emoji } });
+  }
 }
 
 export default new CommentService();
