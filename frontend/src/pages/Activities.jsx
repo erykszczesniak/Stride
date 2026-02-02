@@ -475,12 +475,20 @@ const Activities = () => {
     fetchActiveChallenge();
   }, [fetchActiveChallenge]);
 
-  const handleLikeActivity = async (activityId) => {
+  const handleLikeActivity = async (activityId, isLiked) => {
     try {
-      await ActivityService.likeActivity(activityId);
-      fetchActivities();
+      if (isLiked) {
+        await ActivityService.unlikeActivity(activityId);
+      } else {
+        await ActivityService.likeActivity(activityId);
+      }
+      setActivities(prev => prev.map(a =>
+        a.id === activityId
+          ? { ...a, likedByCurrentUser: !isLiked, likesCount: isLiked ? a.likesCount - 1 : a.likesCount + 1 }
+          : a
+      ));
     } catch (error) {
-      console.error("Error liking activity:", error);
+      console.error("Error toggling like:", error);
     }
   };
 

@@ -84,7 +84,7 @@ const ActivityCard = ({ activity, onLike }) => {
   const handleLike = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (onLike) onLike(activity.id);
+    if (onLike) onLike(activity.id, activity.likedByCurrentUser);
   };
 
   const handleShare = (e) => {
