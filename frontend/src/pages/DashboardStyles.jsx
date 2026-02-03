@@ -48,6 +48,10 @@ export const WelcomeText = styled.div`
   }
 `;
 
+export const UserMenuWrapper = styled.div`
+  position: relative;
+`;
+
 export const UserAvatar = styled.div`
   width: 44px;
   height: 44px;
@@ -65,6 +69,101 @@ export const UserAvatar = styled.div`
   &:hover {
     transform: scale(1.05);
   }
+`;
+
+export const UserDropdown = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 12px;
+  box-shadow: 0 4px 20px ${({ theme }) => theme.shadow};
+  padding: 8px;
+  z-index: 1000;
+  opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
+  visibility: ${({ $isOpen }) => ($isOpen ? 'visible' : 'hidden')};
+  transform: ${({ $isOpen }) => ($isOpen ? 'translateY(0)' : 'translateY(-10px)')};
+  transition: all 0.2s ease;
+`;
+
+export const UserDropdownHeader = styled.div`
+  padding: 12px;
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+  margin-bottom: 8px;
+`;
+
+export const UserDropdownName = styled.p`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0 0 2px 0;
+`;
+
+export const UserDropdownEmail = styled.p`
+  font-size: 12px;
+  color: ${({ theme }) => theme.textSecondary};
+  margin: 0;
+`;
+
+export const UserDropdownItem = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: ${({ theme }) => theme.textSecondary};
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.bgHover};
+    color: ${({ theme }) => theme.textPrimary};
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+`;
+
+export const UserDropdownButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: ${({ theme }) => theme.textSecondary};
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.bgHover};
+    color: ${({ theme }) => theme.error};
+
+    svg {
+      color: ${({ theme }) => theme.error};
+    }
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+`;
+
+export const UserDropdownDivider = styled.div`
+  height: 1px;
+  background: ${({ theme }) => theme.border};
+  margin: 8px 0;
 `;
 
 export const StatsGrid = styled.div`
