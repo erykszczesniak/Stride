@@ -8,14 +8,16 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import static com.strava.backend.constants.PathConstants.*;
+
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/ai")
+@RequestMapping(API_V1_AI)
 public class AIController {
 
     private final GroqService groqService;
 
-    @PostMapping(value = "/generate-goal", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = GENERATE_GOAL, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> generateGoal(@RequestBody Map<String, String> request) {
         String goalType = request.getOrDefault("goalType", "distance");
         String timeframe = request.getOrDefault("timeframe", "month");
@@ -25,7 +27,7 @@ public class AIController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping(value = "/generate-plan", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = GENERATE_PLAN, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> generateTrainingPlan(@RequestBody Map<String, Object> request) {
         String activityType = (String) request.getOrDefault("activityType", "running");
         String experienceLevel = (String) request.getOrDefault("experienceLevel", "intermediate");

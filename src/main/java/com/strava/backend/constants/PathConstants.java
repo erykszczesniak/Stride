@@ -85,6 +85,22 @@ public final class PathConstants {
     // GraphQL
     public static final String GRAPHQL = "/graphql";
 
+    // AI
+    public static final String AI = "/ai";
+    public static final String API_V1_AI = API_V1 + AI;
+    public static final String GENERATE_GOAL = "/generate-goal";
+    public static final String GENERATE_PLAN = "/generate-plan";
+
+    // Training Plans
+    public static final String TRAINING_PLANS = "/training-plans";
+    public static final String API_V1_TRAINING_PLANS = API_V1 + TRAINING_PLANS;
+    public static final String TEMPLATES = "/templates";
+    public static final String TEMPLATE_ID = "/{id}";
+
+    // Export
+    public static final String EXPORT = "/export";
+    public static final String API_V1_EXPORT = API_V1 + EXPORT;
+
     private PathConstants() {
     }
 }

@@ -19,11 +19,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static com.strava.backend.constants.PathConstants.API_V1;
+import static com.strava.backend.constants.PathConstants.API_V1_EXPORT;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(API_V1 + "/export")
+@RequestMapping(API_V1_EXPORT)
 public class ExportController {
 
     private final ActivityRepository activityRepository;
