@@ -1,7 +1,6 @@
 # GraphQL API Documentation
 
 **Endpoint:** `http://localhost:8080/graphql`
-**GraphiQL Interface:** `http://localhost:8080/graphiql`
 
 ---
 
@@ -1077,7 +1076,7 @@ GraphQL returns errors in the following format:
 
 ## Tips
 
-1. **GraphiQL** - the most convenient way to test, has autocomplete and documentation
+1. **Postman/Insomnia** - the most convenient way to test, has autocomplete and documentation
 2. **Fragments** - use fragments for repeating fields
 3. **Aliases** - you can use aliases for multiple queries of the same type
 4. **Variables** - use variables for dynamic values

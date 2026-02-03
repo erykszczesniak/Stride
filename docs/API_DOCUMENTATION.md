@@ -974,7 +974,6 @@ curl -o activity.gpx http://localhost:8080/api/v1/export/activities/gpx/1
 ## 13. GraphQL
 
 **Endpoint:** `/graphql`
-**GraphiQL Interface:** `/graphiql`
 
 ### Example Query
 
@@ -1018,7 +1017,7 @@ curl -X POST http://localhost:8080/graphql \
 
 ### Full GraphQL Documentation
 
-More examples can be found in GraphiQL at: `http://localhost:8080/graphiql`
+More examples can be found in the GraphQL Documentation file.
 
 ---
 

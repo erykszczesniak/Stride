@@ -18,8 +18,9 @@ spring:
       enabled: false
 
   graphql:
-    graphiql:
-      enabled: false
+    schema:
+      introspection:
+        enabled: false
 
   security:
     oauth2:

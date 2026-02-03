@@ -550,24 +550,15 @@ curl -X POST http://localhost:8080/graphql \
   }'
 ```
 
-## Testing with GraphiQL
+## Testing GraphQL
 
-If enabled, access GraphiQL at: `http://localhost:8080/graphiql`
+Use Postman, Insomnia or other GraphQL client at: `http://localhost:8080/graphql`
 
 ---
 
 ## Narzędzia do testowania GraphQL
 
-### 1. GraphiQL (wbudowane w Spring)
-- **URL:** `http://localhost:8080/graphiql`
-- Wbudowane w Spring GraphQL
-- Autouzupełnianie, dokumentacja schematu
-- Aby włączyć, dodaj w `application.properties`:
-  ```properties
-  spring.graphql.graphiql.enabled=true
-  ```
-
-### 2. Postman
+### 1. Postman
 - **URL:** https://www.postman.com/downloads/
 - Darmowa aplikacja desktopowa
 - Wsparcie dla GraphQL z autouzupełnianiem
@@ -578,21 +569,21 @@ If enabled, access GraphiQL at: `http://localhost:8080/graphiql`
   3. Body → GraphQL
   4. Wklej query
 
-### 3. Insomnia
+### 2. Insomnia
 - **URL:** https://insomnia.rest/download
 - Darmowa aplikacja desktopowa
 - Natywne wsparcie GraphQL
 - Automatyczne pobieranie schematu
 - Przejrzysty interfejs
 
-### 4. Apollo Studio (online)
+### 3. Apollo Studio (online)
 - **URL:** https://studio.apollographql.com/sandbox/explorer
 - Darmowe narzędzie online
 - Nie wymaga instalacji
 - Wpisz endpoint: `http://localhost:8080/graphql`
 - Automatycznie pobiera schemat i pokazuje dokumentację
 
-### 5. Altair GraphQL Client
+### 4. Altair GraphQL Client
 - **URL:** https://altairgraphql.dev/
 - Dostępne jako:
   - Rozszerzenie Chrome/Firefox
@@ -600,18 +591,18 @@ If enabled, access GraphiQL at: `http://localhost:8080/graphiql`
 - Darmowe i open source
 - Wsparcie dla subscriptions
 
-### 6. Banana Cake Pop (online)
+### 5. Banana Cake Pop (online)
 - **URL:** https://eat.bananacakepop.com/
 - Darmowe narzędzie online od twórców Hot Chocolate
 - Nie wymaga instalacji
 - Przejrzysty interfejs
 
-### 7. Rozszerzenia do VS Code
+### 6. Rozszerzenia do VS Code
 - **GraphQL for VSCode** - podświetlanie składni
 - **Thunder Client** - jak Postman w VS Code
 - **REST Client** - wysyłanie requestów z plików `.http`
 
-### 8. IntelliJ IDEA (Ultimate)
+### 7. IntelliJ IDEA (Ultimate)
 - Wbudowane wsparcie GraphQL
 - HTTP Client z plikami `.http` lub `.graphql`
 - Przykład pliku `requests.http`:
@@ -629,8 +620,8 @@ If enabled, access GraphiQL at: `http://localhost:8080/graphiql`
 ## Szybki start - testowanie
 
 1. Uruchom aplikację Spring Boot
-2. Otwórz przeglądarkę: `http://localhost:8080/graphiql`
-3. Wklej przykładowe query:
+2. Użyj Postman/Insomnia z endpoint: `http://localhost:8080/graphql`
+3. Wyślij przykładowe query:
    ```graphql
    {
      currentUser {

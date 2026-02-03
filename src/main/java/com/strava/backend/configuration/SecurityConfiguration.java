@@ -34,7 +34,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/graphql", "/graphiql").permitAll()
+                        .requestMatchers("/graphql").permitAll()
                         .anyRequest().authenticated())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
