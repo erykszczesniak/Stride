@@ -3,6 +3,7 @@ import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, Fi
 import { FaRunning, FaBicycle, FaSwimmer, FaHiking, FaWalking } from "react-icons/fa";
 import Navbar from "../components/Navbar/Navbar";
 import SettingsService from "../api/SettingsService";
+import { useToast } from "../context/ToastContext";
 import {
   SettingsContainer,
   SettingsContent,
@@ -41,6 +42,7 @@ import {
 } from "./SettingsStyles";
 
 const Settings = () => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -122,10 +124,10 @@ const Settings = () => {
       // Save preferences to localStorage
       await SettingsService.savePreferences(preferences);
 
-      alert("Settings saved successfully!");
+      toast.success("Settings saved successfully!");
     } catch (error) {
       console.error("Error saving settings:", error);
-      alert("Failed to save settings. Please try again.");
+      toast.error("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
     }

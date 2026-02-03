@@ -5,6 +5,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import Navbar from "../components/Navbar/Navbar";
 import AdminService from "../api/AdminService";
+import { useToast } from "../context/ToastContext";
 import {
   Container,
   Header,
@@ -56,6 +57,7 @@ import {
 } from "./AdminStyles";
 
 const Admin = () => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("activities");
   const [stats, setStats] = useState(null);
   const [activities, setActivities] = useState([]);
@@ -287,7 +289,7 @@ const Admin = () => {
     const data = exportType === "activities" ? activities : users;
 
     if (data.length === 0) {
-      alert("No data to export. Please load data first.");
+      toast.warning("No data to export. Please load data first.");
       return;
     }
 

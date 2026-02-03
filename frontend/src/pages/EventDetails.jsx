@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiMapPin, FiClock, FiUsers, FiCalendar, FiDollarSign, FiExternalLink, FiEdit2, FiTrash2 } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import EventService from "../api/EventService";
+import { useToast } from "../context/ToastContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import styled from "styled-components";
 
@@ -286,6 +287,7 @@ const months = ["January", "February", "March", "April", "May", "June", "July", 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -327,7 +329,7 @@ const EventDetails = () => {
       }
     } catch (error) {
       console.error("Error toggling registration:", error);
-      alert("Failed to update registration. Please try again.");
+      toast.error("Failed to update registration. Please try again.");
     } finally {
       setRegistering(false);
     }
@@ -340,7 +342,7 @@ const EventDetails = () => {
       navigate("/events");
     } catch (error) {
       console.error("Error deleting event:", error);
-      alert("Failed to delete event.");
+      toast.error("Failed to delete event.");
     }
   };
 

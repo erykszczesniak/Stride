@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FiTarget, FiCalendar, FiTrendingUp, FiZap, FiFileText, FiGrid, FiFile, FiDownload } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import AiService from "../api/AiService";
+import { useToast } from "../context/ToastContext";
 import styled from "styled-components";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -479,6 +480,7 @@ const parseAiResponse = (data) => {
 };
 
 const TrainingPlans = () => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("goals");
   const [generating, setGenerating] = useState(false);
 
@@ -497,7 +499,7 @@ const TrainingPlans = () => {
 
   const handleGenerateGoal = async () => {
     if (!goalDescription.trim()) {
-      alert("Please describe what you want to achieve");
+      toast.warning("Please describe what you want to achieve");
       return;
     }
     setGenerating(true);
@@ -510,7 +512,7 @@ const TrainingPlans = () => {
     } catch (error) {
       console.error("Error generating goal:", error);
       console.error("Error details:", error.message);
-      alert("Failed to generate goal. Please try again.");
+      toast.error("Failed to generate goal. Please try again.");
     } finally {
       setGenerating(false);
     }
@@ -518,7 +520,7 @@ const TrainingPlans = () => {
 
   const handleGeneratePlan = async () => {
     if (!targetDistance) {
-      alert("Please enter a target distance");
+      toast.warning("Please enter a target distance");
       return;
     }
     setGenerating(true);
@@ -536,7 +538,7 @@ const TrainingPlans = () => {
     } catch (error) {
       console.error("Error generating plan:", error);
       console.error("Error details:", error.message);
-      alert("Failed to generate training plan. Please try again.");
+      toast.error("Failed to generate training plan. Please try again.");
     } finally {
       setGenerating(false);
     }
