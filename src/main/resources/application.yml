@@ -31,8 +31,6 @@ spring:
       path: /h2-console
 
   graphql:
-    graphiql:
-      enabled: true
     schema:
       locations: classpath:graphql/
       printer:

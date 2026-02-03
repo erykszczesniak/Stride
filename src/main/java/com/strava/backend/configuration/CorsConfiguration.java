@@ -34,11 +34,6 @@ public class CorsConfiguration implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .maxAge(3600);
 
-        registry.addMapping("/graphiql/**")
-                .allowedOrigins("*")
-                .allowedMethods("GET", "POST", "OPTIONS")
-                .allowedHeaders("*")
-                .maxAge(3600);
     }
 
     @Bean
@@ -63,7 +58,6 @@ public class CorsConfiguration implements WebMvcConfigurer {
         graphqlConfig.setAllowCredentials(true);
         graphqlConfig.setMaxAge(3600L);
         source.registerCorsConfiguration("/graphql/**", graphqlConfig);
-        source.registerCorsConfiguration("/graphiql/**", graphqlConfig);
 
         return source;
     }
