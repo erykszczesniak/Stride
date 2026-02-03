@@ -1,12 +1,12 @@
-import api from "./axios";
+import apiClient from "./ApiClient";
 
 const TrainingPlanService = {
   getTemplates() {
-    return api.get("/training-plans/templates");
+    return apiClient.get("/training-plans/templates");
   },
 
   getTemplateById(id) {
-    return api.get(`/training-plans/templates/${id}`);
+    return apiClient.get(`/training-plans/templates/${id}`);
   },
 };
 
