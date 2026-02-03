@@ -8,6 +8,13 @@ import WeeklyChart from "../components/WeeklyChart/WeeklyChart";
 import GoalProgress from "../components/GoalProgress/GoalProgress";
 import EventCard from "../components/EventCard/EventCard";
 import { EventsList, EventsHeader, EventsTitle, ViewAllLink as EventsViewAllLink } from "../components/EventCard/EventCardStyles";
+import {
+  SkeletonActivityCard,
+  SkeletonStatsCard,
+  SkeletonChart,
+  SkeletonGoalProgress,
+  SkeletonEventCard,
+} from "../components/Skeleton/Skeleton";
 import ActivityService from "../api/ActivityService";
 import GoalService from "../api/GoalService";
 import EventService from "../api/EventService";
@@ -130,16 +137,66 @@ const Dashboard = () => {
     return "min";
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <LoadingSpinner />
-      </Layout>
-    );
-  }
+  const renderSkeletonLoading = () => (
+    <>
+      <DashboardHeader>
+        <WelcomeSection>
+          <WelcomeText>
+            <h1>Welcome back, {user?.firstName || 'Athlete'}! <span>🏃</span></h1>
+            <p>Here's your training summary</p>
+          </WelcomeText>
+        </WelcomeSection>
+        <UserAvatar>{user?.firstName?.[0] || 'A'}</UserAvatar>
+      </DashboardHeader>
+
+      <StatsGrid>
+        <SkeletonStatsCard />
+        <SkeletonStatsCard />
+        <SkeletonStatsCard />
+        <SkeletonStatsCard />
+      </StatsGrid>
+
+      <DashboardContainer>
+        <MainColumn>
+          <Section>
+            <SectionHeader>
+              <SectionTitle>Recent Activities</SectionTitle>
+            </SectionHeader>
+            <ActivitiesList>
+              <SkeletonActivityCard />
+              <SkeletonActivityCard />
+              <SkeletonActivityCard />
+            </ActivitiesList>
+          </Section>
+        </MainColumn>
+
+        <SideColumn>
+          <SkeletonChart />
+          <Section>
+            <SectionHeader>
+              <SectionTitle>Weekly Goals</SectionTitle>
+            </SectionHeader>
+            <SkeletonGoalProgress />
+            <SkeletonGoalProgress />
+          </Section>
+          <Section>
+            <SectionHeader>
+              <SectionTitle>Upcoming</SectionTitle>
+            </SectionHeader>
+            <EventsList>
+              <SkeletonEventCard />
+              <SkeletonEventCard />
+            </EventsList>
+          </Section>
+        </SideColumn>
+      </DashboardContainer>
+    </>
+  );
 
   return (
     <Layout>
+      {loading ? renderSkeletonLoading() : (
+        <>
       <DashboardHeader>
         <WelcomeSection>
           <WelcomeText>
@@ -275,6 +332,8 @@ const Dashboard = () => {
           )}
         </SideColumn>
       </DashboardContainer>
+        </>
+      )}
     </Layout>
   );
 };

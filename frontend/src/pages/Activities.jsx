@@ -21,8 +21,8 @@ import {
   EmptyIcon,
   EmptyText,
   AddButton,
-  LoadingSpinner,
 } from "./DashboardStyles";
+import { SkeletonActivityCard, SkeletonStatsCard } from "../components/Skeleton/Skeleton";
 import styled from "styled-components";
 
 const PageHeader = styled.div`
@@ -521,7 +521,24 @@ const Activities = () => {
   if (loading && activities.length === 0) {
     return (
       <Layout>
-        <LoadingSpinner />
+        <PageHeader>
+          <PageTitle>Activities</PageTitle>
+          <AddButton to="/activities/new">
+            <FiPlus size={18} />
+            Add Activity
+          </AddButton>
+        </PageHeader>
+        <StatsGrid>
+          <SkeletonStatsCard />
+          <SkeletonStatsCard />
+          <SkeletonStatsCard />
+        </StatsGrid>
+        <ActivitiesList>
+          <SkeletonActivityCard />
+          <SkeletonActivityCard />
+          <SkeletonActivityCard />
+          <SkeletonActivityCard />
+        </ActivitiesList>
       </Layout>
     );
   }
