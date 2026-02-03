@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
@@ -225,6 +226,93 @@ class CommentControllerTest {
             mockMvc.perform(delete("/api/v1/activities/1/comments/1")
                             .param("userId", "2"))
                     .andExpect(status().isForbidden());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/activities/{activityId}/comments/{commentId}/reactions")
+    class AddReactionTests {
+
+        @Test
+        @DisplayName("Should add reaction successfully")
+        void shouldAddReactionSuccessfully() throws Exception {
+            given(commentService.addReaction(eq(1L), any(), eq("👍"))).willReturn(null);
+            given(commentService.getReactionCounts(1L)).willReturn(Map.of("👍", 1L));
+            given(commentService.getUserReactions(eq(1L), any())).willReturn(List.of("👍"));
+
+            mockMvc.perform(post("/api/v1/activities/1/comments/1/reactions")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"emoji\": \"👍\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Reaction added"));
+        }
+
+        @Test
+        @DisplayName("Should return bad request when emoji is blank")
+        void shouldReturnBadRequestWhenEmojiIsBlank() throws Exception {
+            mockMvc.perform(post("/api/v1/activities/1/comments/1/reactions")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"emoji\": \"\"}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/v1/activities/{activityId}/comments/{commentId}/reactions")
+    class RemoveReactionTests {
+
+        @Test
+        @DisplayName("Should remove reaction successfully")
+        void shouldRemoveReactionSuccessfully() throws Exception {
+            willDoNothing().given(commentService).removeReaction(eq(1L), any(), eq("👍"));
+            given(commentService.getReactionCounts(1L)).willReturn(Map.of());
+            given(commentService.getUserReactions(eq(1L), any())).willReturn(List.of());
+
+            mockMvc.perform(delete("/api/v1/activities/1/comments/1/reactions")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"emoji\": \"👍\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Reaction removed"));
+        }
+
+        @Test
+        @DisplayName("Should return 404 when reaction not found")
+        void shouldReturn404WhenReactionNotFound() throws Exception {
+            willThrow(new ApiRequestException("Reaction not found", HttpStatus.NOT_FOUND))
+                    .given(commentService).removeReaction(eq(1L), any(), eq("👍"));
+
+            mockMvc.perform(delete("/api/v1/activities/1/comments/1/reactions")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"emoji\": \"👍\"}"))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/activities/{activityId}/comments/{commentId}/reactions")
+    class GetReactionsTests {
+
+        @Test
+        @DisplayName("Should return reactions")
+        void shouldReturnReactions() throws Exception {
+            given(commentService.getReactionCounts(1L)).willReturn(Map.of("👍", 5L, "❤️", 3L));
+            given(commentService.getUserReactions(eq(1L), any())).willReturn(List.of("👍"));
+
+            mockMvc.perform(get("/api/v1/activities/1/comments/1/reactions"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.reactions.👍").value(5))
+                    .andExpect(jsonPath("$.reactions.❤️").value(3));
+        }
+
+        @Test
+        @DisplayName("Should return empty reactions when none exist")
+        void shouldReturnEmptyReactionsWhenNoneExist() throws Exception {
+            given(commentService.getReactionCounts(1L)).willReturn(Map.of());
+            given(commentService.getUserReactions(eq(1L), any())).willReturn(List.of());
+
+            mockMvc.perform(get("/api/v1/activities/1/comments/1/reactions"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.reactions").isEmpty());
         }
     }
 }

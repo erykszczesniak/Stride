@@ -217,6 +217,17 @@ public class TestDataFactory {
         return comment;
     }
 
+    public static CommentReaction createCommentReaction(Long id, User user, Comment comment, String emoji) {
+        CommentReaction reaction = CommentReaction.builder()
+                .id(id)
+                .emoji(emoji)
+                .user(user)
+                .comment(comment)
+                .build();
+        reaction.setCreatedAt(LocalDateTime.now());
+        return reaction;
+    }
+
     public static com.strava.backend.dto.event.EventRequest createEventRequest() {
         var request = new com.strava.backend.dto.event.EventRequest();
         request.setName("Marathon 2024");

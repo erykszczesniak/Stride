@@ -2,9 +2,11 @@ package com.strava.backend.service.impl;
 
 import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.Comment;
+import com.strava.backend.domain.CommentReaction;
 import com.strava.backend.domain.User;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.ActivityRepository;
+import com.strava.backend.repository.CommentReactionRepository;
 import com.strava.backend.repository.CommentRepository;
 import com.strava.backend.repository.UserRepository;
 import com.strava.backend.util.TestDataFactory;
@@ -19,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.strava.backend.constants.ErrorMessage.*;
@@ -35,6 +38,9 @@ class CommentServiceImplTest {
 
     @Mock
     private CommentRepository commentRepository;
+
+    @Mock
+    private CommentReactionRepository commentReactionRepository;
 
     @Mock
     private ActivityRepository activityRepository;
@@ -297,6 +303,180 @@ class CommentServiceImplTest {
                     .isEqualTo(HttpStatus.FORBIDDEN);
 
             then(commentRepository).should(never()).delete(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("addReaction Tests")
+    class AddReactionTests {
+
+        @Test
+        @DisplayName("Should add reaction successfully")
+        void shouldAddReactionSuccessfully() {
+            // Given
+            given(commentRepository.findById(1L)).willReturn(Optional.of(testComment));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(commentReactionRepository.findByCommentIdAndUserIdAndEmoji(1L, 1L, "👍"))
+                    .willReturn(Optional.empty());
+            given(commentReactionRepository.save(any(CommentReaction.class))).willAnswer(invocation -> {
+                CommentReaction saved = invocation.getArgument(0);
+                saved.setId(1L);
+                return saved;
+            });
+
+            // When
+            CommentReaction result = commentService.addReaction(1L, 1L, "👍");
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getEmoji()).isEqualTo("👍");
+            then(commentReactionRepository).should().save(any(CommentReaction.class));
+        }
+
+        @Test
+        @DisplayName("Should return existing reaction if already exists")
+        void shouldReturnExistingReactionIfAlreadyExists() {
+            // Given
+            CommentReaction existingReaction = TestDataFactory.createCommentReaction(1L, testUser, testComment, "👍");
+            given(commentRepository.findById(1L)).willReturn(Optional.of(testComment));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(commentReactionRepository.findByCommentIdAndUserIdAndEmoji(1L, 1L, "👍"))
+                    .willReturn(Optional.of(existingReaction));
+
+            // When
+            CommentReaction result = commentService.addReaction(1L, 1L, "👍");
+
+            // Then
+            assertThat(result).isEqualTo(existingReaction);
+            then(commentReactionRepository).should(never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when comment not found")
+        void shouldThrowExceptionWhenCommentNotFound() {
+            // Given
+            given(commentRepository.findById(999L)).willReturn(Optional.empty());
+
+            // When/Then
+            assertThatThrownBy(() -> commentService.addReaction(999L, 1L, "👍"))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessage(COMMENT_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user not found")
+        void shouldThrowExceptionWhenUserNotFound() {
+            // Given
+            given(commentRepository.findById(1L)).willReturn(Optional.of(testComment));
+            given(userRepository.findById(999L)).willReturn(Optional.empty());
+
+            // When/Then
+            assertThatThrownBy(() -> commentService.addReaction(1L, 999L, "👍"))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessage(USER_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("removeReaction Tests")
+    class RemoveReactionTests {
+
+        @Test
+        @DisplayName("Should remove reaction successfully")
+        void shouldRemoveReactionSuccessfully() {
+            // Given
+            CommentReaction reaction = TestDataFactory.createCommentReaction(1L, testUser, testComment, "👍");
+            given(commentReactionRepository.findByCommentIdAndUserIdAndEmoji(1L, 1L, "👍"))
+                    .willReturn(Optional.of(reaction));
+
+            // When
+            commentService.removeReaction(1L, 1L, "👍");
+
+            // Then
+            then(commentReactionRepository).should().delete(reaction);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when reaction not found")
+        void shouldThrowExceptionWhenReactionNotFound() {
+            // Given
+            given(commentReactionRepository.findByCommentIdAndUserIdAndEmoji(1L, 1L, "👍"))
+                    .willReturn(Optional.empty());
+
+            // When/Then
+            assertThatThrownBy(() -> commentService.removeReaction(1L, 1L, "👍"))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessage("Reaction not found");
+        }
+    }
+
+    @Nested
+    @DisplayName("getReactionCounts Tests")
+    class GetReactionCountsTests {
+
+        @Test
+        @DisplayName("Should return reaction counts")
+        void shouldReturnReactionCounts() {
+            // Given
+            List<Object[]> mockResults = List.of(
+                    new Object[]{"👍", 5L},
+                    new Object[]{"❤️", 3L}
+            );
+            given(commentReactionRepository.countReactionsByCommentId(1L)).willReturn(mockResults);
+
+            // When
+            Map<String, Long> result = commentService.getReactionCounts(1L);
+
+            // Then
+            assertThat(result).hasSize(2);
+            assertThat(result.get("👍")).isEqualTo(5L);
+            assertThat(result.get("❤️")).isEqualTo(3L);
+        }
+
+        @Test
+        @DisplayName("Should return empty map when no reactions")
+        void shouldReturnEmptyMapWhenNoReactions() {
+            // Given
+            given(commentReactionRepository.countReactionsByCommentId(1L)).willReturn(List.of());
+
+            // When
+            Map<String, Long> result = commentService.getReactionCounts(1L);
+
+            // Then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("getUserReactions Tests")
+    class GetUserReactionsTests {
+
+        @Test
+        @DisplayName("Should return user reactions")
+        void shouldReturnUserReactions() {
+            // Given
+            given(commentReactionRepository.findUserReactionsByCommentId(1L, 1L))
+                    .willReturn(List.of("👍", "🔥"));
+
+            // When
+            List<String> result = commentService.getUserReactions(1L, 1L);
+
+            // Then
+            assertThat(result).containsExactly("👍", "🔥");
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no user reactions")
+        void shouldReturnEmptyListWhenNoUserReactions() {
+            // Given
+            given(commentReactionRepository.findUserReactionsByCommentId(1L, 1L))
+                    .willReturn(List.of());
+
+            // When
+            List<String> result = commentService.getUserReactions(1L, 1L);
+
+            // Then
+            assertThat(result).isEmpty();
         }
     }
 }
