@@ -1,15 +1,16 @@
 import styled from "styled-components";
 
 export const Card = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
   transition: all 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px ${({ theme }) => theme.shadow};
   }
 `;
 
@@ -27,8 +28,8 @@ export const IconWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${(props) => props.bgColor || "#f0f0f0"};
-  color: ${(props) => props.iconColor || "#333"};
+  background-color: ${(props) => props.bgColor || props.theme.bgHover};
+  color: ${(props) => props.iconColor || props.theme.textPrimary};
 
   svg {
     width: 22px;
@@ -41,8 +42,8 @@ export const TrendBadge = styled.div`
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: #f0fdf4;
-  color: #22c55e;
+  background: ${({ theme }) => theme.primaryLight};
+  color: ${({ theme }) => theme.success};
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -50,9 +51,10 @@ export const TrendBadge = styled.div`
 
 export const Label = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 6px 0;
   font-weight: 500;
+  transition: color 0.3s ease;
 `;
 
 export const Value = styled.div`
@@ -64,14 +66,16 @@ export const Value = styled.div`
 export const ValueNumber = styled.span`
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   line-height: 1;
+  transition: color 0.3s ease;
 `;
 
 export const ValueUnit = styled.span`
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   font-weight: 500;
+  transition: color 0.3s ease;
 `;
 
 export const Content = styled.div`
@@ -81,7 +85,7 @@ export const Content = styled.div`
 export const Trend = styled.span`
   font-size: 12px;
   font-weight: 500;
-  color: ${(props) => (props.positive ? "#22c55e" : "#ef4444")};
+  color: ${(props) => (props.positive ? props.theme.success : props.theme.error)};
   display: flex;
   align-items: center;
   gap: 4px;

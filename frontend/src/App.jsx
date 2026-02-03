@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import Login from "./pages/Login";
@@ -21,9 +22,10 @@ import TrainingPlans from "./pages/TrainingPlans";
 
 const App = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
+    <ThemeProvider>
+      <Router>
+        <AuthProvider>
+          <Routes>
           {/* Public routes */}
           <Route
             path="/login"
@@ -163,9 +165,10 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-        </Routes>
-      </AuthProvider>
-    </Router>
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 };
 

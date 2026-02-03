@@ -99,24 +99,25 @@ export const DropdownMenu = styled.div`
   position: absolute;
   top: 100%;
   right: 0;
-  background: white;
+  background: ${({ theme }) => theme.dropdownBg};
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px ${({ theme }) => theme.shadowMedium};
   min-width: 200px;
   padding: 8px 0;
   margin-top: 8px;
+  border: 1px solid ${({ theme }) => theme.border};
 `;
 
 export const DropdownItem = styled(Link)`
   display: block;
   padding: 12px 16px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   text-decoration: none;
   font-size: 14px;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #f5f5f5;
+    background-color: ${({ theme }) => theme.dropdownHover};
   }
 `;
 
@@ -128,7 +129,7 @@ export const DropdownButton = styled.button`
   display: block;
   width: 100%;
   padding: 12px 16px;
-  color: #dc2626;
+  color: ${({ theme }) => theme.error};
   text-decoration: none;
   font-size: 14px;
   background: none;
@@ -138,6 +139,6 @@ export const DropdownButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #fef2f2;
+    background-color: ${({ theme }) => theme.dropdownHover};
   }
 `;

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiBell, FiSearch, FiSettings } from "react-icons/fi";
+import { FiPlus, FiBell, FiSearch, FiSun, FiMoon } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import {
   Nav,
   Logo,
@@ -21,6 +22,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
 
   const isActive = (path) => location.pathname === path;
@@ -72,6 +74,9 @@ const Navbar = () => {
         </IconButton>
         <IconButton title="Notifications">
           <FiBell size={20} />
+        </IconButton>
+        <IconButton title={isDarkMode ? "Light Mode" : "Dark Mode"} onClick={toggleTheme}>
+          {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
         </IconButton>
         <AvatarWrapper>
           <Avatar onClick={() => setShowDropdown(!showDropdown)}>

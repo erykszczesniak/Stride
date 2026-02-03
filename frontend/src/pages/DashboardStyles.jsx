@@ -32,17 +32,19 @@ export const WelcomeText = styled.div`
   h1 {
     font-size: 26px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: ${({ theme }) => theme.textPrimary};
     margin: 0 0 4px 0;
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: color 0.3s ease;
   }
 
   p {
     font-size: 14px;
-    color: #64748b;
+    color: ${({ theme }) => theme.textSecondary};
     margin: 0;
+    transition: color 0.3s ease;
   }
 `;
 
@@ -103,10 +105,12 @@ export const SideColumn = styled.div`
 `;
 
 export const Section = styled.section`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 `;
 
 export const SectionHeader = styled.div`
@@ -119,8 +123,9 @@ export const SectionHeader = styled.div`
 export const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 export const ViewAllLink = styled(Link)`
@@ -128,7 +133,7 @@ export const ViewAllLink = styled(Link)`
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #fc4c02;
+  color: ${({ theme }) => theme.primary};
   text-decoration: none;
   font-weight: 500;
   transition: gap 0.2s;
@@ -152,8 +157,9 @@ export const ActivitiesList = styled.div`
 export const EmptyState = styled.div`
   text-align: center;
   padding: 48px 24px;
-  background: #f8fafc;
+  background: ${({ theme }) => theme.bgHover};
   border-radius: 12px;
+  transition: background-color 0.3s ease;
 `;
 
 export const EmptyIcon = styled.div`
@@ -163,8 +169,9 @@ export const EmptyIcon = styled.div`
 
 export const EmptyText = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   margin-bottom: 20px;
+  transition: color 0.3s ease;
 `;
 
 export const AddButton = styled(Link)`
@@ -196,8 +203,8 @@ export const LoadingSpinner = styled.div`
     content: "";
     width: 40px;
     height: 40px;
-    border: 3px solid #f0f0f0;
-    border-top-color: #fc4c02;
+    border: 3px solid ${({ theme }) => theme.border};
+    border-top-color: ${({ theme }) => theme.primary};
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }

@@ -2,8 +2,9 @@ import styled from "styled-components";
 
 export const LayoutContainer = styled.div`
   min-height: 100vh;
-  background: #f8fafc;
+  background: ${({ theme }) => theme.bgPrimary};
   display: flex;
+  transition: background-color 0.3s ease;
 `;
 
 export const MainContent = styled.main`
@@ -29,8 +30,9 @@ export const ContentWrapper = styled.div`
 export const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 24px;
+  transition: color 0.3s ease;
 `;
 
 export const WelcomeSection = styled.div`
@@ -64,12 +66,14 @@ export const WelcomeText = styled.div`
   h1 {
     font-size: 24px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: ${({ theme }) => theme.textPrimary};
     margin-bottom: 4px;
+    transition: color 0.3s ease;
   }
 
   p {
     font-size: 14px;
-    color: #64748b;
+    color: ${({ theme }) => theme.textSecondary};
+    transition: color 0.3s ease;
   }
 `;
