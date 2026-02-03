@@ -27,8 +27,10 @@ import {
   CardFooter,
   ActionButton,
   ActionsGroup,
+  MapPreview,
 } from "./ActivityCardStyles";
 import ShareModal from "../ShareModal/ShareModal";
+import ActivityMap from "../ActivityMap/ActivityMap";
 
 const activityIcons = {
   RUN: <FaRunning />,
@@ -118,6 +120,16 @@ const ActivityCard = ({ activity, onLike }) => {
         <ActivityTitle>{activity.title}</ActivityTitle>
         {activity.description && (
           <ActivityDescription>{activity.description}</ActivityDescription>
+        )}
+
+        {activity.routePolyline && (
+          <MapPreview onClick={(e) => e.preventDefault()}>
+            <ActivityMap
+              coordinates={activity.routePolyline}
+              height="160px"
+              showMarkers={false}
+            />
+          </MapPreview>
         )}
 
         <StatsRow>
