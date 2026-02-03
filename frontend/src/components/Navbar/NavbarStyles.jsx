@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
+import { media } from "../../styles/theme";
 
 export const Nav = styled.nav`
   background-color: #fc4c02;
@@ -12,6 +13,10 @@ export const Nav = styled.nav`
   position: sticky;
   top: 0;
   z-index: 1000;
+
+  ${media.md} {
+    padding: 0 16px;
+  }
 `;
 
 export const Logo = styled(Link)`
@@ -22,16 +27,35 @@ export const Logo = styled(Link)`
   font-weight: 700;
   color: white;
   text-decoration: none;
+
+  ${media.sm} {
+    font-size: 18px;
+    gap: 6px;
+  }
 `;
 
 export const LogoIcon = styled.span`
   font-size: 28px;
+
+  ${media.sm} {
+    font-size: 24px;
+  }
+`;
+
+export const LogoText = styled.span`
+  ${media.xs} {
+    display: none;
+  }
 `;
 
 export const NavLinks = styled.div`
   display: flex;
   align-items: center;
   gap: 32px;
+
+  ${media.lg} {
+    display: none;
+  }
 `;
 
 export const NavLink = styled(Link)`
@@ -56,6 +80,10 @@ export const NavRight = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
+
+  ${media.md} {
+    gap: 8px;
+  }
 `;
 
 export const IconButton = styled.button`
@@ -69,9 +97,35 @@ export const IconButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s;
+  min-width: 40px;
+  min-height: 40px;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  ${media.sm} {
+    padding: 6px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+`;
+
+export const HideOnMobile = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ${media.md} {
+    display: none;
+  }
+`;
+
+export const MobileMenuButton = styled(IconButton)`
+  display: none;
+
+  ${media.lg} {
+    display: flex;
   }
 `;
 
@@ -87,6 +141,7 @@ export const Avatar = styled.div`
   color: #fc4c02;
   cursor: pointer;
   overflow: hidden;
+  flex-shrink: 0;
 
   img {
     width: 100%;
@@ -141,4 +196,72 @@ export const DropdownButton = styled.button`
   &:hover {
     background-color: ${({ theme }) => theme.dropdownHover};
   }
+`;
+
+// Mobile Menu Overlay
+export const MobileMenuOverlay = styled.div`
+  display: none;
+
+  ${media.lg} {
+    display: ${({ $isOpen }) => ($isOpen ? "block" : "none")};
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+  }
+`;
+
+export const MobileMenu = styled.div`
+  display: none;
+
+  ${media.lg} {
+    display: ${({ $isOpen }) => ($isOpen ? "flex" : "none")};
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: ${({ theme }) => theme.bgSecondary};
+    flex-direction: column;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+`;
+
+export const MobileNavLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  color: ${({ theme }) => theme.textPrimary};
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.bgHover};
+  }
+
+  &.active {
+    background-color: ${({ theme }) => theme.primaryLight};
+    color: ${({ theme }) => theme.primary};
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+`;
+
+export const MobileDivider = styled.div`
+  height: 1px;
+  background: ${({ theme }) => theme.border};
+  margin: 8px 0;
 `;

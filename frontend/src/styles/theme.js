@@ -1,3 +1,23 @@
+// Responsive breakpoints
+export const breakpoints = {
+  xs: '480px',
+  sm: '640px',
+  md: '768px',
+  lg: '1024px',
+  xl: '1200px',
+  xxl: '1400px',
+};
+
+// Media query helpers
+export const media = {
+  xs: `@media (max-width: ${breakpoints.xs})`,
+  sm: `@media (max-width: ${breakpoints.sm})`,
+  md: `@media (max-width: ${breakpoints.md})`,
+  lg: `@media (max-width: ${breakpoints.lg})`,
+  xl: `@media (max-width: ${breakpoints.xl})`,
+  xxl: `@media (max-width: ${breakpoints.xxl})`,
+};
+
 export const lightTheme = {
   // Backgrounds
   bgPrimary: '#f5f5f5',
