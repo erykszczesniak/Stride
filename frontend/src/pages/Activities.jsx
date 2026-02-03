@@ -35,7 +35,8 @@ const PageHeader = styled.div`
 const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 const SearchContainer = styled.div`
@@ -46,21 +47,22 @@ const SearchContainer = styled.div`
 const SearchInput = styled.input`
   width: 100%;
   padding: 14px 16px 14px 48px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 12px;
   font-size: 15px;
-  background-color: #f8fafc;
+  background-color: ${({ theme }) => theme.bgSecondary};
+  color: ${({ theme }) => theme.textPrimary};
   transition: all 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #fc4c02;
-    background-color: white;
+    border-color: ${({ theme }) => theme.primary};
+    background-color: ${({ theme }) => theme.bgCard};
     box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.1);
   }
 
   &::placeholder {
-    color: #94a3b8;
+    color: ${({ theme }) => theme.textMuted};
   }
 `;
 
@@ -69,15 +71,16 @@ const SearchIcon = styled.div`
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: ${({ theme }) => theme.textMuted};
 `;
 
 const MainTabs = styled.div`
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid ${({ theme }) => theme.border};
   padding-bottom: 12px;
+  transition: border-color 0.3s ease;
 `;
 
 const MainTab = styled.button`
@@ -91,11 +94,11 @@ const MainTab = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  background-color: ${(props) => (props.active ? "#fc4c02" : "transparent")};
-  color: ${(props) => (props.active ? "white" : "#64748b")};
+  background-color: ${(props) => (props.active ? props.theme.primary : "transparent")};
+  color: ${(props) => (props.active ? "white" : props.theme.textSecondary)};
 
   &:hover {
-    background-color: ${(props) => (props.active ? "#e04402" : "#f1f5f9")};
+    background-color: ${(props) => (props.active ? "#e04402" : props.theme.bgHover)};
   }
 
   svg {
@@ -119,12 +122,12 @@ const FilterTab = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  background-color: ${(props) => (props.active ? "#fff7ed" : "#f1f5f9")};
-  color: ${(props) => (props.active ? "#fc4c02" : "#64748b")};
-  border: 1px solid ${(props) => (props.active ? "#fc4c02" : "transparent")};
+  background-color: ${(props) => (props.active ? props.theme.primaryLight : props.theme.bgHover)};
+  color: ${(props) => (props.active ? props.theme.primary : props.theme.textSecondary)};
+  border: 1px solid ${(props) => (props.active ? props.theme.primary : "transparent")};
 
   &:hover {
-    background-color: ${(props) => (props.active ? "#fff7ed" : "#e2e8f0")};
+    background-color: ${(props) => (props.active ? props.theme.primaryLight : props.theme.bgSecondary)};
   }
 `;
 
@@ -147,20 +150,21 @@ const SidebarColumn = styled.div`
 `;
 
 const SidebarCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 20px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
   margin-bottom: 20px;
+  transition: all 0.3s ease;
 `;
 
 const SidebarTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 16px;
+  transition: color 0.3s ease;
 `;
 
 const AthletesList = styled.div`
@@ -204,18 +208,20 @@ const AthleteInfo = styled.div`
 const AthleteName = styled(Link)`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   text-decoration: none;
   display: block;
+  transition: color 0.3s ease;
 
   &:hover {
-    color: #fc4c02;
+    color: ${({ theme }) => theme.primary};
   }
 `;
 
 const AthleteStats = styled.span`
   font-size: 12px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.textMuted};
+  transition: color 0.3s ease;
 `;
 
 const FollowButton = styled.button`
@@ -325,15 +331,15 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const StatIconWrapper = styled.div`
@@ -354,13 +360,15 @@ const StatContent = styled.div`
 const StatValue = styled.div`
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 const StatLabel = styled.div`
   font-size: 13px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.textMuted};
   margin-top: 2px;
+  transition: color 0.3s ease;
 `;
 
 const Activities = () => {

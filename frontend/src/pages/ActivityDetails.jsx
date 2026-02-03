@@ -13,22 +13,25 @@ const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   text-decoration: none;
   font-size: 14px;
   margin-bottom: 24px;
+  transition: color 0.3s ease;
 
   &:hover {
-    color: #fc4c02;
+    color: ${({ theme }) => theme.primary};
   }
 `;
 
 const ActivityHeader = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const UserSection = styled.div`
@@ -54,26 +57,30 @@ const UserInfo = styled.div``;
 
 const UserName = styled.p`
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 const ActivityTime = styled.p`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
+  transition: color 0.3s ease;
 `;
 
 const Title = styled.h1`
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 8px;
+  transition: color 0.3s ease;
 `;
 
 const Description = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   line-height: 1.6;
   margin-bottom: 16px;
+  transition: color 0.3s ease;
 `;
 
 const StatsGrid = styled.div`
@@ -81,9 +88,10 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 16px;
   padding: 16px 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
+  border-top: 1px solid ${({ theme }) => theme.border};
+  border-bottom: 1px solid ${({ theme }) => theme.border};
   margin-bottom: 16px;
+  transition: border-color 0.3s ease;
 `;
 
 const StatItem = styled.div`
@@ -93,13 +101,15 @@ const StatItem = styled.div`
 const StatValue = styled.p`
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 const StatLabel = styled.p`
   font-size: 12px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   text-transform: uppercase;
+  transition: color 0.3s ease;
 `;
 
 const ActionsBar = styled.div`
@@ -114,32 +124,35 @@ const ActionButton = styled.button`
   padding: 8px 16px;
   border: none;
   background: transparent;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   font-size: 14px;
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
 
   &:hover {
-    background-color: #f5f5f5;
+    background-color: ${({ theme }) => theme.bgHover};
   }
 `;
 
 const CommentsSection = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const CommentsSectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: color 0.3s ease;
 `;
 
 const CommentForm = styled.form`
@@ -147,25 +160,28 @@ const CommentForm = styled.form`
   gap: 12px;
   margin-bottom: 24px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+  transition: border-color 0.3s ease;
 `;
 
 const CommentInput = styled.input`
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 24px;
   font-size: 14px;
+  background: ${({ theme }) => theme.bgSecondary};
+  color: ${({ theme }) => theme.textPrimary};
   transition: all 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #fc4c02;
+    border-color: ${({ theme }) => theme.primary};
     box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.1);
   }
 
   &::placeholder {
-    color: #999;
+    color: ${({ theme }) => theme.textMuted};
   }
 `;
 
@@ -226,9 +242,10 @@ const CommentAvatar = styled.div`
 
 const CommentContent = styled.div`
   flex: 1;
-  background: #f7f7f7;
+  background: ${({ theme }) => theme.bgHover};
   border-radius: 12px;
   padding: 12px 16px;
+  transition: background-color 0.3s ease;
 `;
 
 const CommentHeader = styled.div`
@@ -240,20 +257,23 @@ const CommentHeader = styled.div`
 
 const CommentAuthor = styled.span`
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   font-size: 14px;
+  transition: color 0.3s ease;
 `;
 
 const CommentTime = styled.span`
   font-size: 12px;
-  color: #999;
+  color: ${({ theme }) => theme.textMuted};
+  transition: color 0.3s ease;
 `;
 
 const CommentText = styled.p`
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   line-height: 1.5;
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 const CommentActions = styled.div`
@@ -276,15 +296,15 @@ const ReactionBadge = styled.button`
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border: 1px solid ${props => props.active ? '#fc4c02' : '#e5e5e5'};
-  background: ${props => props.active ? 'rgba(252, 76, 2, 0.1)' : 'white'};
+  border: 1px solid ${props => props.active ? props.theme.primary : props.theme.border};
+  background: ${props => props.active ? 'rgba(252, 76, 2, 0.1)' : props.theme.bgCard};
   border-radius: 16px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #fc4c02;
+    border-color: ${({ theme }) => theme.primary};
     background: rgba(252, 76, 2, 0.05);
   }
 
@@ -293,7 +313,7 @@ const ReactionBadge = styled.button`
   }
 
   span.count {
-    color: #666;
+    color: ${({ theme }) => theme.textSecondary};
     font-weight: 500;
   }
 `;
@@ -304,16 +324,17 @@ const AddReactionButton = styled.button`
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px dashed #ccc;
+  border: 1px dashed ${({ theme }) => theme.border};
   background: transparent;
   border-radius: 50%;
   cursor: pointer;
   font-size: 14px;
+  color: ${({ theme }) => theme.textSecondary};
   transition: all 0.2s;
   position: relative;
 
   &:hover {
-    border-color: #fc4c02;
+    border-color: ${({ theme }) => theme.primary};
     background: rgba(252, 76, 2, 0.05);
   }
 `;
@@ -322,13 +343,13 @@ const EmojiPicker = styled.div`
   position: absolute;
   bottom: 100%;
   left: 0;
-  background: white;
-  border: 1px solid #e5e5e5;
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   padding: 8px;
   display: flex;
   gap: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px ${({ theme }) => theme.shadow};
   z-index: 10;
 `;
 
@@ -342,7 +363,7 @@ const EmojiOption = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    background: #f5f5f5;
+    background: ${({ theme }) => theme.bgHover};
     transform: scale(1.2);
   }
 `;
@@ -354,25 +375,27 @@ const CommentActionButton = styled.button`
   padding: 4px 8px;
   border: none;
   background: transparent;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   font-size: 12px;
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.2s;
 
   &:hover {
-    background: #e5e5e5;
-    color: ${props => props.danger ? '#dc2626' : '#fc4c02'};
+    background: ${({ theme }) => theme.bgHover};
+    color: ${props => props.danger ? '#dc2626' : props.theme.primary};
   }
 `;
 
 const EditCommentInput = styled.input`
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #fc4c02;
+  border: 1px solid ${({ theme }) => theme.primary};
   border-radius: 8px;
   font-size: 14px;
   margin-bottom: 8px;
+  background: ${({ theme }) => theme.bgSecondary};
+  color: ${({ theme }) => theme.textPrimary};
 
   &:focus {
     outline: none;
@@ -417,9 +440,10 @@ const EditButton = styled.button`
 
 const NoComments = styled.p`
   text-align: center;
-  color: #999;
+  color: ${({ theme }) => theme.textMuted};
   font-size: 14px;
   padding: 20px 0;
+  transition: color 0.3s ease;
 `;
 
 const activityIcons = {

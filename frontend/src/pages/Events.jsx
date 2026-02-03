@@ -16,7 +16,8 @@ const PageHeader = styled.div`
 const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 const EventsList = styled.div`

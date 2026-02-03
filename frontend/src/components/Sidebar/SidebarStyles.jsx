@@ -198,3 +198,35 @@ export const LogoutButton = styled.button`
     padding: 12px;
   }
 `;
+
+export const ThemeToggle = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    background: ${({ theme }) => theme.sidebarHover};
+    color: ${({ theme }) => theme.primary};
+
+    svg {
+      color: ${({ theme }) => theme.primary};
+    }
+  }
+
+  @media (max-width: 1024px) {
+    justify-content: center;
+    padding: 12px;
+  }
+`;
