@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.strava.backend.constants.PathConstants.*;
+
 @RestController
-@RequestMapping("/api/v1/training-plans/templates")
+@RequestMapping(API_V1_TRAINING_PLANS + TEMPLATES)
 @RequiredArgsConstructor
 public class TrainingPlanTemplateController {
 
@@ -20,7 +22,7 @@ public class TrainingPlanTemplateController {
         return ResponseEntity.ok(templateService.getAllTemplates());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(TEMPLATE_ID)
     public ResponseEntity<TrainingPlanTemplateResponse> getTemplateById(@PathVariable String id) {
         TrainingPlanTemplateResponse template = templateService.getTemplateById(id);
         if (template == null) {
