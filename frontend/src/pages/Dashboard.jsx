@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { FiActivity, FiClock, FiZap, FiTarget, FiPlus } from "react-icons/fi";
+import React, { useEffect, useState, useRef } from "react";
+import { FiActivity, FiClock, FiZap, FiTarget, FiPlus, FiUser, FiSettings, FiLogOut } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
 import StatsCard from "../components/StatsCard/StatsCard";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
@@ -29,17 +30,45 @@ import {
   WelcomeSection,
   WelcomeText,
   UserAvatar,
+  UserMenuWrapper,
+  UserDropdown,
+  UserDropdownHeader,
+  UserDropdownName,
+  UserDropdownEmail,
+  UserDropdownItem,
+  UserDropdownButton,
+  UserDropdownDivider,
   ViewAllLink,
 } from "./DashboardStyles";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [monthlyStats, setMonthlyStats] = useState(null);
   const [weeklyStats, setWeeklyStats] = useState(null);
   const [activities, setActivities] = useState([]);
   const [goals, setGoals] = useState([]);
   const [events, setEvents] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -118,7 +147,30 @@ const Dashboard = () => {
             <p>Here's your training summary</p>
           </WelcomeText>
         </WelcomeSection>
-        <UserAvatar>{user?.firstName?.[0] || 'A'}</UserAvatar>
+        <UserMenuWrapper ref={dropdownRef}>
+          <UserAvatar onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+            {user?.firstName?.[0] || 'A'}
+          </UserAvatar>
+          <UserDropdown $isOpen={isDropdownOpen}>
+            <UserDropdownHeader>
+              <UserDropdownName>{user?.firstName} {user?.lastName}</UserDropdownName>
+              <UserDropdownEmail>{user?.email}</UserDropdownEmail>
+            </UserDropdownHeader>
+            <UserDropdownItem to="/profile" onClick={() => setIsDropdownOpen(false)}>
+              <FiUser />
+              My Profile
+            </UserDropdownItem>
+            <UserDropdownItem to="/settings" onClick={() => setIsDropdownOpen(false)}>
+              <FiSettings />
+              Settings
+            </UserDropdownItem>
+            <UserDropdownDivider />
+            <UserDropdownButton onClick={handleLogout}>
+              <FiLogOut />
+              Sign Out
+            </UserDropdownButton>
+          </UserDropdown>
+        </UserMenuWrapper>
       </DashboardHeader>
 
       <StatsGrid>
