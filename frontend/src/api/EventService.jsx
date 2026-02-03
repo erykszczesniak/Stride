@@ -10,7 +10,7 @@ class EventService {
   }
 
   getUpcomingEvents(page = 0, size = 5) {
-    return apiClient.get(`/events/upcoming?page=${page}&size=${size}`);
+    return apiClient.get(`/events?page=${page}&size=${size}`);
   }
 
   getMyEvents() {
