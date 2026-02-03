@@ -43,7 +43,7 @@ public class GoalController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/all")
+    @GetMapping(ALL)
     public ResponseEntity<List<GoalResponse>> getAllGoals() {
         Long currentUserId = getAuthenticatedUserId();
         List<Goal> goals = goalService.getAllGoalsByUserId(currentUserId);

@@ -66,7 +66,7 @@ public class ChallengeController {
         return ResponseEntity.ok(mapToResponse(challenge, currentUserId));
     }
 
-    @GetMapping("/my")
+    @GetMapping(MY)
     public ResponseEntity<List<ChallengeResponse>> getMyChallenges() {
         Long currentUserId = getAuthenticatedUserId();
         List<Challenge> challenges = challengeService.getUserActiveChallenges(currentUserId);

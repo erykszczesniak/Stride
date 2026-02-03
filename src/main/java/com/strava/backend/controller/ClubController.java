@@ -58,7 +58,7 @@ public class ClubController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/stats")
+    @GetMapping(STATS)
     public ResponseEntity<Map<String, Object>> getClubStats() {
         Long currentUserId = getAuthenticatedUserId();
         long totalClubs = clubService.countPublicClubs();
@@ -78,7 +78,7 @@ public class ClubController {
         return ResponseEntity.ok(mapToResponse(club, currentUserId));
     }
 
-    @GetMapping("/my")
+    @GetMapping(MY)
     public ResponseEntity<List<ClubResponse>> getMyClubs() {
         Long currentUserId = getAuthenticatedUserId();
         List<Club> clubs = clubService.getClubsByUserId(currentUserId);

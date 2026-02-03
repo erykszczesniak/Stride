@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static com.strava.backend.constants.PathConstants.API_V1_EXPORT;
+import static com.strava.backend.constants.PathConstants.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,7 +37,7 @@ public class ExportController {
         return null;
     }
 
-    @GetMapping("/activities/json")
+    @GetMapping(ACTIVITIES + JSON)
     public ResponseEntity<byte[]> exportActivitiesAsJson() throws Exception {
         Long currentUserId = getAuthenticatedUserId();
         List<Activity> activities = activityRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
@@ -55,7 +55,7 @@ public class ExportController {
                 .body(jsonBytes);
     }
 
-    @GetMapping("/activities/csv")
+    @GetMapping(ACTIVITIES + CSV)
     public ResponseEntity<byte[]> exportActivitiesAsCsv() {
         Long currentUserId = getAuthenticatedUserId();
         List<Activity> activities = activityRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
@@ -84,7 +84,7 @@ public class ExportController {
                 .body(csv.toString().getBytes());
     }
 
-    @GetMapping("/activities/txt")
+    @GetMapping(ACTIVITIES + TXT)
     public ResponseEntity<byte[]> exportActivitiesAsTxt() {
         Long currentUserId = getAuthenticatedUserId();
         List<Activity> activities = activityRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
@@ -132,7 +132,7 @@ public class ExportController {
                 .body(txt.toString().getBytes());
     }
 
-    @GetMapping("/activities/gpx/{activityId}")
+    @GetMapping(ACTIVITIES + GPX + ACTIVITY_ID)
     public ResponseEntity<byte[]> exportActivityAsGpx(@PathVariable Long activityId) {
         Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new RuntimeException("Activity not found"));

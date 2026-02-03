@@ -109,7 +109,7 @@ public class ActivityController {
         return ResponseEntity.ok(activityMapper.getWeeklyStats(currentUserId));
     }
 
-    @GetMapping("/user/{targetUserId}")
+    @GetMapping(USER + TARGET_USER_ID)
     public ResponseEntity<List<ActivityResponse>> getUserActivities(
             @PathVariable Long targetUserId,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -120,7 +120,7 @@ public class ActivityController {
                 .body(response.getItems());
     }
 
-    @GetMapping("/my")
+    @GetMapping(MY)
     public ResponseEntity<List<ActivityResponse>> getMyActivities(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) ActivityType activityType,
@@ -162,7 +162,7 @@ public class ActivityController {
                 .body(response.getItems());
     }
 
-    @GetMapping("/my/stats")
+    @GetMapping(MY + STATS)
     public ResponseEntity<Map<String, Object>> getMyTotalStats() {
         Long currentUserId = getAuthenticatedUserId();
         int totalActivities = activityRepository.countByUserId(currentUserId);
@@ -176,7 +176,7 @@ public class ActivityController {
         ));
     }
 
-    @GetMapping("/by-type")
+    @GetMapping(BY_TYPE)
     public ResponseEntity<List<ActivityResponse>> getActivitiesByType(
             @RequestParam ActivityType activityType,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -186,7 +186,7 @@ public class ActivityController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/public")
+    @GetMapping(PUBLIC)
     public ResponseEntity<List<ActivityResponse>> getPublicActivities(
             @PageableDefault(size = 10) Pageable pageable) {
         Long currentUserId = getAuthenticatedUserId();

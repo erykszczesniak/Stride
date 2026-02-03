@@ -41,6 +41,14 @@ public final class PathConstants {
     public static final String COMMENTS = "/comments";
     public static final String COMMENT_ID = "/{commentId}";
     public static final String REACTIONS = "/reactions";
+    public static final String USER = "/user";
+    public static final String TARGET_USER_ID = "/{targetUserId}";
+    public static final String BY_TYPE = "/by-type";
+    public static final String PUBLIC = "/public";
+
+    // Common
+    public static final String MY = "/my";
+    public static final String ALL = "/all";
 
     // Clubs
     public static final String CLUBS = "/clubs";
@@ -100,6 +108,10 @@ public final class PathConstants {
     // Export
     public static final String EXPORT = "/export";
     public static final String API_V1_EXPORT = API_V1 + EXPORT;
+    public static final String JSON = "/json";
+    public static final String CSV = "/csv";
+    public static final String TXT = "/txt";
+    public static final String GPX = "/gpx";
 
     private PathConstants() {
     }

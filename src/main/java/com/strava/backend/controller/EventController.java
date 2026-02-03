@@ -66,7 +66,7 @@ public class EventController {
         return ResponseEntity.ok(mapToResponse(event, currentUserId));
     }
 
-    @GetMapping("/my")
+    @GetMapping(MY)
     public ResponseEntity<List<EventResponse>> getMyUpcomingEvents() {
         Long currentUserId = getAuthenticatedUserId();
         List<Event> events = eventService.getUpcomingEventsByUserId(currentUserId);
