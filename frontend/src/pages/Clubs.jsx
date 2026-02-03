@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { FiSearch, FiMapPin, FiUsers, FiActivity, FiLock, FiCheck, FiPlus } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ClubService from "../api/ClubService";
+import { SkeletonClubCard, SkeletonStatsCard } from "../components/Skeleton/Skeleton";
 import styled from "styled-components";
 
 const PageHeader = styled.div`
@@ -430,7 +431,14 @@ const Clubs = () => {
 
       <ClubsGrid>
         {loading ? (
-          <LoadingSpinner>Loading clubs...</LoadingSpinner>
+          <>
+            <SkeletonClubCard />
+            <SkeletonClubCard />
+            <SkeletonClubCard />
+            <SkeletonClubCard />
+            <SkeletonClubCard />
+            <SkeletonClubCard />
+          </>
         ) : clubs.length === 0 ? (
           <EmptyState>
             <EmptyIcon>🔍</EmptyIcon>
