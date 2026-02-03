@@ -21,14 +21,16 @@ const PageIcon = styled.div`
 const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 const PageSubtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 24px 0;
+  transition: color 0.3s ease;
 `;
 
 const SearchFilterRow = styled.div`
@@ -47,39 +49,43 @@ const SearchIcon = styled.div`
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #999;
+  color: ${({ theme }) => theme.textMuted};
 `;
 
 const SearchInput = styled.input`
   width: 100%;
   padding: 12px 16px 12px 44px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
+  color: ${({ theme }) => theme.textPrimary};
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: #fc4c02;
+    border-color: ${({ theme }) => theme.primary};
   }
 
   &::placeholder {
-    color: #999;
+    color: ${({ theme }) => theme.textMuted};
   }
 `;
 
 const CategorySelect = styled.select`
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
+  color: ${({ theme }) => theme.textPrimary};
   min-width: 160px;
   cursor: pointer;
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: #fc4c02;
+    border-color: ${({ theme }) => theme.primary};
   }
 `;
 
@@ -91,22 +97,26 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const StatValue = styled.div`
   font-size: 28px;
   font-weight: 700;
-  color: ${(props) => props.color || "#333"};
+  color: ${(props) => props.color || props.theme.textPrimary};
   margin-bottom: 4px;
+  transition: color 0.3s ease;
 `;
 
 const StatLabel = styled.div`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
+  transition: color 0.3s ease;
 `;
 
 const ClubsGrid = styled.div`
@@ -124,10 +134,12 @@ const ClubsGrid = styled.div`
 `;
 
 const ClubCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const ClubCover = styled.div`
@@ -171,8 +183,9 @@ const ClubHeader = styled.div`
 const ClubName = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 const CategoryBadge = styled.span`
@@ -187,13 +200,14 @@ const CategoryBadge = styled.span`
 
 const ClubDescription = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 12px 0;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.3s ease;
 `;
 
 const ClubLocation = styled.div`
@@ -201,8 +215,9 @@ const ClubLocation = styled.div`
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #888;
+  color: ${({ theme }) => theme.textMuted};
   margin-bottom: 12px;
+  transition: color 0.3s ease;
 `;
 
 const ClubStats = styled.div`
@@ -217,7 +232,8 @@ const ClubStat = styled.div`
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
+  transition: color 0.3s ease;
 `;
 
 const JoinButton = styled.button`
@@ -237,9 +253,9 @@ const JoinButton = styled.button`
   ${(props) =>
     props.isMember
       ? `
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    color: #333;
+    background-color: ${props.theme.bgCard};
+    border: 1px solid ${props.theme.border};
+    color: ${props.theme.textPrimary};
   `
       : `
     background-color: #fc4c02;
@@ -257,11 +273,13 @@ const JoinButton = styled.button`
 
 const EmptyState = styled.div`
   grid-column: 1 / -1;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 60px 40px;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const EmptyIcon = styled.div`
@@ -271,8 +289,9 @@ const EmptyIcon = styled.div`
 
 const EmptyText = styled.p`
   font-size: 16px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 const LoadingSpinner = styled.div`
@@ -280,7 +299,7 @@ const LoadingSpinner = styled.div`
   display: flex;
   justify-content: center;
   padding: 60px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 const getCategoryInfo = (sportType) => {

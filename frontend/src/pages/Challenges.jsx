@@ -16,14 +16,16 @@ const HeaderLeft = styled.div``;
 const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 const PageSubtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 4px 0 0 0;
+  transition: color 0.3s ease;
 `;
 
 const ActiveBadge = styled.div`
@@ -42,10 +44,11 @@ const TabsContainer = styled.div`
   display: flex;
   gap: 4px;
   margin-bottom: 24px;
-  background-color: #f5f5f5;
+  background-color: ${({ theme }) => theme.bgHover};
   padding: 4px;
   border-radius: 10px;
   width: fit-content;
+  transition: background-color 0.3s ease;
 `;
 
 const Tab = styled.button`
@@ -56,13 +59,13 @@ const Tab = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  background-color: ${(props) => (props.active ? "white" : "transparent")};
-  color: ${(props) => (props.active ? "#333" : "#666")};
-  box-shadow: ${(props) => (props.active ? "0 1px 3px rgba(0,0,0,0.1)" : "none")};
+  background-color: ${(props) => (props.active ? props.theme.bgCard : "transparent")};
+  color: ${(props) => (props.active ? props.theme.textPrimary : props.theme.textSecondary)};
+  box-shadow: ${(props) => (props.active ? `0 1px 3px ${props.theme.shadow}` : "none")};
   position: relative;
 
   &:hover {
-    color: #333;
+    color: ${({ theme }) => theme.textPrimary};
   }
 `;
 
@@ -77,14 +80,16 @@ const TabBadge = styled.span`
 `;
 
 const ChallengeCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
   display: flex;
   align-items: flex-start;
   gap: 16px;
+  transition: all 0.3s ease;
 `;
 
 const ChallengeIcon = styled.div`
@@ -108,14 +113,16 @@ const ChallengeContent = styled.div`
 const ChallengeTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 4px 0;
+  transition: color 0.3s ease;
 `;
 
 const ChallengeDescription = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 12px 0;
+  transition: color 0.3s ease;
 `;
 
 const ChallengeMeta = styled.div`
@@ -130,18 +137,20 @@ const MetaItem = styled.div`
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
+  transition: color 0.3s ease;
 `;
 
 const Badge = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background-color: #f5f5f5;
+  background-color: ${({ theme }) => theme.bgHover};
   padding: 4px 10px;
   border-radius: 16px;
   font-size: 12px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: all 0.3s ease;
 `;
 
 const ProgressContainer = styled.div`
@@ -157,20 +166,23 @@ const ProgressLabel = styled.div`
 
 const ProgressText = styled.span`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
+  transition: color 0.3s ease;
 `;
 
 const ProgressValue = styled.span`
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 const ProgressBar = styled.div`
   height: 8px;
-  background-color: #f0f0f0;
+  background-color: ${({ theme }) => theme.bgHover};
   border-radius: 4px;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 `;
 
 const ProgressFill = styled.div`
@@ -204,10 +216,12 @@ const JoinButton = styled.button`
 `;
 
 const LeaderboardContainer = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const LeaderboardHeader = styled.div`
@@ -234,8 +248,9 @@ const LeaderboardItem = styled.div`
   display: flex;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #f0f0f0;
-  background-color: ${(props) => (props.isCurrentUser ? "#fff8f5" : "white")};
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+  background-color: ${(props) => (props.isCurrentUser ? props.theme.primaryLight : props.theme.bgCard)};
+  transition: all 0.3s ease;
 
   &:last-child {
     border-bottom: none;
@@ -246,10 +261,11 @@ const Rank = styled.div`
   width: 32px;
   font-size: 14px;
   font-weight: 500;
-  color: ${(props) => (props.isTop3 ? "#fc4c02" : "#666")};
+  color: ${(props) => (props.isTop3 ? props.theme.primary : props.theme.textSecondary)};
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.3s ease;
 `;
 
 const Avatar = styled.div`
@@ -270,21 +286,25 @@ const UserName = styled.span`
   flex: 1;
   font-size: 15px;
   font-weight: ${(props) => (props.isCurrentUser ? "600" : "400")};
-  color: ${(props) => (props.isCurrentUser ? "#fc4c02" : "#333")};
+  color: ${(props) => (props.isCurrentUser ? props.theme.primary : props.theme.textPrimary)};
+  transition: color 0.3s ease;
 `;
 
 const UserScore = styled.span`
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 const EmptyState = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 60px 40px;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
 `;
 
 const EmptyIcon = styled.div`
@@ -294,29 +314,32 @@ const EmptyIcon = styled.div`
 
 const EmptyText = styled.p`
   font-size: 16px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 const LoadingSpinner = styled.div`
   display: flex;
   justify-content: center;
   padding: 60px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 const ChallengeSelect = styled.select`
   padding: 10px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
   margin-bottom: 16px;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
+  color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: #fc4c02;
+    border-color: ${({ theme }) => theme.primary};
   }
 `;
 
