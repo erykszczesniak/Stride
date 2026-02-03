@@ -3,16 +3,17 @@ import { Link } from "react-router-dom";
 
 export const Card = styled(Link)`
   display: block;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
   text-decoration: none;
   transition: all 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px ${({ theme }) => theme.shadow};
   }
 `;
 
@@ -52,14 +53,16 @@ export const UserInfo = styled.div`
 export const UserName = styled.p`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 2px 0;
+  transition: color 0.3s ease;
 `;
 
 export const ActivityTime = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
+  transition: color 0.3s ease;
 `;
 
 export const ActivityType = styled.div`
@@ -69,8 +72,8 @@ export const ActivityType = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${(props) => props.bgColor || "#f0f0f0"};
-  color: ${(props) => props.color || "#666"};
+  background-color: ${(props) => props.bgColor || props.theme.bgHover};
+  color: ${(props) => props.color || props.theme.textSecondary};
   flex-shrink: 0;
 
   svg {
@@ -82,25 +85,28 @@ export const ActivityType = styled.div`
 export const ActivityTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 4px 0;
   line-height: 1.4;
+  transition: color 0.3s ease;
 `;
 
 export const ActivityDescription = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 16px 0;
   line-height: 1.5;
+  transition: color 0.3s ease;
 `;
 
 export const StatsRow = styled.div`
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: #f8fafc;
+  background: ${({ theme }) => theme.bgHover};
   border-radius: 12px;
   margin-bottom: 16px;
+  transition: background-color 0.3s ease;
 `;
 
 export const StatItem = styled.div`
@@ -117,8 +123,9 @@ export const StatIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
-  color: #64748b;
+  background: ${({ theme }) => theme.bgCard};
+  color: ${({ theme }) => theme.textSecondary};
+  transition: background-color 0.3s ease;
 
   svg {
     width: 14px;
@@ -133,14 +140,16 @@ export const StatContent = styled.div`
 
 export const StatLabel = styled.span`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.textMuted};
   font-weight: 500;
+  transition: color 0.3s ease;
 `;
 
 export const StatValue = styled.span`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
+  transition: color 0.3s ease;
 `;
 
 export const CardFooter = styled.div`
@@ -148,7 +157,8 @@ export const CardFooter = styled.div`
   align-items: center;
   justify-content: space-between;
   padding-top: 16px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid ${({ theme }) => theme.border};
+  transition: border-color 0.3s ease;
 `;
 
 export const ActionButton = styled.button`
@@ -157,7 +167,7 @@ export const ActionButton = styled.button`
   gap: 6px;
   background: transparent;
   border: none;
-  color: ${(props) => (props.active ? "#fc4c02" : "#64748b")};
+  color: ${(props) => (props.active ? props.theme.primary : props.theme.textSecondary)};
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -166,12 +176,12 @@ export const ActionButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: #f8fafc;
-    color: ${(props) => (props.active ? "#fc4c02" : "#1a1a2e")};
+    background-color: ${({ theme }) => theme.bgHover};
+    color: ${(props) => (props.active ? props.theme.primary : props.theme.textPrimary)};
   }
 
   svg {
-    fill: ${(props) => (props.active ? "#fc4c02" : "transparent")};
+    fill: ${(props) => (props.active ? props.theme.primary : "transparent")};
   }
 `;
 

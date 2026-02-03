@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 export const SidebarContainer = styled.aside`
   width: 260px;
   height: 100vh;
-  background: white;
-  border-right: 1px solid #f0f0f0;
+  background: ${({ theme }) => theme.sidebarBg};
+  border-right: 1px solid ${({ theme }) => theme.border};
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
@@ -13,6 +13,7 @@ export const SidebarContainer = styled.aside`
   left: 0;
   top: 0;
   z-index: 100;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   @media (max-width: 1024px) {
     width: 80px;
@@ -48,8 +49,9 @@ export const LogoIcon = styled.div`
 export const LogoText = styled.span`
   font-size: 20px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   letter-spacing: -0.5px;
+  transition: color 0.3s ease;
 
   @media (max-width: 1024px) {
     display: none;
@@ -101,23 +103,23 @@ export const NavItem = styled(Link)`
   padding: 12px 16px;
   border-radius: 10px;
   text-decoration: none;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
   position: relative;
 
   &:hover {
-    background: #f8fafc;
-    color: #1a1a2e;
+    background: ${({ theme }) => theme.sidebarHover};
+    color: ${({ theme }) => theme.textPrimary};
   }
 
   &.active {
-    color: #fc4c02;
-    background: #fff7ed;
+    color: ${({ theme }) => theme.primary};
+    background: ${({ theme }) => theme.sidebarActive};
 
     svg {
-      color: #fc4c02;
+      color: ${({ theme }) => theme.primary};
     }
   }
 
@@ -144,7 +146,7 @@ export const NavLabel = styled.span`
 export const ActiveDot = styled.span`
   width: 6px;
   height: 6px;
-  background: #fc4c02;
+  background: ${({ theme }) => theme.primary};
   border-radius: 50%;
   margin-left: auto;
 
@@ -161,7 +163,7 @@ export const BottomSection = styled.div`
   flex-direction: column;
   gap: 4px;
   padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid ${({ theme }) => theme.border};
   margin-top: auto;
 `;
 
@@ -172,7 +174,7 @@ export const LogoutButton = styled.button`
   padding: 12px 16px;
   border-radius: 10px;
   text-decoration: none;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -183,11 +185,11 @@ export const LogoutButton = styled.button`
   text-align: left;
 
   &:hover {
-    background: #fef2f2;
-    color: #dc2626;
+    background: ${({ theme }) => theme.dropdownHover};
+    color: ${({ theme }) => theme.error};
 
     svg {
-      color: #dc2626;
+      color: ${({ theme }) => theme.error};
     }
   }
 
