@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiTarget, FiCalendar, FiTrendingUp, FiZap, FiFileText, FiGrid, FiFile, FiDownload, FiClock, FiChevronRight, FiChevronDown, FiArrowLeft } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import AiService from "../api/AiService";
+import TrainingPlanService from "../api/TrainingPlanService";
 import { useToast } from "../context/ToastContext";
 import styled from "styled-components";
 import * as XLSX from "xlsx";
@@ -806,384 +807,14 @@ const DayDuration = styled.div`
   border: 1px solid #e5e7eb;
 `;
 
-// Ready-Made Plans Data
-const readyMadePlans = [
-  {
-    id: '5k-beginner',
-    title: '5K for Beginners',
-    description: 'Perfect plan for those starting their running journey',
-    level: 'Beginner',
-    levelColor: '#22c55e',
-    duration: '8 weeks',
-    frequency: '3x per week',
-    goal: '5 km',
-    gradient: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-    icon: '⚡',
-    weeks: [
-      {
-        week: 1,
-        name: 'Week 1',
-        description: 'Basics and building the habit',
-        workouts: [
-          { day: 'Monday', type: 'Run/Walk', description: '5 min warm-up, 10x (1 min run + 1 min walk), 5 min cool-down', duration: '20 min' },
-          { day: 'Wednesday', type: 'Run/Walk', description: '5 min warm-up, 10x (1 min run + 1 min walk), 5 min cool-down', duration: '20 min' },
-          { day: 'Friday', type: 'Run/Walk', description: '5 min warm-up, 10x (1 min run + 1 min walk), 5 min cool-down', duration: '20 min' }
-        ]
-      },
-      {
-        week: 2,
-        name: 'Week 2',
-        description: 'Building endurance',
-        workouts: [
-          { day: 'Monday', type: 'Run/Walk', description: '5 min warm-up, 8x (90 sec run + 90 sec walk), 5 min cool-down', duration: '22 min' },
-          { day: 'Wednesday', type: 'Run/Walk', description: '5 min warm-up, 8x (90 sec run + 90 sec walk), 5 min cool-down', duration: '22 min' },
-          { day: 'Friday', type: 'Run', description: '5 min warm-up, 6x (2 min run + 1 min walk), 5 min cool-down', duration: '25 min' }
-        ]
-      },
-      {
-        week: 3,
-        name: 'Week 3',
-        description: 'Building pace',
-        workouts: [
-          { day: 'Monday', type: 'Run', description: '5 min warm-up, 5x (3 min run + 2 min walk), 5 min cool-down', duration: '25 min' },
-          { day: 'Wednesday', type: 'Run', description: '5 min warm-up, 5x (3 min run + 2 min walk), 5 min cool-down', duration: '25 min' },
-          { day: 'Friday', type: 'Run', description: '5 min warm-up, 4x (5 min run + 2 min walk), 3 min cool-down', duration: '28 min' }
-        ]
-      },
-      {
-        week: 4,
-        name: 'Week 4',
-        description: 'Recovery',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Slow pace, recovery run', duration: '20 min' },
-          { day: 'Wednesday', type: 'Walk', description: 'Active recovery', duration: '30 min' },
-          { day: 'Friday', type: 'Run', description: '5 min warm-up, 15 min continuous run, 5 min cool-down', duration: '25 min' }
-        ]
-      },
-      {
-        week: 5,
-        name: 'Week 5',
-        description: 'Increasing distance',
-        workouts: [
-          { day: 'Monday', type: 'Run', description: '5 min warm-up, 20 min continuous run, 5 min cool-down', duration: '30 min' },
-          { day: 'Wednesday', type: 'Run', description: '5 min warm-up, 20 min continuous run, 5 min cool-down', duration: '30 min' },
-          { day: 'Friday', type: 'Long run', description: '25 min continuous run at comfortable pace', duration: '30 min' }
-        ]
-      },
-      {
-        week: 6,
-        name: 'Week 6',
-        description: 'Building confidence',
-        workouts: [
-          { day: 'Monday', type: 'Run', description: '5 min warm-up, 25 min continuous run, 5 min cool-down', duration: '35 min' },
-          { day: 'Wednesday', type: 'Intervals', description: '5 min warm-up, 6x (2 min fast + 2 min slow), 5 min cool-down', duration: '30 min' },
-          { day: 'Friday', type: 'Long run', description: '30 min continuous run at easy pace', duration: '35 min' }
-        ]
-      },
-      {
-        week: 7,
-        name: 'Week 7',
-        description: 'Peak training',
-        workouts: [
-          { day: 'Monday', type: 'Run', description: '5 min warm-up, 28 min continuous run, 5 min cool-down', duration: '38 min' },
-          { day: 'Wednesday', type: 'Tempo run', description: '5 min warm-up, 15 min tempo pace, 5 min cool-down', duration: '30 min' },
-          { day: 'Friday', type: 'Long run', description: '35 min continuous run - your longest run!', duration: '40 min' }
-        ]
-      },
-      {
-        week: 8,
-        name: 'Week 8',
-        description: 'Taper and race',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Light 20 min jog', duration: '20 min' },
-          { day: 'Wednesday', type: 'Rest', description: 'Complete rest or light walk', duration: '0 min' },
-          { day: 'Saturday', type: '5K Race', description: 'Race day! Run your first 5K!', duration: '25-35 min' }
-        ]
-      }
-    ]
-  },
-  {
-    id: '10k-intermediate',
-    title: '10K for Intermediate Runners',
-    description: 'For experienced runners aiming to conquer 10K',
-    level: 'Intermediate',
-    levelColor: '#3b82f6',
-    duration: '10 weeks',
-    frequency: '4x per week',
-    goal: '10 km',
-    gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-    icon: '📈',
-    weeks: [
-      {
-        week: 1,
-        name: 'Week 1',
-        description: 'Building the base',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: '10 min warm-up, 20 min race pace, 5 min cool-down', duration: '35 min' },
-          { day: 'Wednesday', type: 'Intervals', description: '10 min warm-up, 6x (3 min fast + 2 min slow), 5 min cool-down', duration: '40 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Slow recovery pace', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Steady pace, building endurance', duration: '60 min' }
-        ]
-      },
-      {
-        week: 2,
-        name: 'Week 2',
-        description: 'Working on pace',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: '10 min warm-up, 25 min threshold pace, 5 min cool-down', duration: '40 min' },
-          { day: 'Wednesday', type: 'Intervals', description: '10 min warm-up, 8x (2 min fast + 90 sec slow), 5 min cool-down', duration: '45 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Recovery pace', duration: '50 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Comfortable long-distance pace', duration: '70 min' }
-        ]
-      },
-      {
-        week: 3,
-        name: 'Week 3',
-        description: 'Increasing intensity',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: '10 min warm-up, 30 min tempo, 5 min cool-down', duration: '45 min' },
-          { day: 'Wednesday', type: 'Hill repeats', description: '10 min warm-up, 8x hill sprints, 10 min cool-down', duration: '40 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Recovery pace', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Progressive long run', duration: '75 min' }
-        ]
-      },
-      {
-        week: 4,
-        name: 'Week 4',
-        description: 'Recovery week',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Light jog', duration: '30 min' },
-          { day: 'Wednesday', type: 'Tempo run', description: 'Moderate tempo', duration: '35 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Recovery pace', duration: '40 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Reduced distance', duration: '50 min' }
-        ]
-      },
-      {
-        week: 5,
-        name: 'Week 5',
-        description: 'Building back up',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: 'Strong tempo effort', duration: '45 min' },
-          { day: 'Wednesday', type: 'Intervals', description: '10x 400m at 5K pace with 90 sec rest', duration: '45 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Recovery', duration: '50 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Building back endurance', duration: '80 min' }
-        ]
-      },
-      {
-        week: 6,
-        name: 'Week 6',
-        description: 'Peak training begins',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: 'Extended tempo', duration: '50 min' },
-          { day: 'Wednesday', type: 'Intervals', description: '6x 800m at goal pace with 2 min rest', duration: '50 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Recovery', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Longest run of the plan', duration: '90 min' }
-        ]
-      },
-      {
-        week: 7,
-        name: 'Week 7',
-        description: 'Maintaining fitness',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: 'Quality tempo', duration: '45 min' },
-          { day: 'Wednesday', type: 'Intervals', description: 'Race-pace intervals', duration: '45 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Recovery', duration: '40 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Steady state', duration: '80 min' }
-        ]
-      },
-      {
-        week: 8,
-        name: 'Week 8',
-        description: 'Sharpening',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: 'Race simulation', duration: '40 min' },
-          { day: 'Wednesday', type: 'Intervals', description: '5x 1000m at goal pace', duration: '45 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Light recovery', duration: '35 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Moderate distance', duration: '70 min' }
-        ]
-      },
-      {
-        week: 9,
-        name: 'Week 9',
-        description: 'Taper begins',
-        workouts: [
-          { day: 'Monday', type: 'Tempo run', description: 'Short and sharp', duration: '35 min' },
-          { day: 'Wednesday', type: 'Easy run', description: 'Light jog with strides', duration: '30 min' },
-          { day: 'Friday', type: 'Easy run', description: 'Recovery', duration: '25 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Final long run - reduced', duration: '50 min' }
-        ]
-      },
-      {
-        week: 10,
-        name: 'Week 10',
-        description: 'Race week',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Light shake-out', duration: '20 min' },
-          { day: 'Wednesday', type: 'Easy run', description: 'Short jog with strides', duration: '15 min' },
-          { day: 'Friday', type: 'Rest', description: 'Complete rest', duration: '0 min' },
-          { day: 'Sunday', type: '10K Race', description: 'Race day! Achieve your 10K goal!', duration: '45-60 min' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'half-marathon-advanced',
-    title: 'Half Marathon - Advanced Level',
-    description: 'Intensive plan for experienced runners targeting a half marathon',
-    level: 'Advanced',
-    levelColor: '#a855f7',
-    duration: '12 weeks',
-    frequency: '5x per week',
-    goal: '21.1 km',
-    gradient: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
-    icon: '🏆',
-    weeks: [
-      {
-        week: 1,
-        name: 'Week 1',
-        description: 'Volume acclimatization',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Base building', duration: '50 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: '15 min warm-up, 25 min tempo, 10 min cool-down', duration: '50 min' },
-          { day: 'Thursday', type: 'Intervals', description: '8x 600m at 5K pace', duration: '55 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Recovery', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Progressive pace', duration: '90 min' }
-        ]
-      },
-      {
-        week: 2,
-        name: 'Week 2',
-        description: 'Increasing intensity',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Recovery', duration: '50 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: '15 min warm-up, 30 min tempo, 10 min cool-down', duration: '55 min' },
-          { day: 'Thursday', type: 'Intervals', description: '10x 400m at mile pace', duration: '50 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Light jog', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Steady state', duration: '100 min' }
-        ]
-      },
-      {
-        week: 3,
-        name: 'Week 3',
-        description: 'Building strength',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Recovery', duration: '50 min' },
-          { day: 'Tuesday', type: 'Hill repeats', description: '10x hill sprints', duration: '55 min' },
-          { day: 'Thursday', type: 'Tempo run', description: 'Extended threshold', duration: '60 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Recovery', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Distance focus', duration: '110 min' }
-        ]
-      },
-      {
-        week: 4,
-        name: 'Week 4',
-        description: 'Recovery week',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Light jog', duration: '40 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Moderate tempo', duration: '45 min' },
-          { day: 'Thursday', type: 'Easy run', description: 'Recovery', duration: '40 min' },
-          { day: 'Saturday', type: 'Rest', description: 'Complete rest', duration: '0 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Reduced distance', duration: '70 min' }
-        ]
-      },
-      {
-        week: 5,
-        name: 'Week 5',
-        description: 'Building back up',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Base building', duration: '55 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Race pace work', duration: '55 min' },
-          { day: 'Thursday', type: 'Intervals', description: '6x 1000m at goal pace', duration: '60 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Recovery', duration: '50 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Progressive', duration: '110 min' }
-        ]
-      },
-      {
-        week: 6,
-        name: 'Week 6',
-        description: 'Peak volume',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Recovery', duration: '55 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Extended tempo', duration: '60 min' },
-          { day: 'Thursday', type: 'Intervals', description: '5x 1600m at goal pace', duration: '65 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Light', duration: '50 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Longest run - 18-20km', duration: '120 min' }
-        ]
-      },
-      {
-        week: 7,
-        name: 'Week 7',
-        description: 'Maintaining peak',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Recovery', duration: '50 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Quality tempo', duration: '55 min' },
-          { day: 'Thursday', type: 'Intervals', description: 'Race simulation intervals', duration: '60 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Light jog', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Steady state', duration: '110 min' }
-        ]
-      },
-      {
-        week: 8,
-        name: 'Week 8',
-        description: 'Recovery week',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Light', duration: '45 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Short tempo', duration: '45 min' },
-          { day: 'Thursday', type: 'Easy run', description: 'Recovery', duration: '40 min' },
-          { day: 'Saturday', type: 'Rest', description: 'Complete rest', duration: '0 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Moderate', duration: '80 min' }
-        ]
-      },
-      {
-        week: 9,
-        name: 'Week 9',
-        description: 'Final build',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Recovery', duration: '50 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Race pace', duration: '55 min' },
-          { day: 'Thursday', type: 'Intervals', description: '8x 800m at goal pace', duration: '55 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Light', duration: '45 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Final long run - 16km', duration: '100 min' }
-        ]
-      },
-      {
-        week: 10,
-        name: 'Week 10',
-        description: 'Taper begins',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Recovery', duration: '45 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Short and sharp', duration: '45 min' },
-          { day: 'Thursday', type: 'Intervals', description: '6x 400m at mile pace', duration: '40 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Light', duration: '35 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Reduced - 12km', duration: '75 min' }
-        ]
-      },
-      {
-        week: 11,
-        name: 'Week 11',
-        description: 'Deep taper',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Light jog', duration: '35 min' },
-          { day: 'Tuesday', type: 'Tempo run', description: 'Short tempo', duration: '35 min' },
-          { day: 'Thursday', type: 'Easy run', description: 'Strides included', duration: '30 min' },
-          { day: 'Saturday', type: 'Easy run', description: 'Shake-out', duration: '25 min' },
-          { day: 'Sunday', type: 'Long run', description: 'Short long run - 8km', duration: '50 min' }
-        ]
-      },
-      {
-        week: 12,
-        name: 'Week 12',
-        description: 'Race week',
-        workouts: [
-          { day: 'Monday', type: 'Easy run', description: 'Very light', duration: '25 min' },
-          { day: 'Wednesday', type: 'Easy run', description: 'Strides', duration: '20 min' },
-          { day: 'Friday', type: 'Rest', description: 'Complete rest', duration: '0 min' },
-          { day: 'Sunday', type: 'Half Marathon', description: 'Race day! Run your half marathon!', duration: '90-120 min' }
-        ]
-      }
-    ]
-  }
-];
+const LoadingPlans = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  color: #666;
+  font-size: 16px;
+`;
 
 const parseAiResponse = (data) => {
   // If already an object, return it directly
@@ -1203,8 +834,27 @@ const TrainingPlans = () => {
   const [generating, setGenerating] = useState(false);
 
   // Ready-Made Plans state
+  const [readyMadePlans, setReadyMadePlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [expandedWeeks, setExpandedWeeks] = useState({});
+
+  // Fetch templates from API
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoadingPlans(true);
+        const response = await TrainingPlanService.getTemplates();
+        setReadyMadePlans(response.data);
+      } catch (error) {
+        console.error("Error fetching training plan templates:", error);
+        toast.error("Failed to load training plans");
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   // Goal Setting state
   const [goalType, setGoalType] = useState("distance");
@@ -1531,6 +1181,12 @@ const TrainingPlans = () => {
   };
 
   const renderReadyMadePlansTab = () => {
+    if (loadingPlans) {
+      return (
+        <LoadingPlans>Loading training plans...</LoadingPlans>
+      );
+    }
+
     if (selectedPlan) {
       const plan = readyMadePlans.find(p => p.id === selectedPlan);
       if (!plan) return null;
