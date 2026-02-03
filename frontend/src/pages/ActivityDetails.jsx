@@ -5,6 +5,7 @@ import { FaRunning, FaBicycle, FaSwimmer, FaHiking } from "react-icons/fa";
 import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
+import ActivityMap from "../components/ActivityMap/ActivityMap";
 import { useAuth } from "../context/AuthContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import styled from "styled-components";
@@ -133,6 +134,27 @@ const ActionButton = styled.button`
   &:hover {
     background-color: ${({ theme }) => theme.bgHover};
   }
+`;
+
+const MapSection = styled.div`
+  background: ${({ theme }) => theme.bgCard};
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
+`;
+
+const MapSectionTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s ease;
 `;
 
 const CommentsSection = styled.div`
@@ -729,6 +751,14 @@ const ActivityDetails = () => {
           </ActionButton>
         </ActionsBar>
       </ActivityHeader>
+
+      <MapSection>
+        <MapSectionTitle>
+          <FiMapPin size={20} />
+          Route Map
+        </MapSectionTitle>
+        <ActivityMap coordinates={activity.routePolyline} height="400px" />
+      </MapSection>
 
       <CommentsSection>
         <CommentsSectionTitle>

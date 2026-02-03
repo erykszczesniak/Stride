@@ -189,3 +189,24 @@ export const ActionsGroup = styled.div`
   display: flex;
   gap: 4px;
 `;
+
+export const MapPreview = styled.div`
+  margin: 12px 0 16px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 160px;
+
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
+    background: ${({ theme }) => theme.bgHover};
+  }
+
+  .leaflet-control-attribution {
+    display: none;
+  }
+
+  .leaflet-control-zoom {
+    display: none;
+  }
+`;

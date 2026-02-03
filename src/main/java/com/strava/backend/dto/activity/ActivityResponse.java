@@ -25,4 +25,7 @@ public class ActivityResponse {
     private boolean likedByCurrentUser;
     private LocalDateTime createdAt;
     private BaseUserResponse user;
+    private String routePolyline;
+    private Integer averageHeartRate;
+    private Integer maxHeartRate;
 }
