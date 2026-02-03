@@ -11,9 +11,12 @@ import {
   FiLogOut,
   FiPlus,
   FiAward,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 import { RiAdminLine } from "react-icons/ri";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import {
   SidebarContainer,
   Logo,
@@ -27,12 +30,14 @@ import {
   ActiveDot,
   BottomSection,
   LogoutButton,
+  ThemeToggle,
 } from "./SidebarStyles";
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const mainNavItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
@@ -86,6 +91,12 @@ const Sidebar = () => {
       </NavSection>
 
       <BottomSection>
+        <ThemeToggle onClick={toggleTheme} title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+          <NavIcon>
+            {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
+          </NavIcon>
+          <NavLabel>{isDarkMode ? "Light Mode" : "Dark Mode"}</NavLabel>
+        </ThemeToggle>
         <NavItem
           to="/settings"
           className={isActive("/settings") ? "active" : ""}
