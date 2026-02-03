@@ -1,5 +1,4 @@
 import React from "react";
-import { FiMapPin, FiUsers, FiClock } from "react-icons/fi";
 import {
   Card,
   DateBox,
@@ -8,20 +7,9 @@ import {
   EventInfo,
   EventName,
   EventLocation,
-  EventMeta,
-  MetaItem,
 } from "./EventCardStyles";
 
-const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const formatTime = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
+const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
 const EventCard = ({ event }) => {
   const eventDate = new Date(event.eventDate);
@@ -37,19 +25,8 @@ const EventCard = ({ event }) => {
       <EventInfo>
         <EventName>{event.name}</EventName>
         <EventLocation>
-          <FiMapPin size={14} />
-          {event.location}, {event.city}
+          {event.distance && `${event.distance} km • `}{event.city || event.location}
         </EventLocation>
-        <EventMeta>
-          <MetaItem>
-            <FiClock size={14} />
-            {formatTime(event.eventDate)}
-          </MetaItem>
-          <MetaItem>
-            <FiUsers size={14} />
-            {event.participantsCount || 0} / {event.maxParticipants}
-          </MetaItem>
-        </EventMeta>
       </EventInfo>
     </Card>
   );

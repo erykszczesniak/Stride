@@ -38,8 +38,19 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EventResponse>> getUpcomingEvents(
+    public ResponseEntity<List<EventResponse>> getAllEvents(
             @PageableDefault(size = 20) Pageable pageable) {
+        Long currentUserId = getAuthenticatedUserId();
+        Page<Event> events = eventService.getUpcomingPublicEvents(pageable);
+        List<EventResponse> response = events.stream()
+                .map(e -> mapToResponse(e, currentUserId))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(UPCOMING)
+    public ResponseEntity<List<EventResponse>> getUpcomingEvents(
+            @PageableDefault(size = 5) Pageable pageable) {
         Long currentUserId = getAuthenticatedUserId();
         Page<Event> events = eventService.getUpcomingPublicEvents(pageable);
         List<EventResponse> response = events.stream()
