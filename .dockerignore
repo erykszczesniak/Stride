@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Build artifacts
+target/
+!target/*.jar
+
+# Frontend (built separately)
+frontend/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.swp
+*.bak
+*~
+
+# Tests
+src/test/
+
+# Maven wrapper (we install maven in Docker)
+.mvn/
+mvnw*
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Kubernetes
+k8s/
+*.yaml
+!pom.xml
+
+# Terraform
+terraform/
+*.tf
+*.tfstate*
+
+# Misc
+.DS_Store
+Thumbs.db
+*.session*
+*.jsonl
+NOTES.md
