@@ -40,39 +40,141 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 ## Screenshots
 
 <details>
-<summary>Click to expand screenshots</summary>
+<summary>Click to expand all screenshots</summary>
 
-### Dashboard
+### Authentication
+
+#### Login
+![Login](docs/screenshots/login.png)
+*Clean login page with email and password fields, password visibility toggle*
+
+#### Register
+![Register](docs/screenshots/register.png)
+*Registration form with password strength indicator*
+
+---
+
+### Main Application
+
+#### Dashboard
 ![Dashboard](docs/screenshots/dashboard.png)
-*Main dashboard with activity summary, weekly stats, and goals*
+*Main dashboard with stats cards, weekly chart, recent activities, and goals progress*
+
+#### Dashboard - User Menu
+![Dashboard User Menu](docs/screenshots/dashboard-user-menu.png)
+*User avatar dropdown with profile link, settings, and logout*
+
+---
 
 ### Activities
+
+#### Activities Feed
 ![Activities](docs/screenshots/activities.png)
-*Activity feed with filtering and search*
+*Activity feed with filters (All/Following/My Activities), type filtering, and sidebar*
 
-### Activity Details
+#### Record Activity
+![Record Activity](docs/screenshots/record-activity.png)
+*Create new activity - select type (Run, Ride, Swim, Hike, Walk, Workout) and enter stats*
+
+#### Activity Details
 ![Activity Details](docs/screenshots/activity-details.png)
-*Detailed view with stats, comments, and reactions*
+*Full activity view with stats, map, comments section, and like/share buttons*
 
-### Challenges
-![Challenges](docs/screenshots/challenges.png)
-*Monthly challenges with leaderboard*
-
-### Clubs
-![Clubs](docs/screenshots/clubs.png)
-*Join sport-specific communities*
-
-### Events
-![Events](docs/screenshots/events.png)
-*Upcoming local fitness events*
+---
 
 ### Profile
-![Profile](docs/screenshots/profile.png)
-*User profile with statistics and activity history*
 
-### Dark Mode
+#### User Profile
+![Profile](docs/screenshots/profile.png)
+*User profile with cover photo, avatar, stats (followers, following, activities)*
+
+#### Profile - Stats Tab
+![Profile Stats](docs/screenshots/profile-stats.png)
+*Detailed statistics with charts and visualizations*
+
+---
+
+### Goals & Challenges
+
+#### Goals
+![Goals](docs/screenshots/goals.png)
+*Personal fitness goals with progress bars and deadlines*
+
+#### Challenges
+![Challenges](docs/screenshots/challenges.png)
+*Active challenges with progress tracking and participant counts*
+
+---
+
+### Social Features
+
+#### Clubs
+![Clubs](docs/screenshots/clubs.png)
+*Sport communities - browse, search, and join clubs*
+
+#### Events
+![Events](docs/screenshots/events.png)
+*Local fitness events with date, location, and registration*
+
+#### Create Event
+![Create Event](docs/screenshots/create-event.png)
+*Event creation form with date picker, location, and details*
+
+---
+
+### Training
+
+#### Training Plans
+![Training Plans](docs/screenshots/training-plans.png)
+*AI-generated training plans with workouts schedule*
+
+---
+
+### Settings
+
+#### Settings - Profile
+![Settings Profile](docs/screenshots/settings-profile.png)
+*Edit profile information - name, bio, location, weight, height*
+
+#### Settings - Preferences
+![Settings Preferences](docs/screenshots/settings-preferences.png)
+*App preferences - notifications, units, language, theme*
+
+---
+
+### Admin Panel
+
+#### Admin - Overview
+![Admin Overview](docs/screenshots/admin-overview.png)
+*Admin dashboard with user and activity statistics*
+
+#### Admin - Users
+![Admin Users](docs/screenshots/admin-users.png)
+*User management table with search and actions*
+
+#### Admin - Export
+![Admin Export](docs/screenshots/admin-export.png)
+*Export data to Excel/PDF*
+
+---
+
+### Theme Variants
+
+#### Light Mode
+![Light Mode](docs/screenshots/light-mode.png)
+*Default light theme*
+
+#### Dark Mode
 ![Dark Mode](docs/screenshots/dark-mode.png)
-*Full dark mode support*
+*Full dark mode support across all pages*
+
+---
+
+### Responsive Design
+
+#### Mobile View
+![Mobile View](docs/screenshots/mobile-view.png)
+*Responsive layout optimized for mobile devices*
 
 </details>
 

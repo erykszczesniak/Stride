@@ -10,8 +10,6 @@ RUN apk add --no-cache maven
 
 # Copy pom.xml first for dependency caching
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
 
 # Download dependencies (cached layer)
 RUN mvn dependency:go-offline -B
