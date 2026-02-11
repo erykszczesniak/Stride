@@ -186,6 +186,7 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - **Spring Data JPA** with PostgreSQL
 - **GraphQL** API support
 - **Flyway** for database migrations
+- **Redis** for caching
 - **Swagger/OpenAPI** documentation
 - **Testcontainers** for integration testing
 
@@ -197,55 +198,100 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - **Axios** for API communication
 - **React Icons** for iconography
 
-### Database
-- **PostgreSQL** (production)
-- **H2** (development/testing)
+### Infrastructure
+- **Docker** & **Docker Compose**
+- **PostgreSQL 15**
+- **Redis 7**
+- **Nginx** (production)
 
 ## Getting Started
 
-### Prerequisites
-- Java 21+
-- Node.js 18+
-- PostgreSQL 15+ (or use H2 for development)
-- Maven 3.9+
+### Quick Start with Docker (Recommended)
 
-### Backend Setup
+The easiest way to run the application is with Docker Compose.
 
-1. Clone the repository
+#### Prerequisites
+- Docker & Docker Compose
+- Make (optional, for convenience commands)
+
+#### Run the Application
+
 ```bash
+# Clone the repository
 git clone https://github.com/erykszczesniak/strava.git
 cd strava
+
+# Start all services (backend, frontend, PostgreSQL, Redis)
+make up
+
+# Or without make:
+docker compose up -d --build
 ```
 
-2. Configure database (optional - uses H2 by default)
+That's it! The application will be available at:
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8080
+- **Swagger UI:** http://localhost:8080/swagger-ui.html
+- **GraphQL:** http://localhost:8080/graphql
+
+#### Sample Users
+
+| Email | Password | Role |
+|-------|----------|------|
+| john@example.com | password123 | USER |
+| jane@example.com | password123 | USER |
+| admin@example.com | admin123 | ADMIN |
+
+#### Useful Commands
+
 ```bash
-# For PostgreSQL, update src/main/resources/application.properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/strava
-spring.datasource.username=your_username
-spring.datasource.password=your_password
+# View logs
+make logs
+
+# Stop all services
+make down
+
+# Restart backend only
+docker compose restart backend
+
+# Access database
+docker compose exec db psql -U strava -d stravadb
+
+# Access Redis CLI
+docker compose exec redis redis-cli
 ```
 
-3. Run the backend
+> For more Docker commands, see [DOCKER.md](DOCKER.md)
+
+---
+
+### Manual Setup (Development)
+
+If you prefer to run services manually without Docker.
+
+#### Prerequisites
+- Java 21+
+- Node.js 18+
+- Maven 3.9+
+
+#### Backend
+
 ```bash
+# Clone and enter directory
+git clone https://github.com/erykszczesniak/strava.git
+cd strava
+
+# Run with H2 in-memory database (default for dev)
 ./mvnw spring-boot:run
 ```
 
 The API will be available at `http://localhost:8080`
 
-### Frontend Setup
+#### Frontend
 
-1. Navigate to frontend directory
 ```bash
 cd frontend
-```
-
-2. Install dependencies
-```bash
 npm install
-```
-
-3. Start the development server
-```bash
 npm start
 ```
 
@@ -274,24 +320,30 @@ Once the backend is running, API documentation is available at:
 
 ```
 strava/
+├── docker-compose.yml     # Docker services configuration
+├── Dockerfile             # Backend Docker image
+├── Makefile               # Convenience commands
+├── DOCKER.md              # Docker commands reference
 ├── src/main/java/com/strava/backend/
-│   ├── configuration/     # Spring configurations
+│   ├── configuration/     # Spring & Redis configurations
 │   ├── controller/        # REST controllers
-│   ├── domain/           # Entity models
-│   ├── dto/              # Data transfer objects
-│   ├── graphql/          # GraphQL resolvers
-│   ├── repository/       # JPA repositories
-│   ├── security/         # JWT & auth
-│   └── service/          # Business logic
+│   ├── domain/            # Entity models
+│   ├── dto/               # Data transfer objects
+│   ├── graphql/           # GraphQL resolvers
+│   ├── repository/        # JPA repositories
+│   ├── security/          # JWT & auth
+│   └── service/           # Business logic
 ├── frontend/
+│   ├── Dockerfile         # Frontend Docker image
+│   ├── nginx.conf         # Nginx configuration
 │   ├── src/
-│   │   ├── api/          # API services
-│   │   ├── components/   # Reusable components
-│   │   ├── context/      # React contexts
-│   │   ├── pages/        # Page components
-│   │   └── styles/       # Theme & global styles
+│   │   ├── api/           # API services
+│   │   ├── components/    # Reusable components
+│   │   ├── context/       # React contexts
+│   │   ├── pages/         # Page components
+│   │   └── styles/        # Theme & global styles
 │   └── public/
-└── docs/                  # Documentation
+└── docs/                   # Documentation & screenshots
 ```
 
 ## Running Tests
