@@ -1,8 +1,8 @@
 -- Comment Reactions table
 CREATE TABLE comment_reactions (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     emoji VARCHAR(10) NOT NULL,
-    created_at DATETIME NOT NULL,
+    created_at TIMESTAMP NOT NULL,
     comment_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     CONSTRAINT fk_comment_reaction_comment FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,

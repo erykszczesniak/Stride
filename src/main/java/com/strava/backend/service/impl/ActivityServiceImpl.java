@@ -10,6 +10,10 @@ import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +31,7 @@ import java.util.stream.Collectors;
 import static com.strava.backend.constants.ErrorMessage.ACTIVITY_ACCESS_DENIED;
 import static com.strava.backend.constants.ErrorMessage.ACTIVITY_NOT_FOUND;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActivityServiceImpl implements ActivityService {
@@ -35,7 +40,9 @@ public class ActivityServiceImpl implements ActivityService {
     private final UserService userService;
 
     @Override
+    @Cacheable(value = "activityDetails", key = "#activityId")
     public Activity getActivityById(Long activityId) {
+        log.debug("Cache miss - fetching activity by id: {}", activityId);
         return activityRepository.findById(activityId)
                 .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
@@ -70,6 +77,11 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "activities", key = "#userId"),
+            @CacheEvict(value = "activityFeed", allEntries = true),
+            @CacheEvict(value = "userStats", key = "#userId")
+    })
     public Activity createActivity(Long userId, ActivityRequest request) {
         User user = userService.getUserById(userId);
 
@@ -100,8 +112,15 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "activityDetails", key = "#activityId"),
+            @CacheEvict(value = "activities", key = "#userId"),
+            @CacheEvict(value = "activityFeed", allEntries = true),
+            @CacheEvict(value = "userStats", key = "#userId")
+    })
     public Activity updateActivity(Long activityId, Long userId, ActivityRequest request) {
-        Activity activity = getActivityById(activityId);
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if (!activity.getUser().getId().equals(userId)) {
             throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
@@ -131,8 +150,15 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "activityDetails", key = "#activityId"),
+            @CacheEvict(value = "activities", key = "#userId"),
+            @CacheEvict(value = "activityFeed", allEntries = true),
+            @CacheEvict(value = "userStats", key = "#userId")
+    })
     public void deleteActivity(Long activityId, Long userId) {
-        Activity activity = getActivityById(activityId);
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if (!activity.getUser().getId().equals(userId)) {
             throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
@@ -143,8 +169,10 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "activityDetails", key = "#activityId")
     public void likeActivity(Long activityId, Long userId) {
-        Activity activity = getActivityById(activityId);
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
         User user = userService.getUserById(userId);
 
         if (activity.getLikedBy().contains(user)) {
@@ -157,8 +185,10 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "activityDetails", key = "#activityId")
     public void unlikeActivity(Long activityId, Long userId) {
-        Activity activity = getActivityById(activityId);
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
         User user = userService.getUserById(userId);
 
         if (!activity.getLikedBy().contains(user)) {
@@ -175,7 +205,9 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    @Cacheable(value = "userStats", key = "'monthly-' + #userId")
     public ActivityStatsResponse getMonthlyStats(Long userId) {
+        log.debug("Cache miss - calculating monthly stats for user: {}", userId);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
@@ -211,7 +243,9 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    @Cacheable(value = "userStats", key = "'weekly-' + #userId")
     public WeeklyStatsResponse getWeeklyStats(Long userId) {
+        log.debug("Cache miss - calculating weekly stats for user: {}", userId);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                 .withHour(0).withMinute(0).withSecond(0);
