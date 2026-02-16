@@ -1,5 +1,6 @@
 package com.strava.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.strava.backend.enums.ActivityType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -76,10 +77,12 @@ public class Activity {
 
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "activity_likes",
@@ -89,6 +92,7 @@ public class Activity {
     @Builder.Default
     private Set<User> likedBy = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<Comment> comments = new HashSet<>();

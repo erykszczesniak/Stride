@@ -1,5 +1,6 @@
 package com.strava.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.strava.backend.enums.AuthProvider;
 import com.strava.backend.enums.Role;
 import jakarta.persistence.*;
@@ -67,10 +68,12 @@ public class User {
 
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<Activity> activities = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "user_followers",
@@ -80,22 +83,27 @@ public class User {
     @Builder.Default
     private Set<User> followers = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "followers")
     @Builder.Default
     private Set<User> following = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "members")
     @Builder.Default
     private Set<Club> clubs = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "participants")
     @Builder.Default
     private Set<Challenge> challenges = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "registeredUsers")
     @Builder.Default
     private Set<Event> events = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<Goal> goals = new HashSet<>();
