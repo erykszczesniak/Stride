@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiMapPin, FiClock, FiUsers, FiCalendar, FiDollarSign, FiExternalLink, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiMapPin, FiClock, FiUsers, FiCalendar, FiDollarSign, FiExternalLink, FiTrash2 } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import EventService from "../api/EventService";
 import { useToast } from "../context/ToastContext";

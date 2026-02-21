@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { FiSearch, FiMapPin, FiUsers, FiActivity, FiLock, FiCheck, FiPlus } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ClubService from "../api/ClubService";
-import { SkeletonClubCard, SkeletonStatsCard } from "../components/Skeleton/Skeleton";
+import { SkeletonClubCard } from "../components/Skeleton/Skeleton";
 import styled from "styled-components";
 
 const PageHeader = styled.div`
@@ -293,14 +293,6 @@ const EmptyText = styled.p`
   color: ${({ theme }) => theme.textSecondary};
   margin: 0;
   transition: color 0.3s ease;
-`;
-
-const LoadingSpinner = styled.div`
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  padding: 60px;
-  color: ${({ theme }) => theme.textSecondary};
 `;
 
 const getCategoryInfo = (sportType) => {

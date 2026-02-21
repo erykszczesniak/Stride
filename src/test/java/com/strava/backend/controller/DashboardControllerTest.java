@@ -5,8 +5,10 @@ import com.strava.backend.dto.activity.ActivityStatsResponse;
 import com.strava.backend.dto.activity.WeeklyStatsResponse;
 import com.strava.backend.dto.user.UserResponse;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.DashboardService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,6 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -77,6 +82,21 @@ class DashboardControllerTest {
                 .weeklyGoal(null)
                 .upcomingEvents(Collections.emptyList())
                 .build();
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -88,8 +108,7 @@ class DashboardControllerTest {
         void shouldReturnDashboardData() throws Exception {
             given(dashboardService.getDashboardData(1L)).willReturn(dashboardResponse);
 
-            mockMvc.perform(get("/api/v1/dashboard")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/dashboard"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.user.id").value(1))
                     .andExpect(jsonPath("$.user.firstName").value("John"))
@@ -113,8 +132,7 @@ class DashboardControllerTest {
         void shouldReturnDashboardWithEmptyRecentActivities() throws Exception {
             given(dashboardService.getDashboardData(1L)).willReturn(dashboardResponse);
 
-            mockMvc.perform(get("/api/v1/dashboard")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/dashboard"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.recentActivities").isEmpty());
         }
@@ -124,8 +142,7 @@ class DashboardControllerTest {
         void shouldReturnDashboardWithNullWeeklyGoal() throws Exception {
             given(dashboardService.getDashboardData(1L)).willReturn(dashboardResponse);
 
-            mockMvc.perform(get("/api/v1/dashboard")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/dashboard"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.weeklyGoal").doesNotExist());
         }

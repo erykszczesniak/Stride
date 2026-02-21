@@ -9,6 +9,7 @@ import com.strava.backend.enums.AuthProvider;
 import com.strava.backend.enums.Role;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.security.UserPrincipal;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -22,6 +23,10 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,6 +51,7 @@ class ActivityIntegrationTest {
 
     private User testUser;
     private Activity testActivity;
+    private Authentication testAuth;
 
     @BeforeEach
     void setUp() {
@@ -64,6 +70,8 @@ class ActivityIntegrationTest {
                 .active(true)
                 .build();
         testUser = userRepository.save(testUser);
+        UserPrincipal userPrincipal = UserPrincipal.create(testUser);
+        testAuth = new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
 
         // Create test activity
         testActivity = Activity.builder()
@@ -89,7 +97,7 @@ class ActivityIntegrationTest {
         @DisplayName("Should return activity by ID")
         void shouldReturnActivityById() throws Exception {
             mockMvc.perform(get("/api/v1/activities/{id}", testActivity.getId())
-                            .param("userId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testActivity.getId()))
                     .andExpect(jsonPath("$.title").value("Integration Test Run"))
@@ -101,7 +109,8 @@ class ActivityIntegrationTest {
         @Test
         @DisplayName("Should return 404 for non-existent activity")
         void shouldReturn404ForNonExistentActivity() throws Exception {
-            mockMvc.perform(get("/api/v1/activities/{id}", 99999L))
+            mockMvc.perform(get("/api/v1/activities/{id}", 99999L)
+                            .with(authentication(testAuth)))
                     .andExpect(status().isNotFound());
         }
     }
@@ -125,7 +134,7 @@ class ActivityIntegrationTest {
             request.setPrivate(false);
 
             mockMvc.perform(post("/api/v1/activities")
-                            .param("userId", testUser.getId().toString())
+                            .with(authentication(testAuth))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -148,7 +157,7 @@ class ActivityIntegrationTest {
             request.setStartTime(LocalDateTime.now());
 
             mockMvc.perform(post("/api/v1/activities")
-                            .param("userId", testUser.getId().toString())
+                            .with(authentication(testAuth))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -174,7 +183,7 @@ class ActivityIntegrationTest {
             request.setPrivate(false);
 
             mockMvc.perform(put("/api/v1/activities/{id}", testActivity.getId())
-                            .param("userId", testUser.getId().toString())
+                            .with(authentication(testAuth))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -195,6 +204,8 @@ class ActivityIntegrationTest {
                     .active(true)
                     .build();
             anotherUser = userRepository.save(anotherUser);
+            UserPrincipal anotherPrincipal = UserPrincipal.create(anotherUser);
+            Authentication anotherAuth = new UsernamePasswordAuthenticationToken(anotherPrincipal, null, anotherPrincipal.getAuthorities());
 
             ActivityRequest request = new ActivityRequest();
             request.setTitle("Attempted Update");
@@ -204,7 +215,7 @@ class ActivityIntegrationTest {
             request.setStartTime(LocalDateTime.now());
 
             mockMvc.perform(put("/api/v1/activities/{id}", testActivity.getId())
-                            .param("userId", anotherUser.getId().toString())
+                            .with(authentication(anotherAuth))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -219,7 +230,7 @@ class ActivityIntegrationTest {
         @DisplayName("Should delete activity")
         void shouldDeleteActivity() throws Exception {
             mockMvc.perform(delete("/api/v1/activities/{id}", testActivity.getId())
-                            .param("userId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isNoContent());
 
             assertThat(activityRepository.findById(testActivity.getId())).isEmpty();
@@ -238,9 +249,11 @@ class ActivityIntegrationTest {
                     .active(true)
                     .build();
             anotherUser = userRepository.save(anotherUser);
+            UserPrincipal anotherPrincipal = UserPrincipal.create(anotherUser);
+            Authentication anotherAuth = new UsernamePasswordAuthenticationToken(anotherPrincipal, null, anotherPrincipal.getAuthorities());
 
             mockMvc.perform(delete("/api/v1/activities/{id}", testActivity.getId())
-                            .param("userId", anotherUser.getId().toString()))
+                            .with(authentication(anotherAuth)))
                     .andExpect(status().isForbidden());
 
             // Activity should still exist
@@ -265,10 +278,12 @@ class ActivityIntegrationTest {
                     .active(true)
                     .build();
             liker = userRepository.save(liker);
+            UserPrincipal likerPrincipal = UserPrincipal.create(liker);
+            Authentication likerAuth = new UsernamePasswordAuthenticationToken(likerPrincipal, null, likerPrincipal.getAuthorities());
 
             // Like activity
             mockMvc.perform(post("/api/v1/activities/{id}/like", testActivity.getId())
-                            .param("userId", liker.getId().toString()))
+                            .with(authentication(likerAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Activity liked"));
 
@@ -277,7 +292,7 @@ class ActivityIntegrationTest {
 
             // Unlike activity
             mockMvc.perform(delete("/api/v1/activities/{id}/like", testActivity.getId())
-                            .param("userId", liker.getId().toString()))
+                            .with(authentication(likerAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Activity unliked"));
 
@@ -298,15 +313,17 @@ class ActivityIntegrationTest {
                     .active(true)
                     .build();
             liker = userRepository.save(liker);
+            UserPrincipal likerPrincipal = UserPrincipal.create(liker);
+            Authentication likerAuth = new UsernamePasswordAuthenticationToken(likerPrincipal, null, likerPrincipal.getAuthorities());
 
             // First like
             mockMvc.perform(post("/api/v1/activities/{id}/like", testActivity.getId())
-                            .param("userId", liker.getId().toString()))
+                            .with(authentication(likerAuth)))
                     .andExpect(status().isOk());
 
             // Second like should fail
             mockMvc.perform(post("/api/v1/activities/{id}/like", testActivity.getId())
-                            .param("userId", liker.getId().toString()))
+                            .with(authentication(likerAuth)))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -333,7 +350,7 @@ class ActivityIntegrationTest {
             activityRepository.save(activity2);
 
             mockMvc.perform(get("/api/v1/activities/stats/monthly")
-                            .param("userId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalDistance").exists())
                     .andExpect(jsonPath("$.totalDuration").exists())
@@ -344,7 +361,7 @@ class ActivityIntegrationTest {
         @DisplayName("Should return weekly stats")
         void shouldReturnWeeklyStats() throws Exception {
             mockMvc.perform(get("/api/v1/activities/stats/weekly")
-                            .param("userId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalDistance").exists())
                     .andExpect(jsonPath("$.dailyStats").isArray())
@@ -360,7 +377,7 @@ class ActivityIntegrationTest {
         @DisplayName("Should return feed activities")
         void shouldReturnFeedActivities() throws Exception {
             mockMvc.perform(get("/api/v1/activities/feed")
-                            .param("userId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray());
         }
@@ -369,7 +386,7 @@ class ActivityIntegrationTest {
         @DisplayName("Should return user's activities")
         void shouldReturnUsersActivities() throws Exception {
             mockMvc.perform(get("/api/v1/activities/my")
-                            .param("userId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$[0].title").value("Integration Test Run"));
@@ -378,7 +395,8 @@ class ActivityIntegrationTest {
         @Test
         @DisplayName("Should return public activities")
         void shouldReturnPublicActivities() throws Exception {
-            mockMvc.perform(get("/api/v1/activities/public"))
+            mockMvc.perform(get("/api/v1/activities/public")
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray());
         }

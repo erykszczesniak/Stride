@@ -34,4 +34,5 @@ class SettingsService {
   }
 }
 
-export default new SettingsService();
+const settingsService = new SettingsService();
+export default settingsService;

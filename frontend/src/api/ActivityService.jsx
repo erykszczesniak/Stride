@@ -61,4 +61,5 @@ class ActivityService {
   }
 }
 
-export default new ActivityService();
+const activityService = new ActivityService();
+export default activityService;

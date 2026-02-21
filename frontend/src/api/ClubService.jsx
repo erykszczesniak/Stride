@@ -38,4 +38,5 @@ class ClubService {
   }
 }
 
-export default new ClubService();
+const clubService = new ClubService();
+export default clubService;

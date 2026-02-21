@@ -9,9 +9,11 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.enums.ChallengeType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.ChallengeService;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -80,6 +85,21 @@ class ChallengeControllerTest {
         challengeRequest.setStartDate(LocalDateTime.now());
         challengeRequest.setEndDate(LocalDateTime.now().plusDays(30));
         challengeRequest.setPublic(true);
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -93,8 +113,7 @@ class ChallengeControllerTest {
             given(challengeService.getActiveChallenges(any(Pageable.class))).willReturn(challengePage);
             given(challengeService.isUserParticipating(1L, 1L)).willReturn(false);
 
-            mockMvc.perform(get("/api/v1/challenges")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/challenges"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].name").value("Monthly Running Challenge"));
@@ -123,8 +142,7 @@ class ChallengeControllerTest {
             given(challengeService.getUpcomingChallenges(any(Pageable.class))).willReturn(challengePage);
             given(challengeService.isUserParticipating(1L, 1L)).willReturn(false);
 
-            mockMvc.perform(get("/api/v1/challenges/upcoming")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/challenges/upcoming"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1));
         }
@@ -141,8 +159,7 @@ class ChallengeControllerTest {
             given(challengeService.isUserParticipating(1L, 1L)).willReturn(true);
             given(challengeService.getUserProgressInChallenge(1L, 1L)).willReturn(50.0);
 
-            mockMvc.perform(get("/api/v1/challenges/1")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/challenges/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.name").value("Monthly Running Challenge"))
@@ -172,8 +189,7 @@ class ChallengeControllerTest {
             given(challengeService.isUserParticipating(1L, 1L)).willReturn(true);
             given(challengeService.getUserProgressInChallenge(1L, 1L)).willReturn(25.0);
 
-            mockMvc.perform(get("/api/v1/challenges/my")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/challenges/my"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].participating").value(true));
@@ -191,7 +207,6 @@ class ChallengeControllerTest {
             given(challengeService.isUserParticipating(1L, 1L)).willReturn(false);
 
             mockMvc.perform(post("/api/v1/challenges")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(challengeRequest)))
                     .andExpect(status().isCreated())
@@ -205,7 +220,6 @@ class ChallengeControllerTest {
             challengeRequest.setName("");
 
             mockMvc.perform(post("/api/v1/challenges")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(challengeRequest)))
                     .andExpect(status().isBadRequest());
@@ -217,7 +231,6 @@ class ChallengeControllerTest {
             challengeRequest.setTargetValue(null);
 
             mockMvc.perform(post("/api/v1/challenges")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(challengeRequest)))
                     .andExpect(status().isBadRequest());
@@ -237,7 +250,6 @@ class ChallengeControllerTest {
             given(challengeService.isUserParticipating(1L, 1L)).willReturn(false);
 
             mockMvc.perform(put("/api/v1/challenges/1")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(challengeRequest)))
                     .andExpect(status().isOk())
@@ -254,8 +266,7 @@ class ChallengeControllerTest {
         void shouldDeleteChallengeSuccessfully() throws Exception {
             willDoNothing().given(challengeService).deleteChallenge(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/challenges/1")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/challenges/1"))
                     .andExpect(status().isNoContent());
         }
     }
@@ -269,8 +280,7 @@ class ChallengeControllerTest {
         void shouldJoinChallengeSuccessfully() throws Exception {
             willDoNothing().given(challengeService).joinChallenge(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/challenges/1/participate")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/challenges/1/participate"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Successfully joined the challenge"));
         }
@@ -281,8 +291,7 @@ class ChallengeControllerTest {
             willThrow(new ApiRequestException("Already participating", HttpStatus.BAD_REQUEST))
                     .given(challengeService).joinChallenge(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/challenges/1/participate")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/challenges/1/participate"))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -296,8 +305,7 @@ class ChallengeControllerTest {
         void shouldLeaveChallengeSuccessfully() throws Exception {
             willDoNothing().given(challengeService).leaveChallenge(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/challenges/1/participate")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/challenges/1/participate"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Successfully left the challenge"));
         }
@@ -334,8 +342,7 @@ class ChallengeControllerTest {
             given(challengeService.isUserParticipating(1L, 1L)).willReturn(false);
 
             mockMvc.perform(get("/api/v1/challenges/search")
-                            .param("q", "Running")
-                            .param("userId", "1"))
+                            .param("q", "Running"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].name").value("Monthly Running Challenge"));
         }

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun } from "react-icons/fi";
-import { FaRunning, FaBicycle, FaSwimmer, FaHiking, FaWalking } from "react-icons/fa";
 import Navbar from "../components/Navbar/Navbar";
 import SettingsService from "../api/SettingsService";
 import { useToast } from "../context/ToastContext";

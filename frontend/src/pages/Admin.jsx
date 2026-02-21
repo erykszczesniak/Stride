@@ -82,6 +82,7 @@ const Admin = () => {
     } else if (activeTab === "users") {
       loadUsers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, activitiesPage, usersPage]);
 
   const loadStats = async () => {

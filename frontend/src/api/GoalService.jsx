@@ -26,4 +26,5 @@ class GoalService {
   }
 }
 
-export default new GoalService();
+const goalService = new GoalService();
+export default goalService;

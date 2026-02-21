@@ -7,9 +7,11 @@ import com.strava.backend.domain.User;
 import com.strava.backend.dto.event.EventRequest;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.EventService;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,6 +24,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -67,6 +72,21 @@ class EventControllerTest {
         testUser = TestDataFactory.createUser();
         testEvent = TestDataFactory.createEvent(1L, testUser);
         eventRequest = TestDataFactory.createEventRequest();
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -80,8 +100,7 @@ class EventControllerTest {
             given(eventService.getUpcomingPublicEvents(any(Pageable.class))).willReturn(eventPage);
             given(eventService.isUserRegistered(1L, 1L)).willReturn(false);
 
-            mockMvc.perform(get("/api/v1/events")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/events"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].name").value("Marathon 2024"));
@@ -109,12 +128,11 @@ class EventControllerTest {
             given(eventService.getEventById(1L)).willReturn(testEvent);
             given(eventService.isUserRegistered(1L, 1L)).willReturn(true);
 
-            mockMvc.perform(get("/api/v1/events/1")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/events/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.name").value("Marathon 2024"))
-                    .andExpect(jsonPath("$.registered").value(true));
+                    .andExpect(jsonPath("$.isRegistered").value(true));
         }
 
         @Test
@@ -138,11 +156,10 @@ class EventControllerTest {
             given(eventService.getUpcomingEventsByUserId(1L)).willReturn(List.of(testEvent));
             given(eventService.isUserRegistered(1L, 1L)).willReturn(true);
 
-            mockMvc.perform(get("/api/v1/events/my")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/events/my"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
-                    .andExpect(jsonPath("$[0].registered").value(true));
+                    .andExpect(jsonPath("$[0].isRegistered").value(true));
         }
     }
 
@@ -157,7 +174,6 @@ class EventControllerTest {
             given(eventService.isUserRegistered(1L, 1L)).willReturn(false);
 
             mockMvc.perform(post("/api/v1/events")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(eventRequest)))
                     .andExpect(status().isCreated())
@@ -171,7 +187,6 @@ class EventControllerTest {
             eventRequest.setName("");
 
             mockMvc.perform(post("/api/v1/events")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(eventRequest)))
                     .andExpect(status().isBadRequest());
@@ -190,7 +205,6 @@ class EventControllerTest {
             given(eventService.isUserRegistered(1L, 1L)).willReturn(false);
 
             mockMvc.perform(put("/api/v1/events/1")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(eventRequest)))
                     .andExpect(status().isOk())
@@ -200,11 +214,10 @@ class EventControllerTest {
         @Test
         @DisplayName("Should return 403 when not organizer")
         void shouldReturn403WhenNotOrganizer() throws Exception {
-            given(eventService.updateEvent(eq(1L), eq(2L), any(EventRequest.class)))
+            given(eventService.updateEvent(eq(1L), eq(1L), any(EventRequest.class)))
                     .willThrow(new ApiRequestException("Not authorized", HttpStatus.FORBIDDEN));
 
             mockMvc.perform(put("/api/v1/events/1")
-                            .param("userId", "2")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(eventRequest)))
                     .andExpect(status().isForbidden());
@@ -220,8 +233,7 @@ class EventControllerTest {
         void shouldDeleteEventSuccessfully() throws Exception {
             willDoNothing().given(eventService).deleteEvent(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/events/1")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/events/1"))
                     .andExpect(status().isNoContent());
         }
     }
@@ -235,8 +247,7 @@ class EventControllerTest {
         void shouldRegisterForEventSuccessfully() throws Exception {
             willDoNothing().given(eventService).registerForEvent(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/events/1/register")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/events/1/register"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Successfully registered for the event"));
         }
@@ -247,8 +258,7 @@ class EventControllerTest {
             willThrow(new ApiRequestException("Event is full", HttpStatus.BAD_REQUEST))
                     .given(eventService).registerForEvent(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/events/1/register")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/events/1/register"))
                     .andExpect(status().isBadRequest());
         }
 
@@ -258,8 +268,7 @@ class EventControllerTest {
             willThrow(new ApiRequestException("Already registered", HttpStatus.BAD_REQUEST))
                     .given(eventService).registerForEvent(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/events/1/register")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/events/1/register"))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -273,8 +282,7 @@ class EventControllerTest {
         void shouldUnregisterFromEventSuccessfully() throws Exception {
             willDoNothing().given(eventService).unregisterFromEvent(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/events/1/register")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/events/1/register"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Successfully unregistered from the event"));
         }

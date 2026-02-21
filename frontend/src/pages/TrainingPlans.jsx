@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiTarget, FiCalendar, FiTrendingUp, FiZap, FiFileText, FiGrid, FiFile, FiDownload, FiClock, FiChevronRight, FiChevronDown, FiArrowLeft } from "react-icons/fi";
+import { FiTarget, FiCalendar, FiTrendingUp, FiZap, FiFileText, FiGrid, FiFile, FiClock, FiChevronRight, FiChevronDown, FiArrowLeft } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import AiService from "../api/AiService";
 import TrainingPlanService from "../api/TrainingPlanService";
@@ -854,6 +854,7 @@ const TrainingPlans = () => {
       }
     };
     fetchTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Goal Setting state

@@ -10,9 +10,11 @@ import com.strava.backend.mapper.ActivityMapper;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +28,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -96,6 +101,21 @@ class ActivityControllerTest {
         fullActivityResponse.setLikesCount(5);
         fullActivityResponse.setCommentsCount(2);
         fullActivityResponse.setComments(Collections.emptyList());
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -107,8 +127,7 @@ class ActivityControllerTest {
         void shouldReturnActivityWhenFound() throws Exception {
             when(activityMapper.getActivityById(1L, 1L)).thenReturn(fullActivityResponse);
 
-            mockMvc.perform(get("/api/v1/activities/1")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.title").value("Morning Run"))
@@ -141,8 +160,7 @@ class ActivityControllerTest {
                     List.of(activityResponse), 1, 1L);
             when(activityMapper.getFeedActivities(eq(1L), any(Pageable.class))).thenReturn(response);
 
-            mockMvc.perform(get("/api/v1/activities/feed")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/feed"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].title").value("Morning Run"));
@@ -172,7 +190,6 @@ class ActivityControllerTest {
                     .thenReturn(activityResponse);
 
             mockMvc.perform(post("/api/v1/activities")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(activityRequest)))
                     .andExpect(status().isCreated())
@@ -223,7 +240,6 @@ class ActivityControllerTest {
                     .thenReturn(activityResponse);
 
             mockMvc.perform(put("/api/v1/activities/1")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(activityRequest)))
                     .andExpect(status().isOk())
@@ -240,8 +256,7 @@ class ActivityControllerTest {
         void shouldDeleteActivitySuccessfully() throws Exception {
             doNothing().when(activityMapper).deleteActivity(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/activities/1")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/activities/1"))
                     .andExpect(status().isNoContent());
 
             verify(activityMapper).deleteActivity(1L, 1L);
@@ -257,8 +272,7 @@ class ActivityControllerTest {
         void shouldLikeActivitySuccessfully() throws Exception {
             doNothing().when(activityService).likeActivity(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/activities/1/like")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/activities/1/like"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Activity liked"));
 
@@ -271,8 +285,7 @@ class ActivityControllerTest {
             doThrow(new ApiRequestException("Activity already liked", HttpStatus.BAD_REQUEST))
                     .when(activityService).likeActivity(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/activities/1/like")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/activities/1/like"))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -286,8 +299,7 @@ class ActivityControllerTest {
         void shouldUnlikeActivitySuccessfully() throws Exception {
             doNothing().when(activityService).unlikeActivity(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/activities/1/like")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/activities/1/like"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Activity unliked"));
 
@@ -315,8 +327,7 @@ class ActivityControllerTest {
 
             when(activityMapper.getMonthlyStats(1L)).thenReturn(statsResponse);
 
-            mockMvc.perform(get("/api/v1/activities/stats/monthly")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/stats/monthly"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalDistance").value(100.0))
                     .andExpect(jsonPath("$.totalActivities").value(10))
@@ -346,8 +357,7 @@ class ActivityControllerTest {
 
             when(activityMapper.getWeeklyStats(1L)).thenReturn(weeklyStats);
 
-            mockMvc.perform(get("/api/v1/activities/stats/weekly")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/stats/weekly"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalDistance").value(50.0))
                     .andExpect(jsonPath("$.trendPercentage").value("+10%"))
@@ -367,8 +377,7 @@ class ActivityControllerTest {
             when(activityMapper.getActivitiesByUserId(eq(2L), eq(1L), any(Pageable.class)))
                     .thenReturn(response);
 
-            mockMvc.perform(get("/api/v1/activities/user/2")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/user/2"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1));
         }
@@ -386,8 +395,7 @@ class ActivityControllerTest {
             when(activityMapper.getActivitiesByUserId(eq(1L), eq(1L), any(Pageable.class)))
                     .thenReturn(response);
 
-            mockMvc.perform(get("/api/v1/activities/my")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/my"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1));
         }
@@ -412,7 +420,6 @@ class ActivityControllerTest {
             when(activityService.isLikedByUser(1L, 1L)).thenReturn(false);
 
             mockMvc.perform(get("/api/v1/activities/my")
-                            .param("userId", "1")
                             .param("search", "Morning"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
@@ -441,7 +448,6 @@ class ActivityControllerTest {
             when(activityService.isLikedByUser(1L, 1L)).thenReturn(false);
 
             mockMvc.perform(get("/api/v1/activities/my")
-                            .param("userId", "1")
                             .param("activityType", "RUN"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
@@ -458,7 +464,6 @@ class ActivityControllerTest {
                     .thenReturn(emptyPage);
 
             mockMvc.perform(get("/api/v1/activities/my")
-                            .param("userId", "1")
                             .param("search", "nonexistent"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isEmpty());
@@ -476,8 +481,7 @@ class ActivityControllerTest {
             when(activityRepository.sumDistanceByUserId(1L)).thenReturn(150.5);
             when(activityRepository.sumDurationByUserId(1L)).thenReturn(36000L);
 
-            mockMvc.perform(get("/api/v1/activities/my/stats")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/my/stats"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalActivities").value(10))
                     .andExpect(jsonPath("$.totalDistanceKm").value(150.5))
@@ -491,8 +495,7 @@ class ActivityControllerTest {
             when(activityRepository.sumDistanceByUserId(1L)).thenReturn(null);
             when(activityRepository.sumDurationByUserId(1L)).thenReturn(null);
 
-            mockMvc.perform(get("/api/v1/activities/my/stats")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/activities/my/stats"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalActivities").value(0))
                     .andExpect(jsonPath("$.totalDistanceKm").value(0.0))

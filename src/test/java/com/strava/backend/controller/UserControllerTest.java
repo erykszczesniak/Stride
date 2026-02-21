@@ -10,9 +10,11 @@ import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.mapper.UserMapper;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.UserService;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,10 +25,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -87,6 +93,21 @@ class UserControllerTest {
         baseUserResponse.setId(1L);
         baseUserResponse.setFirstName("John");
         baseUserResponse.setLastName("Doe");
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("john@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -100,8 +121,7 @@ class UserControllerTest {
             given(userMapper.getCurrentUser(1L)).willReturn(userResponse);
 
             // When/Then
-            mockMvc.perform(get("/api/v1/users/me")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/users/me"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.email").value("john@example.com"))
@@ -115,8 +135,7 @@ class UserControllerTest {
             given(userMapper.getCurrentUser(1L)).willReturn(userResponse);
 
             // When/Then
-            mockMvc.perform(get("/api/v1/users/me")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/users/me"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.weight").value(70.5))
                     .andExpect(jsonPath("$.height").value(175.0));
@@ -207,7 +226,6 @@ class UserControllerTest {
 
             // When/Then
             mockMvc.perform(put("/api/v1/users/me")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -232,7 +250,6 @@ class UserControllerTest {
 
             // When/Then
             mockMvc.perform(put("/api/v1/users/me")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -252,8 +269,7 @@ class UserControllerTest {
             willDoNothing().given(userService).followUser(1L, 2L);
 
             // When/Then
-            mockMvc.perform(post("/api/v1/users/2/follow")
-                            .param("currentUserId", "1"))
+            mockMvc.perform(post("/api/v1/users/2/follow"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("User followed"));
         }
@@ -266,8 +282,7 @@ class UserControllerTest {
                     .given(userService).followUser(1L, 2L);
 
             // When/Then
-            mockMvc.perform(post("/api/v1/users/2/follow")
-                            .param("currentUserId", "1"))
+            mockMvc.perform(post("/api/v1/users/2/follow"))
                     .andExpect(status().isBadRequest());
         }
 
@@ -294,8 +309,7 @@ class UserControllerTest {
             willDoNothing().given(userService).unfollowUser(1L, 2L);
 
             // When/Then
-            mockMvc.perform(delete("/api/v1/users/2/follow")
-                            .param("currentUserId", "1"))
+            mockMvc.perform(delete("/api/v1/users/2/follow"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("User unfollowed"));
         }
@@ -308,8 +322,7 @@ class UserControllerTest {
                     .given(userService).unfollowUser(1L, 2L);
 
             // When/Then
-            mockMvc.perform(delete("/api/v1/users/2/follow")
-                            .param("currentUserId", "1"))
+            mockMvc.perform(delete("/api/v1/users/2/follow"))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -415,7 +428,6 @@ class UserControllerTest {
 
             // When/Then
             mockMvc.perform(get("/api/v1/users/suggested")
-                            .param("userId", "1")
                             .param("limit", "5"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(2))
@@ -431,8 +443,7 @@ class UserControllerTest {
             given(userService.getSuggestedUsers(1L, 5)).willReturn(List.of());
 
             // When/Then
-            mockMvc.perform(get("/api/v1/users/suggested")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/users/suggested"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isEmpty());
         }
@@ -463,7 +474,6 @@ class UserControllerTest {
 
             // When/Then
             mockMvc.perform(get("/api/v1/users/suggested")
-                            .param("userId", "1")
                             .param("limit", "10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(2));

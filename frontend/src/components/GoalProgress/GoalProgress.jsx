@@ -1,6 +1,6 @@
 import React from "react";
 import { FaRunning, FaBicycle, FaSwimmer, FaHiking } from "react-icons/fa";
-import { FiTarget, FiClock, FiTrendingUp } from "react-icons/fi";
+import { FiTarget } from "react-icons/fi";
 import {
   GoalCard,
   GoalHeader,

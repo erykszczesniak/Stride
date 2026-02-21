@@ -276,7 +276,7 @@ export const SkeletonClubCard = () => (
   </ClubCardWrapper>
 );
 
-export default {
+const Skeleton = {
   SkeletonText,
   SkeletonCircle,
   SkeletonRect,
@@ -287,3 +287,5 @@ export default {
   SkeletonGoalProgress,
   SkeletonClubCard,
 };
+
+export default Skeleton;

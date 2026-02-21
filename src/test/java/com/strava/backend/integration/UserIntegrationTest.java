@@ -6,8 +6,10 @@ import com.strava.backend.dto.user.UpdateUserRequest;
 import com.strava.backend.enums.AuthProvider;
 import com.strava.backend.enums.Role;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.security.UserPrincipal;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIf;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -16,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.DockerClientFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -49,8 +54,13 @@ class UserIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     private User testUser;
     private User anotherUser;
+    private UsernamePasswordAuthenticationToken testAuth;
+    private UsernamePasswordAuthenticationToken anotherAuth;
 
     @BeforeEach
     void setUp() {
@@ -69,6 +79,8 @@ class UserIntegrationTest extends AbstractIntegrationTest {
                 .country("Poland")
                 .build();
         testUser = userRepository.save(testUser);
+        UserPrincipal userPrincipal = UserPrincipal.create(testUser);
+        testAuth = new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
 
         anotherUser = User.builder()
                 .email("jane@example.com")
@@ -83,6 +95,8 @@ class UserIntegrationTest extends AbstractIntegrationTest {
                 .country("Poland")
                 .build();
         anotherUser = userRepository.save(anotherUser);
+        UserPrincipal anotherPrincipal = UserPrincipal.create(anotherUser);
+        anotherAuth = new UsernamePasswordAuthenticationToken(anotherPrincipal, null, anotherPrincipal.getAuthorities());
     }
 
     @Nested
@@ -92,7 +106,8 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("Should return user when found")
         void shouldReturnUserWhenFound() throws Exception {
-            mockMvc.perform(get("/api/v1/users/{userId}", testUser.getId()))
+            mockMvc.perform(get("/api/v1/users/{userId}", testUser.getId())
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testUser.getId()))
                     .andExpect(jsonPath("$.email").value("john@example.com"))
@@ -104,7 +119,8 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("Should return 404 for non-existent user")
         void shouldReturn404ForNonExistentUser() throws Exception {
-            mockMvc.perform(get("/api/v1/users/{userId}", 99999L))
+            mockMvc.perform(get("/api/v1/users/{userId}", 99999L)
+                            .with(authentication(testAuth)))
                     .andExpect(status().isNotFound());
         }
     }
@@ -117,7 +133,7 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         @DisplayName("Should return current user profile")
         void shouldReturnCurrentUserProfile() throws Exception {
             mockMvc.perform(get("/api/v1/users/me")
-                            .param("userId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testUser.getId()))
                     .andExpect(jsonPath("$.email").value("john@example.com"));
@@ -132,6 +148,7 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         @DisplayName("Should return paginated list of users")
         void shouldReturnPaginatedUsers() throws Exception {
             mockMvc.perform(get("/api/v1/users")
+                            .with(authentication(testAuth))
                             .param("page", "0")
                             .param("size", "10"))
                     .andExpect(status().isOk())
@@ -154,7 +171,7 @@ class UserIntegrationTest extends AbstractIntegrationTest {
             updateRequest.setCountry("Poland");
 
             mockMvc.perform(put("/api/v1/users/me")
-                            .param("userId", testUser.getId().toString())
+                            .with(authentication(testAuth))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(updateRequest)))
                     .andExpect(status().isOk())
@@ -178,22 +195,26 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         void shouldFollowAndUnfollowUser() throws Exception {
             // Follow user
             mockMvc.perform(post("/api/v1/users/{userId}/follow", anotherUser.getId())
-                            .param("currentUserId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("User followed"));
 
             // Verify follow relationship in database
+            entityManager.flush();
+            entityManager.clear();
             User follower = userRepository.findById(testUser.getId()).orElseThrow();
             User followed = userRepository.findById(anotherUser.getId()).orElseThrow();
             assertThat(follower.getFollowing()).contains(followed);
 
             // Unfollow user
             mockMvc.perform(delete("/api/v1/users/{userId}/follow", anotherUser.getId())
-                            .param("currentUserId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("User unfollowed"));
 
             // Verify unfollow in database
+            entityManager.flush();
+            entityManager.clear();
             follower = userRepository.findById(testUser.getId()).orElseThrow();
             followed = userRepository.findById(anotherUser.getId()).orElseThrow();
             assertThat(follower.getFollowing()).doesNotContain(followed);
@@ -203,7 +224,7 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         @DisplayName("Should return error when following self")
         void shouldReturnErrorWhenFollowingSelf() throws Exception {
             mockMvc.perform(post("/api/v1/users/{userId}/follow", testUser.getId())
-                            .param("currentUserId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -217,11 +238,12 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         void shouldReturnFollowersList() throws Exception {
             // First, make testUser follow anotherUser
             mockMvc.perform(post("/api/v1/users/{userId}/follow", anotherUser.getId())
-                            .param("currentUserId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk());
 
             // Get followers of anotherUser
-            mockMvc.perform(get("/api/v1/users/{userId}/followers", anotherUser.getId()))
+            mockMvc.perform(get("/api/v1/users/{userId}/followers", anotherUser.getId())
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1))
                     .andExpect(jsonPath("$[0].firstName").value("John"));
@@ -230,7 +252,8 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("Should return empty list when no followers")
         void shouldReturnEmptyListWhenNoFollowers() throws Exception {
-            mockMvc.perform(get("/api/v1/users/{userId}/followers", testUser.getId()))
+            mockMvc.perform(get("/api/v1/users/{userId}/followers", testUser.getId())
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(0));
         }
@@ -245,11 +268,16 @@ class UserIntegrationTest extends AbstractIntegrationTest {
         void shouldReturnFollowingList() throws Exception {
             // First, make testUser follow anotherUser
             mockMvc.perform(post("/api/v1/users/{userId}/follow", anotherUser.getId())
-                            .param("currentUserId", testUser.getId().toString()))
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk());
 
+            // Clear Hibernate session to force fresh load
+            entityManager.flush();
+            entityManager.clear();
+
             // Get following list of testUser
-            mockMvc.perform(get("/api/v1/users/{userId}/following", testUser.getId()))
+            mockMvc.perform(get("/api/v1/users/{userId}/following", testUser.getId())
+                            .with(authentication(testAuth)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1))
                     .andExpect(jsonPath("$[0].firstName").value("Jane"));

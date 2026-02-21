@@ -7,8 +7,10 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,6 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -67,6 +72,21 @@ class ExportControllerTest {
         activityResponse.setActivityType(ActivityType.RUN);
         activityResponse.setDistance(10.5);
         activityResponse.setDuration(3600);
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -80,8 +100,7 @@ class ExportControllerTest {
             given(commonMapper.convertToResponseList(List.of(testActivity), ActivityResponse.class))
                     .willReturn(List.of(activityResponse));
 
-            mockMvc.perform(get("/api/v1/export/activities/json")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/json"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
@@ -95,8 +114,7 @@ class ExportControllerTest {
             given(commonMapper.convertToResponseList(Collections.emptyList(), ActivityResponse.class))
                     .willReturn(Collections.emptyList());
 
-            mockMvc.perform(get("/api/v1/export/activities/json")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/json"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON));
         }
@@ -122,8 +140,7 @@ class ExportControllerTest {
         void shouldExportActivitiesAsCsv() throws Exception {
             given(activityRepository.findByUserIdOrderByCreatedAtDesc(1L)).willReturn(List.of(testActivity));
 
-            mockMvc.perform(get("/api/v1/export/activities/csv")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/csv"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/csv"))
                     .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
@@ -135,8 +152,7 @@ class ExportControllerTest {
         void shouldIncludeCsvHeaders() throws Exception {
             given(activityRepository.findByUserIdOrderByCreatedAtDesc(1L)).willReturn(Collections.emptyList());
 
-            mockMvc.perform(get("/api/v1/export/activities/csv")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/csv"))
                     .andExpect(status().isOk())
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("ID,Title,Activity Type")));
         }
@@ -151,8 +167,7 @@ class ExportControllerTest {
         void shouldExportActivitiesAsTxt() throws Exception {
             given(activityRepository.findByUserIdOrderByCreatedAtDesc(1L)).willReturn(List.of(testActivity));
 
-            mockMvc.perform(get("/api/v1/export/activities/txt")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/txt"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                     .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
@@ -164,8 +179,7 @@ class ExportControllerTest {
         void shouldIncludeReportHeaders() throws Exception {
             given(activityRepository.findByUserIdOrderByCreatedAtDesc(1L)).willReturn(Collections.emptyList());
 
-            mockMvc.perform(get("/api/v1/export/activities/txt")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/txt"))
                     .andExpect(status().isOk())
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("ACTIVITIES EXPORT REPORT")));
         }
@@ -175,8 +189,7 @@ class ExportControllerTest {
         void shouldIncludeTotalActivitiesCount() throws Exception {
             given(activityRepository.findByUserIdOrderByCreatedAtDesc(1L)).willReturn(List.of(testActivity));
 
-            mockMvc.perform(get("/api/v1/export/activities/txt")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/txt"))
                     .andExpect(status().isOk())
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("Total activities: 1")));
         }
@@ -191,8 +204,7 @@ class ExportControllerTest {
         void shouldExportActivityAsGpx() throws Exception {
             given(activityRepository.findById(1L)).willReturn(Optional.of(testActivity));
 
-            mockMvc.perform(get("/api/v1/export/activities/gpx/1")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/export/activities/gpx/1"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_XML))
                     .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))

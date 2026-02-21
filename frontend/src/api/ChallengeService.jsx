@@ -30,4 +30,5 @@ class ChallengeService {
   }
 }
 
-export default new ChallengeService();
+const challengeService = new ChallengeService();
+export default challengeService;

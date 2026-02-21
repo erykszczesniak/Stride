@@ -9,9 +9,11 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.ClubService;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +26,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -77,6 +82,21 @@ class ClubControllerTest {
         clubRequest.setCountry("Poland");
         clubRequest.setSportType(ActivityType.RUN);
         clubRequest.setPrivate(false);
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -90,8 +110,7 @@ class ClubControllerTest {
             given(clubService.getAllPublicClubs(any(Pageable.class))).willReturn(clubPage);
             given(clubService.isUserMember(1L, 1L)).willReturn(false);
 
-            mockMvc.perform(get("/api/v1/clubs")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/clubs"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].name").value("Running Club"));
@@ -119,8 +138,7 @@ class ClubControllerTest {
             given(clubService.getClubById(1L)).willReturn(testClub);
             given(clubService.isUserMember(1L, 1L)).willReturn(true);
 
-            mockMvc.perform(get("/api/v1/clubs/1")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/clubs/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.name").value("Running Club"))
@@ -148,8 +166,7 @@ class ClubControllerTest {
             given(clubService.getClubsByUserId(1L)).willReturn(List.of(testClub));
             given(clubService.isUserMember(1L, 1L)).willReturn(true);
 
-            mockMvc.perform(get("/api/v1/clubs/my")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/clubs/my"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1));
         }
@@ -166,7 +183,6 @@ class ClubControllerTest {
             given(clubService.isUserMember(1L, 1L)).willReturn(true);
 
             mockMvc.perform(post("/api/v1/clubs")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(clubRequest)))
                     .andExpect(status().isCreated())
@@ -180,7 +196,6 @@ class ClubControllerTest {
             clubRequest.setName("");
 
             mockMvc.perform(post("/api/v1/clubs")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(clubRequest)))
                     .andExpect(status().isBadRequest());
@@ -199,7 +214,6 @@ class ClubControllerTest {
             given(clubService.isUserMember(1L, 1L)).willReturn(true);
 
             mockMvc.perform(put("/api/v1/clubs/1")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(clubRequest)))
                     .andExpect(status().isOk())
@@ -209,11 +223,10 @@ class ClubControllerTest {
         @Test
         @DisplayName("Should return 403 when not owner")
         void shouldReturn403WhenNotOwner() throws Exception {
-            given(clubService.updateClub(eq(1L), any(Club.class), eq(2L)))
+            given(clubService.updateClub(eq(1L), any(Club.class), eq(1L)))
                     .willThrow(new ApiRequestException("Not authorized", HttpStatus.FORBIDDEN));
 
             mockMvc.perform(put("/api/v1/clubs/1")
-                            .param("userId", "2")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(clubRequest)))
                     .andExpect(status().isForbidden());
@@ -229,8 +242,7 @@ class ClubControllerTest {
         void shouldDeleteClubSuccessfully() throws Exception {
             willDoNothing().given(clubService).deleteClub(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/clubs/1")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/clubs/1"))
                     .andExpect(status().isNoContent());
         }
     }
@@ -244,8 +256,7 @@ class ClubControllerTest {
         void shouldJoinClubSuccessfully() throws Exception {
             willDoNothing().given(clubService).joinClub(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/clubs/1/join")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/clubs/1/join"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Successfully joined the club"));
         }
@@ -256,8 +267,7 @@ class ClubControllerTest {
             willThrow(new ApiRequestException("Already a member", HttpStatus.BAD_REQUEST))
                     .given(clubService).joinClub(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/clubs/1/join")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/clubs/1/join"))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -271,8 +281,7 @@ class ClubControllerTest {
         void shouldLeaveClubSuccessfully() throws Exception {
             willDoNothing().given(clubService).leaveClub(1L, 1L);
 
-            mockMvc.perform(post("/api/v1/clubs/1/leave")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/clubs/1/leave"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Successfully left the club"));
         }
@@ -312,8 +321,7 @@ class ClubControllerTest {
             given(clubService.isUserMember(1L, 1L)).willReturn(false);
 
             mockMvc.perform(get("/api/v1/clubs/search")
-                            .param("q", "Running")
-                            .param("userId", "1"))
+                            .param("q", "Running"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].name").value("Running Club"));
         }
@@ -330,8 +338,7 @@ class ClubControllerTest {
             given(clubService.getClubsByUserId(1L)).willReturn(List.of(testClub, testClub));
             given(clubService.countTotalMembers()).willReturn(100L);
 
-            mockMvc.perform(get("/api/v1/clubs/stats")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/clubs/stats"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalClubs").value(10))
                     .andExpect(jsonPath("$.userClubs").value(2))
@@ -351,7 +358,6 @@ class ClubControllerTest {
             given(clubService.isUserMember(1L, 1L)).willReturn(false);
 
             mockMvc.perform(get("/api/v1/clubs")
-                            .param("userId", "1")
                             .param("sportType", "RUN"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].sportType").value("RUN"));

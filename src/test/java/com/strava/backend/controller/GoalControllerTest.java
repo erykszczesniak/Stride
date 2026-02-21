@@ -10,9 +10,11 @@ import com.strava.backend.enums.GoalPeriod;
 import com.strava.backend.enums.GoalType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.GoalService;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,6 +24,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -66,6 +71,21 @@ class GoalControllerTest {
         testUser = TestDataFactory.createUser();
         testGoal = TestDataFactory.createGoal(1L, testUser);
         goalRequest = TestDataFactory.createGoalRequest();
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -77,8 +97,7 @@ class GoalControllerTest {
         void shouldReturnActiveGoals() throws Exception {
             given(goalService.getActiveGoalsByUserId(1L)).willReturn(List.of(testGoal));
 
-            mockMvc.perform(get("/api/v1/goals")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/goals"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].goalType").value("DISTANCE"))
@@ -90,8 +109,7 @@ class GoalControllerTest {
         void shouldReturnEmptyListWhenNoActiveGoals() throws Exception {
             given(goalService.getActiveGoalsByUserId(1L)).willReturn(Collections.emptyList());
 
-            mockMvc.perform(get("/api/v1/goals")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/goals"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isEmpty());
         }
@@ -117,8 +135,7 @@ class GoalControllerTest {
             inactiveGoal.setActive(false);
             given(goalService.getAllGoalsByUserId(1L)).willReturn(List.of(testGoal, inactiveGoal));
 
-            mockMvc.perform(get("/api/v1/goals/all")
-                            .param("userId", "1"))
+            mockMvc.perform(get("/api/v1/goals/all"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(2));
         }
@@ -162,7 +179,6 @@ class GoalControllerTest {
             given(goalService.createGoal(eq(1L), any(GoalRequest.class))).willReturn(testGoal);
 
             mockMvc.perform(post("/api/v1/goals")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(goalRequest)))
                     .andExpect(status().isCreated())
@@ -176,7 +192,6 @@ class GoalControllerTest {
             goalRequest.setGoalType(null);
 
             mockMvc.perform(post("/api/v1/goals")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(goalRequest)))
                     .andExpect(status().isBadRequest());
@@ -188,7 +203,6 @@ class GoalControllerTest {
             goalRequest.setPeriod(null);
 
             mockMvc.perform(post("/api/v1/goals")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(goalRequest)))
                     .andExpect(status().isBadRequest());
@@ -200,7 +214,6 @@ class GoalControllerTest {
             goalRequest.setTargetValue(null);
 
             mockMvc.perform(post("/api/v1/goals")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(goalRequest)))
                     .andExpect(status().isBadRequest());
@@ -212,7 +225,6 @@ class GoalControllerTest {
             goalRequest.setTargetValue(-10.0);
 
             mockMvc.perform(post("/api/v1/goals")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(goalRequest)))
                     .andExpect(status().isBadRequest());
@@ -230,7 +242,6 @@ class GoalControllerTest {
             given(goalService.updateGoal(eq(1L), eq(1L), any(GoalRequest.class))).willReturn(testGoal);
 
             mockMvc.perform(put("/api/v1/goals/1")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(goalRequest)))
                     .andExpect(status().isOk())
@@ -240,11 +251,10 @@ class GoalControllerTest {
         @Test
         @DisplayName("Should return 403 when not goal owner")
         void shouldReturn403WhenNotGoalOwner() throws Exception {
-            given(goalService.updateGoal(eq(1L), eq(2L), any(GoalRequest.class)))
+            given(goalService.updateGoal(eq(1L), eq(1L), any(GoalRequest.class)))
                     .willThrow(new ApiRequestException("Not authorized", HttpStatus.FORBIDDEN));
 
             mockMvc.perform(put("/api/v1/goals/1")
-                            .param("userId", "2")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(goalRequest)))
                     .andExpect(status().isForbidden());
@@ -260,8 +270,7 @@ class GoalControllerTest {
         void shouldDeleteGoalSuccessfully() throws Exception {
             willDoNothing().given(goalService).deleteGoal(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/goals/1")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/goals/1"))
                     .andExpect(status().isNoContent());
         }
     }
@@ -275,8 +284,7 @@ class GoalControllerTest {
         void shouldUpdateGoalProgressSuccessfully() throws Exception {
             willDoNothing().given(goalService).updateGoalProgress(1L);
 
-            mockMvc.perform(post("/api/v1/goals/progress")
-                            .param("userId", "1"))
+            mockMvc.perform(post("/api/v1/goals/progress"))
                     .andExpect(status().isOk());
         }
     }

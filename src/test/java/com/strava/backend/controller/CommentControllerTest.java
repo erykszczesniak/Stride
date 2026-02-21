@@ -10,9 +10,11 @@ import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.security.CustomUserDetailsService;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.CommentService;
 import com.strava.backend.util.TestDataFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,11 +24,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +92,21 @@ class CommentControllerTest {
         commentResponse.setContent("Great activity!");
         commentResponse.setCreatedAt(LocalDateTime.now());
         commentResponse.setUser(userResponse);
+
+        UserPrincipal userPrincipal = UserPrincipal.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("password")
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .build();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested
@@ -129,7 +150,6 @@ class CommentControllerTest {
             given(commonMapper.convertToResponse(testComment, CommentResponse.class)).willReturn(commentResponse);
 
             mockMvc.perform(post("/api/v1/activities/1/comments")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(commentRequest)))
                     .andExpect(status().isCreated())
@@ -143,7 +163,6 @@ class CommentControllerTest {
             commentRequest.setContent("");
 
             mockMvc.perform(post("/api/v1/activities/1/comments")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(commentRequest)))
                     .andExpect(status().isBadRequest());
@@ -178,7 +197,6 @@ class CommentControllerTest {
             given(commonMapper.convertToResponse(testComment, CommentResponse.class)).willReturn(commentResponse);
 
             mockMvc.perform(put("/api/v1/activities/1/comments/1")
-                            .param("userId", "1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(updateRequest)))
                     .andExpect(status().isOk())
@@ -188,14 +206,13 @@ class CommentControllerTest {
         @Test
         @DisplayName("Should return 403 when not comment author")
         void shouldReturn403WhenNotCommentAuthor() throws Exception {
-            given(commentService.updateComment(1L, 2L, "Updated comment"))
+            given(commentService.updateComment(1L, 1L, "Updated comment"))
                     .willThrow(new ApiRequestException("Not authorized", HttpStatus.FORBIDDEN));
 
             CommentRequest updateRequest = new CommentRequest();
             updateRequest.setContent("Updated comment");
 
             mockMvc.perform(put("/api/v1/activities/1/comments/1")
-                            .param("userId", "2")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(updateRequest)))
                     .andExpect(status().isForbidden());
@@ -211,8 +228,7 @@ class CommentControllerTest {
         void shouldDeleteCommentSuccessfully() throws Exception {
             willDoNothing().given(commentService).deleteComment(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/activities/1/comments/1")
-                            .param("userId", "1"))
+            mockMvc.perform(delete("/api/v1/activities/1/comments/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Comment deleted"));
         }
@@ -221,10 +237,9 @@ class CommentControllerTest {
         @DisplayName("Should return 403 when not comment author")
         void shouldReturn403WhenNotCommentAuthor() throws Exception {
             willThrow(new ApiRequestException("Not authorized", HttpStatus.FORBIDDEN))
-                    .given(commentService).deleteComment(1L, 2L);
+                    .given(commentService).deleteComment(1L, 1L);
 
-            mockMvc.perform(delete("/api/v1/activities/1/comments/1")
-                            .param("userId", "2"))
+            mockMvc.perform(delete("/api/v1/activities/1/comments/1"))
                     .andExpect(status().isForbidden());
         }
     }

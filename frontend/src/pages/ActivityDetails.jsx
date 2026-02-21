@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { FiArrowLeft, FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiClock, FiSend, FiEdit2, FiTrash2, FiX, FiCheck } from "react-icons/fi";
-import { FaRunning, FaBicycle, FaSwimmer, FaHiking } from "react-icons/fa";
+import { FiArrowLeft, FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiSend, FiEdit2, FiTrash2, FiX, FiCheck } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
@@ -468,13 +467,6 @@ const NoComments = styled.p`
   transition: color 0.3s ease;
 `;
 
-const activityIcons = {
-  RUN: <FaRunning size={20} />,
-  RIDE: <FaBicycle size={20} />,
-  SWIM: <FaSwimmer size={20} />,
-  HIKE: <FaHiking size={20} />,
-};
-
 const formatDuration = (seconds) => {
   if (!seconds) return "0m";
   const hours = Math.floor(seconds / 3600);
@@ -538,6 +530,7 @@ const ActivityDetails = () => {
     if (id) {
       fetchComments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleLike = async () => {
