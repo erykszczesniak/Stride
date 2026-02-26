@@ -31,13 +31,13 @@ const TitleGroup = styled.div``;
 const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
 `;
 
 const PageSubtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 4px 0 0 0;
 `;
 
@@ -45,7 +45,7 @@ const AiBadge = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #fff3ed;
+  background-color: ${({ theme }) => theme.primaryLight};
   color: #fc4c02;
   padding: 8px 16px;
   border-radius: 20px;
@@ -57,7 +57,7 @@ const TabsContainer = styled.div`
   display: flex;
   gap: 4px;
   margin-bottom: 24px;
-  background-color: #f5f5f5;
+  background-color: ${({ theme }) => theme.bgSecondary};
   padding: 4px;
   border-radius: 10px;
   width: fit-content;
@@ -78,15 +78,15 @@ const Tab = styled.button`
     if (!props.active) return "transparent";
     return props.variant === "training" ? "#e040fb" : "#fc4c02";
   }};
-  color: ${(props) => (props.active ? "white" : "#666")};
+  color: ${(props) => (props.active ? "white" : props.theme.textSecondary)};
 
   &:hover {
-    color: ${(props) => (props.active ? "white" : "#333")};
+    color: ${(props) => (props.active ? "white" : props.theme.textPrimary)};
   }
 `;
 
 const FormCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -117,13 +117,13 @@ const CardTitleGroup = styled.div``;
 const CardTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
 `;
 
 const CardSubtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 4px 0 0 0;
 `;
 
@@ -142,18 +142,19 @@ const Label = styled.label`
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 8px;
 `;
 
 const Select = styled.select`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.bgInput};
   cursor: pointer;
+  color: ${({ theme }) => theme.textPrimary};
 
   &:focus {
     outline: none;
@@ -164,9 +165,11 @@ const Select = styled.select`
 const Input = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textPrimary};
 
   &:focus {
     outline: none;
@@ -181,9 +184,10 @@ const Input = styled.input`
 const Textarea = styled.textarea`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  background: ${({ theme }) => theme.bgInput};
   min-height: 100px;
   resize: vertical;
 
@@ -284,7 +288,7 @@ const BannerText = styled.p`
 `;
 
 const ResultCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -302,7 +306,7 @@ const ResultSection = styled.div`
 const SectionTitle = styled.h4`
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 12px 0;
   display: flex;
   align-items: center;
@@ -311,7 +315,7 @@ const SectionTitle = styled.h4`
 
 const SectionText = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   line-height: 1.6;
   margin: 0;
 `;
@@ -344,11 +348,11 @@ const MilestoneNumber = styled.span`
 
 const MilestoneText = styled.span`
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 const TipItem = styled.div`
-  background-color: #fff8f5;
+  background-color: ${({ theme }) => theme.primaryLight};
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 8px;
@@ -368,7 +372,7 @@ const TipIcon = styled.span`
 
 const TipText = styled.span`
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   line-height: 1.5;
 `;
 
@@ -386,23 +390,23 @@ const WeekHeader = styled.div`
 const WeekTitle = styled.h4`
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
 `;
 
 const WeekDistance = styled.span`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 const WeekSubtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 16px 0;
 `;
 
 const WorkoutCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -415,14 +419,14 @@ const WorkoutCard = styled.div`
 const DayBadge = styled.div`
   width: 48px;
   height: 48px;
-  background-color: #f5f5f5;
+  background-color: ${({ theme }) => theme.bgSecondary};
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 const WorkoutInfo = styled.div`
@@ -447,12 +451,12 @@ const WorkoutType = styled.span`
 
 const WorkoutStats = styled.span`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 const WorkoutDescription = styled.p`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
 `;
 
@@ -584,13 +588,13 @@ const PlansHeader = styled.div`
 const PlansTitle = styled.h2`
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 8px 0;
 `;
 
 const PlansSubtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
 `;
 
@@ -600,14 +604,14 @@ const BackButton = styled.button`
   gap: 8px;
   background: none;
   border: none;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   font-size: 14px;
   cursor: pointer;
   padding: 8px 0;
   margin-bottom: 16px;
 
   &:hover {
-    color: #333;
+    color: ${({ theme }) => theme.textPrimary};
   }
 `;
 
@@ -688,12 +692,12 @@ const DetailExportButton = styled.button`
 const WeeklyPlanTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 16px 0;
 `;
 
 const WeekAccordion = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   margin-bottom: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -708,15 +712,15 @@ const WeekAccordionHeader = styled.div`
   transition: background 0.2s;
 
   &:hover {
-    background: #f9fafb;
+    background: ${({ theme }) => theme.bgHover};
   }
 `;
 
 const WeekNumber = styled.div`
   width: 36px;
   height: 36px;
-  background: ${props => props.expanded ? '#fc4c02' : '#f3f4f6'};
-  color: ${props => props.expanded ? 'white' : '#666'};
+  background: ${props => props.expanded ? '#fc4c02' : props.theme.bgSecondary};
+  color: ${props => props.expanded ? 'white' : props.theme.textSecondary};
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -734,12 +738,12 @@ const WeekInfo = styled.div`
 const WeekName = styled.div`
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 const WeekDescription = styled.div`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin-top: 2px;
 `;
 
@@ -760,7 +764,7 @@ const DayWorkout = styled.div`
   display: flex;
   align-items: flex-start;
   padding: 16px;
-  background: #f9fafb;
+  background: ${({ theme }) => theme.bgSecondary};
   border-radius: 8px;
   margin-bottom: 8px;
 
@@ -782,12 +786,12 @@ const DayInfo = styled.div`
 const DayName = styled.div`
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 const DayType = styled.div`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin-top: 2px;
 `;
 
@@ -799,12 +803,12 @@ const DayDescription = styled.div`
 
 const DayDuration = styled.div`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   font-weight: 500;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   padding: 4px 10px;
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${({ theme }) => theme.border};
 `;
 
 const LoadingPlans = styled.div`
@@ -812,7 +816,7 @@ const LoadingPlans = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 300px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   font-size: 16px;
 `;
 

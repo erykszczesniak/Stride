@@ -7,8 +7,8 @@ export const Container = styled.div`
 `;
 
 export const ProfileHeader = styled.div`
-  background: white;
-  border-bottom: 1px solid #e5e5e5;
+  background: ${({ theme }) => theme.bgCard};
+  border-bottom: 1px solid ${({ theme }) => theme.border};
   margin-bottom: 32px;
 `;
 
@@ -40,7 +40,7 @@ export const Avatar = styled.div`
   height: 160px;
   border-radius: 50%;
   background: linear-gradient(135deg, #fc5200 0%, #ff7746 100%);
-  border: 6px solid white;
+  border: 6px solid ${({ theme }) => theme.bgCard};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,7 +83,7 @@ export const ProfileInfo = styled.div`
 export const ProfileName = styled.h1`
   font-size: 36px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 8px 0;
 
   @media (max-width: 768px) {
@@ -93,7 +93,7 @@ export const ProfileName = styled.h1`
 
 export const ProfileBio = styled.p`
   font-size: 16px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 4px 0;
 `;
 
@@ -105,12 +105,12 @@ export const ProfileLocation = styled.p`
 
 export const EditButton = styled.button`
   padding: 12px 24px;
-  background: white;
-  border: 2px solid #e5e5e5;
+  background: ${({ theme }) => theme.bgCard};
+  border: 2px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 8px;
@@ -143,7 +143,7 @@ export const StatItem = styled.div`
 export const StatValue = styled.div`
   font-size: 32px;
   font-weight: 900;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 4px;
 
   @media (max-width: 768px) {
@@ -153,15 +153,15 @@ export const StatValue = styled.div`
 
 export const StatLabel = styled.div`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   font-weight: 500;
 `;
 
 export const TabsContainer = styled.div`
   display: flex;
   gap: 8px;
-  background: white;
-  border: 1px solid #e5e5e5;
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.border};
   padding: 4px;
   border-radius: 12px;
   margin-bottom: 32px;
@@ -174,8 +174,8 @@ export const TabsContainer = styled.div`
 
 export const Tab = styled.button`
   padding: 12px 24px;
-  background: ${props => props.active ? '#1a1a1a' : 'transparent'};
-  color: ${props => props.active ? 'white' : '#666'};
+  background: ${props => props.active ? props.theme.textPrimary : 'transparent'};
+  color: ${props => props.active ? 'white' : props.theme.textSecondary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -185,7 +185,7 @@ export const Tab = styled.button`
   flex: 1;
 
   &:hover {
-    background: ${props => props.active ? '#1a1a1a' : '#f5f5f5'};
+    background: ${props => props.active ? props.theme.textPrimary : props.theme.bgHover};
   }
 `;
 
@@ -207,7 +207,7 @@ export const TabContent = styled.div`
 export const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 24px 0;
 `;
 
@@ -219,11 +219,11 @@ export const StatsGrid = styled.div`
 `;
 
 export const StatCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 24px;
   text-align: center;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   transition: all 0.2s ease;
 
   &:hover {
@@ -241,10 +241,10 @@ export const MonthlyChart = styled.div`
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 16px;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 32px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   margin-bottom: 48px;
 
   @media (max-width: 768px) {
@@ -276,7 +276,7 @@ export const MonthBar = styled.div`
 export const MonthLabel = styled.div`
   text-align: center;
   font-size: 12px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin-top: 8px;
   font-weight: 600;
 `;
@@ -285,7 +285,7 @@ export const MonthValue = styled.div`
   text-align: center;
   font-size: 14px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin-top: 4px;
 `;
 
@@ -300,15 +300,15 @@ export const LoadingSpinner = styled.div`
   text-align: center;
   padding: 60px 20px;
   font-size: 16px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 export const EmptyState = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 60px 20px;
   text-align: center;
   font-size: 16px;
-  color: #666;
-  border: 1px solid #e5e5e5;
+  color: ${({ theme }) => theme.textSecondary};
+  border: 1px solid ${({ theme }) => theme.border};
 `;

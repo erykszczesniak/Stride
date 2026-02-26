@@ -190,13 +190,13 @@ const ClubName = styled.h3`
 `;
 
 const CategoryBadge = styled.span`
-  background-color: ${(props) => props.bgColor || "#f5f5f5"};
-  color: ${(props) => props.textColor || "#666"};
+  background-color: ${(props) => props.bgColor || props.theme.bgSecondary};
+  color: ${(props) => props.textColor || props.theme.textSecondary};
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  border: 1px solid ${(props) => props.borderColor || "#e0e0e0"};
+  border: 1px solid ${(props) => props.borderColor || props.theme.border};
 `;
 
 const ClubDescription = styled.p`
@@ -302,7 +302,7 @@ const getCategoryInfo = (sportType) => {
     SWIM: { label: "swimming", bgColor: "#e3f2fd", textColor: "#2196f3", borderColor: "#2196f3", emoji: "🏊" },
     HIKE: { label: "hiking", bgColor: "#fff8e1", textColor: "#ff9800", borderColor: "#ff9800", emoji: "🥾" },
     OTHER: { label: "triathlon", bgColor: "#fce4ec", textColor: "#e91e63", borderColor: "#e91e63", emoji: "🏅" },
-    null: { label: "general", bgColor: "#f5f5f5", textColor: "#666", borderColor: "#e0e0e0", emoji: "⚡" },
+    null: { label: "general", bgColor: null, textColor: null, borderColor: null, emoji: "⚡" },
   };
   return categories[sportType] || categories[null];
 };

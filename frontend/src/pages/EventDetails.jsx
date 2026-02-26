@@ -11,7 +11,7 @@ const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   text-decoration: none;
   font-size: 14px;
   margin-bottom: 24px;
@@ -22,7 +22,7 @@ const BackLink = styled(Link)`
 `;
 
 const EventHeader = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 24px;
@@ -57,7 +57,7 @@ const DateBadge = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #fff3ed;
+  background: ${({ theme }) => theme.primaryLight};
   padding: 12px 16px;
   border-radius: 12px;
   min-width: 70px;
@@ -99,13 +99,13 @@ const EventType = styled.span`
 const Title = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 8px 0;
 `;
 
 const Description = styled.p`
   font-size: 15px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   line-height: 1.6;
   margin: 16px 0;
 `;
@@ -157,11 +157,11 @@ const RegisterButton = styled.button`
 
 const SecondaryButton = styled.button`
   padding: 14px 20px;
-  border: 1px solid #e0e0e0;
-  background: white;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 8px;
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -175,7 +175,7 @@ const SecondaryButton = styled.button`
 `;
 
 const InfoCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
@@ -185,7 +185,7 @@ const InfoCard = styled.div`
 const CardTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 16px 0;
   display: flex;
   align-items: center;
@@ -208,11 +208,11 @@ const InfoIcon = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: #f5f5f5;
+  background: ${({ theme }) => theme.bgSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   flex-shrink: 0;
 `;
 
@@ -227,19 +227,19 @@ const InfoLabel = styled.p`
 const InfoValue = styled.p`
   font-size: 15px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
 `;
 
 const ParticipantsSection = styled.div`
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid ${({ theme }) => theme.borderLight};
 `;
 
 const ProgressBar = styled.div`
   height: 8px;
-  background: #f0f0f0;
+  background: ${({ theme }) => theme.bgSecondary};
   border-radius: 4px;
   overflow: hidden;
   margin: 12px 0;
@@ -257,7 +257,7 @@ const ParticipantStats = styled.div`
   display: flex;
   justify-content: space-between;
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 const ExternalLink = styled.a`

@@ -16,7 +16,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 20px;
   width: 100%;
@@ -35,7 +35,7 @@ const Header = styled.div`
 const Title = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
 `;
 
@@ -43,7 +43,7 @@ const CloseButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   padding: 4px;
   display: flex;
   align-items: center;
@@ -51,7 +51,7 @@ const CloseButton = styled.button`
   border-radius: 4px;
 
   &:hover {
-    background-color: #f5f5f5;
+    background-color: ${({ theme }) => theme.bgHover};
   }
 `;
 
@@ -59,8 +59,8 @@ const UrlContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #f5f5f5;
-  border: 1px solid #e0e0e0;
+  background-color: ${({ theme }) => theme.bgSecondary};
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 12px;
@@ -71,7 +71,7 @@ const UrlInput = styled.input`
   border: none;
   background: transparent;
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   outline: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -90,13 +90,13 @@ const CopyButton = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    background-color: #e0e0e0;
+    background-color: ${({ theme }) => theme.bgHover};
   }
 `;
 
 const HelpText = styled.p`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
 `;
 

@@ -5,13 +5,13 @@ export const Card = styled(Link)`
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: #f8fafc;
+  background: ${({ theme }) => theme.bgSecondary};
   border-radius: 12px;
   text-decoration: none;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f1f5f9;
+    background: ${({ theme }) => theme.bgHover};
   }
 `;
 
@@ -49,14 +49,14 @@ export const EventInfo = styled.div`
 export const EventName = styled.h4`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 6px;
   line-height: 1.3;
 `;
 
 export const EventLocation = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   display: flex;
   align-items: center;
   gap: 4px;
@@ -103,7 +103,7 @@ export const EventsHeader = styled.div`
 export const EventsTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const ViewAllLink = styled(Link)`

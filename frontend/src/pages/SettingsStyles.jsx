@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const SettingsContainer = styled.div`
   display: flex;
   min-height: calc(100vh - 70px);
-  background: #f5f5f5;
+  background: ${({ theme }) => theme.bgPrimary};
 `;
 
 export const SettingsContent = styled.div`
@@ -23,7 +23,7 @@ export const SettingsHeader = styled.div`
 export const SettingsTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const SaveButton = styled.button`
@@ -61,7 +61,7 @@ export const SettingsLayout = styled.div`
 
 export const SettingsSidebar = styled.div`
   width: 240px;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 8px;
   height: fit-content;
@@ -82,8 +82,8 @@ export const SidebarItem = styled.button`
   width: 100%;
   padding: 14px 16px;
   border: none;
-  background: ${props => props.active ? '#fff7ed' : 'transparent'};
-  color: ${props => props.active ? '#fc5200' : '#666'};
+  background: ${props => props.active ? props.theme.primaryLight : 'transparent'};
+  color: ${props => props.active ? '#fc5200' : props.theme.textSecondary};
   font-size: 14px;
   font-weight: ${props => props.active ? '600' : '500'};
   cursor: pointer;
@@ -92,7 +92,7 @@ export const SidebarItem = styled.button`
   text-align: left;
 
   &:hover {
-    background: ${props => props.active ? '#fff7ed' : '#f5f5f5'};
+    background: ${props => props.active ? props.theme.primaryLight : props.theme.bgHover};
   }
 
   svg {
@@ -112,7 +112,7 @@ export const SidebarArrow = styled.span`
 
 export const SettingsPanel = styled.div`
   flex: 1;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 32px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -121,13 +121,13 @@ export const SettingsPanel = styled.div`
 export const PanelTitle = styled.h2`
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 8px 0;
 `;
 
 export const PanelDescription = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 24px 0;
 `;
 
@@ -137,7 +137,7 @@ export const ProfileHeader = styled.div`
   gap: 16px;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid ${({ theme }) => theme.borderLight};
 `;
 
 export const ProfileAvatar = styled.div`
@@ -165,13 +165,13 @@ export const ProfileInfo = styled.div``;
 export const ProfileName = styled.p`
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 4px 0;
 `;
 
 export const ProfileEmail = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
 `;
 
@@ -183,16 +183,18 @@ export const FormLabel = styled.label`
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 8px;
 `;
 
 export const FormInput = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  color: ${({ theme }) => theme.textPrimary};
+  background: ${({ theme }) => theme.bgInput};
   transition: all 0.2s ease;
 
   &:focus {
@@ -219,10 +221,11 @@ export const FormRow = styled.div`
 export const FormSelect = styled.select`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -238,7 +241,7 @@ export const ToggleItem = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: #fafafa;
+  background: ${({ theme }) => theme.bgSecondary};
   border-radius: 12px;
   margin-bottom: 12px;
 
@@ -252,13 +255,13 @@ export const ToggleInfo = styled.div``;
 export const ToggleTitle = styled.p`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 4px 0;
 `;
 
 export const ToggleDescription = styled.p`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
 `;
 
@@ -308,8 +311,8 @@ export const Toggle = styled.label`
 `;
 
 export const DarkModeToggle = styled(ToggleItem)`
-  background: white;
-  border: 1px solid #f0f0f0;
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.borderLight};
   margin-top: 24px;
 `;
 
@@ -321,21 +324,21 @@ export const DarkModeIcon = styled.div`
 
 export const AccountEmail = styled.div`
   padding: 16px 20px;
-  background: #fafafa;
+  background: ${({ theme }) => theme.bgSecondary};
   border-radius: 12px;
   margin-bottom: 24px;
 `;
 
 export const AccountEmailLabel = styled.p`
   font-size: 12px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 4px 0;
 `;
 
 export const AccountEmailValue = styled.p`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
 `;
 
@@ -346,7 +349,7 @@ export const SignOutButton = styled.button`
   gap: 8px;
   width: 100%;
   padding: 14px 24px;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border: 1px solid #fc5200;
   color: #fc5200;
   border-radius: 8px;
@@ -370,7 +373,7 @@ export const LoadingSpinner = styled.div`
     content: "";
     width: 40px;
     height: 40px;
-    border: 3px solid #f0f0f0;
+    border: 3px solid ${({ theme }) => theme.border};
     border-top-color: #fc5200;
     border-radius: 50%;
     animation: spin 1s linear infinite;

@@ -20,10 +20,10 @@ export const BackButton = styled(Link)`
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: white;
-  border: 1px solid #e5e5e5;
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 10px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   text-decoration: none;
   transition: all 0.2s ease;
 
@@ -40,13 +40,13 @@ export const HeaderContent = styled.div`
 export const Title = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 4px 0;
 `;
 
 export const Subtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
 `;
 
@@ -66,10 +66,10 @@ export const StatsGrid = styled.div`
 `;
 
 export const StatCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 24px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   transition: all 0.2s ease;
 
   &:hover {
@@ -93,21 +93,21 @@ export const StatIcon = styled.div`
 export const StatValue = styled.div`
   font-size: 32px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 4px;
 `;
 
 export const StatLabel = styled.div`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   font-weight: 500;
 `;
 
 export const TabsContainer = styled.div`
   display: flex;
   gap: 8px;
-  background: white;
-  border: 1px solid #e5e5e5;
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.border};
   padding: 4px;
   border-radius: 12px;
   margin-bottom: 24px;
@@ -116,8 +116,8 @@ export const TabsContainer = styled.div`
 
 export const Tab = styled.button`
   padding: 12px 24px;
-  background: ${props => props.active ? '#1a1a1a' : 'transparent'};
-  color: ${props => props.active ? 'white' : '#666'};
+  background: ${props => props.active ? props.theme.textPrimary : 'transparent'};
+  color: ${props => props.active ? 'white' : props.theme.textSecondary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -126,14 +126,14 @@ export const Tab = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${props => props.active ? '#1a1a1a' : '#f5f5f5'};
+    background: ${props => props.active ? props.theme.textPrimary : props.theme.bgHover};
   }
 `;
 
 export const TabContent = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   overflow: hidden;
 `;
 
@@ -142,14 +142,16 @@ export const TableHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid ${({ theme }) => theme.border};
 `;
 
 export const SearchInput = styled.input`
   padding: 10px 16px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textPrimary};
   width: 300px;
   transition: all 0.2s ease;
 
@@ -193,25 +195,25 @@ export const Th = styled.th`
   padding: 16px 24px;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e5e5e5;
-  background: #fafafa;
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.bgSecondary};
 `;
 
 export const Td = styled.td`
   padding: 16px 24px;
   font-size: 14px;
-  color: #333;
-  border-bottom: 1px solid #f0f0f0;
+  color: ${({ theme }) => theme.textPrimary};
+  border-bottom: 1px solid ${({ theme }) => theme.borderLight};
 `;
 
 export const Tr = styled.tr`
   transition: background 0.2s ease;
 
   &:hover {
-    background: #fafafa;
+    background: ${({ theme }) => theme.bgHover};
   }
 
   &:last-child td {
@@ -252,12 +254,12 @@ export const UserInfo = styled.div`
 
 export const UserName = styled.span`
   font-weight: 600;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const UserEmail = styled.span`
   font-size: 12px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 export const Badge = styled.span`
@@ -282,8 +284,8 @@ export const Badge = styled.span`
 
 export const ActionButton = styled.button`
   padding: 6px 12px;
-  border: 1px solid #e5e5e5;
-  background: white;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
@@ -307,14 +309,14 @@ export const Pagination = styled.div`
   align-items: center;
   gap: 8px;
   padding: 20px;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid ${({ theme }) => theme.border};
 `;
 
 export const PageButton = styled.button`
   padding: 8px 16px;
-  border: 1px solid ${props => props.active ? '#fc5200' : '#e5e5e5'};
-  background: ${props => props.active ? '#fc5200' : 'white'};
-  color: ${props => props.active ? 'white' : '#666'};
+  border: 1px solid ${props => props.active ? '#fc5200' : props.theme.border};
+  background: ${props => props.active ? '#fc5200' : props.theme.bgCard};
+  color: ${props => props.active ? 'white' : props.theme.textSecondary};
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
@@ -338,13 +340,13 @@ export const ExportSection = styled.div`
 export const ExportTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 8px 0;
 `;
 
 export const ExportDescription = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0 0 24px 0;
 `;
 
@@ -363,15 +365,17 @@ export const ExportRow = styled.div`
 export const ExportLabel = styled.label`
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   min-width: 100px;
 `;
 
 export const Select = styled.select`
   padding: 10px 16px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textPrimary};
   min-width: 200px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -389,8 +393,8 @@ export const FormatCards = styled.div`
 
 export const FormatCard = styled.button`
   padding: 16px 24px;
-  border: 2px solid ${props => props.selected ? '#fc5200' : '#e5e5e5'};
-  background: ${props => props.selected ? '#fff7ed' : 'white'};
+  border: 2px solid ${props => props.selected ? '#fc5200' : props.theme.border};
+  background: ${props => props.selected ? '#fff7ed' : props.theme.bgCard};
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -412,7 +416,7 @@ export const FormatIcon = styled.div`
 export const FormatName = styled.span`
   font-size: 14px;
   font-weight: 600;
-  color: ${props => props.selected ? '#fc5200' : '#333'};
+  color: ${props => props.selected ? '#fc5200' : props.theme.textPrimary};
 `;
 
 export const Checkbox = styled.label`
@@ -420,7 +424,7 @@ export const Checkbox = styled.label`
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
 
   input {
@@ -465,7 +469,7 @@ export const LoadingSpinner = styled.div`
     content: "";
     width: 40px;
     height: 40px;
-    border: 3px solid #f0f0f0;
+    border: 3px solid ${({ theme }) => theme.border};
     border-top-color: #fc5200;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -481,7 +485,7 @@ export const LoadingSpinner = styled.div`
 export const EmptyState = styled.div`
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 export const EmptyIcon = styled.div`

@@ -8,13 +8,13 @@ const LoadingContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: ${({ theme }) => theme.bgPrimary};
 `;
 
 const Spinner = styled.div`
   width: 40px;
   height: 40px;
-  border: 3px solid #e2e8f0;
+  border: 3px solid ${({ theme }) => theme.border};
   border-top-color: #fc4c02;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;

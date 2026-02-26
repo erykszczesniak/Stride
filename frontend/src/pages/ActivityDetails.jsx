@@ -450,11 +450,11 @@ const EditButton = styled.button`
   }
 
   &.cancel {
-    background: #e5e5e5;
-    color: #666;
+    background: ${({ theme }) => theme.bgHover};
+    color: ${({ theme }) => theme.textSecondary};
 
     &:hover {
-      background: #d5d5d5;
+      background: ${({ theme }) => theme.border};
     }
   }
 `;

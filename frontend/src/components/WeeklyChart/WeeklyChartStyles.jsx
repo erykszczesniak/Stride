@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const ChartContainer = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -17,7 +17,7 @@ export const ChartHeader = styled.div`
 export const ChartTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const TrendBadge = styled.span`
@@ -43,7 +43,7 @@ export const ChartLegend = styled.div`
   gap: 24px;
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid ${({ theme }) => theme.borderLight};
 `;
 
 export const LegendItem = styled.div`

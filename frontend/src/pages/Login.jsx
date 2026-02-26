@@ -7,7 +7,7 @@ import styled from "styled-components";
 const Container = styled.div`
   min-height: 100vh;
   display: flex;
-  background: #f8fafc;
+  background: ${({ theme }) => theme.bgPrimary};
 `;
 
 const LeftPanel = styled.div`
@@ -108,13 +108,13 @@ const MobileLogoText = styled.span`
 const Title = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 8px;
 `;
 
 const Description = styled.p`
   font-size: 15px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   margin-bottom: 32px;
 `;
 
@@ -132,7 +132,7 @@ const InputLabel = styled.label`
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 8px;
 `;
 
@@ -151,9 +151,11 @@ const InputIcon = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 14px 16px 14px 48px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 12px;
   font-size: 15px;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textPrimary};
   transition: all 0.2s;
 
   &:focus {
@@ -163,7 +165,7 @@ const Input = styled.input`
   }
 
   &::placeholder {
-    color: #94a3b8;
+    color: ${({ theme }) => theme.textMuted};
   }
 `;
 
@@ -231,19 +233,19 @@ const Divider = styled.div`
     content: "";
     flex: 1;
     height: 1px;
-    background: #e2e8f0;
+    background: ${({ theme }) => theme.border};
   }
 
   span {
     font-size: 13px;
-    color: #94a3b8;
+    color: ${({ theme }) => theme.textMuted};
   }
 `;
 
 const RegisterLink = styled.p`
   text-align: center;
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
 
   a {
     color: #fc4c02;
@@ -257,9 +259,9 @@ const RegisterLink = styled.p`
 `;
 
 const ErrorMessage = styled.div`
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #ef4444;
   padding: 12px 16px;
   border-radius: 10px;
   font-size: 14px;

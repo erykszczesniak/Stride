@@ -61,29 +61,29 @@ export const lightTheme = {
 
 export const darkTheme = {
   // Backgrounds
-  bgPrimary: '#0f0f1a',
-  bgSecondary: '#1a1a2e',
-  bgCard: '#252540',
-  bgHover: '#2d2d4a',
-  bgInput: '#1a1a2e',
+  bgPrimary: '#111113',
+  bgSecondary: '#1a1a1d',
+  bgCard: '#232326',
+  bgHover: '#2c2c30',
+  bgInput: '#1a1a1d',
 
   // Text
-  textPrimary: '#f1f5f9',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
+  textPrimary: '#ededef',
+  textSecondary: '#a0a0a8',
+  textMuted: '#63636b',
 
   // Brand
   primary: '#fc4c02',
   primaryHover: '#ff6b35',
-  primaryLight: '#2d1f1a',
+  primaryLight: '#2a1a10',
 
   // Borders
-  border: '#2d2d4a',
-  borderLight: '#252540',
+  border: '#2c2c30',
+  borderLight: '#232326',
 
   // Shadows
-  shadow: 'rgba(0, 0, 0, 0.3)',
-  shadowMedium: 'rgba(0, 0, 0, 0.4)',
+  shadow: 'rgba(0, 0, 0, 0.5)',
+  shadowMedium: 'rgba(0, 0, 0, 0.6)',
 
   // Status
   success: '#22c55e',
@@ -91,11 +91,11 @@ export const darkTheme = {
   warning: '#f59e0b',
 
   // Dropdown
-  dropdownBg: '#252540',
-  dropdownHover: '#2d2d4a',
+  dropdownBg: '#232326',
+  dropdownHover: '#2c2c30',
 
   // Sidebar
-  sidebarBg: '#1a1a2e',
-  sidebarHover: '#252540',
-  sidebarActive: '#2d1f1a',
+  sidebarBg: '#18181b',
+  sidebarHover: '#232326',
+  sidebarActive: '#2a1a10',
 };

@@ -4,7 +4,7 @@ export const Container = styled.div`
   max-width: 900px;
   margin: 0 auto;
   padding: 32px 24px;
-  background: #fafafa;
+  background: ${({ theme }) => theme.bgPrimary};
   min-height: 100vh;
 `;
 
@@ -15,12 +15,12 @@ export const Header = styled.div`
 export const Title = styled.h1`
   font-size: 32px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
 `;
 
 export const Section = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 32px;
   margin-bottom: 24px;
@@ -30,7 +30,7 @@ export const Section = styled.div`
 export const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #242428;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 24px 0;
 `;
 
@@ -47,8 +47,8 @@ export const ActivityTypeButton = styled.button`
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  background: ${props => props.selected ? `${props.color}15` : 'white'};
-  border: 2px solid ${props => props.selected ? props.color : '#e5e5e5'};
+  background: ${props => props.selected ? `${props.color}15` : props.theme.bgCard};
+  border: 2px solid ${props => props.selected ? props.color : props.theme.border};
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -73,7 +73,7 @@ export const ActivityIcon = styled.div`
 export const ActivityLabel = styled.span`
   font-size: 16px;
   font-weight: 600;
-  color: #242428;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const FormGroup = styled.div`
@@ -88,7 +88,7 @@ export const Label = styled.label`
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #242428;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 8px;
 `;
 
@@ -96,11 +96,13 @@ export const Input = styled.input`
   width: 100%;
   padding: 14px 16px;
   font-size: 16px;
-  border: 2px solid #e5e5e5;
+  border: 2px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   transition: all 0.2s ease;
   font-family: inherit;
   box-sizing: border-box;
+  color: ${({ theme }) => theme.textPrimary};
+  background: ${({ theme }) => theme.bgInput};
 
   &:focus {
     outline: none;
@@ -116,12 +118,14 @@ export const TextArea = styled.textarea`
   width: 100%;
   padding: 14px 16px;
   font-size: 16px;
-  border: 2px solid #e5e5e5;
+  border: 2px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   transition: all 0.2s ease;
   font-family: inherit;
   resize: vertical;
   box-sizing: border-box;
+  color: ${({ theme }) => theme.textPrimary};
+  background: ${({ theme }) => theme.bgInput};
 
   &:focus {
     outline: none;
@@ -143,7 +147,7 @@ export const StatLabel = styled.label`
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   margin-bottom: 8px;
 `;
 
@@ -152,12 +156,14 @@ export const StatInput = styled.input`
   padding: 14px 16px;
   font-size: 18px;
   font-weight: 500;
-  border: 2px solid #e5e5e5;
+  border: 2px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   transition: all 0.2s ease;
   font-family: inherit;
   box-sizing: border-box;
   text-align: center;
+  color: ${({ theme }) => theme.textPrimary};
+  background: ${({ theme }) => theme.bgInput};
 
   &:focus {
     outline: none;

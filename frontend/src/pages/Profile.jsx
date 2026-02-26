@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTheme } from "styled-components";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
 import Layout from "../components/Layout/Layout";
@@ -37,6 +38,7 @@ import {
 const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
   const [user, setUser] = useState(null);
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState(null);
@@ -342,7 +344,7 @@ const Profile = () => {
                     >
                       {achievement.title}
                     </div>
-                    <div style={{ fontSize: "12px", color: "#666" }}>
+                    <div style={{ fontSize: "12px", color: theme.textSecondary }}>
                       {achievement.description}
                     </div>
                   </div>
@@ -366,10 +368,10 @@ const Profile = () => {
                   <div
                     key={activity.id}
                     style={{
-                      background: "white",
+                      background: theme.bgCard,
                       borderRadius: "16px",
                       padding: "24px",
-                      border: "1px solid #e5e5e5",
+                      border: `1px solid ${theme.border}`,
                     }}
                   >
                     <h3>{activity.title}</h3>
@@ -388,11 +390,11 @@ const Profile = () => {
           <TabContent>
             <div
               style={{
-                background: "white",
+                background: theme.bgCard,
                 borderRadius: "16px",
                 padding: "24px",
                 marginBottom: "24px",
-                border: "1px solid #e5e5e5",
+                border: `1px solid ${theme.border}`,
               }}
             >
               <div
@@ -412,7 +414,7 @@ const Profile = () => {
                   >
                     Achievement Progress
                   </h3>
-                  <p style={{ fontSize: "14px", color: "#666" }}>
+                  <p style={{ fontSize: "14px", color: theme.textSecondary }}>
                     You've earned {achievements.length} of 24 badges
                   </p>
                 </div>
@@ -426,7 +428,7 @@ const Profile = () => {
                   >
                     25%
                   </div>
-                  <div style={{ fontSize: "14px", color: "#666" }}>
+                  <div style={{ fontSize: "14px", color: theme.textSecondary }}>
                     Complete
                   </div>
                 </div>
@@ -434,7 +436,7 @@ const Profile = () => {
               <div
                 style={{
                   height: "12px",
-                  background: "#f0f0f0",
+                  background: theme.bgSecondary,
                   borderRadius: "6px",
                   marginTop: "16px",
                   overflow: "hidden",
@@ -483,7 +485,7 @@ const Profile = () => {
                     >
                       {achievement.title}
                     </div>
-                    <div style={{ fontSize: "12px", color: "#666" }}>
+                    <div style={{ fontSize: "12px", color: theme.textSecondary }}>
                       {achievement.description}
                     </div>
                   </div>

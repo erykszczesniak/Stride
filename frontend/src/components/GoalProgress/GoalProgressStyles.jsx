@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const GoalCard = styled.div`
-  background: #f8fafc;
+  background: ${({ theme }) => theme.bgSecondary};
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -21,13 +21,13 @@ export const GoalHeader = styled.div`
 export const GoalTitle = styled.h3`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const GoalPeriod = styled.span`
   font-size: 11px;
   color: #64748b;
-  background-color: white;
+  background-color: ${({ theme }) => theme.bgCard};
   padding: 4px 10px;
   border-radius: 20px;
   font-weight: 500;
@@ -44,7 +44,7 @@ export const GoalIcon = styled.span`
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,7 +90,7 @@ export const ProgressStats = styled.div`
 export const ProgressValue = styled.span`
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const ProgressTarget = styled.span`

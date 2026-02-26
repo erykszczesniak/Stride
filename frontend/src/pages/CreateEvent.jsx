@@ -19,26 +19,26 @@ const BackButton = styled.button`
   width: 40px;
   height: 40px;
   border: none;
-  background: #f5f5f5;
+  background: ${({ theme }) => theme.bgSecondary};
   border-radius: 8px;
   cursor: pointer;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   transition: all 0.2s;
 
   &:hover {
-    background: #e0e0e0;
-    color: #333;
+    background: ${({ theme }) => theme.bgHover};
+    color: ${({ theme }) => theme.textPrimary};
   }
 `;
 
 const PageTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 const FormCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -48,7 +48,7 @@ const FormCard = styled.div`
 const SectionTitle = styled.h2`
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -74,16 +74,18 @@ const Label = styled.label`
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
   margin-bottom: 8px;
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  color: ${({ theme }) => theme.textPrimary};
+  background: ${({ theme }) => theme.bgInput};
   transition: border-color 0.2s;
 
   &:focus {
@@ -99,9 +101,11 @@ const Input = styled.input`
 const TextArea = styled.textarea`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  color: ${({ theme }) => theme.textPrimary};
+  background: ${({ theme }) => theme.bgInput};
   min-height: 100px;
   resize: vertical;
   font-family: inherit;
@@ -119,10 +123,11 @@ const TextArea = styled.textarea`
 const Select = styled.select`
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
 
   &:focus {
@@ -144,8 +149,8 @@ const ActivityTypeButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 16px 12px;
-  border: 2px solid ${props => props.selected ? props.color : '#e0e0e0'};
-  background: ${props => props.selected ? `${props.color}10` : 'white'};
+  border: 2px solid ${props => props.selected ? props.color : props.theme.border};
+  background: ${props => props.selected ? `${props.color}10` : props.theme.bgCard};
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
@@ -162,7 +167,7 @@ const ActivityIcon = styled.span`
 const ActivityLabel = styled.span`
   font-size: 12px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 const CheckboxGroup = styled.label`
@@ -171,7 +176,7 @@ const CheckboxGroup = styled.label`
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 const Checkbox = styled.input`
@@ -189,17 +194,17 @@ const ButtonGroup = styled.div`
 
 const CancelButton = styled.button`
   padding: 12px 24px;
-  border: 1px solid #e0e0e0;
-  background: white;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.bgCard};
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: ${({ theme }) => theme.textSecondary};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: #f5f5f5;
+    background: ${({ theme }) => theme.bgHover};
   }
 `;
 
