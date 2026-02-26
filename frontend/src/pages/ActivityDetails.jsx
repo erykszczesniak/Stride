@@ -5,6 +5,7 @@ import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
 import ActivityMap from "../components/ActivityMap/ActivityMap";
+import ShareModal from "../components/ShareModal/ShareModal";
 import { useAuth } from "../context/AuthContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import styled from "styled-components";
@@ -490,6 +491,7 @@ const ActivityDetails = () => {
   const [commentReactions, setCommentReactions] = useState({});
   const [userReactions, setUserReactions] = useState({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const availableEmojis = ['👍', '❤️', '🔥', '👏', '💪', '🎉'];
 
@@ -738,7 +740,7 @@ const ActivityDetails = () => {
             <FiMessageCircle size={18} />
             {comments.length} Comments
           </ActionButton>
-          <ActionButton>
+          <ActionButton onClick={() => setShowShareModal(true)}>
             <FiShare2 size={18} />
             Share
           </ActionButton>
@@ -857,6 +859,12 @@ const ActivityDetails = () => {
           )}
         </CommentsList>
       </CommentsSection>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        activityId={id}
+      />
     </Layout>
   );
 };
