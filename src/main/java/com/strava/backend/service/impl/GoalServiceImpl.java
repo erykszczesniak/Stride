@@ -12,8 +12,6 @@ import com.strava.backend.service.GoalService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,9 +41,7 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
-    @Cacheable(value = "goals", key = "'active-' + #userId")
     public List<Goal> getActiveGoalsByUserId(Long userId) {
-        log.debug("Cache miss - fetching active goals for user: {}", userId);
         return goalRepository.findActiveGoalsByUserId(userId);
     }
 
@@ -61,7 +57,6 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "goals", key = "'active-' + #userId")
     public Goal createGoal(Long userId, GoalRequest request) {
         User user = userService.getUserById(userId);
 
@@ -86,7 +81,6 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "goals", key = "'active-' + #userId")
     public Goal updateGoal(Long goalId, Long userId, GoalRequest request) {
         Goal goal = getGoalById(goalId);
 
@@ -103,7 +97,6 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "goals", key = "'active-' + #userId")
     public void deleteGoal(Long goalId, Long userId) {
         Goal goal = getGoalById(goalId);
 
@@ -116,7 +109,6 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "goals", key = "'active-' + #userId")
     public void updateGoalProgress(Long userId) {
         List<Goal> activeGoals = goalRepository.findActiveGoalsByUserId(userId);
         for (Goal goal : activeGoals) {

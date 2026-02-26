@@ -81,8 +81,6 @@ docker-compose logs -f
 docker-compose logs -f backend
 docker-compose logs -f frontend
 docker-compose logs -f postgres
-docker-compose logs -f redis
-
 # Last 100 lines
 docker-compose logs --tail=100 backend
 
@@ -135,9 +133,6 @@ docker exec -it strava-backend sh
 # PostgreSQL (psql)
 docker exec -it strava-postgres psql -U strava -d strava
 
-# Redis CLI
-docker exec -it strava-redis redis-cli
-
 # Frontend container
 docker exec -it strava-frontend sh
 ```
@@ -186,31 +181,6 @@ docker exec strava-postgres psql -U strava -d strava -c "\dt"
 
 # Describe table
 docker exec strava-postgres psql -U strava -d strava -c "\d users"
-```
-
-### Redis
-
-```bash
-# Connect to Redis CLI
-docker exec -it strava-redis redis-cli
-
-# Ping Redis
-docker exec strava-redis redis-cli PING
-
-# List all keys
-docker exec strava-redis redis-cli KEYS "*"
-
-# Get key value
-docker exec strava-redis redis-cli GET "key-name"
-
-# Delete key
-docker exec strava-redis redis-cli DEL "key-name"
-
-# Flush all cache
-docker exec strava-redis redis-cli FLUSHALL
-
-# Monitor commands in real-time
-docker exec strava-redis redis-cli MONITOR
 ```
 
 ---
@@ -292,16 +262,6 @@ docker exec strava-postgres psql -U strava -l
 docker exec strava-backend wget -qO- http://postgres:5432 || echo "Cannot connect"
 ```
 
-### Redis connection issues
-
-```bash
-# Check if redis is healthy
-docker exec strava-redis redis-cli PING
-
-# Check redis info
-docker exec strava-redis redis-cli INFO
-```
-
 ### Out of disk space
 
 ```bash
@@ -334,9 +294,6 @@ docker build --no-cache . 2>&1 | head -50
 | `DATABASE_URL` | jdbc:postgresql://postgres:5432/strava | DB connection |
 | `DATABASE_USERNAME` | strava | DB user |
 | `DATABASE_PASSWORD` | strava123 | DB password |
-| `REDIS_HOST` | redis | Redis host |
-| `REDIS_PORT` | 6379 | Redis port |
-| `CACHE_TYPE` | redis | Cache type (redis/simple) |
 | `JWT_SECRET` | (generated) | JWT signing key |
 | `CORS_ORIGINS` | http://localhost:3000,http://localhost | Allowed origins |
 

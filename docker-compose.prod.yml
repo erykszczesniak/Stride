@@ -32,29 +32,6 @@ services:
           memory: 1G
 
   # ============================================
-  # Redis Cache
-  # ============================================
-  redis:
-    image: redis:7-alpine
-    container_name: strava-redis-prod
-    restart: always
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - strava-network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-
-  # ============================================
   # Backend (Spring Boot)
   # ============================================
   backend:
@@ -71,14 +48,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS}
       GROQ_API_KEY: ${GROQ_API_KEY}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc.log"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
@@ -134,8 +106,6 @@ services:
 # ============================================
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
     driver: local
 
 # ============================================

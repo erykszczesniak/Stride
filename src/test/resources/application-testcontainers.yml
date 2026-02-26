@@ -1,7 +1,4 @@
 spring:
-  cache:
-    type: simple
-
   jpa:
     hibernate:
       ddl-auto: create-drop

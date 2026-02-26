@@ -16,9 +16,6 @@ spring:
   flyway:
     enabled: ${FLYWAY_ENABLED:false}
 
-  cache:
-    type: ${CACHE_TYPE:simple}
-
   h2:
     console:
       enabled: true

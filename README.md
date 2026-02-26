@@ -186,7 +186,6 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - **Spring Data JPA** with PostgreSQL
 - **GraphQL** API support
 - **Flyway** for database migrations
-- **Redis** for caching
 - **Swagger/OpenAPI** documentation
 - **Testcontainers** for integration testing
 
@@ -200,8 +199,7 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 
 ### Infrastructure
 - **Docker** & **Docker Compose**
-- **PostgreSQL 15**
-- **Redis 7**
+- **PostgreSQL 16**
 - **Nginx** (production)
 
 ## Getting Started
@@ -221,7 +219,7 @@ The easiest way to run the application is with Docker Compose.
 git clone https://github.com/erykszczesniak/strava.git
 cd strava
 
-# Start all services (backend, frontend, PostgreSQL, Redis)
+# Start all services (backend, frontend, PostgreSQL)
 make up
 
 # Or without make:
@@ -257,8 +255,6 @@ docker compose restart backend
 # Access database
 docker compose exec db psql -U strava -d stravadb
 
-# Access Redis CLI
-docker compose exec redis redis-cli
 ```
 
 > For more Docker commands, see [DOCKER.md](DOCKER.md)
@@ -325,7 +321,7 @@ strava/
 ├── Makefile               # Convenience commands
 ├── DOCKER.md              # Docker commands reference
 ├── src/main/java/com/strava/backend/
-│   ├── configuration/     # Spring & Redis configurations
+│   ├── configuration/     # Spring configurations
 │   ├── controller/        # REST controllers
 │   ├── domain/            # Entity models
 │   ├── dto/               # Data transfer objects

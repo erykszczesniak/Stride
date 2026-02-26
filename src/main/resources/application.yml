@@ -36,23 +36,6 @@ spring:
       printer:
         enabled: true
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 2
-
-  cache:
-    type: ${CACHE_TYPE:redis}
-    redis:
-      time-to-live: 600000
-      cache-null-values: false
-
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
