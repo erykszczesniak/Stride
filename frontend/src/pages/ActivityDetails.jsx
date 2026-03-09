@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FiArrowLeft, FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiSend, FiEdit2, FiTrash2, FiX, FiCheck } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
@@ -492,6 +492,7 @@ const ActivityDetails = () => {
   const [userReactions, setUserReactions] = useState({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const commentsSectionRef = useRef(null);
 
   const availableEmojis = ['👍', '❤️', '🔥', '👏', '💪', '🎉'];
 
@@ -736,7 +737,7 @@ const ActivityDetails = () => {
             <FiHeart size={18} fill={likedByMe ? '#fc4c02' : 'none'} />
             {likesCount} Likes
           </ActionButton>
-          <ActionButton>
+          <ActionButton onClick={() => commentsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}>
             <FiMessageCircle size={18} />
             {comments.length} Comments
           </ActionButton>
@@ -755,7 +756,7 @@ const ActivityDetails = () => {
         <ActivityMap coordinates={activity.routePolyline} height="400px" />
       </MapSection>
 
-      <CommentsSection>
+      <CommentsSection ref={commentsSectionRef}>
         <CommentsSectionTitle>
           <FiMessageCircle size={20} />
           Comments ({comments.length})
