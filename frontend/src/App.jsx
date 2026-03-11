@@ -16,6 +16,7 @@ import Challenges from "./pages/Challenges";
 import Clubs from "./pages/Clubs";
 import Events from "./pages/Events";
 import CreateEvent from "./pages/CreateEvent";
+import CreateChallenge from "./pages/CreateChallenge";
 import EventDetails from "./pages/EventDetails";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
@@ -108,6 +109,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Challenges />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/challenges/new"
+            element={
+              <ProtectedRoute>
+                <CreateChallenge />
               </ProtectedRoute>
             }
           />

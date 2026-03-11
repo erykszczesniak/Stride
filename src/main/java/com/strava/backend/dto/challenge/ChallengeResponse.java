@@ -22,4 +22,5 @@ public class ChallengeResponse {
     private boolean isActive;
     private boolean isPublic;
     private Double userProgress;
+    private Long creatorId;
 }
