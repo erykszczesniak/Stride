@@ -1,0 +1,338 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "HTTP Requests",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{application=\"strava-backend\"}[1m])",
+          "legendFormat": "{{method}} {{uri}} [{{status}}]"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 2,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "HTTP Response Time (p95)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{application=\"strava-backend\"}[5m]))",
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "bars",
+            "fillOpacity": 50,
+            "lineWidth": 1,
+            "stacking": { "mode": "normal" }
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "HTTP Errors (4xx / 5xx)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "increase(http_server_requests_seconds_count{application=\"strava-backend\", status=~\"4..\"}[5m])",
+          "legendFormat": "4xx - {{method}} {{uri}}"
+        },
+        {
+          "expr": "increase(http_server_requests_seconds_count{application=\"strava-backend\", status=~\"5..\"}[5m])",
+          "legendFormat": "5xx - {{method}} {{uri}}"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 101,
+      "title": "JVM Memory",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "JVM Heap Memory",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{application=\"strava-backend\", area=\"heap\"}",
+          "legendFormat": "Used - {{id}}"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{application=\"strava-backend\", area=\"heap\"}",
+          "legendFormat": "Max - {{id}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "JVM Non-Heap Memory",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{application=\"strava-backend\", area=\"nonheap\"}",
+          "legendFormat": "Used - {{id}}"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{application=\"strava-backend\", area=\"nonheap\"}",
+          "legendFormat": "Max - {{id}}"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "id": 102,
+      "title": "JVM GC & Threads",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "id": 6,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "GC Pause Duration",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{application=\"strava-backend\"}[1m])",
+          "legendFormat": "{{action}} - {{cause}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "JVM Threads",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{application=\"strava-backend\"}",
+          "legendFormat": "Live"
+        },
+        {
+          "expr": "jvm_threads_daemon_threads{application=\"strava-backend\"}",
+          "legendFormat": "Daemon"
+        },
+        {
+          "expr": "jvm_threads_peak_threads{application=\"strava-backend\"}",
+          "legendFormat": "Peak"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "id": 103,
+      "title": "System & Connection Pool",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "percentunit",
+          "max": 1
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "id": 8,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "System CPU Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "system_cpu_usage{application=\"strava-backend\"}",
+          "legendFormat": "System CPU"
+        },
+        {
+          "expr": "process_cpu_usage{application=\"strava-backend\"}",
+          "legendFormat": "Process CPU"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "id": 9,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "HikariCP Connection Pool",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{application=\"strava-backend\"}",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "hikaricp_connections_idle{application=\"strava-backend\"}",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "hikaricp_connections_pending{application=\"strava-backend\"}",
+          "legendFormat": "Pending"
+        },
+        {
+          "expr": "hikaricp_connections{application=\"strava-backend\"}",
+          "legendFormat": "Total"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["spring-boot", "jvm", "strava"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Strava Backend - JVM & Spring Boot",
+  "uid": "strava-jvm",
+  "version": 1
+}

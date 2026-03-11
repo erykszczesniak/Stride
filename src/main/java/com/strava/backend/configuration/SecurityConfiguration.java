@@ -1,5 +1,6 @@
 package com.strava.backend.configuration;
 
+import com.strava.backend.security.RateLimitingFilter;
 import com.strava.backend.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,7 @@ public class SecurityConfiguration {
 
     private final CorsConfigurationSource corsConfigurationSource;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,6 +44,7 @@ public class SecurityConfiguration {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

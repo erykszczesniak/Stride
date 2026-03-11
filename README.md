@@ -197,10 +197,13 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - **Axios** for API communication
 - **React Icons** for iconography
 
-### Infrastructure
+### Infrastructure & Observability
 - **Docker** & **Docker Compose**
 - **PostgreSQL 16**
 - **Nginx** (production)
+- **Prometheus** + **Grafana** for metrics & dashboards
+- **Structured logging** (JSON in prod via Logstash encoder)
+- **Rate limiting** on auth endpoints
 
 ## Getting Started
 
@@ -227,10 +230,12 @@ docker compose up -d --build
 ```
 
 That's it! The application will be available at:
-- **Frontend:** http://localhost:3000
+- **Frontend:** http://localhost (port 80)
 - **Backend API:** http://localhost:8080
 - **Swagger UI:** http://localhost:8080/swagger-ui.html
 - **GraphQL:** http://localhost:8080/graphql
+- **Grafana:** http://localhost:3001 (admin/admin)
+- **Prometheus:** http://localhost:9090
 
 #### Sample Users
 
@@ -320,6 +325,9 @@ strava/
 ├── Dockerfile             # Backend Docker image
 ├── Makefile               # Convenience commands
 ├── DOCKER.md              # Docker commands reference
+├── monitoring/
+│   ├── prometheus/        # Prometheus scrape config
+│   └── grafana/           # Grafana dashboards & provisioning
 ├── src/main/java/com/strava/backend/
 │   ├── configuration/     # Spring configurations
 │   ├── controller/        # REST controllers
@@ -341,6 +349,119 @@ strava/
 │   └── public/
 └── docs/                   # Documentation & screenshots
 ```
+
+## Observability & Security
+
+### Monitoring (Prometheus + Grafana)
+
+Prometheus scrapes backend metrics every 15s. Grafana comes with a pre-built **JVM & Spring Boot** dashboard.
+
+```bash
+# Start the full stack (includes Prometheus + Grafana)
+docker compose up -d --build
+```
+
+**Prometheus** — http://localhost:9090
+
+Check targets status at [/targets](http://localhost:9090/targets) — backend should show as `UP`.
+
+Example queries to try in [/graph](http://localhost:9090/graph):
+
+```promql
+# HTTP request rate per endpoint
+rate(http_server_requests_seconds_count[1m])
+
+# Response time (p95)
+histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))
+
+# JVM heap memory usage
+jvm_memory_used_bytes{area="heap"}
+
+# CPU usage
+process_cpu_usage
+
+# HikariCP active connections
+hikaricp_connections_active
+
+# GC pause duration
+rate(jvm_gc_pause_seconds_sum[1m])
+```
+
+**Grafana** — http://localhost:3001 (login: `admin` / `admin`)
+
+Go to **Dashboards → Strava Backend - JVM & Spring Boot** to see:
+- HTTP request rate, p95 latency, error rates (4xx/5xx)
+- JVM heap & non-heap memory
+- GC pause duration
+- Thread counts (live, daemon, peak)
+- System & process CPU usage
+- HikariCP connection pool (active, idle, pending, total)
+
+### Structured Logging
+
+Logging format depends on the active Spring profile:
+
+| Profile | Format | Use case |
+|---------|--------|----------|
+| `dev` (default) | Colored console | Local development |
+| `prod` | JSON (Logstash encoder) | Production / log aggregation |
+
+```bash
+# View backend logs (dev - human readable)
+docker compose logs -f backend
+
+# Test JSON output with prod profile
+SPRING_PROFILES_ACTIVE=prod docker compose up backend
+```
+
+Example JSON log line (prod):
+```json
+{
+  "@timestamp": "2026-03-10T16:40:12.345Z",
+  "level": "INFO",
+  "logger_name": "c.s.b.StravaApplication",
+  "message": "Started StravaApplication in 4.2 seconds",
+  "thread_name": "main"
+}
+```
+
+### Rate Limiting
+
+Auth endpoints are protected against brute-force attacks with a per-IP sliding window rate limiter:
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /api/v1/auth/login` | 10 requests | 1 minute |
+| `POST /api/v1/auth/register` | 5 requests | 1 minute |
+
+When the limit is exceeded, the API returns `429 Too Many Requests`:
+
+```json
+{"error": "Too many requests. Please try again later."}
+```
+
+Test it:
+
+```bash
+# Send 12 login requests — the last 2 should return 429
+for i in $(seq 1 12); do
+  echo "Request $i: $(curl -s -o /dev/null -w '%{http_code}' \
+    -X POST http://localhost:8080/api/v1/auth/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"test@test.com","password":"wrong"}')"
+done
+```
+
+Expected output:
+```
+Request 1: 401
+...
+Request 10: 401
+Request 11: 429
+Request 12: 429
+```
+
+---
 
 ## Running Tests
 
