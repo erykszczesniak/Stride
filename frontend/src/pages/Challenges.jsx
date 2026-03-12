@@ -118,6 +118,12 @@ const ChallengeCard = styled.div`
   align-items: flex-start;
   gap: 16px;
   transition: all 0.3s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 12px ${({ theme }) => theme.shadow};
+    transform: translateY(-1px);
+  }
 `;
 
 const ChallengeIcon = styled.div`
@@ -547,7 +553,7 @@ const Challenges = () => {
       const unit = formatUnit(challenge.challengeType);
 
       return (
-        <ChallengeCard key={challenge.id}>
+        <ChallengeCard key={challenge.id} onClick={() => navigate(`/challenges/${challenge.id}`)}>
           <ChallengeIcon bgColor={colors.bg} iconColor={colors.icon}>
             {getIconForType(challenge.challengeType, challenge.activityType)}
           </ChallengeIcon>
@@ -580,7 +586,7 @@ const Challenges = () => {
           </ChallengeContent>
           {challenge.creatorId !== user?.id && (
             <LeaveButton
-              onClick={() => handleLeaveChallenge(challenge.id)}
+              onClick={(e) => { e.stopPropagation(); handleLeaveChallenge(challenge.id); }}
               disabled={leavingId === challenge.id}
             >
               {leavingId === challenge.id ? "Leaving..." : "Leave"}
@@ -605,7 +611,7 @@ const Challenges = () => {
       const colors = getIconColors(index);
 
       return (
-        <ChallengeCard key={challenge.id}>
+        <ChallengeCard key={challenge.id} onClick={() => navigate(`/challenges/${challenge.id}`)}>
           <ChallengeIcon bgColor={colors.bg} iconColor={colors.icon}>
             {getIconForType(challenge.challengeType, challenge.activityType)}
           </ChallengeIcon>
@@ -628,7 +634,7 @@ const Challenges = () => {
             </ChallengeMeta>
           </ChallengeContent>
           <JoinButton
-            onClick={() => handleJoinChallenge(challenge.id)}
+            onClick={(e) => { e.stopPropagation(); handleJoinChallenge(challenge.id); }}
             disabled={joiningId === challenge.id}
           >
             {joiningId === challenge.id ? "Joining..." : "Join"}

@@ -25,6 +25,10 @@ class ChallengeService {
     return apiClient.delete(`/challenges/${challengeId}/participate`);
   }
 
+  deleteChallenge(challengeId) {
+    return apiClient.delete(`/challenges/${challengeId}`);
+  }
+
   getLeaderboard(challengeId) {
     return apiClient.get(`/challenges/${challengeId}/leaderboard`);
   }
