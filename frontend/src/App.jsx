@@ -18,6 +18,7 @@ import Events from "./pages/Events";
 import CreateEvent from "./pages/CreateEvent";
 import CreateChallenge from "./pages/CreateChallenge";
 import EventDetails from "./pages/EventDetails";
+import ChallengeDetails from "./pages/ChallengeDetails";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import TrainingPlans from "./pages/TrainingPlans";
@@ -117,6 +118,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <CreateChallenge />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/challenges/:id"
+            element={
+              <ProtectedRoute>
+                <ChallengeDetails />
               </ProtectedRoute>
             }
           />
