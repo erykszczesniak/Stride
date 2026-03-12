@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { FiUsers, FiCalendar, FiAward } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiUsers, FiCalendar, FiAward, FiPlus } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ChallengeService from "../api/ChallengeService";
+import { useAuth } from "../context/AuthContext";
 import styled from "styled-components";
 
 const PageHeader = styled.div`
@@ -26,6 +28,32 @@ const PageSubtitle = styled.p`
   color: ${({ theme }) => theme.textSecondary};
   margin: 4px 0 0 0;
   transition: color 0.3s ease;
+`;
+
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const CreateButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(252, 76, 2, 0.3);
+  }
 `;
 
 const ActiveBadge = styled.div`
@@ -215,6 +243,31 @@ const JoinButton = styled.button`
   }
 `;
 
+const LeaveButton = styled.button`
+  background-color: transparent;
+  color: ${({ theme }) => theme.textSecondary};
+  border: 1px solid ${({ theme }) => theme.border};
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-start;
+  transition: all 0.2s;
+
+  &:hover {
+    color: #e53935;
+    border-color: #e53935;
+    background-color: #ffebee;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 const LeaderboardContainer = styled.div`
   background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
@@ -344,6 +397,8 @@ const ChallengeSelect = styled.select`
 `;
 
 const Challenges = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("my");
   const [myChallenges, setMyChallenges] = useState([]);
   const [exploreChallenges, setExploreChallenges] = useState([]);
@@ -351,6 +406,7 @@ const Challenges = () => {
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
+  const [leavingId, setLeavingId] = useState(null);
 
   const fetchMyChallenges = useCallback(async () => {
     try {
@@ -407,6 +463,18 @@ const Challenges = () => {
       console.error("Error joining challenge:", error);
     } finally {
       setJoiningId(null);
+    }
+  };
+
+  const handleLeaveChallenge = async (challengeId) => {
+    setLeavingId(challengeId);
+    try {
+      await ChallengeService.leaveChallenge(challengeId);
+      await Promise.all([fetchMyChallenges(), fetchExploreChallenges()]);
+    } catch (error) {
+      console.error("Error leaving challenge:", error);
+    } finally {
+      setLeavingId(null);
     }
   };
 
@@ -510,6 +578,14 @@ const Challenges = () => {
               </ProgressBar>
             </ProgressContainer>
           </ChallengeContent>
+          {challenge.creatorId !== user?.id && (
+            <LeaveButton
+              onClick={() => handleLeaveChallenge(challenge.id)}
+              disabled={leavingId === challenge.id}
+            >
+              {leavingId === challenge.id ? "Leaving..." : "Leave"}
+            </LeaveButton>
+          )}
         </ChallengeCard>
       );
     });
@@ -633,10 +709,16 @@ const Challenges = () => {
           <PageTitle>Challenges</PageTitle>
           <PageSubtitle>Compete and earn rewards</PageSubtitle>
         </HeaderLeft>
-        <ActiveBadge>
-          <FiAward size={18} />
-          {myChallenges.length} Active
-        </ActiveBadge>
+        <HeaderRight>
+          <ActiveBadge>
+            <FiAward size={18} />
+            {myChallenges.length} Active
+          </ActiveBadge>
+          <CreateButton onClick={() => navigate("/challenges/new")}>
+            <FiPlus size={16} />
+            Create
+          </CreateButton>
+        </HeaderRight>
       </PageHeader>
 
       <TabsContainer>

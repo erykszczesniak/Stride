@@ -164,6 +164,7 @@ public class ChallengeController {
         response.setParticipantsCount(challenge.getParticipantsCount());
         response.setActive(challenge.isActive());
         response.setPublic(challenge.isPublic());
+        response.setCreatorId(challenge.getCreator().getId());
         response.setParticipating(challengeService.isUserParticipating(challenge.getId(), currentUserId));
 
         if (response.isParticipating()) {

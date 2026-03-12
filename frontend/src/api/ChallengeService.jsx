@@ -13,6 +13,10 @@ class ChallengeService {
     return apiClient.get(`/challenges/${challengeId}`);
   }
 
+  createChallenge(data) {
+    return apiClient.post("/challenges", data);
+  }
+
   joinChallenge(challengeId) {
     return apiClient.post(`/challenges/${challengeId}/participate`);
   }
