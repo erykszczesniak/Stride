@@ -199,6 +199,7 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 
 ### Infrastructure & Observability
 - **Docker** & **Docker Compose**
+- **Kubernetes** manifests (Deployments, Services, Ingress, Secrets, ConfigMaps)
 - **PostgreSQL 16**
 - **Nginx** (production)
 - **Prometheus** + **Grafana** for metrics & dashboards
@@ -298,6 +299,111 @@ npm start
 
 The app will be available at `http://localhost:3000`
 
+---
+
+### Kubernetes Deployment
+
+Kubernetes manifests are provided in the `k8s/` directory for deploying to any K8s cluster (minikube, kind, EKS, GKE, etc.).
+
+#### Prerequisites
+- A running Kubernetes cluster
+- `kubectl` configured and connected
+- Nginx Ingress Controller installed
+- Container images pushed to a registry (default: `ghcr.io/erykszczesniak/strava-*`)
+
+#### Deploy
+
+```bash
+# 1. Create the namespace
+kubectl apply -f k8s/namespace.yaml
+
+# 2. Deploy all resources
+kubectl apply -f k8s/ --recursive
+
+# 3. Verify everything is running
+kubectl get all -n strava
+```
+
+#### Quick Start with minikube
+
+```bash
+# Start minikube
+minikube start
+
+# Enable Ingress addon
+minikube addons enable ingress
+
+# Build images inside minikube (no registry needed)
+eval $(minikube docker-env)
+docker build -t ghcr.io/erykszczesniak/strava-backend:latest .
+docker build -t ghcr.io/erykszczesniak/strava-frontend:latest ./frontend
+
+# Deploy
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/ --recursive
+
+# Add host entry
+echo "$(minikube ip) strava.local" | sudo tee -a /etc/hosts
+
+# Open in browser
+open http://strava.local
+```
+
+#### Update Secrets
+
+Secrets use base64-encoded placeholder values. Replace them before deploying to a real environment:
+
+```bash
+# Generate a base64-encoded value
+echo -n 'your-real-password' | base64
+
+# Edit the secret files, then apply
+kubectl apply -f k8s/postgres/secret.yaml
+kubectl apply -f k8s/backend/secret.yaml
+```
+
+#### Manifest Structure
+
+```
+k8s/
+├── namespace.yaml          # strava namespace
+├── ingress.yaml            # Nginx Ingress (strava.local)
+├── postgres/
+│   ├── secret.yaml         # DB credentials
+│   ├── configmap.yaml      # PGDATA path
+│   ├── pvc.yaml            # 1Gi persistent volume
+│   ├── deployment.yaml     # Single replica, liveness/readiness probes
+│   └── service.yaml        # ClusterIP :5432
+├── backend/
+│   ├── secret.yaml         # JWT secret, DB password, API keys
+│   ├── configmap.yaml      # Spring config, CORS, Flyway
+│   ├── deployment.yaml     # 2 replicas, startup/liveness/readiness probes
+│   └── service.yaml        # ClusterIP :8080
+└── frontend/
+    ├── configmap.yaml       # Nginx config reference
+    ├── deployment.yaml      # 2 replicas, liveness/readiness probes
+    └── service.yaml         # ClusterIP :80
+```
+
+#### Useful Commands
+
+```bash
+# Check pod status
+kubectl get pods -n strava
+
+# View logs for a pod
+kubectl logs -f deployment/backend -n strava
+
+# Port-forward backend for local debugging
+kubectl port-forward svc/backend 8080:8080 -n strava
+
+# Scale backend replicas
+kubectl scale deployment backend --replicas=3 -n strava
+
+# Delete everything
+kubectl delete namespace strava
+```
+
 ## API Documentation
 
 Once the backend is running, API documentation is available at:
@@ -325,6 +431,12 @@ strava/
 ├── Dockerfile             # Backend Docker image
 ├── Makefile               # Convenience commands
 ├── DOCKER.md              # Docker commands reference
+├── k8s/                   # Kubernetes manifests
+│   ├── namespace.yaml
+│   ├── ingress.yaml
+│   ├── postgres/          # DB deployment, service, PVC, secrets
+│   ├── backend/           # API deployment, service, configmap, secrets
+│   └── frontend/          # Web deployment, service, configmap
 ├── monitoring/
 │   ├── prometheus/        # Prometheus scrape config
 │   └── grafana/           # Grafana dashboards & provisioning
