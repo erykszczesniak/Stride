@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: strava
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: strava
+data:
+  SPRING_PROFILES_ACTIVE: prod
+  DATABASE_URL: jdbc:postgresql://postgres:5432/strava
+  DATABASE_USERNAME: strava
+  DATABASE_DRIVER: org.postgresql.Driver
+  HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+  HIBERNATE_DDL_AUTO: validate
+  FLYWAY_ENABLED: "true"
+  CORS_ORIGINS: http://strava.local,https://strava.local
+  SERVER_PORT: "8080"

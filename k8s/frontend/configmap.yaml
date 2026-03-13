@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: strava
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: strava
+data:
+  # REACT_APP_API_URL is baked into the image at build time.
+  # To change it, rebuild the image with:
+  #   docker build --build-arg REACT_APP_API_URL=/api/v1 -t strava-frontend .
+  NGINX_WORKER_CONNECTIONS: "1024"
