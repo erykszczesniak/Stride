@@ -1,0 +1,23 @@
+# AWS
+aws_region    = "eu-central-1"
+project_name  = "strava"
+
+# EC2
+ec2_instance_type = "t3.micro"
+ec2_key_pair_name = "strava-key"
+
+# RDS
+db_instance_class = "db.t3.micro"
+db_name           = "stravadb"
+db_username       = "strava"
+db_password       = "CHANGE_ME_strong_password_123"
+
+# App secrets
+jwt_secret           = "CHANGE_ME_jwt_secret_at_least_32_chars"
+groq_api_key         = ""
+google_client_id     = ""
+google_client_secret = ""
+
+# Docker image tags
+backend_image_tag  = "latest"
+frontend_image_tag = "latest"

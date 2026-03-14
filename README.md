@@ -199,6 +199,7 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 
 ### Infrastructure & Observability
 - **Docker** & **Docker Compose**
+- **Terraform** for AWS infrastructure (EC2, RDS, ALB, ECR, VPC)
 - **Kubernetes** manifests (Deployments, Services, Ingress, Secrets, ConfigMaps)
 - **PostgreSQL 16**
 - **Nginx** (production)
@@ -404,6 +405,73 @@ kubectl scale deployment backend --replicas=3 -n strava
 kubectl delete namespace strava
 ```
 
+## AWS Deployment (Terraform)
+
+Deploy to AWS Free Tier using Terraform. Architecture: ALB → EC2 (Docker) → RDS PostgreSQL.
+
+> **Note:** Currently `docker-compose.prod.yml` includes a local PostgreSQL service. Once AWS RDS is configured via Terraform, the local `postgres` service should be removed and the backend should point to the RDS endpoint instead.
+
+### Prerequisites
+- AWS CLI configured (`aws configure`)
+- Terraform >= 1.5
+- Docker (for building images)
+- An EC2 key pair created in your AWS region
+
+### Deploy
+
+```bash
+cd terraform
+
+# Copy and edit variables
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your values (db_password, jwt_secret, etc.)
+
+# Initialize and apply
+terraform init
+terraform apply
+```
+
+### Push Docker Images
+
+After `terraform apply`, push your images to ECR:
+
+```bash
+# Login to ECR
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $(terraform output -raw ecr_backend_url | cut -d'/' -f1)
+
+# Build and push backend
+docker build -t $(terraform output -raw ecr_backend_url):latest ..
+docker push $(terraform output -raw ecr_backend_url):latest
+
+# Build and push frontend
+docker build -t $(terraform output -raw ecr_frontend_url):latest ../frontend
+docker push $(terraform output -raw ecr_frontend_url):latest
+```
+
+### Access the App
+
+```bash
+# Get the ALB URL
+curl $(terraform output -raw alb_dns)
+```
+
+### Infrastructure Overview
+
+| Resource | Type | Free Tier |
+|----------|------|-----------|
+| EC2 | t3.micro | 750 hrs/month |
+| RDS | db.t3.micro PostgreSQL | 750 hrs/month |
+| ALB | Application LB | 750 hrs/month |
+| ECR | Container registry | 500 MB storage |
+
+### Tear Down
+
+```bash
+terraform destroy
+```
+
+---
+
 ## API Documentation
 
 Once the backend is running, API documentation is available at:
@@ -431,6 +499,7 @@ strava/
 ├── Dockerfile             # Backend Docker image
 ├── Makefile               # Convenience commands
 ├── DOCKER.md              # Docker commands reference
+├── terraform/             # AWS infrastructure (Terraform)
 ├── k8s/                   # Kubernetes manifests
 │   ├── namespace.yaml
 │   ├── ingress.yaml
