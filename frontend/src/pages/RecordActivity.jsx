@@ -98,7 +98,7 @@ const RecordActivity = () => {
       // Navigate to activities page or dashboard
       navigate('/activities');
     } catch (err) {
-      console.error('Error creating activity:', err);
+      // TODO: Add error reporting service
       setError(err.response?.data?.message || 'Failed to save activity. Please try again.');
     }
   };

@@ -74,6 +74,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception e) {
+        log.error("Unexpected error", e);
         Map<String, String> response = new HashMap<>();
         response.put("error", "An unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);

@@ -3,6 +3,7 @@ package com.strava.backend.mapper;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.dto.HeaderResponse;
 import com.strava.backend.dto.activity.*;
+import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.InputFieldException;
 import com.strava.backend.service.ActivityService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -68,6 +70,31 @@ public class ActivityMapper {
 
     public WeeklyStatsResponse getWeeklyStats(Long userId) {
         return activityService.getWeeklyStats(userId);
+    }
+
+    public List<ActivityResponse> searchMyActivities(Long userId, String searchText, ActivityType activityType, Pageable pageable) {
+        Page<Activity> activities = activityService.searchUserActivities(userId, searchText, activityType, pageable);
+        return activities.getContent().stream()
+                .map(activity -> mapToActivityResponse(activity, userId))
+                .collect(Collectors.toList());
+    }
+
+    public List<ActivityResponse> getActivitiesByType(Long userId, ActivityType activityType, Pageable pageable) {
+        Page<Activity> activities = activityService.getActivitiesByUserIdAndType(userId, activityType, pageable);
+        return activities.getContent().stream()
+                .map(activity -> mapToActivityResponse(activity, userId))
+                .collect(Collectors.toList());
+    }
+
+    public Map<String, Object> getUserTotalStats(Long userId) {
+        return activityService.getUserTotalStats(userId);
+    }
+
+    public List<ActivityResponse> getPublicActivities(Long currentUserId, Pageable pageable) {
+        Page<Activity> activities = activityService.getPublicActivities(pageable);
+        return activities.getContent().stream()
+                .map(activity -> mapToActivityResponse(activity, currentUserId))
+                .collect(Collectors.toList());
     }
 
     private ActivityResponse mapToActivityResponse(Activity activity, Long currentUserId) {

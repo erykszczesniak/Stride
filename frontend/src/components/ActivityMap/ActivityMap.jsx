@@ -110,7 +110,7 @@ const ActivityMap = ({ coordinates, height = "400px", showMarkers = true }) => {
     try {
       parsedCoordinates = JSON.parse(coordinates);
     } catch (e) {
-      console.error("Error parsing coordinates:", e);
+      // TODO: Add error reporting service
       parsedCoordinates = null;
     }
   }

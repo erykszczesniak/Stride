@@ -95,19 +95,19 @@ const Profile = () => {
         const followersData = await UserService.getFollowers(userId);
         setFollowersCount(followersData.data?.length || 0);
       } catch (err) {
-        console.error("Error fetching followers:", err);
+        // TODO: Add error reporting service
       }
 
       try {
         const followingData = await UserService.getFollowing(userId);
         setFollowingCount(followingData.data?.length || 0);
       } catch (err) {
-        console.error("Error fetching following:", err);
+        // TODO: Add error reporting service
       }
 
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      // TODO: Add error reporting service
       setLoading(false);
     }
   };

@@ -3,8 +3,6 @@ package com.strava.backend.controller;
 import com.strava.backend.dto.activity.*;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.mapper.ActivityMapper;
-import com.strava.backend.mapper.CommonMapper;
-import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ActivityService;
 import jakarta.validation.Valid;
@@ -30,8 +28,6 @@ public class ActivityController {
 
     private final ActivityMapper activityMapper;
     private final ActivityService activityService;
-    private final ActivityRepository activityRepository;
-    private final CommonMapper commonMapper;
 
     private Long getAuthenticatedUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -128,32 +124,11 @@ public class ActivityController {
         Long currentUserId = getAuthenticatedUserId();
 
         if (search != null && !search.trim().isEmpty()) {
-            var activities = activityRepository.searchUserActivities(currentUserId, search.trim(), pageable);
-            var responses = activities.getContent().stream()
-                    .filter(a -> activityType == null || a.getActivityType() == activityType)
-                    .map(activity -> {
-                        ActivityResponse response = commonMapper.convertToResponse(activity, ActivityResponse.class);
-                        response.setLikesCount(activity.getLikesCount());
-                        response.setCommentsCount(activity.getCommentsCount());
-                        response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
-                        return response;
-                    })
-                    .toList();
-            return ResponseEntity.ok(responses);
+            return ResponseEntity.ok(activityMapper.searchMyActivities(currentUserId, search.trim(), activityType, pageable));
         }
 
         if (activityType != null) {
-            var activities = activityRepository.findByUserIdAndActivityType(currentUserId, activityType, pageable);
-            var responses = activities.getContent().stream()
-                    .map(activity -> {
-                        ActivityResponse response = commonMapper.convertToResponse(activity, ActivityResponse.class);
-                        response.setLikesCount(activity.getLikesCount());
-                        response.setCommentsCount(activity.getCommentsCount());
-                        response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
-                        return response;
-                    })
-                    .toList();
-            return ResponseEntity.ok(responses);
+            return ResponseEntity.ok(activityMapper.getActivitiesByType(currentUserId, activityType, pageable));
         }
 
         var response = activityMapper.getActivitiesByUserId(currentUserId, currentUserId, pageable);
@@ -165,15 +140,7 @@ public class ActivityController {
     @GetMapping(MY + STATS)
     public ResponseEntity<Map<String, Object>> getMyTotalStats() {
         Long currentUserId = getAuthenticatedUserId();
-        int totalActivities = activityRepository.countByUserId(currentUserId);
-        Double totalDistance = activityRepository.sumDistanceByUserId(currentUserId);
-        Long totalDuration = activityRepository.sumDurationByUserId(currentUserId);
-
-        return ResponseEntity.ok(Map.of(
-                "totalActivities", totalActivities,
-                "totalDistanceKm", totalDistance != null ? totalDistance : 0.0,
-                "totalDurationSeconds", totalDuration != null ? totalDuration : 0L
-        ));
+        return ResponseEntity.ok(activityMapper.getUserTotalStats(currentUserId));
     }
 
     @GetMapping(BY_TYPE)
@@ -181,25 +148,13 @@ public class ActivityController {
             @RequestParam ActivityType activityType,
             @PageableDefault(size = 10) Pageable pageable) {
         Long currentUserId = getAuthenticatedUserId();
-        var activities = activityRepository.findByUserIdAndActivityType(currentUserId, activityType, pageable);
-        var responses = commonMapper.convertToResponseList(activities.getContent(), ActivityResponse.class);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(activityMapper.getActivitiesByType(currentUserId, activityType, pageable));
     }
 
     @GetMapping(PUBLIC)
     public ResponseEntity<List<ActivityResponse>> getPublicActivities(
             @PageableDefault(size = 10) Pageable pageable) {
         Long currentUserId = getAuthenticatedUserId();
-        var activities = activityService.getPublicActivities(pageable);
-        var responses = activities.getContent().stream()
-                .map(activity -> {
-                    ActivityResponse response = commonMapper.convertToResponse(activity, ActivityResponse.class);
-                    response.setLikesCount(activity.getLikesCount());
-                    response.setCommentsCount(activity.getCommentsCount());
-                    response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
-                    return response;
-                })
-                .toList();
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(activityMapper.getPublicActivities(currentUserId, pageable));
     }
 }

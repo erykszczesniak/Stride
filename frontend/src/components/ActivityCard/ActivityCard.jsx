@@ -199,4 +199,4 @@ const ActivityCard = ({ activity, onLike }) => {
   );
 };
 
-export default ActivityCard;
+export default React.memo(ActivityCard);

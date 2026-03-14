@@ -292,16 +292,11 @@ class ActivityServiceImplTest {
         @Test
         @DisplayName("Should return monthly stats")
         void shouldReturnMonthlyStats() {
+            Object[] stats = new Object[]{100.0, 36000L, 5000, 1500, 10};
+            when(activityRepository.getAggregatedStatsByUserAndDateRange(eq(1L), any(), any()))
+                    .thenReturn(stats);
             when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(100.0));
-            when(activityRepository.sumDurationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(36000L));
-            when(activityRepository.sumCaloriesByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(5000));
-            when(activityRepository.sumElevationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(1500));
-            when(activityRepository.countByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(10);
+                    .thenReturn(Optional.of(80.0));
 
             ActivityStatsResponse result = activityService.getMonthlyStats(1L);
 
@@ -315,16 +310,11 @@ class ActivityServiceImplTest {
         @Test
         @DisplayName("Should handle zero activities")
         void shouldHandleZeroActivities() {
+            Object[] stats = new Object[]{0.0, 0L, 0, 0, 0};
+            when(activityRepository.getAggregatedStatsByUserAndDateRange(eq(1L), any(), any()))
+                    .thenReturn(stats);
             when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
                     .thenReturn(Optional.empty());
-            when(activityRepository.sumDurationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.empty());
-            when(activityRepository.sumCaloriesByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.empty());
-            when(activityRepository.sumElevationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.empty());
-            when(activityRepository.countByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(0);
 
             ActivityStatsResponse result = activityService.getMonthlyStats(1L);
 
@@ -341,12 +331,14 @@ class ActivityServiceImplTest {
         @Test
         @DisplayName("Should return weekly stats with daily breakdown")
         void shouldReturnWeeklyStatsWithDailyBreakdown() {
+            // Previous week distance for trend calculation
             when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(50.0));
-            when(activityRepository.sumDurationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(18000L));
-            when(activityRepository.countByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(5);
+                    .thenReturn(Optional.of(40.0));
+            // Daily stats: PostgreSQL DOW 1=Monday with 50km
+            List<Object[]> dailyResults = new java.util.ArrayList<>();
+            dailyResults.add(new Object[]{1, 50.0, 18000, 5});
+            when(activityRepository.getDailyStatsByUserAndDateRange(eq(1L), any(), any()))
+                    .thenReturn(dailyResults);
 
             WeeklyStatsResponse result = activityService.getWeeklyStats(1L);
 

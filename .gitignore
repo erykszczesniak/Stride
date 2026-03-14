@@ -35,3 +35,10 @@ build/
 
 ### Session backups ###
 strava_session_backup.jsonl
+
+### Environment files ###
+.env
+*.env.local
+
+### Claude ###
+.claude/

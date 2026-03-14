@@ -326,7 +326,7 @@ const Clubs = () => {
       }
       setClubs(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-      console.error("Error fetching clubs:", error);
+      // TODO: Add error reporting service
     } finally {
       setLoading(false);
     }
@@ -337,7 +337,7 @@ const Clubs = () => {
       const res = await ClubService.getClubStats();
       setStats(res.data);
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      // TODO: Add error reporting service
     }
   }, []);
 
@@ -353,7 +353,7 @@ const Clubs = () => {
       await fetchClubs();
       await fetchStats();
     } catch (error) {
-      console.error("Error joining club:", error);
+      // TODO: Add error reporting service
     } finally {
       setJoiningId(null);
     }

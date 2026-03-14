@@ -21,6 +21,12 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     Page<ActivityProjection> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 
     @Query("SELECT a FROM Activity a WHERE a.user.id = :userId ORDER BY a.createdAt DESC")
+    Page<Activity> findByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT a FROM Activity a WHERE a.user.id IN :userIds ORDER BY a.createdAt DESC")
+    Page<Activity> findByUserIdIn(@Param("userIds") List<Long> userIds, Pageable pageable);
+
+    @Query("SELECT a FROM Activity a WHERE a.user.id = :userId ORDER BY a.createdAt DESC")
     List<Activity> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
 
     @Query("SELECT a FROM Activity a WHERE a.user.id IN :userIds AND a.isPrivate = false " +
@@ -122,6 +128,33 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     Double countActivitiesForChallenge(
             @Param("userId") Long userId,
             @Param("activityType") ActivityType activityType,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    // Daily aggregated stats for a date range (used by weekly stats)
+    // EXTRACT(DOW FROM ...) returns 0=Sunday, 1=Monday, ..., 6=Saturday in PostgreSQL
+    @Query(value = "SELECT EXTRACT(DOW FROM a.start_time) as dow, " +
+           "COALESCE(SUM(a.distance), 0.0), " +
+           "COALESCE(SUM(a.duration), 0), " +
+           "COUNT(a.id) " +
+           "FROM activities a WHERE a.user_id = :userId " +
+           "AND a.start_time BETWEEN :startDate AND :endDate " +
+           "GROUP BY EXTRACT(DOW FROM a.start_time)", nativeQuery = true)
+    List<Object[]> getDailyStatsByUserAndDateRange(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    // Monthly aggregated stats (distance, duration, calories, elevation, count)
+    @Query(value = "SELECT COALESCE(SUM(a.distance), 0.0), " +
+           "COALESCE(SUM(a.duration), 0), " +
+           "COALESCE(SUM(a.calories), 0), " +
+           "COALESCE(SUM(a.elevation_gain), 0), " +
+           "COUNT(a.id) " +
+           "FROM activities a WHERE a.user_id = :userId " +
+           "AND a.start_time BETWEEN :startDate AND :endDate", nativeQuery = true)
+    Object[] getAggregatedStatsByUserAndDateRange(
+            @Param("userId") Long userId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 

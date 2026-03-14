@@ -7,6 +7,7 @@ import com.strava.backend.domain.User;
 import com.strava.backend.dto.activity.ActivityStatsResponse;
 import com.strava.backend.dto.activity.WeeklyStatsResponse;
 import com.strava.backend.enums.GoalPeriod;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.EventService;
 import com.strava.backend.service.GoalService;
@@ -14,6 +15,8 @@ import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -22,16 +25,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DashboardGraphQLController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final UserService userService;
     private final ActivityService activityService;
     private final GoalService goalService;
     private final EventService eventService;
 
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
+
     @QueryMapping
     public DashboardData dashboard() {
-        return new DashboardData(DEFAULT_USER_ID);
+        return new DashboardData(getAuthenticatedUserId());
     }
 
     // Inner class to hold dashboard context

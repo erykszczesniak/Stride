@@ -27,11 +27,12 @@ public class CorsConfiguration implements WebMvcConfigurer {
                 .allowCredentials(true)
                 .maxAge(3600);
 
-        // GraphQL endpoints - allow all origins for development
+        // GraphQL endpoints - use same allowed origins as REST API
         registry.addMapping("/graphql/**")
-                .allowedOrigins("*")
+                .allowedOrigins(allowedOrigins.split(","))
                 .allowedMethods("GET", "POST", "OPTIONS")
                 .allowedHeaders("*")
+                .allowCredentials(true)
                 .maxAge(3600);
 
     }
@@ -50,9 +51,9 @@ public class CorsConfiguration implements WebMvcConfigurer {
         apiConfig.setMaxAge(3600L);
         source.registerCorsConfiguration("/api/**", apiConfig);
 
-        // GraphQL endpoints - allow all origins for development/testing
+        // GraphQL endpoints - use same allowed origins as REST API
         org.springframework.web.cors.CorsConfiguration graphqlConfig = new org.springframework.web.cors.CorsConfiguration();
-        graphqlConfig.setAllowedOriginPatterns(List.of("*"));
+        graphqlConfig.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         graphqlConfig.setAllowedMethods(Arrays.asList("GET", "POST", "OPTIONS"));
         graphqlConfig.setAllowedHeaders(List.of("*"));
         graphqlConfig.setAllowCredentials(true);

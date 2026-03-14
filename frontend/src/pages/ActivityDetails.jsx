@@ -1,6 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { FiArrowLeft, FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiSend, FiEdit2, FiTrash2, FiX, FiCheck } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiHeart,
+  FiMessageCircle,
+  FiShare2,
+  FiMapPin,
+  FiSend,
+  FiEdit2,
+  FiTrash2,
+  FiX,
+  FiCheck,
+} from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
@@ -318,8 +329,10 @@ const ReactionBadge = styled.button`
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border: 1px solid ${props => props.active ? props.theme.primary : props.theme.border};
-  background: ${props => props.active ? 'rgba(252, 76, 2, 0.1)' : props.theme.bgCard};
+  border: 1px solid
+    ${(props) => (props.active ? props.theme.primary : props.theme.border)};
+  background: ${(props) =>
+    props.active ? "rgba(252, 76, 2, 0.1)" : props.theme.bgCard};
   border-radius: 16px;
   font-size: 12px;
   cursor: pointer;
@@ -405,7 +418,7 @@ const CommentActionButton = styled.button`
 
   &:hover {
     background: ${({ theme }) => theme.bgHover};
-    color: ${props => props.danger ? '#dc2626' : props.theme.primary};
+    color: ${(props) => (props.danger ? "#dc2626" : props.theme.primary)};
   }
 `;
 
@@ -494,7 +507,7 @@ const ActivityDetails = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const commentsSectionRef = useRef(null);
 
-  const availableEmojis = ['👍', '❤️', '🔥', '👏', '💪', '🎉'];
+  const availableEmojis = ["😆", "👍", "❤️", "🔥", "👏", "💪", "🎉"];
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -505,7 +518,7 @@ const ActivityDetails = () => {
         setLikedByMe(res.data.likedByCurrentUser || false);
         setLikesCount(res.data.likesCount || 0);
       } catch (error) {
-        console.error("Error fetching activity:", error);
+        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }
@@ -526,7 +539,7 @@ const ActivityDetails = () => {
           fetchReactions(comment.id);
         }
       } catch (error) {
-        console.error("Error fetching comments:", error);
+        // TODO: Add error reporting service
       }
     };
 
@@ -541,14 +554,14 @@ const ActivityDetails = () => {
       if (likedByMe) {
         await ActivityService.unlikeActivity(id);
         setLikedByMe(false);
-        setLikesCount(prev => prev - 1);
+        setLikesCount((prev) => prev - 1);
       } else {
         await ActivityService.likeActivity(id);
         setLikedByMe(true);
-        setLikesCount(prev => prev + 1);
+        setLikesCount((prev) => prev + 1);
       }
     } catch (error) {
-      console.error("Error toggling like:", error);
+      // TODO: Add error reporting service
     }
   };
 
@@ -561,11 +574,11 @@ const ActivityDetails = () => {
       const res = await CommentService.createComment(id, newComment.trim());
       const newCommentData = res.data;
       setComments([...comments, newCommentData]);
-      setCommentReactions(prev => ({ ...prev, [newCommentData.id]: {} }));
-      setUserReactions(prev => ({ ...prev, [newCommentData.id]: [] }));
+      setCommentReactions((prev) => ({ ...prev, [newCommentData.id]: {} }));
+      setUserReactions((prev) => ({ ...prev, [newCommentData.id]: [] }));
       setNewComment("");
     } catch (error) {
-      console.error("Error creating comment:", error);
+      // TODO: Add error reporting service
     } finally {
       setSubmitting(false);
     }
@@ -585,54 +598,77 @@ const ActivityDetails = () => {
     if (!editContent.trim()) return;
 
     try {
-      const res = await CommentService.updateComment(id, commentId, editContent.trim());
-      setComments(comments.map(c => c.id === commentId ? res.data : c));
+      const res = await CommentService.updateComment(
+        id,
+        commentId,
+        editContent.trim(),
+      );
+      setComments(comments.map((c) => (c.id === commentId ? res.data : c)));
       setEditingCommentId(null);
       setEditContent("");
     } catch (error) {
-      console.error("Error updating comment:", error);
+      // TODO: Add error reporting service
     }
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    if (!window.confirm("Are you sure you want to delete this comment?"))
+      return;
 
     try {
       await CommentService.deleteComment(id, commentId);
-      setComments(comments.filter(c => c.id !== commentId));
+      setComments(comments.filter((c) => c.id !== commentId));
     } catch (error) {
-      console.error("Error deleting comment:", error);
+      // TODO: Add error reporting service
     }
   };
 
   const fetchReactions = async (commentId) => {
     try {
       const res = await CommentService.getReactions(id, commentId);
-      setCommentReactions(prev => ({ ...prev, [commentId]: res.data.reactions || {} }));
-      setUserReactions(prev => ({ ...prev, [commentId]: res.data.userReactions || [] }));
+      setCommentReactions((prev) => ({
+        ...prev,
+        [commentId]: res.data.reactions || {},
+      }));
+      setUserReactions((prev) => ({
+        ...prev,
+        [commentId]: res.data.userReactions || [],
+      }));
     } catch (error) {
-      console.error("Error fetching reactions:", error);
+      // TODO: Add error reporting service
     }
   };
 
   const handleAddReaction = async (commentId, emoji) => {
     try {
       const res = await CommentService.addReaction(id, commentId, emoji);
-      setCommentReactions(prev => ({ ...prev, [commentId]: res.data.reactions || {} }));
-      setUserReactions(prev => ({ ...prev, [commentId]: res.data.userReactions || [] }));
+      setCommentReactions((prev) => ({
+        ...prev,
+        [commentId]: res.data.reactions || {},
+      }));
+      setUserReactions((prev) => ({
+        ...prev,
+        [commentId]: res.data.userReactions || [],
+      }));
       setShowEmojiPicker(null);
     } catch (error) {
-      console.error("Error adding reaction:", error);
+      // TODO: Add error reporting service
     }
   };
 
   const handleRemoveReaction = async (commentId, emoji) => {
     try {
       const res = await CommentService.removeReaction(id, commentId, emoji);
-      setCommentReactions(prev => ({ ...prev, [commentId]: res.data.reactions || {} }));
-      setUserReactions(prev => ({ ...prev, [commentId]: res.data.userReactions || [] }));
+      setCommentReactions((prev) => ({
+        ...prev,
+        [commentId]: res.data.reactions || {},
+      }));
+      setUserReactions((prev) => ({
+        ...prev,
+        [commentId]: res.data.userReactions || [],
+      }));
     } catch (error) {
-      console.error("Error removing reaction:", error);
+      // TODO: Add error reporting service
     }
   };
 
@@ -689,9 +725,7 @@ const ActivityDetails = () => {
 
       <ActivityHeader>
         <UserSection>
-          <Avatar>
-            {activity.user?.firstName?.charAt(0) || "U"}
-          </Avatar>
+          <Avatar>{activity.user?.firstName?.charAt(0) || "U"}</Avatar>
           <UserInfo>
             <UserName>
               {activity.user?.firstName} {activity.user?.lastName}
@@ -703,7 +737,9 @@ const ActivityDetails = () => {
         </UserSection>
 
         <Title>{activity.title}</Title>
-        {activity.description && <Description>{activity.description}</Description>}
+        {activity.description && (
+          <Description>{activity.description}</Description>
+        )}
 
         <StatsGrid>
           <StatItem>
@@ -733,11 +769,18 @@ const ActivityDetails = () => {
         </StatsGrid>
 
         <ActionsBar>
-          <ActionButton onClick={handleLike} style={{ color: likedByMe ? '#fc4c02' : '#666' }}>
-            <FiHeart size={18} fill={likedByMe ? '#fc4c02' : 'none'} />
+          <ActionButton
+            onClick={handleLike}
+            style={{ color: likedByMe ? "#fc4c02" : "#666" }}
+          >
+            <FiHeart size={18} fill={likedByMe ? "#fc4c02" : "none"} />
             {likesCount} Likes
           </ActionButton>
-          <ActionButton onClick={() => commentsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+          <ActionButton
+            onClick={() =>
+              commentsSectionRef.current?.scrollIntoView({ behavior: "smooth" })
+            }
+          >
             <FiMessageCircle size={18} />
             {comments.length} Comments
           </ActionButton>
@@ -769,7 +812,10 @@ const ActivityDetails = () => {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
           />
-          <CommentSubmitButton type="submit" disabled={!newComment.trim() || submitting}>
+          <CommentSubmitButton
+            type="submit"
+            disabled={!newComment.trim() || submitting}
+          >
             <FiSend size={18} />
           </CommentSubmitButton>
         </CommentForm>
@@ -792,7 +838,9 @@ const ActivityDetails = () => {
                     <CommentAuthor>
                       {comment.user?.firstName} {comment.user?.lastName}
                     </CommentAuthor>
-                    <CommentTime>{formatCommentTime(comment.createdAt)}</CommentTime>
+                    <CommentTime>
+                      {formatCommentTime(comment.createdAt)}
+                    </CommentTime>
                   </CommentHeader>
                   {editingCommentId === comment.id ? (
                     <>
@@ -803,11 +851,17 @@ const ActivityDetails = () => {
                         autoFocus
                       />
                       <EditActions>
-                        <EditButton className="save" onClick={() => handleSaveEdit(comment.id)}>
+                        <EditButton
+                          className="save"
+                          onClick={() => handleSaveEdit(comment.id)}
+                        >
                           <FiCheck size={14} />
                           Save
                         </EditButton>
-                        <EditButton className="cancel" onClick={handleCancelEdit}>
+                        <EditButton
+                          className="cancel"
+                          onClick={handleCancelEdit}
+                        >
                           <FiX size={14} />
                           Cancel
                         </EditButton>
@@ -817,22 +871,41 @@ const ActivityDetails = () => {
                     <>
                       <CommentText>{comment.content}</CommentText>
                       <ReactionBar>
-                        {Object.entries(commentReactions[comment.id] || {}).map(([emoji, count]) => (
-                          <ReactionBadge
-                            key={emoji}
-                            active={(userReactions[comment.id] || []).includes(emoji)}
-                            onClick={() => handleToggleReaction(comment.id, emoji)}
-                          >
-                            <span className="emoji">{emoji}</span>
-                            <span className="count">{count}</span>
-                          </ReactionBadge>
-                        ))}
-                        <AddReactionButton onClick={() => setShowEmojiPicker(showEmojiPicker === comment.id ? null : comment.id)}>
+                        {Object.entries(commentReactions[comment.id] || {}).map(
+                          ([emoji, count]) => (
+                            <ReactionBadge
+                              key={emoji}
+                              active={(
+                                userReactions[comment.id] || []
+                              ).includes(emoji)}
+                              onClick={() =>
+                                handleToggleReaction(comment.id, emoji)
+                              }
+                            >
+                              <span className="emoji">{emoji}</span>
+                              <span className="count">{count}</span>
+                            </ReactionBadge>
+                          ),
+                        )}
+                        <AddReactionButton
+                          onClick={() =>
+                            setShowEmojiPicker(
+                              showEmojiPicker === comment.id
+                                ? null
+                                : comment.id,
+                            )
+                          }
+                        >
                           +
                           {showEmojiPicker === comment.id && (
                             <EmojiPicker onClick={(e) => e.stopPropagation()}>
-                              {availableEmojis.map(emoji => (
-                                <EmojiOption key={emoji} onClick={() => handleAddReaction(comment.id, emoji)}>
+                              {availableEmojis.map((emoji) => (
+                                <EmojiOption
+                                  key={emoji}
+                                  onClick={() =>
+                                    handleAddReaction(comment.id, emoji)
+                                  }
+                                >
                                   {emoji}
                                 </EmojiOption>
                               ))}
@@ -842,11 +915,16 @@ const ActivityDetails = () => {
                       </ReactionBar>
                       {comment.user?.id === user?.id && (
                         <CommentActions>
-                          <CommentActionButton onClick={() => handleEditComment(comment)}>
+                          <CommentActionButton
+                            onClick={() => handleEditComment(comment)}
+                          >
                             <FiEdit2 size={12} />
                             Edit
                           </CommentActionButton>
-                          <CommentActionButton danger onClick={() => handleDeleteComment(comment.id)}>
+                          <CommentActionButton
+                            danger
+                            onClick={() => handleDeleteComment(comment.id)}
+                          >
                             <FiTrash2 size={12} />
                             Delete
                           </CommentActionButton>

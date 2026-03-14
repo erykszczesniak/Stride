@@ -134,8 +134,13 @@ public class ExportController {
 
     @GetMapping(ACTIVITIES + GPX + ACTIVITY_ID)
     public ResponseEntity<byte[]> exportActivityAsGpx(@PathVariable Long activityId) {
+        Long currentUserId = getAuthenticatedUserId();
         Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new RuntimeException("Activity not found"));
+
+        if (!activity.getUser().getId().equals(currentUserId)) {
+            return ResponseEntity.status(403).build();
+        }
 
         StringBuilder gpx = new StringBuilder();
         gpx.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");

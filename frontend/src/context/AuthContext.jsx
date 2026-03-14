@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
         setUser(response.data);
         setIsAuthenticated(true);
       } catch (error) {
-        console.error("Auth check failed:", error);
+        // TODO: Add error reporting service
         logout();
       }
     }

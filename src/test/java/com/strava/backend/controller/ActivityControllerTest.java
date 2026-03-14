@@ -403,21 +403,9 @@ class ActivityControllerTest {
         @Test
         @DisplayName("Should search user activities by search query")
         void shouldSearchUserActivitiesBySearchQuery() throws Exception {
-            com.strava.backend.domain.Activity domainActivity = com.strava.backend.domain.Activity.builder()
-                    .id(1L)
-                    .title("Morning Run")
-                    .activityType(ActivityType.RUN)
-                    .distance(10.5)
-                    .duration(3600)
-                    .isPrivate(false)
-                    .build();
-
-            Page<com.strava.backend.domain.Activity> page = new PageImpl<>(List.of(domainActivity));
-            when(activityRepository.searchUserActivities(eq(1L), eq("Morning"), any(Pageable.class)))
-                    .thenReturn(page);
-            when(commonMapper.convertToResponse(any(com.strava.backend.domain.Activity.class), eq(ActivityResponse.class)))
-                    .thenReturn(activityResponse);
-            when(activityService.isLikedByUser(1L, 1L)).thenReturn(false);
+            ActivityResponse searchResult = activityResponse;
+            when(activityMapper.searchMyActivities(eq(1L), eq("Morning"), isNull(), any(Pageable.class)))
+                    .thenReturn(List.of(searchResult));
 
             mockMvc.perform(get("/api/v1/activities/my")
                             .param("search", "Morning"))
@@ -425,27 +413,15 @@ class ActivityControllerTest {
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].title").value("Morning Run"));
 
-            verify(activityRepository).searchUserActivities(eq(1L), eq("Morning"), any(Pageable.class));
+            verify(activityMapper).searchMyActivities(eq(1L), eq("Morning"), isNull(), any(Pageable.class));
         }
 
         @Test
         @DisplayName("Should filter user activities by activity type")
         void shouldFilterUserActivitiesByActivityType() throws Exception {
-            com.strava.backend.domain.Activity domainActivity = com.strava.backend.domain.Activity.builder()
-                    .id(1L)
-                    .title("Morning Run")
-                    .activityType(ActivityType.RUN)
-                    .distance(10.5)
-                    .duration(3600)
-                    .isPrivate(false)
-                    .build();
-
-            Page<com.strava.backend.domain.Activity> page = new PageImpl<>(List.of(domainActivity));
-            when(activityRepository.findByUserIdAndActivityType(eq(1L), eq(ActivityType.RUN), any(Pageable.class)))
-                    .thenReturn(page);
-            when(commonMapper.convertToResponse(any(com.strava.backend.domain.Activity.class), eq(ActivityResponse.class)))
-                    .thenReturn(activityResponse);
-            when(activityService.isLikedByUser(1L, 1L)).thenReturn(false);
+            ActivityResponse typedResult = activityResponse;
+            when(activityMapper.getActivitiesByType(eq(1L), eq(ActivityType.RUN), any(Pageable.class)))
+                    .thenReturn(List.of(typedResult));
 
             mockMvc.perform(get("/api/v1/activities/my")
                             .param("activityType", "RUN"))
@@ -453,15 +429,14 @@ class ActivityControllerTest {
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].activityType").value("RUN"));
 
-            verify(activityRepository).findByUserIdAndActivityType(eq(1L), eq(ActivityType.RUN), any(Pageable.class));
+            verify(activityMapper).getActivitiesByType(eq(1L), eq(ActivityType.RUN), any(Pageable.class));
         }
 
         @Test
         @DisplayName("Should return empty list when search has no matches")
         void shouldReturnEmptyListWhenSearchHasNoMatches() throws Exception {
-            Page<com.strava.backend.domain.Activity> emptyPage = new PageImpl<>(Collections.emptyList());
-            when(activityRepository.searchUserActivities(eq(1L), eq("nonexistent"), any(Pageable.class)))
-                    .thenReturn(emptyPage);
+            when(activityMapper.searchMyActivities(eq(1L), eq("nonexistent"), isNull(), any(Pageable.class)))
+                    .thenReturn(Collections.emptyList());
 
             mockMvc.perform(get("/api/v1/activities/my")
                             .param("search", "nonexistent"))
@@ -477,9 +452,8 @@ class ActivityControllerTest {
         @Test
         @DisplayName("Should return total stats for user")
         void shouldReturnTotalStatsForUser() throws Exception {
-            when(activityRepository.countByUserId(1L)).thenReturn(10);
-            when(activityRepository.sumDistanceByUserId(1L)).thenReturn(150.5);
-            when(activityRepository.sumDurationByUserId(1L)).thenReturn(36000L);
+            when(activityMapper.getUserTotalStats(1L)).thenReturn(
+                    java.util.Map.of("totalActivities", 10, "totalDistanceKm", 150.5, "totalDurationSeconds", 36000L));
 
             mockMvc.perform(get("/api/v1/activities/my/stats"))
                     .andExpect(status().isOk())
@@ -491,9 +465,8 @@ class ActivityControllerTest {
         @Test
         @DisplayName("Should return zeros when user has no activities")
         void shouldReturnZerosWhenUserHasNoActivities() throws Exception {
-            when(activityRepository.countByUserId(1L)).thenReturn(0);
-            when(activityRepository.sumDistanceByUserId(1L)).thenReturn(null);
-            when(activityRepository.sumDurationByUserId(1L)).thenReturn(null);
+            when(activityMapper.getUserTotalStats(1L)).thenReturn(
+                    java.util.Map.of("totalActivities", 0, "totalDistanceKm", 0.0, "totalDurationSeconds", 0L));
 
             mockMvc.perform(get("/api/v1/activities/my/stats"))
                     .andExpect(status().isOk())
@@ -505,15 +478,14 @@ class ActivityControllerTest {
         @Test
         @DisplayName("Should use default user ID when not provided")
         void shouldUseDefaultUserIdWhenNotProvided() throws Exception {
-            when(activityRepository.countByUserId(1L)).thenReturn(5);
-            when(activityRepository.sumDistanceByUserId(1L)).thenReturn(50.0);
-            when(activityRepository.sumDurationByUserId(1L)).thenReturn(18000L);
+            when(activityMapper.getUserTotalStats(1L)).thenReturn(
+                    java.util.Map.of("totalActivities", 5, "totalDistanceKm", 50.0, "totalDurationSeconds", 18000L));
 
             mockMvc.perform(get("/api/v1/activities/my/stats"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalActivities").value(5));
 
-            verify(activityRepository).countByUserId(1L);
+            verify(activityMapper).getUserTotalStats(1L);
         }
     }
 

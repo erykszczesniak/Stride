@@ -34,4 +34,4 @@ const StatsCard = ({ icon, label, value, unit, trend, bgColor, iconColor }) => {
   );
 };
 
-export default StatsCard;
+export default React.memo(StatsCard);

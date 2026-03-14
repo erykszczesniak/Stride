@@ -86,7 +86,7 @@ const Settings = () => {
         height: response.data.height || "",
       });
     } catch (error) {
-      console.error("Error loading user data:", error);
+      // TODO: Add error reporting service
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ const Settings = () => {
 
       toast.success("Settings saved successfully!");
     } catch (error) {
-      console.error("Error saving settings:", error);
+      // TODO: Add error reporting service
       toast.error("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);

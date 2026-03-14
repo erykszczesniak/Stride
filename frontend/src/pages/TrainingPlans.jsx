@@ -851,7 +851,7 @@ const TrainingPlans = () => {
         const response = await TrainingPlanService.getTemplates();
         setReadyMadePlans(response.data);
       } catch (error) {
-        console.error("Error fetching training plan templates:", error);
+        // TODO: Add error reporting service
         toast.error("Failed to load training plans");
       } finally {
         setLoadingPlans(false);
@@ -882,13 +882,10 @@ const TrainingPlans = () => {
     setGenerating(true);
     try {
       const response = await AiService.generateGoal(goalType, timeframe, goalDescription);
-      console.log("Goal API response:", response.data);
       const data = parseAiResponse(response.data);
-      console.log("Parsed goal data:", data);
       setGeneratedGoal(data);
     } catch (error) {
-      console.error("Error generating goal:", error);
-      console.error("Error details:", error.message);
+      // TODO: Add error reporting service
       toast.error("Failed to generate goal. Please try again.");
     } finally {
       setGenerating(false);
@@ -908,13 +905,10 @@ const TrainingPlans = () => {
         targetDistance,
         planDuration
       );
-      console.log("Plan API response:", response.data);
       const data = parseAiResponse(response.data);
-      console.log("Parsed plan data:", data);
       setGeneratedPlan(data);
     } catch (error) {
-      console.error("Error generating plan:", error);
-      console.error("Error details:", error.message);
+      // TODO: Add error reporting service
       toast.error("Failed to generate training plan. Please try again.");
     } finally {
       setGenerating(false);

@@ -299,7 +299,7 @@ const EventDetails = () => {
         const res = await EventService.getEventById(id);
         setEvent(res.data);
       } catch (error) {
-        console.error("Error fetching event:", error);
+        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }
@@ -328,7 +328,7 @@ const EventDetails = () => {
         }));
       }
     } catch (error) {
-      console.error("Error toggling registration:", error);
+      // TODO: Add error reporting service
       toast.error("Failed to update registration. Please try again.");
     } finally {
       setRegistering(false);
@@ -341,7 +341,7 @@ const EventDetails = () => {
       await EventService.deleteEvent(event.id);
       navigate("/events");
     } catch (error) {
-      console.error("Error deleting event:", error);
+      // TODO: Add error reporting service
       toast.error("Failed to delete event.");
     }
   };

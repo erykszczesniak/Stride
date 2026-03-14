@@ -45,7 +45,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Page<User> searchUsers(String searchText, Pageable pageable) {
-        return userRepository.findAll(pageable); // Simplified, can use custom query
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return userRepository.findAll(pageable);
+        }
+        return userRepository.searchUsersByText(searchText.trim(), pageable);
     }
 
     @Override

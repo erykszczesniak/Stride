@@ -36,7 +36,7 @@ const Goals = () => {
         const res = await GoalService.getUserGoals();
         setGoals(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
-        console.error("Error fetching goals:", error);
+        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }

@@ -22,6 +22,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.graphql.test.tester.GraphQlTester;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.strava.backend.security.UserPrincipal;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
@@ -60,6 +66,11 @@ class ActivityGraphQLControllerTest {
                 .active(true)
                 .build();
 
+        UserPrincipal principal = UserPrincipal.create(testUser);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         testActivity = Activity.builder()
                 .id(1L)
                 .title("Morning Run")
@@ -77,6 +88,11 @@ class ActivityGraphQLControllerTest {
                 .comments(new HashSet<>())
                 .build();
         testActivity.setCreatedAt(LocalDateTime.now());
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Nested

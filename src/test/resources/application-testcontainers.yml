@@ -10,6 +10,14 @@ spring:
   flyway:
     enabled: false
 
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktbWluLTI1Ni1iaXRz
+  expiration: 86400000
+
+groq:
+  api-key: test-api-key
+  model: test-model
+
 logging:
   level:
     org.springframework.transaction: DEBUG

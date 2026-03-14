@@ -307,7 +307,7 @@ const CreateChallenge = () => {
       await ChallengeService.createChallenge(challengeData);
       navigate("/challenges");
     } catch (err) {
-      console.error("Error creating challenge:", err);
+      // TODO: Add error reporting service
       setError(
         err.response?.data?.error || "Failed to create challenge. Please try again."
       );

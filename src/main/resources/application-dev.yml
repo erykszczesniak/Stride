@@ -20,6 +20,11 @@ spring:
     console:
       enabled: true
 
+  graphql:
+    schema:
+      introspection:
+        enabled: true
+
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
@@ -28,3 +33,4 @@ logging:
   level:
     com.strava: DEBUG
     org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG

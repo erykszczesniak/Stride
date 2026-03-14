@@ -8,11 +8,16 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Set;
 
 @Aspect
 @Component
 @Slf4j
 public class LoggingAspect {
+
+    private static final Set<String> SENSITIVE_TYPE_KEYWORDS = Set.of(
+            "authentication", "registration", "password", "login", "credential", "token"
+    );
 
     @Pointcut("execution(* com.strava.backend.controller.*.*(..))")
     public void controllerMethods() {
@@ -24,7 +29,7 @@ public class LoggingAspect {
         String methodName = joinPoint.getSignature().getName();
 
         log.debug("==> {}.{}() with arguments: {}",
-                className, methodName, Arrays.toString(joinPoint.getArgs()));
+                className, methodName, maskSensitiveArgs(joinPoint.getArgs()));
 
         long startTime = System.currentTimeMillis();
 
@@ -41,5 +46,22 @@ public class LoggingAspect {
                     className, methodName, e.getMessage());
             throw e;
         }
+    }
+
+    private String maskSensitiveArgs(Object[] args) {
+        if (args == null || args.length == 0) {
+            return "[]";
+        }
+        String[] masked = new String[args.length];
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] == null) {
+                masked[i] = "null";
+            } else {
+                String typeName = args[i].getClass().getSimpleName().toLowerCase();
+                boolean isSensitive = SENSITIVE_TYPE_KEYWORDS.stream().anyMatch(typeName::contains);
+                masked[i] = isSensitive ? "[REDACTED]" : args[i].toString();
+            }
+        }
+        return Arrays.toString(masked);
     }
 }

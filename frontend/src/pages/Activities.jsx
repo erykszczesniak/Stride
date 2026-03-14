@@ -427,7 +427,7 @@ const Activities = () => {
 
       setActivities(data);
     } catch (error) {
-      console.error("Error fetching activities:", error);
+      // TODO: Add error reporting service
     } finally {
       setLoading(false);
     }
@@ -439,7 +439,7 @@ const Activities = () => {
         const res = await ActivityService.getMyTotalStats();
         setStats(res.data);
       } catch (error) {
-        console.error("Error fetching stats:", error);
+        // TODO: Add error reporting service
       }
     }
   }, [mainTab]);
@@ -451,7 +451,7 @@ const Activities = () => {
       }));
       setSuggestedAthletes(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-      console.error("Error fetching suggested athletes:", error);
+      // TODO: Add error reporting service
     }
   }, []);
 
@@ -463,7 +463,7 @@ const Activities = () => {
         setActiveChallenge(challenges[0]);
       }
     } catch (error) {
-      console.error("Error fetching active challenge:", error);
+      // TODO: Add error reporting service
     }
   }, []);
 
@@ -496,7 +496,7 @@ const Activities = () => {
           : a
       ));
     } catch (error) {
-      console.error("Error toggling like:", error);
+      // TODO: Add error reporting service
     }
   };
 
@@ -505,7 +505,7 @@ const Activities = () => {
       await UserService.followUser(athleteId);
       fetchSuggestedAthletes();
     } catch (error) {
-      console.error("Error following user:", error);
+      // TODO: Add error reporting service
     }
   };
 

@@ -5,6 +5,7 @@ import com.strava.backend.domain.Comment;
 import com.strava.backend.dto.activity.ActivityRequest;
 import com.strava.backend.dto.activity.ActivityStatsResponse;
 import com.strava.backend.dto.activity.WeeklyStatsResponse;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.CommentService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,8 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -21,10 +24,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ActivityGraphQLController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final ActivityService activityService;
     private final CommentService commentService;
+
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
 
     @QueryMapping
     public Activity activity(@Argument Long id) {
@@ -36,7 +45,7 @@ public class ActivityGraphQLController {
             @Argument Long userId,
             @Argument Integer page,
             @Argument Integer size) {
-        Long targetUserId = userId != null ? userId : DEFAULT_USER_ID;
+        Long targetUserId = userId != null ? userId : getAuthenticatedUserId();
         int pageNum = page != null ? page : 0;
         int pageSize = size != null ? size : 10;
         return activityService.getActivitiesByUserId(targetUserId, PageRequest.of(pageNum, pageSize)).getContent();
@@ -48,50 +57,60 @@ public class ActivityGraphQLController {
             @Argument Integer size) {
         int pageNum = page != null ? page : 0;
         int pageSize = size != null ? size : 10;
-        return activityService.getFeedActivities(DEFAULT_USER_ID, PageRequest.of(pageNum, pageSize)).getContent();
+        return activityService.getFeedActivities(getAuthenticatedUserId(), PageRequest.of(pageNum, pageSize)).getContent();
     }
 
     @QueryMapping
     public ActivityStatsResponse activityStats(@Argument Long userId) {
-        return activityService.getMonthlyStats(userId);
+        Long authenticatedUserId = getAuthenticatedUserId();
+        Long targetUserId = userId != null ? userId : authenticatedUserId;
+        if (!targetUserId.equals(authenticatedUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to view stats for another user");
+        }
+        return activityService.getMonthlyStats(targetUserId);
     }
 
     @QueryMapping
     public WeeklyStatsResponse weeklyStats(@Argument Long userId) {
-        return activityService.getWeeklyStats(userId);
+        Long authenticatedUserId = getAuthenticatedUserId();
+        Long targetUserId = userId != null ? userId : authenticatedUserId;
+        if (!targetUserId.equals(authenticatedUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to view stats for another user");
+        }
+        return activityService.getWeeklyStats(targetUserId);
     }
 
     @MutationMapping
     public Activity createActivity(@Argument("input") ActivityRequest input) {
-        return activityService.createActivity(DEFAULT_USER_ID, input);
+        return activityService.createActivity(getAuthenticatedUserId(), input);
     }
 
     @MutationMapping
     public Activity updateActivity(@Argument Long id, @Argument("input") ActivityRequest input) {
-        return activityService.updateActivity(id, DEFAULT_USER_ID, input);
+        return activityService.updateActivity(id, getAuthenticatedUserId(), input);
     }
 
     @MutationMapping
     public Boolean deleteActivity(@Argument Long id) {
-        activityService.deleteActivity(id, DEFAULT_USER_ID);
+        activityService.deleteActivity(id, getAuthenticatedUserId());
         return true;
     }
 
     @MutationMapping
     public Activity likeActivity(@Argument Long id) {
-        activityService.likeActivity(id, DEFAULT_USER_ID);
+        activityService.likeActivity(id, getAuthenticatedUserId());
         return activityService.getActivityById(id);
     }
 
     @MutationMapping
     public Activity unlikeActivity(@Argument Long id) {
-        activityService.unlikeActivity(id, DEFAULT_USER_ID);
+        activityService.unlikeActivity(id, getAuthenticatedUserId());
         return activityService.getActivityById(id);
     }
 
     @MutationMapping
     public Comment addComment(@Argument Long activityId, @Argument String content) {
-        return commentService.createComment(activityId, DEFAULT_USER_ID, content);
+        return commentService.createComment(activityId, getAuthenticatedUserId(), content);
     }
 
     // Schema mappings for computed fields
@@ -107,7 +126,7 @@ public class ActivityGraphQLController {
 
     @SchemaMapping(typeName = "Activity", field = "likedByCurrentUser")
     public boolean likedByCurrentUser(Activity activity) {
-        return activityService.isLikedByUser(activity.getId(), DEFAULT_USER_ID);
+        return activityService.isLikedByUser(activity.getId(), getAuthenticatedUserId());
     }
 
     @SchemaMapping(typeName = "Activity", field = "comments")

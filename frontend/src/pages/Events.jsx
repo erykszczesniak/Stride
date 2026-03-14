@@ -38,7 +38,7 @@ const Events = () => {
         setEvents(Array.isArray(res.data) ? res.data :
                   res.data?.content ? res.data.content : []);
       } catch (error) {
-        console.error("Error fetching events:", error);
+        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }

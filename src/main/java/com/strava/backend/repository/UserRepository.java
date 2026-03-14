@@ -34,6 +34,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "UPPER(u.email) LIKE UPPER(CONCAT('%', :searchText, '%'))")
     Page<UserProjection> searchUsers(@Param("searchText") String searchText, Pageable pageable);
 
+    @Query("SELECT u FROM User u WHERE " +
+           "UPPER(u.firstName) LIKE UPPER(CONCAT('%', :searchText, '%')) OR " +
+           "UPPER(u.lastName) LIKE UPPER(CONCAT('%', :searchText, '%')) OR " +
+           "UPPER(u.email) LIKE UPPER(CONCAT('%', :searchText, '%'))")
+    Page<User> searchUsersByText(@Param("searchText") String searchText, Pageable pageable);
+
     @Query("SELECT COUNT(f) FROM User u JOIN u.followers f WHERE u.id = :userId")
     int countFollowers(@Param("userId") Long userId);
 

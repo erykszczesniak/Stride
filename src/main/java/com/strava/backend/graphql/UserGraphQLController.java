@@ -3,6 +3,7 @@ package com.strava.backend.graphql;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.user.UpdateUserRequest;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -19,11 +22,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserGraphQLController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final UserService userService;
     private final UserRepository userRepository;
     private final ActivityService activityService;
+
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
 
     @QueryMapping
     public User user(@Argument Long id) {
@@ -39,29 +48,29 @@ public class UserGraphQLController {
 
     @QueryMapping
     public User currentUser() {
-        return userService.getUserById(DEFAULT_USER_ID);
+        return userService.getUserById(getAuthenticatedUserId());
     }
 
     @QueryMapping
     public List<User> suggestedUsers(@Argument Integer limit) {
         int maxResults = limit != null ? limit : 5;
-        return userService.getSuggestedUsers(DEFAULT_USER_ID, maxResults);
+        return userService.getSuggestedUsers(getAuthenticatedUserId(), maxResults);
     }
 
     @MutationMapping
     public User updateProfile(@Argument("input") UpdateUserRequest input) {
-        return userService.updateUser(DEFAULT_USER_ID, input);
+        return userService.updateUser(getAuthenticatedUserId(), input);
     }
 
     @MutationMapping
     public Boolean followUser(@Argument Long userId) {
-        userService.followUser(DEFAULT_USER_ID, userId);
+        userService.followUser(getAuthenticatedUserId(), userId);
         return true;
     }
 
     @MutationMapping
     public Boolean unfollowUser(@Argument Long userId) {
-        userService.unfollowUser(DEFAULT_USER_ID, userId);
+        userService.unfollowUser(getAuthenticatedUserId(), userId);
         return true;
     }
 

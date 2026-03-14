@@ -63,4 +63,4 @@ const EventCard = ({ event, compact = false }) => {
   );
 };
 
-export default EventCard;
+export default React.memo(EventCard);

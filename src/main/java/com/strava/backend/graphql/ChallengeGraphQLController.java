@@ -1,6 +1,7 @@
 package com.strava.backend.graphql;
 
 import com.strava.backend.domain.Challenge;
+import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ChallengeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -8,6 +9,8 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
@@ -17,9 +20,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChallengeGraphQLController {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final ChallengeService challengeService;
+
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
 
     @QueryMapping
     public Challenge challenge(@Argument Long id) {
@@ -40,13 +49,13 @@ public class ChallengeGraphQLController {
 
     @MutationMapping
     public Boolean joinChallenge(@Argument Long challengeId) {
-        challengeService.joinChallenge(challengeId, DEFAULT_USER_ID);
+        challengeService.joinChallenge(challengeId, getAuthenticatedUserId());
         return true;
     }
 
     @MutationMapping
     public Boolean leaveChallenge(@Argument Long challengeId) {
-        challengeService.leaveChallenge(challengeId, DEFAULT_USER_ID);
+        challengeService.leaveChallenge(challengeId, getAuthenticatedUserId());
         return true;
     }
 
@@ -58,7 +67,7 @@ public class ChallengeGraphQLController {
 
     @SchemaMapping(typeName = "Challenge", field = "isParticipating")
     public boolean isParticipating(Challenge challenge) {
-        return challengeService.isUserParticipating(challenge.getId(), DEFAULT_USER_ID);
+        return challengeService.isUserParticipating(challenge.getId(), getAuthenticatedUserId());
     }
 
     @SchemaMapping(typeName = "Challenge", field = "isActive")
@@ -69,6 +78,6 @@ public class ChallengeGraphQLController {
 
     @SchemaMapping(typeName = "Challenge", field = "userProgress")
     public Double userProgress(Challenge challenge) {
-        return challengeService.getUserProgressInChallenge(challenge.getId(), DEFAULT_USER_ID);
+        return challengeService.getUserProgressInChallenge(challenge.getId(), getAuthenticatedUserId());
     }
 }

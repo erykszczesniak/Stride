@@ -419,7 +419,7 @@ const Challenges = () => {
       const res = await ChallengeService.getMyChallenges();
       setMyChallenges(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-      console.error("Error fetching my challenges:", error);
+      // TODO: Add error reporting service
     }
   }, []);
 
@@ -430,7 +430,7 @@ const Challenges = () => {
       // Filter out challenges user is already participating in
       setExploreChallenges(challenges.filter(c => !c.participating));
     } catch (error) {
-      console.error("Error fetching explore challenges:", error);
+      // TODO: Add error reporting service
     }
   }, []);
 
@@ -439,7 +439,7 @@ const Challenges = () => {
       const res = await ChallengeService.getLeaderboard(challengeId);
       setLeaderboard(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-      console.error("Error fetching leaderboard:", error);
+      // TODO: Add error reporting service
     }
   }, []);
 
@@ -466,7 +466,7 @@ const Challenges = () => {
       await ChallengeService.joinChallenge(challengeId);
       await Promise.all([fetchMyChallenges(), fetchExploreChallenges()]);
     } catch (error) {
-      console.error("Error joining challenge:", error);
+      // TODO: Add error reporting service
     } finally {
       setJoiningId(null);
     }
@@ -478,7 +478,7 @@ const Challenges = () => {
       await ChallengeService.leaveChallenge(challengeId);
       await Promise.all([fetchMyChallenges(), fetchExploreChallenges()]);
     } catch (error) {
-      console.error("Error leaving challenge:", error);
+      // TODO: Add error reporting service
     } finally {
       setLeavingId(null);
     }

@@ -322,7 +322,7 @@ const CreateEvent = () => {
       await EventService.createEvent(1, eventData);
       navigate('/events');
     } catch (err) {
-      console.error('Error creating event:', err);
+      // TODO: Add error reporting service
       setError(err.response?.data?.message || 'Failed to create event. Please try again.');
     } finally {
       setLoading(false);

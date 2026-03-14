@@ -33,6 +33,12 @@ spring:
               - email
               - profile
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
 logging:
   level:
     com.strava: INFO

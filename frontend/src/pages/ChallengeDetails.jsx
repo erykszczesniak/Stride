@@ -427,7 +427,7 @@ const ChallengeDetails = () => {
       const res = await ChallengeService.getChallengeById(id);
       setChallenge(res.data);
     } catch (error) {
-      console.error("Error fetching challenge:", error);
+      // TODO: Add error reporting service
     }
   }, [id]);
 
@@ -436,7 +436,7 @@ const ChallengeDetails = () => {
       const res = await ChallengeService.getLeaderboard(id);
       setLeaderboard(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-      console.error("Error fetching leaderboard:", error);
+      // TODO: Add error reporting service
     }
   }, [id]);
 
@@ -456,7 +456,7 @@ const ChallengeDetails = () => {
       await Promise.all([fetchChallenge(), fetchLeaderboard()]);
       toast.success("Successfully joined the challenge!");
     } catch (error) {
-      console.error("Error joining challenge:", error);
+      // TODO: Add error reporting service
       toast.error("Failed to join the challenge.");
     } finally {
       setActionLoading(false);
@@ -470,7 +470,7 @@ const ChallengeDetails = () => {
       await Promise.all([fetchChallenge(), fetchLeaderboard()]);
       toast.success("You left the challenge.");
     } catch (error) {
-      console.error("Error leaving challenge:", error);
+      // TODO: Add error reporting service
       toast.error("Failed to leave the challenge.");
     } finally {
       setActionLoading(false);
@@ -485,7 +485,7 @@ const ChallengeDetails = () => {
       toast.success("Challenge deleted.");
       navigate("/challenges");
     } catch (error) {
-      console.error("Error deleting challenge:", error);
+      // TODO: Add error reporting service
       toast.error("Failed to delete the challenge.");
     }
   };

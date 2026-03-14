@@ -95,7 +95,7 @@ const Dashboard = () => {
         setGoals(Array.isArray(goalsRes.data) ? goalsRes.data : []);
         setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }
@@ -117,7 +117,7 @@ const Dashboard = () => {
           : a
       ));
     } catch (error) {
-      console.error("Error toggling like:", error);
+      // TODO: Add error reporting service
     }
   };
 

@@ -5,6 +5,7 @@ import com.strava.backend.domain.User;
 import com.strava.backend.dto.activity.ActivityRequest;
 import com.strava.backend.dto.activity.ActivityStatsResponse;
 import com.strava.backend.dto.activity.WeeklyStatsResponse;
+import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.service.ActivityService;
@@ -22,7 +23,9 @@ import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.strava.backend.constants.ErrorMessage.ACTIVITY_ACCESS_DENIED;
@@ -44,7 +47,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public Page<Activity> getActivitiesByUserId(Long userId, Pageable pageable) {
-        return activityRepository.findAll(pageable); // Simplified
+        return activityRepository.findByUserId(userId, pageable);
     }
 
     @Override
@@ -62,7 +65,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .map(User::getId)
                 .collect(Collectors.toList());
         followingIds.add(userId);
-        return activityRepository.findAll(pageable); // Simplified
+        return activityRepository.findByUserIdIn(followingIds, pageable);
     }
 
     @Override
@@ -189,15 +192,16 @@ public class ActivityServiceImpl implements ActivityService {
         LocalDateTime startOfPrevMonth = startOfMonth.minusMonths(1);
         LocalDateTime endOfPrevMonth = startOfMonth.minusSeconds(1);
 
-        Double totalDistance = activityRepository.sumDistanceByUserAndDateRange(userId, startOfMonth, endOfMonth)
-                .orElse(0.0);
-        Long totalDuration = activityRepository.sumDurationByUserAndDateRange(userId, startOfMonth, endOfMonth)
-                .orElse(0L);
-        Integer totalCalories = activityRepository.sumCaloriesByUserAndDateRange(userId, startOfMonth, endOfMonth)
-                .orElse(0);
-        Integer totalElevation = activityRepository.sumElevationByUserAndDateRange(userId, startOfMonth, endOfMonth)
-                .orElse(0);
-        int totalActivities = activityRepository.countByUserAndDateRange(userId, startOfMonth, endOfMonth);
+        // Single native query to get all aggregated stats for the current month
+        Object[] rawStats = activityRepository.getAggregatedStatsByUserAndDateRange(userId, startOfMonth, endOfMonth);
+        // Native query returns Object[] where each element is a column value
+        Object[] stats = (rawStats != null && rawStats.length > 0 && rawStats[0] instanceof Object[])
+                ? (Object[]) rawStats[0] : rawStats;
+        double totalDistance = stats != null ? ((Number) stats[0]).doubleValue() : 0.0;
+        long totalDuration = stats != null ? ((Number) stats[1]).longValue() : 0L;
+        int totalCalories = stats != null ? ((Number) stats[2]).intValue() : 0;
+        int totalElevation = stats != null ? ((Number) stats[3]).intValue() : 0;
+        int totalActivities = stats != null ? ((Number) stats[4]).intValue() : 0;
 
         Double prevMonthDistance = activityRepository.sumDistanceByUserAndDateRange(userId, startOfPrevMonth, endOfPrevMonth)
                 .orElse(0.0);
@@ -226,31 +230,47 @@ public class ActivityServiceImpl implements ActivityService {
         LocalDateTime startOfPrevWeek = startOfWeek.minusWeeks(1);
         LocalDateTime endOfPrevWeek = startOfWeek.minusSeconds(1);
 
-        Double totalDistance = activityRepository.sumDistanceByUserAndDateRange(userId, startOfWeek, endOfWeek)
-                .orElse(0.0);
         Double prevWeekDistance = activityRepository.sumDistanceByUserAndDateRange(userId, startOfPrevWeek, endOfPrevWeek)
                 .orElse(0.0);
 
+        // Single query to get daily aggregated stats for the whole week
+        List<Object[]> dailyResults = activityRepository.getDailyStatsByUserAndDateRange(userId, startOfWeek, endOfWeek);
+
+        // PostgreSQL EXTRACT(DOW FROM ...) returns: 0=Sunday, 1=Monday, ..., 6=Saturday
+        // Map to our array index: Mon=0, Tue=1, ..., Sun=6
+        // So DOW 1->0, 2->1, 3->2, 4->3, 5->4, 6->5, 0->6
+        Double[] distances = new Double[7];
+        Integer[] durations = new Integer[7];
+        Integer[] activities = new Integer[7];
+        for (int i = 0; i < 7; i++) {
+            distances[i] = 0.0;
+            durations[i] = 0;
+            activities[i] = 0;
+        }
+
+        double totalDistance = 0.0;
+        for (Object[] row : dailyResults) {
+            int dow = ((Number) row[0]).intValue(); // PostgreSQL DOW: 0=Sun, 1=Mon, ..., 6=Sat
+            int index = dow == 0 ? 6 : dow - 1; // Convert to Mon=0 .. Sun=6
+            double dist = ((Number) row[1]).doubleValue();
+            int dur = ((Number) row[2]).intValue();
+            int act = ((Number) row[3]).intValue();
+            distances[index] = dist;
+            durations[index] = dur;
+            activities[index] = act;
+            totalDistance += dist;
+        }
+
         String trend = calculateTrend(totalDistance, prevWeekDistance);
 
-        List<WeeklyStatsResponse.DailyStats> dailyStats = new ArrayList<>();
         String[] dayNames = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-
+        List<WeeklyStatsResponse.DailyStats> dailyStats = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
-            LocalDateTime dayStart = startOfWeek.plusDays(i);
-            LocalDateTime dayEnd = dayStart.plusDays(1).minusSeconds(1);
-
-            Double dayDistance = activityRepository.sumDistanceByUserAndDateRange(userId, dayStart, dayEnd)
-                    .orElse(0.0);
-            Long dayDuration = activityRepository.sumDurationByUserAndDateRange(userId, dayStart, dayEnd)
-                    .orElse(0L);
-            int dayActivities = activityRepository.countByUserAndDateRange(userId, dayStart, dayEnd);
-
             dailyStats.add(WeeklyStatsResponse.DailyStats.builder()
                     .dayName(dayNames[i])
-                    .distance(dayDistance)
-                    .duration(dayDuration.intValue())
-                    .activities(dayActivities)
+                    .distance(distances[i])
+                    .duration(durations[i])
+                    .activities(activities[i])
                     .build());
         }
 
@@ -264,6 +284,36 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     public int countActivitiesByUserId(Long userId) {
         return activityRepository.countByUserId(userId);
+    }
+
+    @Override
+    public Page<Activity> searchUserActivities(Long userId, String searchText, ActivityType activityType, Pageable pageable) {
+        Page<Activity> activities = activityRepository.searchUserActivities(userId, searchText, pageable);
+        if (activityType != null) {
+            List<Activity> filtered = activities.getContent().stream()
+                    .filter(a -> a.getActivityType() == activityType)
+                    .collect(Collectors.toList());
+            return new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
+        }
+        return activities;
+    }
+
+    @Override
+    public Page<Activity> getActivitiesByUserIdAndType(Long userId, ActivityType activityType, Pageable pageable) {
+        return activityRepository.findByUserIdAndActivityType(userId, activityType, pageable);
+    }
+
+    @Override
+    public Map<String, Object> getUserTotalStats(Long userId) {
+        int totalActivities = activityRepository.countByUserId(userId);
+        Double totalDistance = activityRepository.sumDistanceByUserId(userId);
+        Long totalDuration = activityRepository.sumDurationByUserId(userId);
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalActivities", totalActivities);
+        stats.put("totalDistanceKm", totalDistance != null ? totalDistance : 0.0);
+        stats.put("totalDurationSeconds", totalDuration != null ? totalDuration : 0L);
+        return stats;
     }
 
     private String calculateTrend(Double current, Double previous) {

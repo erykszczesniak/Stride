@@ -85,4 +85,4 @@ const GoalProgress = ({ goal }) => {
   );
 };
 
-export default GoalProgress;
+export default React.memo(GoalProgress);
