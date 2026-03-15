@@ -2,7 +2,12 @@ import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import styled from "styled-components";
+import {
+  MapWrapper,
+  EmptyMapState,
+  EmptyMapIcon,
+  EmptyMapText,
+} from "./ActivityMapStyles";
 
 // Fix for default marker icons in React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -11,53 +16,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
-
-const MapWrapper = styled.div`
-  width: 100%;
-  height: ${({ $height }) => $height || "400px"};
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.shadow};
-  border: 1px solid ${({ theme }) => theme.border};
-
-  .leaflet-container {
-    width: 100%;
-    height: 100%;
-    background: ${({ theme }) => theme.bgCard};
-  }
-
-  .leaflet-control-attribution {
-    background: ${({ theme }) => theme.bgCard} !important;
-    color: ${({ theme }) => theme.textMuted} !important;
-  }
-
-  .leaflet-control-attribution a {
-    color: ${({ theme }) => theme.primary} !important;
-  }
-`;
-
-const EmptyMapState = styled.div`
-  width: 100%;
-  height: ${({ $height }) => $height || "400px"};
-  border-radius: 12px;
-  background: ${({ theme }) => theme.bgCard};
-  border: 1px solid ${({ theme }) => theme.border};
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: ${({ theme }) => theme.textSecondary};
-  gap: 12px;
-`;
-
-const EmptyMapIcon = styled.div`
-  font-size: 48px;
-`;
-
-const EmptyMapText = styled.p`
-  font-size: 14px;
-  margin: 0;
-`;
 
 // Custom start marker icon
 const startIcon = new L.DivIcon({
@@ -110,7 +68,6 @@ const ActivityMap = ({ coordinates, height = "400px", showMarkers = true }) => {
     try {
       parsedCoordinates = JSON.parse(coordinates);
     } catch (e) {
-      // TODO: Add error reporting service
       parsedCoordinates = null;
     }
   }

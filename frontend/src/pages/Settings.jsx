@@ -86,7 +86,6 @@ const Settings = () => {
         height: response.data.height || "",
       });
     } catch (error) {
-      // TODO: Add error reporting service
     } finally {
       setLoading(false);
     }
@@ -125,7 +124,6 @@ const Settings = () => {
 
       toast.success("Settings saved successfully!");
     } catch (error) {
-      // TODO: Add error reporting service
       toast.error("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
@@ -135,8 +133,9 @@ const Settings = () => {
   const handleSignOut = () => {
     if (window.confirm("Are you sure you want to sign out?")) {
       localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
       localStorage.removeItem("userPreferences");
-      window.location.href = "/";
+      window.location.href = "/login";
     }
   };
 

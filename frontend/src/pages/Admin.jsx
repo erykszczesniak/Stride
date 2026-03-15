@@ -6,6 +6,7 @@ import autoTable from "jspdf-autotable";
 import Navbar from "../components/Navbar/Navbar";
 import AdminService from "../api/AdminService";
 import { useToast } from "../context/ToastContext";
+import { formatDuration, formatDate, getInitials } from "../utils/formatters";
 import {
   Container,
   Header,
@@ -90,7 +91,6 @@ const Admin = () => {
       const response = await AdminService.getAdminStats();
       setStats(response.data);
     } catch (error) {
-      // TODO: Add error reporting service
     }
   };
 
@@ -103,7 +103,6 @@ const Admin = () => {
       setActivities(response.data.items || []);
       setActivitiesTotalPages(response.data.totalPages || 0);
     } catch (error) {
-      // TODO: Add error reporting service
     } finally {
       setLoading(false);
     }
@@ -116,7 +115,6 @@ const Admin = () => {
       setUsers(response.data.items || []);
       setUsersTotalPages(response.data.totalPages || 0);
     } catch (error) {
-      // TODO: Add error reporting service
     } finally {
       setLoading(false);
     }
@@ -134,7 +132,6 @@ const Admin = () => {
         await AdminService.deleteActivity(activityId);
         loadActivities();
       } catch (error) {
-        // TODO: Add error reporting service
       }
     }
   };
@@ -145,30 +142,8 @@ const Admin = () => {
         await AdminService.deleteUser(userId);
         loadUsers();
       } catch (error) {
-        // TODO: Add error reporting service
       }
     }
-  };
-
-  const formatDuration = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const getInitials = (firstName, lastName) => {
-    return `${(firstName || "")[0] || ""}${(lastName || "")[0] || ""}`.toUpperCase();
   };
 
   const exportToTxt = (data, type) => {

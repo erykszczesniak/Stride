@@ -27,6 +27,7 @@ const RecordActivity = () => {
   const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState('RUN');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -56,6 +57,8 @@ const RecordActivity = () => {
   };
 
   const handleSaveActivity = async () => {
+    if (saving) return;
+
     try {
       setError('');
 
@@ -75,31 +78,35 @@ const RecordActivity = () => {
         return;
       }
 
+      setSaving(true);
+
+      const durationMinutes = parseInt(formData.duration);
+      const distanceKm = parseFloat(formData.distance);
+
       // Prepare activity data matching backend ActivityRequest DTO
+      // Duration is stored in seconds in the backend
       const activityData = {
         title: formData.title,
         description: formData.description || null,
         activityType: selectedType,
-        distance: parseFloat(formData.distance),
-        duration: parseInt(formData.duration),
+        distance: distanceKm,
+        duration: durationMinutes * 60,
         elevationGain: formData.elevation ? parseInt(formData.elevation) : 0,
         calories: formData.calories ? parseInt(formData.calories) : 0,
         averageHeartRate: formData.avgHeartRate ? parseInt(formData.avgHeartRate) : null,
-        averageSpeed: formData.distance && formData.duration
-          ? parseFloat((parseFloat(formData.distance) / (parseInt(formData.duration) / 60)).toFixed(2))
+        averageSpeed: distanceKm && durationMinutes
+          ? parseFloat((distanceKm / (durationMinutes / 60)).toFixed(2))
           : null,
         startTime: new Date().toISOString(),
         isPrivate: false
       };
 
-      // Create activity
       await ActivityService.createActivity(activityData);
-
-      // Navigate to activities page or dashboard
       navigate('/activities');
     } catch (err) {
-      // TODO: Add error reporting service
       setError(err.response?.data?.message || 'Failed to save activity. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -223,10 +230,10 @@ const RecordActivity = () => {
         </StatsGrid>
       </Section>
 
-      {error && <ErrorMessage>{error}</ErrorMessage>}
+      {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 
-      <SaveButton onClick={handleSaveActivity}>
-        💾 Save Activity
+      <SaveButton onClick={handleSaveActivity} disabled={saving}>
+        {saving ? 'Saving...' : 'Save Activity'}
       </SaveButton>
     </Container>
     </Layout>

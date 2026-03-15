@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import AuthService from "../api/AuthService";
 
 const AuthContext = createContext(null);
@@ -14,29 +14,34 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const checkAuth = async () => {
+  // Derive isAuthenticated from user instead of tracking separately
+  const isAuthenticated = user !== null;
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    setUser(null);
+  }, []);
+
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const response = await AuthService.getCurrentUser();
         setUser(response.data);
-        setIsAuthenticated(true);
       } catch (error) {
-        // TODO: Add error reporting service
         logout();
       }
     }
     setLoading(false);
-  };
+  }, [logout]);
 
   useEffect(() => {
     checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkAuth]);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     const response = await AuthService.login(email, password);
     const { accessToken, refreshToken, user: userData } = response.data;
 
@@ -44,12 +49,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("refreshToken", refreshToken);
 
     setUser(userData);
-    setIsAuthenticated(true);
 
     return response.data;
-  };
+  }, []);
 
-  const register = async (firstName, lastName, email, password, confirmPassword) => {
+  const register = useCallback(async (firstName, lastName, email, password, confirmPassword) => {
     const response = await AuthService.register(
       firstName,
       lastName,
@@ -63,19 +67,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("refreshToken", refreshToken);
 
     setUser(userData);
-    setIsAuthenticated(true);
 
     return response.data;
-  };
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    setUser(null);
-    setIsAuthenticated(false);
-  };
-
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     isAuthenticated,
@@ -83,7 +79,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     checkAuth,
-  };
+  }), [user, loading, isAuthenticated, login, register, logout, checkAuth]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

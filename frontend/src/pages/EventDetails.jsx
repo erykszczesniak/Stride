@@ -1,277 +1,42 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiMapPin, FiClock, FiUsers, FiCalendar, FiDollarSign, FiExternalLink, FiTrash2 } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import EventService from "../api/EventService";
 import { useToast } from "../context/ToastContext";
 import { LoadingSpinner } from "./DashboardStyles";
-import styled from "styled-components";
-
-const BackLink = styled(Link)`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: ${({ theme }) => theme.textSecondary};
-  text-decoration: none;
-  font-size: 14px;
-  margin-bottom: 24px;
-
-  &:hover {
-    color: #fc4c02;
-  }
-`;
-
-const EventHeader = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-`;
-
-const CoverImage = styled.div`
-  height: 200px;
-  background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const EventIcon = styled.span`
-  font-size: 64px;
-`;
-
-const HeaderContent = styled.div`
-  padding: 24px;
-`;
-
-const EventMeta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-`;
-
-const DateBadge = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: ${({ theme }) => theme.primaryLight};
-  padding: 12px 16px;
-  border-radius: 12px;
-  min-width: 70px;
-`;
-
-const DateMonth = styled.span`
-  font-size: 12px;
-  font-weight: 600;
-  color: #fc4c02;
-  text-transform: uppercase;
-`;
-
-const DateDay = styled.span`
-  font-size: 28px;
-  font-weight: 700;
-  color: #fc4c02;
-`;
-
-const DateYear = styled.span`
-  font-size: 11px;
-  color: #999;
-`;
-
-const EventTitleSection = styled.div`
-  flex: 1;
-`;
-
-const EventType = styled.span`
-  display: inline-block;
-  background: ${props => props.color || '#fc4c02'};
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 8px;
-`;
-
-const Title = styled.h1`
-  font-size: 28px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0 0 8px 0;
-`;
-
-const Description = styled.p`
-  font-size: 15px;
-  color: ${({ theme }) => theme.textSecondary};
-  line-height: 1.6;
-  margin: 16px 0;
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
-`;
-
-const RegisterButton = styled.button`
-  flex: 1;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-
-  ${props => props.registered ? `
-    background: #e8f5e9;
-    color: #2e7d32;
-
-    &:hover {
-      background: #ffebee;
-      color: #c62828;
-    }
-  ` : `
-    background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%);
-    color: white;
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(252, 76, 2, 0.3);
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const SecondaryButton = styled.button`
-  padding: 14px 20px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 8px;
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: #fc4c02;
-    color: #fc4c02;
-  }
-`;
-
-const InfoCard = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-`;
-
-const CardTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-`;
-
-const InfoItem = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-`;
-
-const InfoIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: ${({ theme }) => theme.bgSecondary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${({ theme }) => theme.textSecondary};
-  flex-shrink: 0;
-`;
-
-const InfoContent = styled.div``;
-
-const InfoLabel = styled.p`
-  font-size: 12px;
-  color: #999;
-  margin: 0 0 4px 0;
-`;
-
-const InfoValue = styled.p`
-  font-size: 15px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0;
-`;
-
-const ParticipantsSection = styled.div`
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid ${({ theme }) => theme.borderLight};
-`;
-
-const ProgressBar = styled.div`
-  height: 8px;
-  background: ${({ theme }) => theme.bgSecondary};
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 12px 0;
-`;
-
-const ProgressFill = styled.div`
-  height: 100%;
-  background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%);
-  width: ${props => props.percent}%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-`;
-
-const ParticipantStats = styled.div`
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-`;
-
-const ExternalLink = styled.a`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #fc4c02;
-  text-decoration: none;
-  font-weight: 500;
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
+import {
+  BackLink,
+  EventHeader,
+  CoverImage,
+  EventIcon,
+  HeaderContent,
+  EventMeta,
+  DateBadge,
+  DateMonth,
+  DateDay,
+  DateYear,
+  EventTitleSection,
+  EventType,
+  Title,
+  Description,
+  ActionButtons,
+  RegisterButton,
+  SecondaryButton,
+  InfoCard,
+  CardTitle,
+  InfoGrid,
+  InfoItem,
+  InfoIcon,
+  InfoContent,
+  InfoLabel,
+  InfoValue,
+  ParticipantsSection,
+  ProgressBar,
+  ProgressFill,
+  ParticipantStats,
+  ExternalLink,
+} from "./EventDetailsStyles";
 
 const activityTypeConfig = {
   RUN: { icon: '🏃', label: 'Run', color: '#fc5200' },
@@ -299,7 +64,6 @@ const EventDetails = () => {
         const res = await EventService.getEventById(id);
         setEvent(res.data);
       } catch (error) {
-        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }
@@ -328,7 +92,6 @@ const EventDetails = () => {
         }));
       }
     } catch (error) {
-      // TODO: Add error reporting service
       toast.error("Failed to update registration. Please try again.");
     } finally {
       setRegistering(false);
@@ -341,7 +104,6 @@ const EventDetails = () => {
       await EventService.deleteEvent(event.id);
       navigate("/events");
     } catch (error) {
-      // TODO: Add error reporting service
       toast.error("Failed to delete event.");
     }
   };

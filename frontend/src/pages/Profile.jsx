@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 import ActivityService from "../api/ActivityService";
@@ -34,6 +34,45 @@ import {
   LoadingSpinner,
   EmptyState,
 } from "./ProfileStyles";
+
+const achievements = [
+  {
+    icon: "👑",
+    title: "100km Club",
+    description: "Ran 100km in a month",
+    color: "#FFD700",
+  },
+  {
+    icon: "⛰️",
+    title: "Mountain Goat",
+    description: "5,000m elevation gained",
+    color: "#4CAF50",
+  },
+  {
+    icon: "🔥",
+    title: "Calorie Crusher",
+    description: "Burned 10,000 calories",
+    color: "#FF6B35",
+  },
+  {
+    icon: "⚡",
+    title: "Speed Demon",
+    description: "Fastest 5km time",
+    color: "#9C27B0",
+  },
+  {
+    icon: "⭐",
+    title: "Rising Star",
+    description: "50 activities completed",
+    color: "#2196F3",
+  },
+  {
+    icon: "🏅",
+    title: "Consistent",
+    description: "30 day streak",
+    color: "#C0C0C0",
+  },
+];
 
 const Profile = () => {
   const { id } = useParams();
@@ -95,24 +134,21 @@ const Profile = () => {
         const followersData = await UserService.getFollowers(userId);
         setFollowersCount(followersData.data?.length || 0);
       } catch (err) {
-        // TODO: Add error reporting service
       }
 
       try {
         const followingData = await UserService.getFollowing(userId);
         setFollowingCount(followingData.data?.length || 0);
       } catch (err) {
-        // TODO: Add error reporting service
       }
 
       setLoading(false);
     } catch (error) {
-      // TODO: Add error reporting service
       setLoading(false);
     }
   };
 
-  const calculateTotals = () => {
+  const totals = useMemo(() => {
     if (!activities.length)
       return { distance: 0, time: 0, elevation: 0, count: 0 };
 
@@ -122,48 +158,7 @@ const Profile = () => {
       elevation: activities.reduce((sum, a) => sum + (a.elevationGain || 0), 0),
       count: activities.length,
     };
-  };
-
-  const totals = calculateTotals();
-
-  const achievements = [
-    {
-      icon: "👑",
-      title: "100km Club",
-      description: "Ran 100km in a month",
-      color: "#FFD700",
-    },
-    {
-      icon: "⛰️",
-      title: "Mountain Goat",
-      description: "5,000m elevation gained",
-      color: "#4CAF50",
-    },
-    {
-      icon: "🔥",
-      title: "Calorie Crusher",
-      description: "Burned 10,000 calories",
-      color: "#FF6B35",
-    },
-    {
-      icon: "⚡",
-      title: "Speed Demon",
-      description: "Fastest 5km time",
-      color: "#9C27B0",
-    },
-    {
-      icon: "⭐",
-      title: "Rising Star",
-      description: "50 activities completed",
-      color: "#2196F3",
-    },
-    {
-      icon: "🏅",
-      title: "Consistent",
-      description: "30 day streak",
-      color: "#C0C0C0",
-    },
-  ];
+  }, [activities]);
 
   const monthlyProgress = stats?.monthlyStats || [
     { month: "Jan", distance: 142 },

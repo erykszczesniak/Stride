@@ -1,85 +1,33 @@
 import React from "react";
-import styled, { keyframes } from "styled-components";
+import {
+  SkeletonText,
+  SkeletonCircle,
+  SkeletonRect,
+  ActivityCardWrapper,
+  CardHeader,
+  CardHeaderInfo,
+  StatsRow,
+  StatItem,
+  CardFooter,
+  StatsCardWrapper,
+  StatsCardHeader,
+  EventCardWrapper,
+  EventDateBox,
+  EventInfo,
+  ChartWrapper,
+  ChartHeader,
+  ChartBars,
+  GoalWrapper,
+  GoalHeader,
+  ClubCardWrapper,
+  ClubCover,
+  ClubContent,
+  ClubHeader,
+} from "./SkeletonStyles";
 
-const shimmer = keyframes`
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-`;
-
-const SkeletonBase = styled.div`
-  background: ${({ theme }) => theme.bgHover};
-  background-image: linear-gradient(
-    90deg,
-    ${({ theme }) => theme.bgHover} 0px,
-    ${({ theme }) => theme.bgSecondary} 40px,
-    ${({ theme }) => theme.bgHover} 80px
-  );
-  background-size: 200px 100%;
-  animation: ${shimmer} 1.5s ease-in-out infinite;
-  border-radius: ${({ $radius }) => $radius || "8px"};
-`;
-
-export const SkeletonText = styled(SkeletonBase)`
-  height: ${({ $height }) => $height || "16px"};
-  width: ${({ $width }) => $width || "100%"};
-  margin-bottom: ${({ $mb }) => $mb || "0"};
-`;
-
-export const SkeletonCircle = styled(SkeletonBase)`
-  width: ${({ $size }) => $size || "44px"};
-  height: ${({ $size }) => $size || "44px"};
-  border-radius: 50%;
-  flex-shrink: 0;
-`;
-
-export const SkeletonRect = styled(SkeletonBase)`
-  width: ${({ $width }) => $width || "100%"};
-  height: ${({ $height }) => $height || "100px"};
-`;
+export { SkeletonText, SkeletonCircle, SkeletonRect };
 
 // Activity Card Skeleton
-const ActivityCardWrapper = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
-
-const CardHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-`;
-
-const CardHeaderInfo = styled.div`
-  flex: 1;
-`;
-
-const StatsRow = styled.div`
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: ${({ theme }) => theme.bgHover};
-  border-radius: 12px;
-  margin-bottom: 16px;
-`;
-
-const StatItem = styled.div`
-  flex: 1;
-`;
-
-const CardFooter = styled.div`
-  display: flex;
-  gap: 16px;
-  padding-top: 16px;
-  border-top: 1px solid ${({ theme }) => theme.border};
-`;
-
 export const SkeletonActivityCard = () => (
   <ActivityCardWrapper>
     <CardHeader>
@@ -114,20 +62,6 @@ export const SkeletonActivityCard = () => (
 );
 
 // Stats Card Skeleton
-const StatsCardWrapper = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
-
-const StatsCardHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-`;
-
 export const SkeletonStatsCard = () => (
   <StatsCardWrapper>
     <StatsCardHeader>
@@ -140,26 +74,6 @@ export const SkeletonStatsCard = () => (
 );
 
 // Event Card Skeleton
-const EventCardWrapper = styled.div`
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
-
-const EventDateBox = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-`;
-
-const EventInfo = styled.div`
-  flex: 1;
-`;
-
 export const SkeletonEventCard = () => (
   <EventCardWrapper>
     <EventDateBox>
@@ -174,27 +88,6 @@ export const SkeletonEventCard = () => (
 );
 
 // Chart Skeleton
-const ChartWrapper = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 16px;
-  padding: 24px;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
-
-const ChartHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-`;
-
-const ChartBars = styled.div`
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 150px;
-  gap: 8px;
-`;
-
 export const SkeletonChart = () => (
   <ChartWrapper>
     <ChartHeader>
@@ -210,21 +103,6 @@ export const SkeletonChart = () => (
 );
 
 // Goal Progress Skeleton
-const GoalWrapper = styled.div`
-  padding: 16px 0;
-  border-bottom: 1px solid ${({ theme }) => theme.border};
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const GoalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-`;
-
 export const SkeletonGoalProgress = () => (
   <GoalWrapper>
     <GoalHeader>
@@ -236,28 +114,6 @@ export const SkeletonGoalProgress = () => (
 );
 
 // Club Card Skeleton
-const ClubCardWrapper = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
-
-const ClubCover = styled.div`
-  height: 140px;
-  background: ${({ theme }) => theme.bgHover};
-`;
-
-const ClubContent = styled.div`
-  padding: 16px 20px 20px;
-`;
-
-const ClubHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-`;
-
 export const SkeletonClubCard = () => (
   <ClubCardWrapper>
     <ClubCover>

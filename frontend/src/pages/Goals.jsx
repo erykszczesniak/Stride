@@ -4,26 +4,7 @@ import Layout from "../components/Layout/Layout";
 import GoalProgress from "../components/GoalProgress/GoalProgress";
 import GoalService from "../api/GoalService";
 import { LoadingSpinner, AddButton, EmptyState, EmptyIcon, EmptyText } from "./DashboardStyles";
-import styled from "styled-components";
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 28px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.textPrimary};
-`;
-
-const GoalsList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 16px;
-`;
+import { PageHeader, PageTitle, GoalsList } from "./GoalsStyles";
 
 const Goals = () => {
   const [loading, setLoading] = useState(true);
@@ -36,7 +17,6 @@ const Goals = () => {
         const res = await GoalService.getUserGoals();
         setGoals(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
-        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }

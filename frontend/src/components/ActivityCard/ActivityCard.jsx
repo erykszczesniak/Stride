@@ -31,6 +31,7 @@ import {
 } from "./ActivityCardStyles";
 import ShareModal from "../ShareModal/ShareModal";
 import ActivityMap from "../ActivityMap/ActivityMap";
+import { formatDuration, formatDistance, getTimeAgo } from "../../utils/formatters";
 
 const activityIcons = {
   RUN: <FaRunning />,
@@ -48,34 +49,6 @@ const activityColors = {
   HIKE: { bg: "#f0fdf4", color: "#22c55e" },
   SKI: { bg: "#faf5ff", color: "#a855f7" },
   WORKOUT: { bg: "#fdf2f8", color: "#ec4899" },
-};
-
-const formatDuration = (seconds) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-};
-
-const formatDistance = (km) => {
-  return `${km.toFixed(2)} km`;
-};
-
-const getTimeAgo = (dateString) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  if (diffDays < 30) return `${diffDays} days ago`;
-  return date.toLocaleDateString();
 };
 
 const ActivityCard = ({ activity, onLike }) => {

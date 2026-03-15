@@ -4,461 +4,100 @@ import Layout from "../components/Layout/Layout";
 import AiService from "../api/AiService";
 import TrainingPlanService from "../api/TrainingPlanService";
 import { useToast } from "../context/ToastContext";
-import styled from "styled-components";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const PageIcon = styled.div`
-  font-size: 28px;
-`;
-
-const TitleGroup = styled.div``;
-
-const PageTitle = styled.h1`
-  font-size: 28px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0;
-`;
-
-const PageSubtitle = styled.p`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-  margin: 4px 0 0 0;
-`;
-
-const AiBadge = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: ${({ theme }) => theme.primaryLight};
-  color: #fc4c02;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 14px;
-`;
-
-const TabsContainer = styled.div`
-  display: flex;
-  gap: 4px;
-  margin-bottom: 24px;
-  background-color: ${({ theme }) => theme.bgSecondary};
-  padding: 4px;
-  border-radius: 10px;
-  width: fit-content;
-`;
-
-const Tab = styled.button`
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: ${(props) => {
-    if (!props.active) return "transparent";
-    return props.variant === "training" ? "#e040fb" : "#fc4c02";
-  }};
-  color: ${(props) => (props.active ? "white" : props.theme.textSecondary)};
-
-  &:hover {
-    color: ${(props) => (props.active ? "white" : props.theme.textPrimary)};
-  }
-`;
-
-const FormCard = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  margin-bottom: 24px;
-`;
-
-const CardHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-`;
-
-const CardIcon = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  background-color: ${(props) => props.bgColor || "#fff3ed"};
-  color: ${(props) => props.color || "#fc4c02"};
-`;
-
-const CardTitleGroup = styled.div``;
-
-const CardTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0;
-`;
-
-const CardSubtitle = styled.p`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-  margin: 4px 0 0 0;
-`;
-
-const FormRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: ${(props) => (props.noMargin ? "0" : "16px")};
-`;
-
-const Label = styled.label`
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.textPrimary};
-  margin-bottom: 8px;
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid ${({ theme }) => theme.border};
-  border-radius: 8px;
-  font-size: 14px;
-  background: ${({ theme }) => theme.bgInput};
-  cursor: pointer;
-  color: ${({ theme }) => theme.textPrimary};
-
-  &:focus {
-    outline: none;
-    border-color: #fc4c02;
-  }
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid ${({ theme }) => theme.border};
-  border-radius: 8px;
-  font-size: 14px;
-  background: ${({ theme }) => theme.bgInput};
-  color: ${({ theme }) => theme.textPrimary};
-
-  &:focus {
-    outline: none;
-    border-color: #fc4c02;
-  }
-
-  &::placeholder {
-    color: #999;
-  }
-`;
-
-const Textarea = styled.textarea`
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid ${({ theme }) => theme.border};
-  border-radius: 8px;
-  font-size: 14px;
-  background: ${({ theme }) => theme.bgInput};
-  min-height: 100px;
-  resize: vertical;
-
-  &:focus {
-    outline: none;
-    border-color: #fc4c02;
-  }
-
-  &::placeholder {
-    color: #999;
-  }
-`;
-
-const GenerateButton = styled.button`
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-  background: ${(props) =>
-    props.variant === "training"
-      ? "linear-gradient(135deg, #e040fb 0%, #ff4081 100%)"
-      : "linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%)"};
-  color: white;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(252, 76, 2, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const ResultBanner = styled.div`
-  background: ${(props) =>
-    props.variant === "training"
-      ? "linear-gradient(135deg, #7b1fa2 0%, #e040fb 100%)"
-      : "linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%)"};
-  border-radius: 12px;
-  padding: 20px 24px;
-  color: white;
-  margin-bottom: 24px;
-`;
-
-const BannerHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-`;
-
-const BannerTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const ExportButtons = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const ExportButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  color: white;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-`;
-
-const BannerText = styled.p`
-  font-size: 15px;
-  line-height: 1.6;
-  margin: 0;
-`;
-
-const ResultCard = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  margin-bottom: 16px;
-`;
-
-const ResultSection = styled.div`
-  margin-bottom: 20px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const SectionTitle = styled.h4`
-  font-size: 16px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0 0 12px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const SectionText = styled.p`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-  line-height: 1.6;
-  margin: 0;
-`;
-
-const MilestoneList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
-
-const MilestoneItem = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-`;
-
-const MilestoneNumber = styled.span`
-  width: 24px;
-  height: 24px;
-  background-color: #fc4c02;
-  color: white;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
-`;
-
-const MilestoneText = styled.span`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textPrimary};
-`;
-
-const TipItem = styled.div`
-  background-color: ${({ theme }) => theme.primaryLight};
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const TipIcon = styled.span`
-  color: #fc4c02;
-  flex-shrink: 0;
-`;
-
-const TipText = styled.span`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textPrimary};
-  line-height: 1.5;
-`;
-
-const WeekSection = styled.div`
-  margin-bottom: 24px;
-`;
-
-const WeekHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-`;
-
-const WeekTitle = styled.h4`
-  font-size: 16px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0;
-`;
-
-const WeekDistance = styled.span`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-`;
-
-const WeekSubtitle = styled.p`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-  margin: 0 0 16px 0;
-`;
-
-const WorkoutCard = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-`;
-
-const DayBadge = styled.div`
-  width: 48px;
-  height: 48px;
-  background-color: ${({ theme }) => theme.bgSecondary};
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textSecondary};
-`;
-
-const WorkoutInfo = styled.div`
-  flex: 1;
-`;
-
-const WorkoutHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-`;
-
-const WorkoutType = styled.span`
-  background-color: ${(props) => props.bgColor || "#e8f5e9"};
-  color: ${(props) => props.color || "#388e3c"};
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-`;
-
-const WorkoutStats = styled.span`
-  font-size: 13px;
-  color: ${({ theme }) => theme.textSecondary};
-`;
-
-const WorkoutDescription = styled.p`
-  font-size: 13px;
-  color: ${({ theme }) => theme.textSecondary};
-  margin: 0;
-`;
+import {
+  PageHeader,
+  HeaderLeft,
+  PageIcon,
+  TitleGroup,
+  PageTitle,
+  PageSubtitle,
+  AiBadge,
+  TabsContainer,
+  Tab,
+  FormCard,
+  CardHeader,
+  CardIcon,
+  CardTitleGroup,
+  CardTitle,
+  CardSubtitle,
+  FormRow,
+  FormGroup,
+  Label,
+  Select,
+  Input,
+  Textarea,
+  GenerateButton,
+  ResultBanner,
+  BannerHeader,
+  BannerTitle,
+  ExportButtons,
+  ExportButton,
+  BannerText,
+  ResultCard,
+  ResultSection,
+  SectionTitle,
+  SectionText,
+  MilestoneList,
+  MilestoneItem,
+  MilestoneNumber,
+  MilestoneText,
+  TipItem,
+  TipIcon,
+  TipText,
+  WeekSection,
+  WeekHeader,
+  WeekTitle,
+  WeekDistance,
+  WeekSubtitle,
+  WorkoutCard,
+  DayBadge,
+  WorkoutInfo,
+  WorkoutHeader,
+  WorkoutType,
+  WorkoutStats,
+  WorkoutDescription,
+  PlansGrid,
+  PlanCard,
+  PlanCardIcon,
+  PlanLevelBadge,
+  PlanCardTitle,
+  PlanCardDescription,
+  PlanCardMeta,
+  PlanMetaItem,
+  ViewPlanButton,
+  PlansHeader,
+  PlansTitle,
+  PlansSubtitle,
+  BackButton,
+  PlanDetailHeader,
+  PlanDetailBadge,
+  PlanDetailTitle,
+  PlanDetailDescription,
+  PlanDetailMeta,
+  PlanDetailMetaItem,
+  DetailExportButtons,
+  DetailExportButton,
+  WeeklyPlanTitle,
+  WeekAccordion,
+  WeekAccordionHeader,
+  WeekNumber,
+  WeekInfo,
+  WeekName,
+  WeekDescription,
+  WeekExpandIcon,
+  WeekContent,
+  DayWorkout,
+  DayIcon,
+  DayInfo,
+  DayName,
+  DayType,
+  DayDescription,
+  DayDuration,
+  LoadingPlans,
+} from "./TrainingPlansStyles";
 
 const getWorkoutTypeStyle = (type) => {
   const styles = {
@@ -471,354 +110,6 @@ const getWorkoutTypeStyle = (type) => {
   };
   return styles[type] || styles["easy run"];
 };
-
-// Ready-Made Plans Styled Components
-const PlansGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const PlanCard = styled.div`
-  background: ${props => props.gradient};
-  border-radius: 16px;
-  padding: 24px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const PlanCardIcon = styled.div`
-  width: 48px;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-bottom: 16px;
-`;
-
-const PlanLevelBadge = styled.span`
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  color: ${props => props.color || '#333'};
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
-const PlanCardTitle = styled.h3`
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-`;
-
-const PlanCardDescription = styled.p`
-  font-size: 14px;
-  opacity: 0.9;
-  margin: 0 0 24px 0;
-  line-height: 1.5;
-`;
-
-const PlanCardMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-`;
-
-const PlanMetaItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  opacity: 0.9;
-
-  svg {
-    opacity: 0.8;
-  }
-`;
-
-const ViewPlanButton = styled.button`
-  width: 100%;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-`;
-
-const PlansHeader = styled.div`
-  text-align: center;
-  margin-bottom: 32px;
-`;
-
-const PlansTitle = styled.h2`
-  font-size: 24px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0 0 8px 0;
-`;
-
-const PlansSubtitle = styled.p`
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-  margin: 0;
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.textSecondary};
-  font-size: 14px;
-  cursor: pointer;
-  padding: 8px 0;
-  margin-bottom: 16px;
-
-  &:hover {
-    color: ${({ theme }) => theme.textPrimary};
-  }
-`;
-
-const PlanDetailHeader = styled.div`
-  background: ${props => props.gradient};
-  border-radius: 16px;
-  padding: 24px;
-  color: white;
-  margin-bottom: 24px;
-  position: relative;
-`;
-
-const PlanDetailBadge = styled.span`
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.9);
-  color: ${props => props.color || '#333'};
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 12px;
-`;
-
-const PlanDetailTitle = styled.h2`
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-`;
-
-const PlanDetailDescription = styled.p`
-  font-size: 15px;
-  opacity: 0.9;
-  margin: 0 0 16px 0;
-`;
-
-const PlanDetailMeta = styled.div`
-  display: flex;
-  gap: 24px;
-`;
-
-const PlanDetailMetaItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  opacity: 0.9;
-`;
-
-const DetailExportButtons = styled.div`
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const DetailExportButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: ${props => props.variant === 'pdf' ? '#374151' : props.variant === 'excel' ? '#059669' : '#6b7280'};
-  color: white;
-
-  &:hover {
-    opacity: 0.9;
-    transform: translateX(-2px);
-  }
-`;
-
-const WeeklyPlanTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textPrimary};
-  margin: 0 0 16px 0;
-`;
-
-const WeekAccordion = styled.div`
-  background: ${({ theme }) => theme.bgCard};
-  border-radius: 12px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-`;
-
-const WeekAccordionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: ${({ theme }) => theme.bgHover};
-  }
-`;
-
-const WeekNumber = styled.div`
-  width: 36px;
-  height: 36px;
-  background: ${props => props.expanded ? '#fc4c02' : props.theme.bgSecondary};
-  color: ${props => props.expanded ? 'white' : props.theme.textSecondary};
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-  margin-right: 16px;
-  transition: all 0.2s;
-`;
-
-const WeekInfo = styled.div`
-  flex: 1;
-`;
-
-const WeekName = styled.div`
-  font-size: 15px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textPrimary};
-`;
-
-const WeekDescription = styled.div`
-  font-size: 13px;
-  color: ${({ theme }) => theme.textSecondary};
-  margin-top: 2px;
-`;
-
-const WeekExpandIcon = styled.div`
-  color: #9ca3af;
-  transition: transform 0.2s;
-  transform: ${props => props.expanded ? 'rotate(180deg)' : 'rotate(0)'};
-`;
-
-const WeekContent = styled.div`
-  padding: ${props => props.expanded ? '0 20px 20px 20px' : '0'};
-  max-height: ${props => props.expanded ? '1000px' : '0'};
-  overflow: hidden;
-  transition: all 0.3s ease;
-`;
-
-const DayWorkout = styled.div`
-  display: flex;
-  align-items: flex-start;
-  padding: 16px;
-  background: ${({ theme }) => theme.bgSecondary};
-  border-radius: 8px;
-  margin-bottom: 8px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const DayIcon = styled.div`
-  color: #fc4c02;
-  margin-right: 12px;
-  margin-top: 2px;
-`;
-
-const DayInfo = styled.div`
-  flex: 1;
-`;
-
-const DayName = styled.div`
-  font-size: 14px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textPrimary};
-`;
-
-const DayType = styled.div`
-  font-size: 13px;
-  color: ${({ theme }) => theme.textSecondary};
-  margin-top: 2px;
-`;
-
-const DayDescription = styled.div`
-  font-size: 13px;
-  color: #888;
-  margin-top: 4px;
-`;
-
-const DayDuration = styled.div`
-  font-size: 13px;
-  color: ${({ theme }) => theme.textSecondary};
-  font-weight: 500;
-  background: ${({ theme }) => theme.bgCard};
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
-
-const LoadingPlans = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-  color: ${({ theme }) => theme.textSecondary};
-  font-size: 16px;
-`;
 
 const parseAiResponse = (data) => {
   // If already an object, return it directly
@@ -851,7 +142,6 @@ const TrainingPlans = () => {
         const response = await TrainingPlanService.getTemplates();
         setReadyMadePlans(response.data);
       } catch (error) {
-        // TODO: Add error reporting service
         toast.error("Failed to load training plans");
       } finally {
         setLoadingPlans(false);
@@ -885,7 +175,6 @@ const TrainingPlans = () => {
       const data = parseAiResponse(response.data);
       setGeneratedGoal(data);
     } catch (error) {
-      // TODO: Add error reporting service
       toast.error("Failed to generate goal. Please try again.");
     } finally {
       setGenerating(false);
@@ -908,7 +197,6 @@ const TrainingPlans = () => {
       const data = parseAiResponse(response.data);
       setGeneratedPlan(data);
     } catch (error) {
-      // TODO: Add error reporting service
       toast.error("Failed to generate training plan. Please try again.");
     } finally {
       setGenerating(false);

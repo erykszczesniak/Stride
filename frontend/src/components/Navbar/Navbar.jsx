@@ -69,7 +69,7 @@ const Navbar = () => {
 
   return (
     <>
-      <Nav>
+      <Nav role="navigation" aria-label="Main navigation">
         <Logo to="/">
           <LogoIcon>🏃</LogoIcon>
           <LogoText>Strava Clone</LogoText>
@@ -141,6 +141,8 @@ const Navbar = () => {
           </AvatarWrapper>
           <MobileMenuButton
             title="Menu"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}

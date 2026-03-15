@@ -19,6 +19,7 @@ import ActivityService from "../api/ActivityService";
 import GoalService from "../api/GoalService";
 import EventService from "../api/EventService";
 import { useAuth } from "../context/AuthContext";
+import { formatDurationValue, formatDurationUnit } from "../utils/formatters";
 import {
   DashboardContainer,
   DashboardHeader,
@@ -95,7 +96,6 @@ const Dashboard = () => {
         setGoals(Array.isArray(goalsRes.data) ? goalsRes.data : []);
         setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
       } catch (error) {
-        // TODO: Add error reporting service
       } finally {
         setLoading(false);
       }
@@ -117,23 +117,7 @@ const Dashboard = () => {
           : a
       ));
     } catch (error) {
-      // TODO: Add error reporting service
     }
-  };
-
-  const formatDuration = (seconds) => {
-    if (!seconds) return "0";
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) return `${hours}`;
-    return `${minutes}m`;
-  };
-
-  const formatDurationUnit = (seconds) => {
-    if (!seconds) return "hours";
-    const hours = Math.floor(seconds / 3600);
-    if (hours > 0) return "hours";
-    return "min";
   };
 
   const renderSkeletonLoading = () => (
@@ -242,7 +226,7 @@ const Dashboard = () => {
         <StatsCard
           icon={<FiClock />}
           label="Active Time"
-          value={formatDuration(monthlyStats?.totalDuration)}
+          value={formatDurationValue(monthlyStats?.totalDuration)}
           unit={formatDurationUnit(monthlyStats?.totalDuration)}
           trend={12}
           bgColor="#eff6ff"
