@@ -28,27 +28,32 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final ActivityRepository activityRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Challenge getChallengeById(Long challengeId) {
         return challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ApiRequestException("Challenge not found", HttpStatus.NOT_FOUND));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Challenge> getActiveChallenges(Pageable pageable) {
         return challengeRepository.findActivePublicChallenges(LocalDateTime.now(), pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Challenge> getUpcomingChallenges(Pageable pageable) {
         return challengeRepository.findUpcomingPublicChallenges(LocalDateTime.now(), pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Challenge> getUserActiveChallenges(Long userId) {
         return challengeRepository.findActiveChallengesByUserId(userId, LocalDateTime.now());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Challenge> getChallengesCreatedByUser(Long userId) {
         return challengeRepository.findByCreatorId(userId);
     }
@@ -149,11 +154,13 @@ public class ChallengeServiceImpl implements ChallengeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isUserParticipating(Long challengeId, Long userId) {
         return challengeRepository.isUserParticipating(challengeId, userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Double getUserProgressInChallenge(Long challengeId, Long userId) {
         Challenge challenge = getChallengeById(challengeId);
 
@@ -174,6 +181,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Challenge> searchChallenges(String searchText, Pageable pageable) {
         return challengeRepository.searchChallenges(searchText, pageable);
     }

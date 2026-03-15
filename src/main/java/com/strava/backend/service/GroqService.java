@@ -26,9 +26,9 @@ public class GroqService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    public GroqService() {
+    public GroqService(ObjectMapper objectMapper) {
         this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     public String generateCompletion(String systemPrompt, String userPrompt) {

@@ -28,6 +28,13 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             @Param("userId") Long userId,
             @Param("currentDate") LocalDateTime currentDate);
 
+    @Query("SELECT e FROM Event e JOIN e.registeredUsers u WHERE u.id = :userId " +
+           "AND e.eventDate > :currentDate ORDER BY e.eventDate ASC")
+    Page<Event> findUpcomingEventsByUserId(
+            @Param("userId") Long userId,
+            @Param("currentDate") LocalDateTime currentDate,
+            Pageable pageable);
+
     @Query("SELECT e FROM Event e WHERE e.organizer.id = :userId ORDER BY e.eventDate DESC")
     List<Event> findByOrganizerId(@Param("userId") Long userId);
 

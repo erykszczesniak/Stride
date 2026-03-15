@@ -129,7 +129,7 @@ public class ClubController {
 
     @GetMapping(CLUB_ID + MEMBERS)
     public ResponseEntity<List<BaseUserResponse>> getClubMembers(@PathVariable Long clubId) {
-        List<?> members = clubService.getClubMembers(clubId);
+        var members = clubService.getClubMembers(clubId);
         List<BaseUserResponse> response = members.stream()
                 .map(m -> commonMapper.convertToResponse(m, BaseUserResponse.class))
                 .collect(Collectors.toList());
@@ -159,7 +159,7 @@ public class ClubController {
         response.setCountry(club.getCountry());
         response.setSportType(club.getSportType());
         response.setMembersCount(club.getMembersCount());
-        response.setActivitiesCount(club.getMembersCount() * 12 + (int)(club.getId() * 100));
+        response.setActivitiesCount(0);
         response.setPrivate(club.isPrivate());
         response.setMember(clubService.isUserMember(club.getId(), currentUserId));
         if (club.getOwner() != null) {

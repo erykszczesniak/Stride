@@ -31,6 +31,7 @@ public class AdminServiceImpl implements AdminService {
     private final EventRepository eventRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public AdminStatsResponse getAdminStats() {
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
         LocalDateTime startOfMonth = LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth()).toLocalDate().atStartOfDay();
@@ -50,11 +51,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<User> getAllUsers(Pageable pageable) {
         return userRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -87,11 +90,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Activity> getAllActivities(Pageable pageable) {
         return activityRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Activity> searchActivities(String search, Pageable pageable) {
         return activityRepository.searchByTitle(search, pageable);
     }

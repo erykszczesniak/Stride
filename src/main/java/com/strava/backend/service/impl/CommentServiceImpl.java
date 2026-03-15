@@ -31,6 +31,7 @@ public class CommentServiceImpl implements CommentService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<Comment> getCommentsByActivityId(Long activityId) {
         if (!activityRepository.existsById(activityId)) {
             throw new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND);
@@ -39,6 +40,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Comment getCommentById(Long commentId) {
         return commentRepository.findById(commentId)
                 .orElseThrow(() -> new ApiRequestException(COMMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -122,6 +124,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Long> getReactionCounts(Long commentId) {
         List<Object[]> results = commentReactionRepository.countReactionsByCommentId(commentId);
         Map<String, Long> counts = new HashMap<>();
@@ -132,6 +135,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<String> getUserReactions(Long commentId, Long userId) {
         return commentReactionRepository.findUserReactionsByCommentId(commentId, userId);
     }

@@ -27,23 +27,27 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<User> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<User> searchUsers(String searchText, Pageable pageable) {
         if (searchText == null || searchText.trim().isEmpty()) {
             return userRepository.findAll(pageable);
@@ -103,6 +107,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<User> getFollowers(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -110,6 +115,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<User> getFollowing(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -117,11 +123,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isFollowing(Long userId, Long followerId) {
         return userRepository.isFollowing(userId, followerId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<User> getSuggestedUsers(Long userId, int limit) {
         return userRepository.findSuggestedUsers(userId, PageRequest.of(0, limit));
     }

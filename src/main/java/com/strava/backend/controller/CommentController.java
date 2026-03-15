@@ -63,12 +63,12 @@ public class CommentController {
     }
 
     @DeleteMapping(ACTIVITY_ID + COMMENTS + COMMENT_ID)
-    public ResponseEntity<Map<String, String>> deleteComment(
+    public ResponseEntity<Void> deleteComment(
             @PathVariable Long activityId,
             @PathVariable Long commentId) {
         Long currentUserId = getAuthenticatedUserId();
         commentService.deleteComment(commentId, currentUserId);
-        return ResponseEntity.ok(Map.of("message", "Comment deleted"));
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(ACTIVITY_ID + COMMENTS + COMMENT_ID + REACTIONS)

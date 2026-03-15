@@ -40,25 +40,27 @@ public class ActivityServiceImpl implements ActivityService {
     private final UserService userService;
 
     @Override
+    @Transactional(readOnly = true)
     public Activity getActivityById(Long activityId) {
         return activityRepository.findById(activityId)
                 .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Activity> getActivitiesByUserId(Long userId, Pageable pageable) {
         return activityRepository.findByUserId(userId, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Activity> getRecentActivitiesByUserId(Long userId, int limit) {
-        return activityRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                .stream()
-                .limit(limit)
-                .collect(Collectors.toList());
+        return activityRepository.findByUserId(userId, PageRequest.of(0, limit))
+                .getContent();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Activity> getFeedActivities(Long userId, Pageable pageable) {
         User user = userService.getUserById(userId);
         List<Long> followingIds = user.getFollowing().stream()
@@ -69,6 +71,7 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Activity> getPublicActivities(Pageable pageable) {
         return activityRepository.findAll(pageable);
     }
@@ -179,11 +182,13 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isLikedByUser(Long activityId, Long userId) {
         return activityRepository.isLikedByUser(activityId, userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ActivityStatsResponse getMonthlyStats(Long userId) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
@@ -221,6 +226,7 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public WeeklyStatsResponse getWeeklyStats(Long userId) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -282,28 +288,28 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public int countActivitiesByUserId(Long userId) {
         return activityRepository.countByUserId(userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Activity> searchUserActivities(Long userId, String searchText, ActivityType activityType, Pageable pageable) {
-        Page<Activity> activities = activityRepository.searchUserActivities(userId, searchText, pageable);
         if (activityType != null) {
-            List<Activity> filtered = activities.getContent().stream()
-                    .filter(a -> a.getActivityType() == activityType)
-                    .collect(Collectors.toList());
-            return new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
+            return activityRepository.searchUserActivitiesByType(userId, searchText, activityType, pageable);
         }
-        return activities;
+        return activityRepository.searchUserActivities(userId, searchText, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Activity> getActivitiesByUserIdAndType(Long userId, ActivityType activityType, Pageable pageable) {
         return activityRepository.findByUserIdAndActivityType(userId, activityType, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> getUserTotalStats(Long userId) {
         int totalActivities = activityRepository.countByUserId(userId);
         Double totalDistance = activityRepository.sumDistanceByUserId(userId);

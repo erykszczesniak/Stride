@@ -1,6 +1,7 @@
 package com.strava.backend.service;
 
 import com.strava.backend.domain.Club;
+import com.strava.backend.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -26,7 +27,7 @@ public interface ClubService {
 
     void leaveClub(Long clubId, Long userId);
 
-    List<?> getClubMembers(Long clubId);
+    List<User> getClubMembers(Long clubId);
 
     boolean isUserMember(Long clubId, Long userId);
 

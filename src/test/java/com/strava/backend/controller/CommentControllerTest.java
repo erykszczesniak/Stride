@@ -229,8 +229,7 @@ class CommentControllerTest {
             willDoNothing().given(commentService).deleteComment(1L, 1L);
 
             mockMvc.perform(delete("/api/v1/activities/1/comments/1"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.message").value("Comment deleted"));
+                    .andExpect(status().isNoContent());
         }
 
         @Test

@@ -35,22 +35,26 @@ public class GoalServiceImpl implements GoalService {
     private final UserService userService;
 
     @Override
+    @Transactional(readOnly = true)
     public Goal getGoalById(Long goalId) {
         return goalRepository.findById(goalId)
                 .orElseThrow(() -> new ApiRequestException(GOAL_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Goal> getActiveGoalsByUserId(Long userId) {
         return goalRepository.findActiveGoalsByUserId(userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Goal> getAllGoalsByUserId(Long userId) {
         return goalRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Goal> getActiveGoalByPeriod(Long userId, GoalPeriod period) {
         return goalRepository.findActiveGoalByUserIdAndPeriod(userId, period, LocalDateTime.now());
     }
@@ -122,48 +126,32 @@ public class GoalServiceImpl implements GoalService {
         LocalDateTime startDate = goal.getStartDate();
         LocalDateTime endDate = goal.getEndDate();
 
-        double currentValue = 0.0;
-
-        if (goal.getGoalType() == GoalType.DISTANCE) {
-            currentValue = activityRepository.sumDistanceByUserAndDateRange(userId, startDate, endDate)
+        double currentValue = switch (goal.getGoalType()) {
+            case DISTANCE -> activityRepository.sumDistanceByUserAndDateRange(userId, startDate, endDate)
                     .orElse(0.0);
-        } else if (goal.getGoalType() == GoalType.TIME) {
-            Long seconds = activityRepository.sumDurationByUserAndDateRange(userId, startDate, endDate)
-                    .orElse(0L);
-            currentValue = seconds / 3600.0; // Convert to hours
-        } else if (goal.getGoalType() == GoalType.ELEVATION) {
-            currentValue = activityRepository.sumElevationByUserAndDateRange(userId, startDate, endDate)
+            case TIME -> activityRepository.sumDurationByUserAndDateRange(userId, startDate, endDate)
+                    .orElse(0L) / 3600.0;
+            case ELEVATION -> activityRepository.sumElevationByUserAndDateRange(userId, startDate, endDate)
                     .orElse(0).doubleValue();
-        } else if (goal.getGoalType() == GoalType.ACTIVITIES) {
-            currentValue = activityRepository.countByUserAndDateRange(userId, startDate, endDate);
-        }
+            case ACTIVITIES -> activityRepository.countByUserAndDateRange(userId, startDate, endDate);
+        };
 
         goal.setCurrentValue(currentValue);
     }
 
     private LocalDateTime[] calculateDateRange(GoalPeriod period) {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start;
-        LocalDateTime end;
-
-        switch (period) {
-            case WEEKLY:
-                start = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                        .withHour(0).withMinute(0).withSecond(0).withNano(0);
-                end = start.plusWeeks(1).minusNanos(1);
-                break;
-            case MONTHLY:
-                start = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-                end = start.plusMonths(1).minusNanos(1);
-                break;
-            case YEARLY:
-                start = now.withDayOfYear(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-                end = start.plusYears(1).minusNanos(1);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown period: " + period);
-        }
-
+        LocalDateTime start = switch (period) {
+            case WEEKLY -> now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                    .withHour(0).withMinute(0).withSecond(0).withNano(0);
+            case MONTHLY -> now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+            case YEARLY -> now.withDayOfYear(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        };
+        LocalDateTime end = switch (period) {
+            case WEEKLY -> start.plusWeeks(1).minusNanos(1);
+            case MONTHLY -> start.plusMonths(1).minusNanos(1);
+            case YEARLY -> start.plusYears(1).minusNanos(1);
+        };
         return new LocalDateTime[]{start, end};
     }
 }

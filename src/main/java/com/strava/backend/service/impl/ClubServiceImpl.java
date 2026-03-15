@@ -26,22 +26,26 @@ public class ClubServiceImpl implements ClubService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Club getClubById(Long clubId) {
         return clubRepository.findById(clubId)
                 .orElseThrow(() -> new ApiRequestException("Club not found", HttpStatus.NOT_FOUND));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Club> getAllPublicClubs(Pageable pageable) {
         return clubRepository.findPublicClubsOrderByMembersCount(pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Club> getClubsByUserId(Long userId) {
         return clubRepository.findClubsByUserId(userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Club> getClubsOwnedByUser(Long userId) {
         return clubRepository.findByOwnerId(userId);
     }
@@ -138,32 +142,38 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public List<?> getClubMembers(Long clubId) {
+    @Transactional(readOnly = true)
+    public List<User> getClubMembers(Long clubId) {
         Club club = getClubById(clubId);
         return new ArrayList<>(club.getMembers());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isUserMember(Long clubId, Long userId) {
         return clubRepository.isUserMember(clubId, userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Club> searchClubs(String searchText, Pageable pageable) {
         return clubRepository.searchClubs(searchText, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Club> getClubsBySportType(com.strava.backend.enums.ActivityType sportType, Pageable pageable) {
         return clubRepository.findPublicClubsBySportType(sportType, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long countPublicClubs() {
         return clubRepository.countPublicClubs();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long countTotalMembers() {
         return clubRepository.sumAllMembers();
     }

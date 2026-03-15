@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +40,7 @@ class GroqServiceTest {
 
     @BeforeEach
     void setUp() {
-        groqService = new GroqService();
+        groqService = new GroqService(new ObjectMapper());
         ReflectionTestUtils.setField(groqService, "restTemplate", restTemplate);
         ReflectionTestUtils.setField(groqService, "apiKey", "test-api-key");
         ReflectionTestUtils.setField(groqService, "model", "test-model");

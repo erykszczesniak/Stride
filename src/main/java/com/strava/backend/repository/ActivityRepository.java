@@ -194,6 +194,15 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
            "ORDER BY a.createdAt DESC")
     Page<Activity> searchUserActivities(@Param("userId") Long userId, @Param("searchText") String searchText, Pageable pageable);
 
+    // Search user's own activities filtered by activity type
+    @Query("SELECT a FROM Activity a WHERE a.user.id = :userId AND " +
+           "a.activityType = :activityType AND " +
+           "(UPPER(a.title) LIKE UPPER(CONCAT('%', :searchText, '%')) OR " +
+           "UPPER(a.description) LIKE UPPER(CONCAT('%', :searchText, '%'))) " +
+           "ORDER BY a.createdAt DESC")
+    Page<Activity> searchUserActivitiesByType(@Param("userId") Long userId, @Param("searchText") String searchText,
+                                              @Param("activityType") ActivityType activityType, Pageable pageable);
+
     // Get total distance for user
     @Query("SELECT COALESCE(SUM(a.distance), 0) FROM Activity a WHERE a.user.id = :userId")
     Double sumDistanceByUserId(@Param("userId") Long userId);

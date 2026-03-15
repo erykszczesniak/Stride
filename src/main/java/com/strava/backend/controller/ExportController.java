@@ -1,14 +1,15 @@
 package com.strava.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.dto.activity.ActivityResponse;
+import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static com.strava.backend.constants.ErrorMessage.ACTIVITY_NOT_FOUND;
+import static com.strava.backend.constants.ErrorMessage.ACTIVITY_ACCESS_DENIED;
 import static com.strava.backend.constants.PathConstants.*;
 
 @RestController
@@ -28,6 +31,7 @@ public class ExportController {
 
     private final ActivityRepository activityRepository;
     private final CommonMapper commonMapper;
+    private final ObjectMapper objectMapper;
 
     private Long getAuthenticatedUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -43,9 +47,7 @@ public class ExportController {
         List<Activity> activities = activityRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
         List<ActivityResponse> responses = commonMapper.convertToResponseList(activities, ActivityResponse.class);
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        byte[] jsonBytes = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(responses);
+        byte[] jsonBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(responses);
 
         String filename = "activities_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".json";
 
@@ -136,10 +138,10 @@ public class ExportController {
     public ResponseEntity<byte[]> exportActivityAsGpx(@PathVariable Long activityId) {
         Long currentUserId = getAuthenticatedUserId();
         Activity activity = activityRepository.findById(activityId)
-                .orElseThrow(() -> new RuntimeException("Activity not found"));
+                .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if (!activity.getUser().getId().equals(currentUserId)) {
-            return ResponseEntity.status(403).build();
+            throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
         }
 
         StringBuilder gpx = new StringBuilder();

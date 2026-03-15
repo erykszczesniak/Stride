@@ -224,12 +224,12 @@ class ExportControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 500 when activity not found")
-        void shouldReturn500WhenActivityNotFound() throws Exception {
+        @DisplayName("Should return 404 when activity not found")
+        void shouldReturn404WhenActivityNotFound() throws Exception {
             given(activityRepository.findById(99L)).willReturn(Optional.empty());
 
             mockMvc.perform(get("/api/v1/export/activities/gpx/99"))
-                    .andExpect(status().isInternalServerError());
+                    .andExpect(status().isNotFound());
         }
     }
 }

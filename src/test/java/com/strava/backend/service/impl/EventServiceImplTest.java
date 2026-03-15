@@ -147,9 +147,8 @@ class EventServiceImplTest {
         void shouldReturnLimitedUpcomingEventsForUser() {
             // Given
             Event event2 = TestDataFactory.createEvent(2L, organizer);
-            Event event3 = TestDataFactory.createEvent(3L, organizer);
-            given(eventRepository.findUpcomingEventsByUserId(eq(1L), any(LocalDateTime.class)))
-                    .willReturn(List.of(testEvent, event2, event3));
+            given(eventRepository.findUpcomingEventsByUserId(eq(1L), any(LocalDateTime.class), any(Pageable.class)))
+                    .willReturn(new PageImpl<>(List.of(testEvent, event2)));
 
             // When
             List<Event> result = eventService.getUpcomingEventsByUserId(1L, 2);

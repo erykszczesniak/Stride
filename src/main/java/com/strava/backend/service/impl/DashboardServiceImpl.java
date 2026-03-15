@@ -18,6 +18,7 @@ import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final ActivityRepository activityRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public DashboardResponse getDashboardData(Long userId) {
         User user = userService.getUserById(userId);
 

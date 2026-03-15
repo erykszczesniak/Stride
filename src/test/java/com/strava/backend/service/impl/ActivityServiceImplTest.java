@@ -100,21 +100,20 @@ class ActivityServiceImplTest {
         @DisplayName("Should return limited recent activities")
         void shouldReturnLimitedRecentActivities() {
             Activity activity2 = TestDataFactory.createActivity(2L, testUser);
-            Activity activity3 = TestDataFactory.createActivity(3L, testUser);
-            when(activityRepository.findByUserIdOrderByCreatedAtDesc(1L))
-                    .thenReturn(List.of(testActivity, activity2, activity3));
+            when(activityRepository.findByUserId(eq(1L), any(Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(testActivity, activity2)));
 
             List<Activity> result = activityService.getRecentActivitiesByUserId(1L, 2);
 
             assertThat(result).hasSize(2);
-            verify(activityRepository).findByUserIdOrderByCreatedAtDesc(1L);
+            verify(activityRepository).findByUserId(eq(1L), any(Pageable.class));
         }
 
         @Test
         @DisplayName("Should return empty list when no activities")
         void shouldReturnEmptyListWhenNoActivities() {
-            when(activityRepository.findByUserIdOrderByCreatedAtDesc(1L))
-                    .thenReturn(Collections.emptyList());
+            when(activityRepository.findByUserId(eq(1L), any(Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(Collections.emptyList()));
 
             List<Activity> result = activityService.getRecentActivitiesByUserId(1L, 5);
 
