@@ -36,7 +36,7 @@ import {
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
 
   const mainNavItems = [
@@ -47,7 +47,7 @@ const Sidebar = () => {
     { path: "/training", label: "Training Plans", icon: FiTarget },
     { path: "/clubs", label: "Clubs", icon: FiUsers },
     { path: "/events", label: "Events", icon: FiCalendar },
-    { path: "/admin", label: "Admin Panel", icon: RiAdminLine },
+    ...(user?.role === "ADMIN" ? [{ path: "/admin", label: "Admin Panel", icon: RiAdminLine }] : []),
   ];
 
   const handleLogout = () => {

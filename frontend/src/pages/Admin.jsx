@@ -75,6 +75,7 @@ const Admin = () => {
 
   useEffect(() => {
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -91,6 +92,9 @@ const Admin = () => {
       const response = await AdminService.getAdminStats();
       setStats(response.data);
     } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error("Access denied. You need ADMIN role to view this page.");
+      }
     }
   };
 
@@ -103,6 +107,9 @@ const Admin = () => {
       setActivities(response.data.items || []);
       setActivitiesTotalPages(response.data.totalPages || 0);
     } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error("Access denied. You need ADMIN role to view activities.");
+      }
     } finally {
       setLoading(false);
     }
@@ -115,6 +122,9 @@ const Admin = () => {
       setUsers(response.data.items || []);
       setUsersTotalPages(response.data.totalPages || 0);
     } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error("Access denied. You need ADMIN role to view users.");
+      }
     } finally {
       setLoading(false);
     }
@@ -130,8 +140,10 @@ const Admin = () => {
     if (window.confirm("Are you sure you want to delete this activity?")) {
       try {
         await AdminService.deleteActivity(activityId);
+        toast.success("Activity deleted successfully.");
         loadActivities();
       } catch (error) {
+        toast.error("Failed to delete activity.");
       }
     }
   };
@@ -140,8 +152,10 @@ const Admin = () => {
     if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
       try {
         await AdminService.deleteUser(userId);
+        toast.success("User deleted successfully.");
         loadUsers();
       } catch (error) {
+        toast.error("Failed to delete user.");
       }
     }
   };

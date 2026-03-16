@@ -129,9 +129,11 @@ const Navbar = () => {
                 <DropdownItem to="/training" onClick={() => setShowDropdown(false)}>
                   Training Plans
                 </DropdownItem>
-                <DropdownItem to="/admin" onClick={() => setShowDropdown(false)}>
-                  Admin Panel
-                </DropdownItem>
+                {user?.role === "ADMIN" && (
+                  <DropdownItem to="/admin" onClick={() => setShowDropdown(false)}>
+                    Admin Panel
+                  </DropdownItem>
+                )}
                 <DropdownItem to="/settings" onClick={() => setShowDropdown(false)}>
                   Settings
                 </DropdownItem>
@@ -180,9 +182,11 @@ const Navbar = () => {
         <MobileNavLink to="/training" className={isActive("/training") ? "active" : ""}>
           <FiBook /> Training Plans
         </MobileNavLink>
-        <MobileNavLink to="/admin" className={isActive("/admin") ? "active" : ""}>
-          <FiShield /> Admin Panel
-        </MobileNavLink>
+        {user?.role === "ADMIN" && (
+          <MobileNavLink to="/admin" className={isActive("/admin") ? "active" : ""}>
+            <FiShield /> Admin Panel
+          </MobileNavLink>
+        )}
         <MobileNavLink to="/settings" className={isActive("/settings") ? "active" : ""}>
           <FiSettings /> Settings
         </MobileNavLink>
