@@ -32,37 +32,37 @@ help:
 # ============================================
 
 build:
-	docker-compose build
+	docker compose build
 
 up:
-	docker-compose up -d
+	docker compose up -d
 
 down:
-	docker-compose down
+	docker compose down
 
 restart: down up
 
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-backend:
-	docker-compose logs -f backend
+	docker compose logs -f backend
 
 logs-frontend:
-	docker-compose logs -f frontend
+	docker compose logs -f frontend
 
 logs-db:
-	docker-compose logs -f postgres
+	docker compose logs -f postgres
 
 clean:
-	docker-compose down -v --rmi local
+	docker compose down -v --rmi local
 	docker system prune -f
 
 shell-backend:
-	docker-compose exec backend sh
+	docker compose exec backend sh
 
 shell-db:
-	docker-compose exec postgres psql -U strava -d strava
+	docker compose exec postgres psql -U strava -d strava
 
 # ============================================
 # Local Development (no Docker)
@@ -82,16 +82,16 @@ test:
 # ============================================
 
 prod-build:
-	docker-compose -f docker-compose.prod.yml build
+	docker compose -f docker-compose.prod.yml build
 
 prod-up:
-	docker-compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml up -d
 
 prod-down:
-	docker-compose -f docker-compose.prod.yml down
+	docker compose -f docker-compose.prod.yml down
 
 prod-logs:
-	docker-compose -f docker-compose.prod.yml logs -f
+	docker compose -f docker-compose.prod.yml logs -f
 
 # ============================================
 # Utilities
@@ -99,7 +99,7 @@ prod-logs:
 
 # Check container status
 ps:
-	docker-compose ps
+	docker compose ps
 
 # Check health endpoints
 health:
@@ -111,9 +111,9 @@ health:
 # Database backup
 db-backup:
 	@mkdir -p backups
-	docker-compose exec postgres pg_dump -U strava strava > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+	docker compose exec postgres pg_dump -U strava strava > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "Backup created in backups/"
 
 # Database restore (usage: make db-restore FILE=backups/backup_xxx.sql)
 db-restore:
-	docker-compose exec -T postgres psql -U strava strava < $(FILE)
+	docker compose exec -T postgres psql -U strava strava < $(FILE)

@@ -233,11 +233,11 @@ docker compose up -d --build
 
 That's it! The application will be available at:
 - **Frontend:** http://localhost (port 80)
-- **Backend API:** http://localhost:8080
-- **Swagger UI:** http://localhost:8080/swagger-ui.html
-- **GraphQL:** http://localhost:8080/graphql
-- **Grafana:** http://localhost:3001 (admin/admin)
-- **Prometheus:** http://localhost:9090
+- **Backend API:** http://localhost:8081
+- **Swagger UI:** http://localhost:8081/swagger-ui.html
+- **GraphQL:** http://localhost:8081/graphql
+- **Grafana:** http://localhost:3003 (admin/admin)
+- **Prometheus:** http://localhost:9091
 
 #### Sample Users
 
@@ -475,8 +475,8 @@ terraform destroy
 ## API Documentation
 
 Once the backend is running, API documentation is available at:
-- **Swagger UI:** http://localhost:8080/swagger-ui.html
-- **GraphQL Playground:** http://localhost:8080/graphql
+- **Swagger UI:** http://localhost:8081/swagger-ui.html
+- **GraphQL Playground:** http://localhost:8081/graphql
 
 ### REST API Endpoints
 
@@ -542,11 +542,11 @@ Prometheus scrapes backend metrics every 15s. Grafana comes with a pre-built **J
 docker compose up -d --build
 ```
 
-**Prometheus** — http://localhost:9090
+**Prometheus** — http://localhost:9091
 
-Check targets status at [/targets](http://localhost:9090/targets) — backend should show as `UP`.
+Check targets status at [/targets](http://localhost:9091/targets) — backend should show as `UP`.
 
-Example queries to try in [/graph](http://localhost:9090/graph):
+Example queries to try in [/graph](http://localhost:9091/graph):
 
 ```promql
 # HTTP request rate per endpoint
@@ -568,7 +568,7 @@ hikaricp_connections_active
 rate(jvm_gc_pause_seconds_sum[1m])
 ```
 
-**Grafana** — http://localhost:3001 (login: `admin` / `admin`)
+**Grafana** — http://localhost:3003 (login: `admin` / `admin`)
 
 Go to **Dashboards → Strava Backend - JVM & Spring Boot** to see:
 - HTTP request rate, p95 latency, error rates (4xx/5xx)
@@ -627,7 +627,7 @@ Test it:
 # Send 12 login requests — the last 2 should return 429
 for i in $(seq 1 12); do
   echo "Request $i: $(curl -s -o /dev/null -w '%{http_code}' \
-    -X POST http://localhost:8080/api/v1/auth/login \
+    -X POST http://localhost:8081/api/v1/auth/login \
     -H 'Content-Type: application/json' \
     -d '{"email":"test@test.com","password":"wrong"}')"
 done

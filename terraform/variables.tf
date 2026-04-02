@@ -85,6 +85,12 @@ variable "google_client_secret" {
   default     = ""
 }
 
+variable "domain_name" {
+  description = "Domain name for the application (used for ACM certificate)"
+  type        = string
+  default     = ""
+}
+
 variable "backend_image_tag" {
   description = "Docker image tag for backend"
   type        = string
