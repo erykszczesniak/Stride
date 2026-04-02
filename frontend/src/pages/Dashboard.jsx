@@ -219,7 +219,7 @@ const Dashboard = () => {
           label="Total Distance"
           value={monthlyStats?.totalDistance?.toFixed(1) || "0"}
           unit="km"
-          trend={monthlyStats?.trendPercentage || 8.2}
+          trend={monthlyStats?.distanceTrendPercentage}
           bgColor="#fff7ed"
           iconColor="#fc4c02"
         />
@@ -228,7 +228,7 @@ const Dashboard = () => {
           label="Active Time"
           value={formatDurationValue(monthlyStats?.totalDuration)}
           unit={formatDurationUnit(monthlyStats?.totalDuration)}
-          trend={12}
+          trend={monthlyStats?.durationTrendPercentage}
           bgColor="#eff6ff"
           iconColor="#3b82f6"
         />
@@ -237,7 +237,7 @@ const Dashboard = () => {
           label="Calories Burned"
           value={monthlyStats?.totalCalories?.toLocaleString() || "0"}
           unit="kcal"
-          trend={5.3}
+          trend={monthlyStats?.caloriesTrendPercentage}
           bgColor="#fdf2f8"
           iconColor="#ec4899"
         />
@@ -246,6 +246,7 @@ const Dashboard = () => {
           label="Activities"
           value={monthlyStats?.totalActivities || "0"}
           unit="this month"
+          trend={monthlyStats?.activitiesTrendPercentage}
           bgColor="#f0fdf4"
           iconColor="#22c55e"
         />

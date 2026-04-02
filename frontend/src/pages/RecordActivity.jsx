@@ -36,7 +36,7 @@ const RecordActivity = () => {
     elevation: '',
     calories: '',
     avgHeartRate: '',
-    avgPace: '5:30/km'
+    avgPace: ''
   });
 
   const activityTypes = [

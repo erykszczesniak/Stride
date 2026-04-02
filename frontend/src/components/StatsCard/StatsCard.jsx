@@ -18,10 +18,10 @@ const StatsCard = ({ icon, label, value, unit, trend, bgColor, iconColor }) => {
         <IconWrapper bgColor={bgColor} iconColor={iconColor}>
           {icon}
         </IconWrapper>
-        {trend && (
+        {trend != null && trend !== 0 && (
           <TrendBadge>
             <FiTrendingUp size={12} />
-            +{trend}%
+            {trend > 0 ? `+${trend}` : trend}%
           </TrendBadge>
         )}
       </CardHeader>

@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
 import Layout from "../components/Layout/Layout";
+import ActivityCard from "../components/ActivityCard/ActivityCard";
 import {
   Container,
   ProfileHeader,
@@ -35,42 +36,48 @@ import {
   EmptyState,
 } from "./ProfileStyles";
 
-const achievements = [
+const allAchievements = [
   {
     icon: "👑",
     title: "100km Club",
     description: "Ran 100km in a month",
     color: "#FFD700",
+    check: (totals) => totals.distance >= 100,
   },
   {
     icon: "⛰️",
     title: "Mountain Goat",
     description: "5,000m elevation gained",
     color: "#4CAF50",
+    check: (totals) => totals.elevation >= 5000,
   },
   {
     icon: "🔥",
     title: "Calorie Crusher",
     description: "Burned 10,000 calories",
     color: "#FF6B35",
+    check: (totals) => totals.calories >= 10000,
   },
   {
     icon: "⚡",
     title: "Speed Demon",
-    description: "Fastest 5km time",
+    description: "Avg speed over 12 km/h",
     color: "#9C27B0",
+    check: (totals) => totals.count > 0 && totals.avgSpeed > 12,
   },
   {
     icon: "⭐",
     title: "Rising Star",
     description: "50 activities completed",
     color: "#2196F3",
+    check: (totals) => totals.count >= 50,
   },
   {
     icon: "🏅",
     title: "Consistent",
-    description: "30 day streak",
+    description: "10+ activities completed",
     color: "#C0C0C0",
+    check: (totals) => totals.count >= 10,
   },
 ];
 
@@ -150,26 +157,48 @@ const Profile = () => {
 
   const totals = useMemo(() => {
     if (!activities.length)
-      return { distance: 0, time: 0, elevation: 0, count: 0 };
+      return { distance: 0, time: 0, elevation: 0, count: 0, calories: 0, avgSpeed: 0 };
+
+    const distance = activities.reduce((sum, a) => sum + (a.distance || 0), 0);
+    const time = activities.reduce((sum, a) => sum + (a.duration || 0), 0);
+    const elevation = activities.reduce((sum, a) => sum + (a.elevationGain || 0), 0);
+    const calories = activities.reduce((sum, a) => sum + (a.calories || 0), 0);
+    const totalSpeed = activities.reduce((sum, a) => sum + (a.averageSpeed || 0), 0);
 
     return {
-      distance: activities.reduce((sum, a) => sum + (a.distance || 0), 0),
-      time: activities.reduce((sum, a) => sum + (a.duration || 0), 0),
-      elevation: activities.reduce((sum, a) => sum + (a.elevationGain || 0), 0),
+      distance,
+      time,
+      elevation,
       count: activities.length,
+      calories,
+      avgSpeed: activities.length > 0 ? totalSpeed / activities.length : 0,
     };
   }, [activities]);
 
-  const monthlyProgress = stats?.monthlyStats || [
-    { month: "Jan", distance: 142 },
-    { month: "Feb", distance: 168 },
-    { month: "Mar", distance: 195 },
-    { month: "Apr", distance: 178 },
-    { month: "May", distance: 203 },
-    { month: "Jun", distance: 156 },
-  ];
+  const earnedAchievements = useMemo(() => {
+    return allAchievements.filter((a) => a.check(totals));
+  }, [totals]);
 
-  const maxDistance = Math.max(...monthlyProgress.map((m) => m.distance));
+  const monthlyProgress = stats?.monthlyStats || [];
+
+  const maxDistance = monthlyProgress.length > 0 ? Math.max(...monthlyProgress.map((m) => m.distance)) : 1;
+
+  const handleLikeActivity = useCallback(async (activityId, isLiked) => {
+    try {
+      if (isLiked) {
+        await ActivityService.unlikeActivity(activityId);
+      } else {
+        await ActivityService.likeActivity(activityId);
+      }
+      setActivities(prev => prev.map(a =>
+        a.id === activityId
+          ? { ...a, likedByCurrentUser: !isLiked, likesCount: isLiked ? a.likesCount - 1 : a.likesCount + 1 }
+          : a
+      ));
+    } catch (error) {
+      // silently handle error
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -293,22 +322,29 @@ const Profile = () => {
               </StatCard>
             </StatsGrid>
 
-            <SectionTitle>📊 Monthly Progress</SectionTitle>
-            <MonthlyChart>
-              {monthlyProgress.map((stat) => (
-                <div key={stat.month}>
-                  <MonthBar height={(stat.distance / maxDistance) * 100}>
-                    <div />
-                  </MonthBar>
-                  <MonthLabel>{stat.month}</MonthLabel>
-                  <MonthValue>{stat.distance}</MonthValue>
-                </div>
-              ))}
-            </MonthlyChart>
+            {monthlyProgress.length > 0 && (
+              <>
+                <SectionTitle>📊 Monthly Progress</SectionTitle>
+                <MonthlyChart>
+                  {monthlyProgress.map((stat) => (
+                    <div key={stat.month}>
+                      <MonthBar height={(stat.distance / maxDistance) * 100}>
+                        <div />
+                      </MonthBar>
+                      <MonthLabel>{stat.month}</MonthLabel>
+                      <MonthValue>{stat.distance}</MonthValue>
+                    </div>
+                  ))}
+                </MonthlyChart>
+              </>
+            )}
 
-            <SectionTitle>🏅 Recent Achievements</SectionTitle>
+            <SectionTitle>🏅 Achievements</SectionTitle>
+            {earnedAchievements.length === 0 ? (
+              <EmptyState>No achievements earned yet. Keep training!</EmptyState>
+            ) : (
             <AchievementsGrid>
-              {achievements.map((achievement, index) => (
+              {earnedAchievements.map((achievement, index) => (
                 <div key={index}>
                   <div
                     style={{
@@ -346,6 +382,7 @@ const Profile = () => {
                 </div>
               ))}
             </AchievementsGrid>
+            )}
           </TabContent>
         )}
 
@@ -360,19 +397,11 @@ const Profile = () => {
                 }}
               >
                 {activities.map((activity) => (
-                  <div
+                  <ActivityCard
                     key={activity.id}
-                    style={{
-                      background: theme.bgCard,
-                      borderRadius: "16px",
-                      padding: "24px",
-                      border: `1px solid ${theme.border}`,
-                    }}
-                  >
-                    <h3>{activity.title}</h3>
-                    <p>Distance: {activity.distance} km</p>
-                    <p>Duration: {activity.duration} min</p>
-                  </div>
+                    activity={activity}
+                    onLike={handleLikeActivity}
+                  />
                 ))}
               </div>
             ) : (
@@ -410,7 +439,7 @@ const Profile = () => {
                     Achievement Progress
                   </h3>
                   <p style={{ fontSize: "14px", color: theme.textSecondary }}>
-                    You've earned {achievements.length} of 24 badges
+                    You've earned {earnedAchievements.length} of {allAchievements.length} badges
                   </p>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -421,7 +450,7 @@ const Profile = () => {
                       color: "#fc5200",
                     }}
                   >
-                    25%
+                    {allAchievements.length > 0 ? Math.round((earnedAchievements.length / allAchievements.length) * 100) : 0}%
                   </div>
                   <div style={{ fontSize: "14px", color: theme.textSecondary }}>
                     Complete
@@ -440,7 +469,7 @@ const Profile = () => {
                 <div
                   style={{
                     height: "100%",
-                    width: "25%",
+                    width: `${allAchievements.length > 0 ? Math.round((earnedAchievements.length / allAchievements.length) * 100) : 0}%`,
                     background: "linear-gradient(90deg, #fc5200, #ff6b35)",
                     borderRadius: "6px",
                   }}
@@ -449,43 +478,47 @@ const Profile = () => {
             </div>
 
             <AchievementsGrid>
-              {achievements.map((achievement, index) => (
-                <div key={index}>
-                  <div
-                    style={{
-                      background: `${achievement.color}20`,
-                      border: `2px solid ${achievement.color}`,
-                      borderRadius: "16px",
-                      padding: "24px",
-                      textAlign: "center",
-                      cursor: "pointer",
-                      transition: "transform 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.transform = "translateY(-4px)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.transform = "translateY(0)")
-                    }
-                  >
-                    <div style={{ fontSize: "48px", marginBottom: "12px" }}>
-                      {achievement.icon}
-                    </div>
+              {allAchievements.map((achievement, index) => {
+                const isEarned = achievement.check(totals);
+                return (
+                  <div key={index}>
                     <div
                       style={{
-                        fontWeight: "700",
-                        fontSize: "14px",
-                        marginBottom: "4px",
+                        background: isEarned ? `${achievement.color}20` : theme.bgSecondary,
+                        border: `2px solid ${isEarned ? achievement.color : theme.border}`,
+                        borderRadius: "16px",
+                        padding: "24px",
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "transform 0.2s",
+                        opacity: isEarned ? 1 : 0.5,
                       }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "translateY(-4px)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "translateY(0)")
+                      }
                     >
-                      {achievement.title}
-                    </div>
-                    <div style={{ fontSize: "12px", color: theme.textSecondary }}>
-                      {achievement.description}
+                      <div style={{ fontSize: "48px", marginBottom: "12px" }}>
+                        {achievement.icon}
+                      </div>
+                      <div
+                        style={{
+                          fontWeight: "700",
+                          fontSize: "14px",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {achievement.title}
+                      </div>
+                      <div style={{ fontSize: "12px", color: theme.textSecondary }}>
+                        {achievement.description}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </AchievementsGrid>
           </TabContent>
         )}
