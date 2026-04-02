@@ -3,6 +3,7 @@ import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, Fi
 import Navbar from "../components/Navbar/Navbar";
 import SettingsService from "../api/SettingsService";
 import { useToast } from "../context/ToastContext";
+import { useTheme } from "../context/ThemeContext";
 import {
   SettingsContainer,
   SettingsContent,
@@ -42,6 +43,7 @@ import {
 
 const Settings = () => {
   const toast = useToast();
+  const { isDarkMode, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,7 +71,12 @@ const Settings = () => {
   useEffect(() => {
     loadUserData();
     loadPreferences();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setPreferences((prev) => ({ ...prev, darkMode: isDarkMode }));
+  }, [isDarkMode]);
 
   const loadUserData = async () => {
     try {
@@ -93,7 +100,7 @@ const Settings = () => {
 
   const loadPreferences = () => {
     const prefs = SettingsService.getPreferences();
-    setPreferences(prefs);
+    setPreferences((prev) => ({ ...prev, ...prefs }));
   };
 
   const handleFormChange = (e) => {
@@ -121,6 +128,11 @@ const Settings = () => {
 
       // Save preferences to localStorage
       await SettingsService.savePreferences(preferences);
+
+      // Apply dark mode change if it differs from current theme
+      if (preferences.darkMode !== isDarkMode) {
+        toggleTheme();
+      }
 
       toast.success("Settings saved successfully!");
     } catch (error) {
