@@ -289,13 +289,13 @@ class ActivityServiceImplTest {
     class GetMonthlyStatsTests {
 
         @Test
-        @DisplayName("Should return monthly stats")
+        @DisplayName("Should return monthly stats with trend percentages")
         void shouldReturnMonthlyStats() {
-            Object[] stats = new Object[]{100.0, 36000L, 5000, 1500, 10};
+            Object[] currentStats = new Object[]{100.0, 36000L, 5000, 1500, 10};
+            Object[] prevStats = new Object[]{80.0, 30000L, 4000, 1200, 8};
             when(activityRepository.getAggregatedStatsByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(stats);
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(80.0));
+                    .thenReturn(currentStats)
+                    .thenReturn(prevStats);
 
             ActivityStatsResponse result = activityService.getMonthlyStats(1L);
 
@@ -304,22 +304,30 @@ class ActivityServiceImplTest {
             assertThat(result.getTotalCalories()).isEqualTo(5000);
             assertThat(result.getTotalActivities()).isEqualTo(10);
             assertThat(result.getAverageDistance()).isEqualTo(10.0);
+            assertThat(result.getDistanceTrendPercentage()).isEqualTo(25.0);
+            assertThat(result.getDurationTrendPercentage()).isEqualTo(20.0);
+            assertThat(result.getCaloriesTrendPercentage()).isEqualTo(25.0);
+            assertThat(result.getActivitiesTrendPercentage()).isEqualTo(25.0);
         }
 
         @Test
         @DisplayName("Should handle zero activities")
         void shouldHandleZeroActivities() {
-            Object[] stats = new Object[]{0.0, 0L, 0, 0, 0};
+            Object[] currentStats = new Object[]{0.0, 0L, 0, 0, 0};
+            Object[] prevStats = new Object[]{0.0, 0L, 0, 0, 0};
             when(activityRepository.getAggregatedStatsByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(stats);
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.empty());
+                    .thenReturn(currentStats)
+                    .thenReturn(prevStats);
 
             ActivityStatsResponse result = activityService.getMonthlyStats(1L);
 
             assertThat(result.getTotalDistance()).isEqualTo(0.0);
             assertThat(result.getTotalActivities()).isEqualTo(0);
             assertThat(result.getAverageDistance()).isEqualTo(0.0);
+            assertThat(result.getDistanceTrendPercentage()).isEqualTo(0.0);
+            assertThat(result.getDurationTrendPercentage()).isEqualTo(0.0);
+            assertThat(result.getCaloriesTrendPercentage()).isEqualTo(0.0);
+            assertThat(result.getActivitiesTrendPercentage()).isEqualTo(0.0);
         }
     }
 

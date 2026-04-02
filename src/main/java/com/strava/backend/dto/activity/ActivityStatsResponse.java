@@ -18,4 +18,8 @@ public class ActivityStatsResponse {
     private Double averageDistance;
     private Double averageDuration;
     private String trendPercentage;
+    private Double distanceTrendPercentage;
+    private Double durationTrendPercentage;
+    private Double caloriesTrendPercentage;
+    private Double activitiesTrendPercentage;
 }

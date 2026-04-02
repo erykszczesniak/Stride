@@ -208,10 +208,15 @@ public class ActivityServiceImpl implements ActivityService {
         int totalElevation = stats != null ? ((Number) stats[3]).intValue() : 0;
         int totalActivities = stats != null ? ((Number) stats[4]).intValue() : 0;
 
-        Double prevMonthDistance = activityRepository.sumDistanceByUserAndDateRange(userId, startOfPrevMonth, endOfPrevMonth)
-                .orElse(0.0);
+        Object[] prevRawStats = activityRepository.getAggregatedStatsByUserAndDateRange(userId, startOfPrevMonth, endOfPrevMonth);
+        Object[] prevStats = (prevRawStats != null && prevRawStats.length > 0 && prevRawStats[0] instanceof Object[])
+                ? (Object[]) prevRawStats[0] : prevRawStats;
+        double prevDistance = prevStats != null ? ((Number) prevStats[0]).doubleValue() : 0.0;
+        long prevDuration = prevStats != null ? ((Number) prevStats[1]).longValue() : 0L;
+        int prevCalories = prevStats != null ? ((Number) prevStats[2]).intValue() : 0;
+        int prevActivities = prevStats != null ? ((Number) prevStats[4]).intValue() : 0;
 
-        String trend = calculateTrend(totalDistance, prevMonthDistance);
+        String trend = calculateTrend(totalDistance, prevDistance);
 
         return ActivityStatsResponse.builder()
                 .totalDistance(totalDistance)
@@ -222,6 +227,10 @@ public class ActivityServiceImpl implements ActivityService {
                 .averageDistance(totalActivities > 0 ? totalDistance / totalActivities : 0.0)
                 .averageDuration(totalActivities > 0 ? (double) totalDuration / totalActivities : 0.0)
                 .trendPercentage(trend)
+                .distanceTrendPercentage(calculateTrendNumeric(totalDistance, prevDistance))
+                .durationTrendPercentage(calculateTrendNumeric((double) totalDuration, (double) prevDuration))
+                .caloriesTrendPercentage(calculateTrendNumeric((double) totalCalories, (double) prevCalories))
+                .activitiesTrendPercentage(calculateTrendNumeric((double) totalActivities, (double) prevActivities))
                 .build();
     }
 
@@ -320,6 +329,14 @@ public class ActivityServiceImpl implements ActivityService {
         stats.put("totalDistanceKm", totalDistance != null ? totalDistance : 0.0);
         stats.put("totalDurationSeconds", totalDuration != null ? totalDuration : 0L);
         return stats;
+    }
+
+    private Double calculateTrendNumeric(Double current, Double previous) {
+        if (previous == null || previous == 0) {
+            return current > 0 ? 100.0 : 0.0;
+        }
+        double percentage = ((current - previous) / previous) * 100;
+        return Math.round(percentage * 10.0) / 10.0;
     }
 
     private String calculateTrend(Double current, Double previous) {
