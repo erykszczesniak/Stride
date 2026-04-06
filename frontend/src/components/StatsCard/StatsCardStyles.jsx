@@ -42,8 +42,8 @@ export const TrendBadge = styled.div`
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: ${({ theme }) => theme.primaryLight};
-  color: ${({ theme }) => theme.success};
+  background: ${({ $isPositive, theme }) => $isPositive ? theme.primaryLight : (theme.errorLight || '#fef2f2')};
+  color: ${({ $isPositive, theme }) => $isPositive ? theme.success : theme.error};
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;

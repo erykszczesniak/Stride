@@ -1,5 +1,5 @@
 import React from "react";
-import { FiTrendingUp } from "react-icons/fi";
+import { FiTrendingUp, FiTrendingDown } from "react-icons/fi";
 import {
   Card,
   CardHeader,
@@ -12,6 +12,9 @@ import {
 } from "./StatsCardStyles";
 
 const StatsCard = ({ icon, label, value, unit, trend, bgColor, iconColor }) => {
+  const isPositive = trend > 0;
+  const TrendIcon = isPositive ? FiTrendingUp : FiTrendingDown;
+
   return (
     <Card>
       <CardHeader>
@@ -19,9 +22,9 @@ const StatsCard = ({ icon, label, value, unit, trend, bgColor, iconColor }) => {
           {icon}
         </IconWrapper>
         {trend != null && trend !== 0 && (
-          <TrendBadge>
-            <FiTrendingUp size={12} />
-            {trend > 0 ? `+${trend}` : trend}%
+          <TrendBadge $isPositive={isPositive}>
+            <TrendIcon size={12} />
+            {isPositive ? `+${trend}` : trend}%
           </TrendBadge>
         )}
       </CardHeader>

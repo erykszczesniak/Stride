@@ -29,6 +29,9 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
 
+jwt:
+  secret: ${JWT_SECRET:NUtsqxvqmko2PhkLf8pxHZQ4RQheHK55njws3fV7b1g=}
+
 logging:
   level:
     com.strava: DEBUG

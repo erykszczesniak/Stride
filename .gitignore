@@ -42,3 +42,6 @@ strava_session_backup.jsonl
 
 ### Claude ###
 .claude/
+
+### Local notes ###
+notes/
