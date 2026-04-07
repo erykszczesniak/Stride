@@ -3,16 +3,16 @@ import { Link } from "react-router-dom";
 import { media } from "../../styles/theme";
 
 export const Nav = styled.nav`
-  background-color: #fc4c02;
+  background: linear-gradient(135deg, #fc4c02 0%, #e04400 100%);
+  border-bottom: none;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 0 24px;
   height: 64px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 1000;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   ${media.md} {
     padding: 0 16px;
@@ -22,23 +22,32 @@ export const Nav = styled.nav`
 export const Logo = styled(Link)`
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 24px;
-  font-weight: 700;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
   color: white;
   text-decoration: none;
+  letter-spacing: -0.5px;
 
   ${media.sm} {
     font-size: 18px;
-    gap: 6px;
+    gap: 8px;
   }
 `;
 
-export const LogoIcon = styled.span`
-  font-size: 28px;
+export const LogoIcon = styled.div`
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
 
   ${media.sm} {
-    font-size: 24px;
+    width: 32px;
+    height: 32px;
   }
 `;
 
@@ -50,8 +59,10 @@ export const LogoText = styled.span`
 
 export const NavLinks = styled.div`
   display: flex;
-  align-items: center;
-  gap: 32px;
+  align-items: stretch;
+  gap: 4px;
+  margin: 0 auto;
+  height: 100%;
 
   ${media.lg} {
     display: none;
@@ -59,20 +70,25 @@ export const NavLinks = styled.div`
 `;
 
 export const NavLink = styled(Link)`
-  color: white;
+  color: rgba(255, 255, 255, 0.95);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
   }
 
   &.active {
-    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-bottom-color: white;
+    font-weight: 600;
   }
 `;
 
@@ -89,19 +105,20 @@ export const NavRight = styled.div`
 export const IconButton = styled.button`
   background: transparent;
   border: none;
-  color: white;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   min-width: 40px;
   min-height: 40px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    background-color: rgba(255, 255, 255, 0.15);
   }
 
   ${media.sm} {
@@ -133,11 +150,12 @@ export const Avatar = styled.div`
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: white;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
+  font-size: 13px;
   color: #fc4c02;
   cursor: pointer;
   overflow: hidden;

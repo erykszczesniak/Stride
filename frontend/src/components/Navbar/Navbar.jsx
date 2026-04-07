@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FiPlus, FiBell, FiSearch, FiSun, FiMoon, FiMenu, FiX, FiHome, FiActivity, FiAward, FiUsers, FiCalendar, FiUser, FiTarget, FiBook, FiSettings, FiShield, FiLogOut } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import SearchModal from "../SearchModal/SearchModal";
 import {
   Nav,
   Logo,
@@ -32,6 +33,7 @@ const Navbar = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const isActive = (path) => location.pathname === path;
 
@@ -53,6 +55,18 @@ const Navbar = () => {
     };
   }, [mobileMenuOpen]);
 
+  // Cmd+K / Ctrl+K keyboard shortcut to open search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowSearch((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -71,8 +85,8 @@ const Navbar = () => {
     <>
       <Nav role="navigation" aria-label="Main navigation">
         <Logo to="/">
-          <LogoIcon>🏃</LogoIcon>
-          <LogoText>Strava Clone</LogoText>
+          <LogoIcon><FiActivity size={20} /></LogoIcon>
+          <LogoText>STRIDE</LogoText>
         </Logo>
 
         <NavLinks>
@@ -95,7 +109,7 @@ const Navbar = () => {
 
         <NavRight>
           <HideOnMobile>
-            <IconButton title="Search">
+            <IconButton title="Search (Cmd+K)" onClick={() => setShowSearch(true)}>
               <FiSearch size={20} />
             </IconButton>
           </HideOnMobile>
@@ -201,6 +215,8 @@ const Navbar = () => {
           <FiLogOut /> Log Out
         </MobileNavLink>
       </MobileMenu>
+
+      <SearchModal isOpen={showSearch} onClose={() => setShowSearch(false)} />
     </>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun } from "react-icons/fi";
 import Navbar from "../components/Navbar/Navbar";
 import SettingsService from "../api/SettingsService";
@@ -41,9 +42,12 @@ import {
   LoadingSpinner,
 } from "./SettingsStyles";
 
+const VALID_SECTIONS = ["profile", "notifications", "preferences", "account"];
+
 const Settings = () => {
   const toast = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,6 +71,13 @@ const Settings = () => {
     language: "en",
     darkMode: false,
   });
+
+  useEffect(() => {
+    const section = searchParams.get("section");
+    if (section && VALID_SECTIONS.includes(section)) {
+      setActiveTab(section);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     loadUserData();
