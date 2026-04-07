@@ -178,6 +178,7 @@ export const Textarea = styled.textarea`
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
   font-size: 14px;
+  color: ${({ theme }) => theme.textPrimary};
   background: ${({ theme }) => theme.bgInput};
   min-height: 100px;
   resize: vertical;
