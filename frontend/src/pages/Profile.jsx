@@ -307,7 +307,7 @@ const Profile = () => {
               </StatCard>
               <StatCard color="#0095ff">
                 <StatIcon>📅</StatIcon>
-                <StatValue>{Math.floor(totals.time / 60)}</StatValue>
+                <StatValue>{Math.floor(totals.time / 3600)}</StatValue>
                 <StatLabel>Hours Active</StatLabel>
               </StatCard>
               <StatCard color="#4caf50">
@@ -345,9 +345,10 @@ const Profile = () => {
             ) : (
             <AchievementsGrid>
               {earnedAchievements.map((achievement, index) => (
-                <div key={index}>
+                <div key={index} style={{ display: "flex" }}>
                   <div
                     style={{
+                      flex: 1,
                       background: `${achievement.color}20`,
                       border: `2px solid ${achievement.color}`,
                       borderRadius: "16px",
@@ -481,9 +482,10 @@ const Profile = () => {
               {allAchievements.map((achievement, index) => {
                 const isEarned = achievement.check(totals);
                 return (
-                  <div key={index}>
+                  <div key={index} style={{ display: "flex" }}>
                     <div
                       style={{
+                        flex: 1,
                         background: isEarned ? `${achievement.color}20` : theme.bgSecondary,
                         border: `2px solid ${isEarned ? achievement.color : theme.border}`,
                         borderRadius: "16px",
