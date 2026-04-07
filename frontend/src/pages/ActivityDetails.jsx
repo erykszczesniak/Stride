@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   FiArrowLeft,
   FiHeart,
@@ -66,6 +66,7 @@ import {
 
 const ActivityDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activity, setActivity] = useState(null);
@@ -255,6 +256,17 @@ const ActivityDetails = () => {
     );
   }
 
+  const isOwner = user && activity?.user?.id === user.id;
+
+  const handleDeleteActivity = async () => {
+    if (!window.confirm(`Delete "${activity.title}"? This cannot be undone.`)) return;
+    try {
+      await ActivityService.deleteActivity(id);
+      navigate('/activities');
+    } catch (error) {
+    }
+  };
+
   if (!activity) {
     return (
       <Layout>
@@ -335,6 +347,18 @@ const ActivityDetails = () => {
             <FiShare2 size={18} />
             Share
           </ActionButton>
+          {isOwner && (
+            <>
+              <ActionButton onClick={() => navigate(`/activities/${id}/edit`)}>
+                <FiEdit2 size={18} />
+                Edit
+              </ActionButton>
+              <ActionButton onClick={handleDeleteActivity} style={{ color: "#ef4444" }}>
+                <FiTrash2 size={18} />
+                Delete
+              </ActionButton>
+            </>
+          )}
         </ActionsBar>
       </ActivityHeader>
 

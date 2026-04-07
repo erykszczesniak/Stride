@@ -77,6 +77,14 @@ const App = () => {
             }
           />
           <Route
+            path="/activities/:id/edit"
+            element={
+              <ProtectedRoute>
+                <RecordActivity />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/activities/:id"
             element={
               <ProtectedRoute>
