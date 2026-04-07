@@ -284,7 +284,7 @@ export const Toggle = styled.label`
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background-color: ${({ theme }) => theme.border};
     transition: 0.3s;
     border-radius: 28px;
 
@@ -302,7 +302,7 @@ export const Toggle = styled.label`
   }
 
   input:checked + span {
-    background-color: #1a1a1a;
+    background-color: #fc4c02;
   }
 
   input:checked + span:before {
