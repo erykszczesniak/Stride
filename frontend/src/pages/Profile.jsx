@@ -266,7 +266,7 @@ const Profile = () => {
           <StatItem>
             <StatValue>
               {activities
-                .reduce((sum, a) => sum + (a.kudosCount || 0), 0)
+                .reduce((sum, a) => sum + (a.likesCount || 0), 0)
                 .toLocaleString()}
             </StatValue>
             <StatLabel>Kudos</StatLabel>
@@ -372,6 +372,7 @@ const Profile = () => {
                         fontWeight: "700",
                         fontSize: "14px",
                         marginBottom: "4px",
+                        color: theme.textPrimary,
                       }}
                     >
                       {achievement.title}
@@ -435,6 +436,7 @@ const Profile = () => {
                       fontSize: "18px",
                       fontWeight: "700",
                       marginBottom: "8px",
+                      color: theme.textPrimary,
                     }}
                   >
                     Achievement Progress
@@ -510,6 +512,7 @@ const Profile = () => {
                           fontWeight: "700",
                           fontSize: "14px",
                           marginBottom: "4px",
+                          color: theme.textPrimary,
                         }}
                       >
                         {achievement.title}

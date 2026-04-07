@@ -65,8 +65,8 @@ const GoalProgress = ({ goal, clickable = true, onEdit, onDelete }) => {
       <GoalHeader>
         <GoalTitle>{goal.period === "WEEKLY" ? "Weekly" : goal.period === "MONTHLY" ? "Monthly" : "Yearly"} Goal</GoalTitle>
         <HeaderRight>
-          {onEdit && <ActionBtn onClick={(e) => stopAndCall(e, onEdit)} title="Edit"><FiEdit2 size={13} /></ActionBtn>}
-          {onDelete && <ActionBtn $danger onClick={(e) => stopAndCall(e, onDelete)} title="Delete"><FiTrash2 size={13} /></ActionBtn>}
+          {onEdit && <ActionBtn onClick={(e) => stopAndCall(e, onEdit)} title="Edit"><FiEdit2 size={18} /></ActionBtn>}
+          {onDelete && <ActionBtn $danger onClick={(e) => stopAndCall(e, onDelete)} title="Delete"><FiTrash2 size={18} /></ActionBtn>}
           <GoalPeriod>{goal.period}</GoalPeriod>
         </HeaderRight>
       </GoalHeader>

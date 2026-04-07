@@ -174,8 +174,8 @@ export const TabsContainer = styled.div`
 
 export const Tab = styled.button`
   padding: 12px 24px;
-  background: ${props => props.active ? props.theme.textPrimary : 'transparent'};
-  color: ${props => props.active ? 'white' : props.theme.textSecondary};
+  background: ${props => props.active ? props.theme.primary : 'transparent'};
+  color: ${props => props.active ? '#ffffff' : props.theme.textSecondary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -185,7 +185,7 @@ export const Tab = styled.button`
   flex: 1;
 
   &:hover {
-    background: ${props => props.active ? props.theme.textPrimary : props.theme.bgHover};
+    background: ${props => props.active ? props.theme.primaryHover : props.theme.bgHover};
   }
 `;
 
