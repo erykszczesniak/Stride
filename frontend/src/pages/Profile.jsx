@@ -200,6 +200,19 @@ const Profile = () => {
     }
   }, []);
 
+  const handleDeleteActivity = useCallback(async (activity) => {
+    if (!window.confirm(`Delete "${activity.title}"? This cannot be undone.`)) return;
+    try {
+      await ActivityService.deleteActivity(activity.id);
+      setActivities((prev) => prev.filter((a) => a.id !== activity.id));
+    } catch (error) {
+    }
+  }, []);
+
+  const handleEditActivity = useCallback((activity) => {
+    navigate(`/activities/${activity.id}/edit`);
+  }, [navigate]);
+
   if (loading) {
     return (
       <Layout>
@@ -403,6 +416,8 @@ const Profile = () => {
                     key={activity.id}
                     activity={activity}
                     onLike={handleLikeActivity}
+                    onEdit={isOwnProfile ? handleEditActivity : undefined}
+                    onDelete={isOwnProfile ? handleDeleteActivity : undefined}
                   />
                 ))}
               </div>

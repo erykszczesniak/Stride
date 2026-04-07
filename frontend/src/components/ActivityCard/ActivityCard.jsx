@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiClock, FiTrendingUp, FiZap } from "react-icons/fi";
+import { FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiClock, FiTrendingUp, FiZap, FiEdit2, FiTrash2 } from "react-icons/fi";
 import {
   FaRunning,
   FaBicycle,
@@ -51,7 +51,7 @@ const activityColors = {
   WORKOUT: { bg: "#fdf2f8", color: "#ec4899" },
 };
 
-const ActivityCard = ({ activity, onLike }) => {
+const ActivityCard = ({ activity, onLike, onEdit, onDelete }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const colors = activityColors[activity.activityType] || activityColors.RUN;
   const icon = activityIcons[activity.activityType] || activityIcons.RUN;
@@ -66,6 +66,18 @@ const ActivityCard = ({ activity, onLike }) => {
     e.preventDefault();
     e.stopPropagation();
     setShowShareModal(true);
+  };
+
+  const handleEdit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onEdit) onEdit(activity);
+  };
+
+  const handleDelete = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDelete) onDelete(activity);
   };
 
   return (
@@ -85,6 +97,20 @@ const ActivityCard = ({ activity, onLike }) => {
             </UserName>
             <ActivityTime>{getTimeAgo(activity.createdAt)}</ActivityTime>
           </UserInfo>
+          {(onEdit || onDelete) && (
+            <ActionsGroup style={{ marginRight: "8px" }}>
+              {onEdit && (
+                <ActionButton onClick={handleEdit} title="Edit">
+                  <FiEdit2 size={16} />
+                </ActionButton>
+              )}
+              {onDelete && (
+                <ActionButton onClick={handleDelete} title="Delete">
+                  <FiTrash2 size={16} />
+                </ActionButton>
+              )}
+            </ActionsGroup>
+          )}
           <ActivityType bgColor={colors.bg} color={colors.color}>
             {icon}
           </ActivityType>

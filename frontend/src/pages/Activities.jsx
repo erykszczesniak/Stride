@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiPlus,
   FiSearch,
@@ -14,6 +15,7 @@ import ActivityCard from "../components/ActivityCard/ActivityCard";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
 import ChallengeService from "../api/ChallengeService";
+import { useAuth } from "../context/AuthContext";
 import {
   ActivitiesList,
   EmptyState,
@@ -66,6 +68,8 @@ import {
 } from "./ActivitiesStyles";
 
 const Activities = () => {
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [mainTab, setMainTab] = useState("all"); // all, following, my
@@ -218,6 +222,21 @@ const Activities = () => {
     }
   };
 
+  const handleDeleteActivity = async (activity) => {
+    if (!window.confirm(`Delete "${activity.title}"? This cannot be undone.`)) return;
+    try {
+      await ActivityService.deleteActivity(activity.id);
+      setActivities((prev) => prev.filter((a) => a.id !== activity.id));
+    } catch (error) {
+    }
+  };
+
+  const handleEditActivity = (activity) => {
+    navigate(`/activities/${activity.id}/edit`);
+  };
+
+  const isOwner = (activity) => currentUser && activity.user?.id === currentUser.id;
+
   if (loading && activities.length === 0) {
     return (
       <Layout>
@@ -350,6 +369,8 @@ const Activities = () => {
                   key={activity.id}
                   activity={activity}
                   onLike={handleLikeActivity}
+                  onEdit={isOwner(activity) ? handleEditActivity : undefined}
+                  onDelete={isOwner(activity) ? handleDeleteActivity : undefined}
                 />
               ))}
             </ActivitiesList>
