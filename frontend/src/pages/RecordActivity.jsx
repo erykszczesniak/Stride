@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout/Layout';
 import ActivityService from '../api/ActivityService';
 import {
@@ -25,13 +25,9 @@ import {
 
 const RecordActivity = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const isEditMode = Boolean(id);
   const [selectedType, setSelectedType] = useState('RUN');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [loadingActivity, setLoadingActivity] = useState(false);
-  const [originalStartTime, setOriginalStartTime] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -42,34 +38,6 @@ const RecordActivity = () => {
     avgHeartRate: '',
     avgPace: ''
   });
-
-  useEffect(() => {
-    if (!isEditMode) return;
-    const fetchActivity = async () => {
-      try {
-        setLoadingActivity(true);
-        const res = await ActivityService.getActivityById(id);
-        const a = res.data;
-        setSelectedType(a.activityType || 'RUN');
-        setOriginalStartTime(a.startTime);
-        setFormData({
-          title: a.title || '',
-          description: a.description || '',
-          distance: a.distance ? String(a.distance) : '',
-          duration: a.duration ? String(Math.round(a.duration / 60)) : '',
-          elevation: a.elevationGain ? String(a.elevationGain) : '',
-          calories: a.calories ? String(a.calories) : '',
-          avgHeartRate: a.averageHeartRate ? String(a.averageHeartRate) : '',
-          avgPace: ''
-        });
-      } catch (err) {
-        setError('Failed to load activity');
-      } finally {
-        setLoadingActivity(false);
-      }
-    };
-    fetchActivity();
-  }, [id, isEditMode]);
 
   const activityTypes = [
     { type: 'RUN', label: 'Run', icon: '🏃', color: '#fc5200' },
@@ -129,15 +97,11 @@ const RecordActivity = () => {
         averageSpeed: distanceKm && durationMinutes
           ? parseFloat((distanceKm / (durationMinutes / 60)).toFixed(2))
           : null,
-        startTime: isEditMode && originalStartTime ? originalStartTime : new Date().toISOString(),
+        startTime: new Date().toISOString(),
         isPrivate: false
       };
 
-      if (isEditMode) {
-        await ActivityService.updateActivity(id, activityData);
-      } else {
-        await ActivityService.createActivity(activityData);
-      }
+      await ActivityService.createActivity(activityData);
       navigate('/activities');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save activity. Please try again.');
@@ -150,7 +114,7 @@ const RecordActivity = () => {
     <Layout>
     <Container>
       <Header>
-        <Title>{isEditMode ? 'Edit Activity' : 'Record Activity'}</Title>
+        <Title>Record Activity</Title>
       </Header>
 
       <Section>
@@ -268,8 +232,8 @@ const RecordActivity = () => {
 
       {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 
-      <SaveButton onClick={handleSaveActivity} disabled={saving || loadingActivity}>
-        {saving ? 'Saving...' : isEditMode ? 'Update Activity' : 'Save Activity'}
+      <SaveButton onClick={handleSaveActivity} disabled={saving}>
+        {saving ? 'Saving...' : 'Save Activity'}
       </SaveButton>
     </Container>
     </Layout>
