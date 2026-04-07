@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiBell, FiSearch, FiSun, FiMoon, FiMenu, FiX, FiHome, FiActivity, FiAward, FiUsers, FiCalendar, FiUser, FiTarget, FiBook, FiSettings, FiShield, FiLogOut } from "react-icons/fi";
+import { FiPlus, FiBell, FiSun, FiMoon, FiMenu, FiX, FiHome, FiActivity, FiAward, FiUsers, FiCalendar, FiUser, FiTarget, FiBook, FiSettings, FiShield, FiLogOut } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -72,7 +72,7 @@ const Navbar = () => {
       <Nav role="navigation" aria-label="Main navigation">
         <Logo to="/">
           <LogoIcon>🏃</LogoIcon>
-          <LogoText>Strava Clone</LogoText>
+          <LogoText>STRIDE</LogoText>
         </Logo>
 
         <NavLinks>
@@ -94,11 +94,6 @@ const Navbar = () => {
         </NavLinks>
 
         <NavRight>
-          <HideOnMobile>
-            <IconButton title="Search">
-              <FiSearch size={20} />
-            </IconButton>
-          </HideOnMobile>
           <IconButton title="Add Activity" onClick={() => navigate("/activities/new")}>
             <FiPlus size={22} />
           </IconButton>
