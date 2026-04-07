@@ -475,6 +475,8 @@ export const PlanCard = styled.div`
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     transform: translateY(-4px);
@@ -524,6 +526,7 @@ export const PlanCardMeta = styled.div`
   flex-direction: column;
   gap: 8px;
   margin-bottom: 20px;
+  flex: 1;
 `;
 
 export const PlanMetaItem = styled.div`
