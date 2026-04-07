@@ -2,8 +2,10 @@ package com.strava.backend.service.impl;
 
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.user.UpdateUserRequest;
+import com.strava.backend.enums.NotificationType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import static com.strava.backend.constants.ErrorMessage.USER_NOT_FOUND;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -88,6 +91,15 @@ public class UserServiceImpl implements UserService {
 
         followUser.getFollowers().add(user);
         userRepository.save(followUser);
+
+        notificationService.createNotification(
+                followUser,
+                user,
+                NotificationType.FOLLOW,
+                user.getFirstName() + " " + user.getLastName() + " started following you",
+                null,
+                null
+        );
     }
 
     @Override

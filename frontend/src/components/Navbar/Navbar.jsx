@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiBell, FiSearch, FiSun, FiMoon, FiMenu, FiX, FiHome, FiActivity, FiAward, FiUsers, FiCalendar, FiUser, FiTarget, FiBook, FiSettings, FiShield, FiLogOut } from "react-icons/fi";
+import { FiPlus, FiSearch, FiSun, FiMoon, FiMenu, FiX, FiHome, FiActivity, FiAward, FiUsers, FiCalendar, FiUser, FiTarget, FiBook, FiSettings, FiShield, FiLogOut } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import SearchModal from "../SearchModal/SearchModal";
+import NotificationDropdown from "./NotificationDropdown";
 import {
   Nav,
   Logo,
@@ -117,9 +118,7 @@ const Navbar = () => {
             <FiPlus size={22} />
           </IconButton>
           <HideOnMobile>
-            <IconButton title="Notifications">
-              <FiBell size={20} />
-            </IconButton>
+            <NotificationDropdown />
             <IconButton title={isDarkMode ? "Light Mode" : "Dark Mode"} onClick={toggleTheme}>
               {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
             </IconButton>

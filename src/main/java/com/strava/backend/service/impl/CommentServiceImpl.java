@@ -5,11 +5,13 @@ import com.strava.backend.domain.Comment;
 import com.strava.backend.domain.CommentReaction;
 import com.strava.backend.domain.User;
 import com.strava.backend.exception.ApiRequestException;
+import com.strava.backend.enums.NotificationType;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.CommentReactionRepository;
 import com.strava.backend.repository.CommentRepository;
 import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.CommentService;
+import com.strava.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentReactionRepository commentReactionRepository;
     private final ActivityRepository activityRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -61,7 +64,18 @@ public class CommentServiceImpl implements CommentService {
                 .user(user)
                 .build();
 
-        return commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+
+        notificationService.createNotification(
+                activity.getUser(),
+                user,
+                NotificationType.COMMENT,
+                user.getFirstName() + " " + user.getLastName() + " commented on your activity \"" + activity.getTitle() + "\"",
+                activityId,
+                "ACTIVITY"
+        );
+
+        return savedComment;
     }
 
     @Override

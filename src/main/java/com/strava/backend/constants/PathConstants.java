@@ -105,6 +105,14 @@ public final class PathConstants {
     public static final String TEMPLATES = "/templates";
     public static final String TEMPLATE_ID = "/{id}";
 
+    // Notifications
+    public static final String NOTIFICATIONS = "/notifications";
+    public static final String API_V1_NOTIFICATIONS = API_V1 + NOTIFICATIONS;
+    public static final String NOTIFICATION_ID = "/{notificationId}";
+    public static final String READ = "/read";
+    public static final String READ_ALL = "/read-all";
+    public static final String UNREAD_COUNT = "/unread-count";
+
     // Export
     public static final String EXPORT = "/export";
     public static final String API_V1_EXPORT = API_V1 + EXPORT;

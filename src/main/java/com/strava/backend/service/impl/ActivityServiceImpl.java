@@ -7,8 +7,10 @@ import com.strava.backend.dto.activity.ActivityStatsResponse;
 import com.strava.backend.dto.activity.WeeklyStatsResponse;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.ApiRequestException;
+import com.strava.backend.enums.NotificationType;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.service.ActivityService;
+import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     private final ActivityRepository activityRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -164,6 +167,15 @@ public class ActivityServiceImpl implements ActivityService {
 
         activity.getLikedBy().add(user);
         activityRepository.save(activity);
+
+        notificationService.createNotification(
+                activity.getUser(),
+                user,
+                NotificationType.LIKE,
+                user.getFirstName() + " " + user.getLastName() + " liked your activity \"" + activity.getTitle() + "\"",
+                activityId,
+                "ACTIVITY"
+        );
     }
 
     @Override
