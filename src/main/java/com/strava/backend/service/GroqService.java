@@ -44,7 +44,7 @@ public class GroqService {
                     Map.of("role", "user", "content", userPrompt)
                 ),
                 "temperature", 0.7,
-                "max_tokens", 8192
+                "max_tokens", 2048
             );
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);

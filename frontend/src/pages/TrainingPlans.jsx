@@ -175,7 +175,8 @@ const TrainingPlans = () => {
       const data = parseAiResponse(response.data);
       setGeneratedGoal(data);
     } catch (error) {
-      toast.error("Failed to generate goal. Please try again.");
+      const details = error.response?.data?.message || error.message || String(error);
+      toast.error("Failed to generate goal. Please try again.", "Error", details);
     } finally {
       setGenerating(false);
     }
@@ -197,7 +198,8 @@ const TrainingPlans = () => {
       const data = parseAiResponse(response.data);
       setGeneratedPlan(data);
     } catch (error) {
-      toast.error("Failed to generate training plan. Please try again.");
+      const details = error.response?.data?.message || error.message || String(error);
+      toast.error("Failed to generate training plan. Please try again.", "Error", details);
     } finally {
       setGenerating(false);
     }

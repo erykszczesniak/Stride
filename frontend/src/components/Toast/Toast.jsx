@@ -1,5 +1,5 @@
-import React from "react";
-import { FiCheck, FiX, FiAlertCircle, FiInfo } from "react-icons/fi";
+import React, { useState } from "react";
+import { FiCheck, FiX, FiAlertCircle, FiInfo, FiCopy } from "react-icons/fi";
 import {
   ToastWrapper,
   IconWrapper,
@@ -7,6 +7,7 @@ import {
   Title,
   Message,
   CloseButton,
+  CopyButton,
 } from "./ToastStyles";
 
 const getIcon = (type) => {
@@ -35,7 +36,19 @@ const getTitle = (type) => {
   }
 };
 
-const Toast = ({ type = "info", message, title, onClose, isExiting }) => {
+const Toast = ({ type = "info", message, title, details, onClose, isExiting }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+    const text = details || message;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
   return (
     <ToastWrapper $type={type} $isExiting={isExiting}>
       <IconWrapper $type={type}>{getIcon(type)}</IconWrapper>
@@ -43,6 +56,11 @@ const Toast = ({ type = "info", message, title, onClose, isExiting }) => {
         <Title>{title || getTitle(type)}</Title>
         <Message>{message}</Message>
       </Content>
+      {type === "error" && (
+        <CopyButton onClick={handleCopy} title="Copy error to clipboard">
+          {copied ? <FiCheck size={14} /> : <FiCopy size={14} />}
+        </CopyButton>
+      )}
       <CloseButton onClick={onClose}>
         <FiX size={18} />
       </CloseButton>

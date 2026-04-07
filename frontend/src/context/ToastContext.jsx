@@ -38,9 +38,9 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   const addToast = useCallback(
-    ({ type = "info", message, title, duration = 5000 }) => {
+    ({ type = "info", message, title, details, duration = 5000 }) => {
       const id = Date.now() + Math.random();
-      const newToast = { id, type, message, title, isExiting: false };
+      const newToast = { id, type, message, title, details, isExiting: false };
 
       setToasts((prev) => [...prev, newToast]);
 
@@ -61,7 +61,7 @@ export const ToastProvider = ({ children }) => {
   );
 
   const error = useCallback(
-    (message, title) => addToast({ type: "error", message, title }),
+    (message, title, details) => addToast({ type: "error", message, title, details }),
     [addToast]
   );
 
@@ -94,6 +94,7 @@ export const ToastProvider = ({ children }) => {
             type={toast.type}
             message={toast.message}
             title={toast.title}
+            details={toast.details}
             isExiting={toast.isExiting}
             onClose={() => removeToast(toast.id)}
           />

@@ -99,6 +99,26 @@ export const Message = styled.p`
   line-height: 1.4;
 `;
 
+export const CopyButton = styled.button`
+  background: none;
+  border: 1px solid ${({ theme }) => theme.border};
+  padding: 6px;
+  cursor: pointer;
+  color: ${({ theme }) => theme.textSecondary};
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: ${({ theme }) => theme.bgHover};
+    color: ${({ theme }) => theme.textPrimary};
+    border-color: ${({ theme }) => theme.textMuted};
+  }
+`;
+
 export const CloseButton = styled.button`
   background: none;
   border: none;
