@@ -176,8 +176,8 @@ class GoalServiceImplTest {
                 saved.setId(1L);
                 return saved;
             });
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(25.0));
+            when(activityRepository.sumDistanceForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(25.0);
 
             Goal result = goalService.createGoal(1L, goalRequest);
 
@@ -195,8 +195,8 @@ class GoalServiceImplTest {
             goalRequest.setPeriod(GoalPeriod.WEEKLY);
             when(userService.getUserById(1L)).thenReturn(testUser);
             when(goalRepository.save(any(Goal.class))).thenAnswer(invocation -> invocation.getArgument(0));
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.empty());
+            when(activityRepository.sumDistanceForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(0.0);
 
             Goal result = goalService.createGoal(1L, goalRequest);
 
@@ -212,8 +212,8 @@ class GoalServiceImplTest {
             goalRequest.setPeriod(GoalPeriod.MONTHLY);
             when(userService.getUserById(1L)).thenReturn(testUser);
             when(goalRepository.save(any(Goal.class))).thenAnswer(invocation -> invocation.getArgument(0));
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.empty());
+            when(activityRepository.sumDistanceForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(0.0);
 
             Goal result = goalService.createGoal(1L, goalRequest);
 
@@ -302,8 +302,8 @@ class GoalServiceImplTest {
         void shouldUpdateProgressForDistanceGoal() {
             testGoal.setGoalType(GoalType.DISTANCE);
             when(goalRepository.findActiveGoalsByUserId(1L)).thenReturn(List.of(testGoal));
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(75.0));
+            when(activityRepository.sumDistanceForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(75.0);
 
             goalService.updateGoalProgress(1L);
 
@@ -316,8 +316,8 @@ class GoalServiceImplTest {
         void shouldUpdateProgressForTimeGoal() {
             testGoal.setGoalType(GoalType.TIME);
             when(goalRepository.findActiveGoalsByUserId(1L)).thenReturn(List.of(testGoal));
-            when(activityRepository.sumDurationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(7200L)); // 2 hours in seconds
+            when(activityRepository.sumDurationForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(7200.0); // 2 hours in seconds
 
             goalService.updateGoalProgress(1L);
 
@@ -330,8 +330,8 @@ class GoalServiceImplTest {
         void shouldUpdateProgressForElevationGoal() {
             testGoal.setGoalType(GoalType.ELEVATION);
             when(goalRepository.findActiveGoalsByUserId(1L)).thenReturn(List.of(testGoal));
-            when(activityRepository.sumElevationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(500));
+            when(activityRepository.sumElevationForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(500.0);
 
             goalService.updateGoalProgress(1L);
 
@@ -343,7 +343,7 @@ class GoalServiceImplTest {
         void shouldUpdateProgressForActivitiesCountGoal() {
             testGoal.setGoalType(GoalType.ACTIVITIES);
             when(goalRepository.findActiveGoalsByUserId(1L)).thenReturn(List.of(testGoal));
-            when(activityRepository.countByUserAndDateRange(eq(1L), any(), any()))
+            when(activityRepository.countByUserAndActivityTypeAndDateRange(eq(1L), any(), any(), any()))
                     .thenReturn(15);
 
             goalService.updateGoalProgress(1L);
@@ -356,8 +356,8 @@ class GoalServiceImplTest {
         void shouldHandleEmptyActivityData() {
             testGoal.setGoalType(GoalType.DISTANCE);
             when(goalRepository.findActiveGoalsByUserId(1L)).thenReturn(List.of(testGoal));
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.empty());
+            when(activityRepository.sumDistanceForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(0.0);
 
             goalService.updateGoalProgress(1L);
 
@@ -371,10 +371,10 @@ class GoalServiceImplTest {
             goal2.setGoalType(GoalType.TIME);
 
             when(goalRepository.findActiveGoalsByUserId(1L)).thenReturn(List.of(testGoal, goal2));
-            when(activityRepository.sumDistanceByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(50.0));
-            when(activityRepository.sumDurationByUserAndDateRange(eq(1L), any(), any()))
-                    .thenReturn(Optional.of(3600L));
+            when(activityRepository.sumDistanceForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(50.0);
+            when(activityRepository.sumDurationForChallenge(eq(1L), any(), any(), any()))
+                    .thenReturn(3600.0);
 
             goalService.updateGoalProgress(1L);
 

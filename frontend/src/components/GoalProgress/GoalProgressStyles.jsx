@@ -4,11 +4,8 @@ export const GoalCard = styled.div`
   background: ${({ theme }) => theme.bgSecondary};
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 12px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+  display: flex;
+  flex-direction: column;
 `;
 
 export const GoalHeader = styled.div`
@@ -31,6 +28,32 @@ export const GoalPeriod = styled.span`
   padding: 4px 10px;
   border-radius: 20px;
   font-weight: 500;
+`;
+
+export const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+`;
+
+export const ActionBtn = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: ${({ $danger }) => $danger ? '#ef4444' : '#94a3b8'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: ${({ $danger }) => $danger ? '#fef2f2' : '#f1f5f9'};
+    color: ${({ $danger }) => $danger ? '#dc2626' : '#475569'};
+  }
 `;
 
 export const GoalType = styled.div`
@@ -58,7 +81,9 @@ export const GoalLabel = styled.span`
   font-weight: 500;
 `;
 
-export const ProgressContainer = styled.div``;
+export const ProgressContainer = styled.div`
+  margin-top: auto;
+`;
 
 export const ProgressBar = styled.div`
   width: 100%;

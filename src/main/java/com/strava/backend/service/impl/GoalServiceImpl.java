@@ -42,9 +42,14 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Goal> getActiveGoalsByUserId(Long userId) {
-        return goalRepository.findActiveGoalsByUserId(userId);
+        List<Goal> goals = goalRepository.findActiveGoalsByUserId(userId);
+        for (Goal goal : goals) {
+            updateSingleGoalProgress(goal);
+        }
+        goalRepository.saveAll(goals);
+        return goals;
     }
 
     @Override
@@ -125,15 +130,13 @@ public class GoalServiceImpl implements GoalService {
         Long userId = goal.getUser().getId();
         LocalDateTime startDate = goal.getStartDate();
         LocalDateTime endDate = goal.getEndDate();
+        var activityType = goal.getActivityType();
 
         double currentValue = switch (goal.getGoalType()) {
-            case DISTANCE -> activityRepository.sumDistanceByUserAndDateRange(userId, startDate, endDate)
-                    .orElse(0.0);
-            case TIME -> activityRepository.sumDurationByUserAndDateRange(userId, startDate, endDate)
-                    .orElse(0L) / 3600.0;
-            case ELEVATION -> activityRepository.sumElevationByUserAndDateRange(userId, startDate, endDate)
-                    .orElse(0).doubleValue();
-            case ACTIVITIES -> activityRepository.countByUserAndDateRange(userId, startDate, endDate);
+            case DISTANCE -> activityRepository.sumDistanceForChallenge(userId, activityType, startDate, endDate);
+            case TIME -> activityRepository.sumDurationForChallenge(userId, activityType, startDate, endDate) / 3600.0;
+            case ELEVATION -> activityRepository.sumElevationForChallenge(userId, activityType, startDate, endDate);
+            case ACTIVITIES -> activityRepository.countByUserAndActivityTypeAndDateRange(userId, activityType, startDate, endDate);
         };
 
         goal.setCurrentValue(currentValue);

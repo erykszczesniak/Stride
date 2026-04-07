@@ -78,6 +78,15 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
+    @Query("SELECT COUNT(a) FROM Activity a WHERE a.user.id = :userId " +
+           "AND (:activityType IS NULL OR a.activityType = :activityType) " +
+           "AND a.startTime BETWEEN :startDate AND :endDate")
+    int countByUserAndActivityTypeAndDateRange(
+            @Param("userId") Long userId,
+            @Param("activityType") ActivityType activityType,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
     @Query("SELECT COUNT(a) FROM Activity a WHERE a.user.id = :userId")
     int countByUserId(@Param("userId") Long userId);
 

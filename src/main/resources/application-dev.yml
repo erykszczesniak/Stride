@@ -1,24 +1,27 @@
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:h2:mem:stravadb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
-    username: ${DATABASE_USERNAME:sa}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/strava_dev}
+    username: ${DATABASE_USERNAME:erykszczesniak}
     password: ${DATABASE_PASSWORD:}
-    driver-class-name: ${DATABASE_DRIVER:org.h2.Driver}
+    driver-class-name: ${DATABASE_DRIVER:org.postgresql.Driver}
 
   jpa:
     hibernate:
-      ddl-auto: ${HIBERNATE_DDL_AUTO:create}
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
     show-sql: true
     properties:
       hibernate:
-        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
 
   flyway:
-    enabled: ${FLYWAY_ENABLED:false}
+    enabled: true
+    baseline-on-migrate: true
+    clean-disabled: false
+    locations: classpath:db/migration
 
   h2:
     console:
-      enabled: true
+      enabled: false
 
   graphql:
     schema:

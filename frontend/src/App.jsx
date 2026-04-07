@@ -13,6 +13,8 @@ import ActivityDetails from "./pages/ActivityDetails";
 import RecordActivity from "./pages/RecordActivity";
 import Profile from "./pages/Profile";
 import Goals from "./pages/Goals";
+import CreateGoal from "./pages/CreateGoal";
+import GoalDetails from "./pages/GoalDetails";
 import Challenges from "./pages/Challenges";
 import Clubs from "./pages/Clubs";
 import Events from "./pages/Events";
@@ -103,6 +105,22 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Goals />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/goals/new"
+            element={
+              <ProtectedRoute>
+                <CreateGoal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/goals/:goalId"
+            element={
+              <ProtectedRoute>
+                <GoalDetails />
               </ProtectedRoute>
             }
           />

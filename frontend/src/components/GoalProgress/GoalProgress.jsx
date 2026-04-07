@@ -1,6 +1,7 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { FaRunning, FaBicycle, FaSwimmer, FaHiking } from "react-icons/fa";
-import { FiTarget } from "react-icons/fi";
+import { FiTarget, FiEdit2, FiTrash2 } from "react-icons/fi";
 import {
   GoalCard,
   GoalHeader,
@@ -15,6 +16,8 @@ import {
   ProgressStats,
   ProgressValue,
   ProgressTarget,
+  HeaderRight,
+  ActionBtn,
 } from "./GoalProgressStyles";
 
 const activityIcons = {
@@ -48,17 +51,24 @@ const formatValue = (value, goalType) => {
   return Math.round(value);
 };
 
-const GoalProgress = ({ goal }) => {
+const GoalProgress = ({ goal, clickable = true, onEdit, onDelete }) => {
+  const navigate = useNavigate();
   const progress = (goal.currentValue / goal.targetValue) * 100;
   const isCompleted = progress >= 100;
   const icon = activityIcons[goal.activityType] || <FiTarget />;
   const unit = goalTypeUnits[goal.goalType] || "";
+  const handleClick = clickable ? () => navigate(`/goals/${goal.id}`) : undefined;
+  const stopAndCall = (e, fn) => { e.stopPropagation(); fn(goal); };
 
   return (
-    <GoalCard>
+    <GoalCard onClick={handleClick} style={clickable ? { cursor: "pointer" } : undefined}>
       <GoalHeader>
-        <GoalTitle>Weekly Goal</GoalTitle>
-        <GoalPeriod>{goal.period}</GoalPeriod>
+        <GoalTitle>{goal.period === "WEEKLY" ? "Weekly" : goal.period === "MONTHLY" ? "Monthly" : "Yearly"} Goal</GoalTitle>
+        <HeaderRight>
+          {onEdit && <ActionBtn onClick={(e) => stopAndCall(e, onEdit)} title="Edit"><FiEdit2 size={13} /></ActionBtn>}
+          {onDelete && <ActionBtn $danger onClick={(e) => stopAndCall(e, onDelete)} title="Delete"><FiTrash2 size={13} /></ActionBtn>}
+          <GoalPeriod>{goal.period}</GoalPeriod>
+        </HeaderRight>
       </GoalHeader>
 
       <GoalType>

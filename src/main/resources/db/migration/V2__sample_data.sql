@@ -12,69 +12,91 @@ SELECT setval('users_id_seq', 4);
 INSERT INTO user_followers (user_id, follower_id) VALUES
 (1, 2), (1, 3), (2, 1), (2, 3), (3, 1), (3, 2), (4, 1), (4, 2), (4, 3);
 
--- Sample activities for user 1 (Pan)
+-- Sample activities for user 1 (Pan) - spread across this week and last week
 INSERT INTO activities (id, title, description, activity_type, distance, duration, elevation_gain, calories, average_speed, start_time, user_id, created_at) VALUES
-(1, 'Morning Trail Run', 'Beautiful sunrise run through the park. Feeling energized!', 'RUN', 8.5, 2880, 156, 620, 10.625, NOW() - INTERVAL '4 days', 1, NOW() - INTERVAL '4 days'),
-(2, 'Weekend Long Ride', 'Great coastal route with some challenging climbs.', 'RIDE', 45.2, 7200, 420, 1240, 22.6, NOW() - INTERVAL '3 days', 1, NOW() - INTERVAL '3 days'),
-(3, 'Recovery Swim', 'Easy pool session to loosen up the muscles.', 'SWIM', 1.5, 2100, 0, 320, 2.57, NOW() - INTERVAL '2 days', 1, NOW() - INTERVAL '2 days');
+(1, 'Morning Trail Run', 'Beautiful sunrise run through the park. Feeling energized!', 'RUN', 8.5, 2880, 156, 620, 10.625, NOW() - INTERVAL '6 days', 1, NOW() - INTERVAL '6 days'),
+(2, 'Weekend Long Ride', 'Great coastal route with some challenging climbs.', 'RIDE', 45.2, 7200, 420, 1240, 22.6, NOW() - INTERVAL '5 days', 1, NOW() - INTERVAL '5 days'),
+(3, 'Recovery Swim', 'Easy pool session to loosen up the muscles.', 'SWIM', 1.5, 2100, 0, 320, 2.57, NOW() - INTERVAL '4 days', 1, NOW() - INTERVAL '4 days'),
+(4, 'Interval Training', 'High intensity intervals on the track.', 'RUN', 6.0, 1800, 20, 480, 12.0, NOW() - INTERVAL '2 days', 1, NOW() - INTERVAL '2 days'),
+(5, 'Evening Ride', 'Relaxing ride along the river after work.', 'RIDE', 22.0, 3600, 80, 550, 22.0, NOW() - INTERVAL '1 day', 1, NOW() - INTERVAL '1 day'),
+(6, 'Park Run', 'Saturday morning parkrun with friends.', 'RUN', 5.0, 1500, 15, 380, 12.0, NOW(), 1, NOW());
 
--- Sample activities for user 2 (John)
+-- Sample activities for user 2 (John) - spread across this week and last week
 INSERT INTO activities (id, title, description, activity_type, distance, duration, elevation_gain, calories, average_speed, start_time, user_id, created_at) VALUES
-(4, 'Golden Gate Run', 'Perfect weather for a bridge run!', 'RUN', 12.0, 3600, 200, 800, 12.0, NOW() - INTERVAL '3 days', 2, NOW() - INTERVAL '3 days'),
-(5, 'Hill Repeats', 'Tough hill workout in Marin.', 'RIDE', 35.0, 5400, 650, 1100, 23.33, NOW() - INTERVAL '2 days', 2, NOW() - INTERVAL '2 days'),
-(6, 'Easy Morning Jog', 'Light recovery run along the Embarcadero.', 'RUN', 5.5, 1800, 30, 350, 11.0, NOW() - INTERVAL '1 day', 2, NOW() - INTERVAL '1 day'),
-(7, 'Lunch Swim', 'Quick swim session during lunch break.', 'SWIM', 1.0, 1500, 0, 250, 2.4, NOW(), 2, NOW());
+(7, 'Golden Gate Run', 'Perfect weather for a bridge run!', 'RUN', 12.0, 3600, 200, 800, 12.0, NOW() - INTERVAL '5 days', 2, NOW() - INTERVAL '5 days'),
+(8, 'Hill Repeats', 'Tough hill workout in Marin.', 'RIDE', 35.0, 5400, 650, 1100, 23.33, NOW() - INTERVAL '4 days', 2, NOW() - INTERVAL '4 days'),
+(9, 'Easy Morning Jog', 'Light recovery run along the Embarcadero.', 'RUN', 5.5, 1800, 30, 350, 11.0, NOW() - INTERVAL '3 days', 2, NOW() - INTERVAL '3 days'),
+(10, 'Lunch Swim', 'Quick swim session during lunch break.', 'SWIM', 1.0, 1500, 0, 250, 2.4, NOW() - INTERVAL '2 days', 2, NOW() - INTERVAL '2 days'),
+(11, 'Bay Trail Ride', 'Long ride around the bay. Great views!', 'RIDE', 52.0, 7200, 320, 1400, 26.0, NOW() - INTERVAL '1 day', 2, NOW() - INTERVAL '1 day'),
+(12, 'Morning Speed Work', 'Track session at Kezar Stadium.', 'RUN', 8.0, 2400, 10, 560, 12.0, NOW(), 2, NOW());
 
--- Sample activities for user 3 (Jane)
+-- Sample activities for user 3 (Jane) - spread across this week and last week
 INSERT INTO activities (id, title, description, activity_type, distance, duration, elevation_gain, calories, average_speed, start_time, user_id, created_at) VALUES
-(8, 'Central Park Long Run', 'Marathon training - 20 mile long run around Central Park.', 'RUN', 32.2, 10800, 180, 2100, 10.73, NOW() - INTERVAL '5 days', 3, NOW() - INTERVAL '5 days'),
-(9, 'Tempo Run', 'Threshold workout along Hudson River.', 'RUN', 10.0, 2700, 45, 720, 13.33, NOW() - INTERVAL '3 days', 3, NOW() - INTERVAL '3 days'),
-(10, 'Brooklyn Bridge Run', 'Beautiful evening run across the bridge and back.', 'RUN', 8.0, 2400, 60, 550, 12.0, NOW() - INTERVAL '2 days', 3, NOW() - INTERVAL '2 days'),
-(11, 'Recovery Walk', 'Active recovery day with a relaxing walk.', 'HIKE', 5.0, 3600, 20, 200, 5.0, NOW() - INTERVAL '1 day', 3, NOW() - INTERVAL '1 day'),
-(12, 'Speed Intervals', 'Track session - 12x400m at race pace.', 'RUN', 8.5, 2100, 10, 620, 14.57, NOW(), 3, NOW());
+(13, 'Central Park Long Run', 'Marathon training - long run around Central Park.', 'RUN', 32.2, 10800, 180, 2100, 10.73, NOW() - INTERVAL '6 days', 3, NOW() - INTERVAL '6 days'),
+(14, 'Tempo Run', 'Threshold workout along Hudson River.', 'RUN', 10.0, 2700, 45, 720, 13.33, NOW() - INTERVAL '4 days', 3, NOW() - INTERVAL '4 days'),
+(15, 'Brooklyn Bridge Run', 'Beautiful evening run across the bridge and back.', 'RUN', 8.0, 2400, 60, 550, 12.0, NOW() - INTERVAL '3 days', 3, NOW() - INTERVAL '3 days'),
+(16, 'Recovery Walk', 'Active recovery day with a relaxing walk.', 'WALK', 5.0, 3600, 20, 200, 5.0, NOW() - INTERVAL '2 days', 3, NOW() - INTERVAL '2 days'),
+(17, 'Speed Intervals', 'Track session - 12x400m at race pace.', 'RUN', 8.5, 2100, 10, 620, 14.57, NOW() - INTERVAL '1 day', 3, NOW() - INTERVAL '1 day'),
+(18, 'Prospect Park Loop', 'Easy morning run around Prospect Park.', 'RUN', 6.2, 1980, 35, 440, 11.3, NOW(), 3, NOW()),
+(19, 'Hudson River Ride', 'Cycling along the Hudson River Greenway.', 'RIDE', 28.5, 4200, 45, 680, 24.4, NOW() - INTERVAL '1 day', 3, NOW() - INTERVAL '1 day'),
+(20, 'Morning Swim', 'Pool session at the Y. Working on technique.', 'SWIM', 2.0, 2700, 0, 420, 2.67, NOW() - INTERVAL '3 days', 3, NOW() - INTERVAL '3 days');
 
--- Sample activities for user 4 (Admin)
+-- Sample activities for user 4 (Admin) - spread across this week
 INSERT INTO activities (id, title, description, activity_type, distance, duration, elevation_gain, calories, average_speed, start_time, user_id, created_at) VALUES
-(13, 'Thames Path Run', 'Running along the Thames on a foggy morning.', 'RUN', 10.0, 3300, 25, 680, 10.9, NOW() - INTERVAL '2 days', 4, NOW() - INTERVAL '2 days'),
-(14, 'Hyde Park Cycle', 'Quick ride through Hyde Park during lunch.', 'RIDE', 15.0, 2400, 35, 400, 22.5, NOW() - INTERVAL '1 day', 4, NOW() - INTERVAL '1 day');
+(21, 'Thames Path Run', 'Running along the Thames on a foggy morning.', 'RUN', 10.0, 3300, 25, 680, 10.9, NOW() - INTERVAL '3 days', 4, NOW() - INTERVAL '3 days'),
+(22, 'Hyde Park Cycle', 'Quick ride through Hyde Park during lunch.', 'RIDE', 15.0, 2400, 35, 400, 22.5, NOW() - INTERVAL '2 days', 4, NOW() - INTERVAL '2 days'),
+(23, 'Regent Park Jog', 'Easy afternoon jog through Regent Park.', 'RUN', 7.5, 2400, 15, 520, 11.25, NOW() - INTERVAL '1 day', 4, NOW() - INTERVAL '1 day'),
+(24, 'Serpentine Swim', 'Open water swimming in the Serpentine.', 'SWIM', 1.2, 1800, 0, 300, 2.4, NOW(), 4, NOW());
 
 -- Reset the sequence
-SELECT setval('activities_id_seq', 14);
+SELECT setval('activities_id_seq', 24);
 
 -- Sample activity likes
 INSERT INTO activity_likes (activity_id, user_id) VALUES
 (1, 2), (1, 3), (1, 4),
 (2, 2), (2, 3),
 (3, 2), (3, 4),
-(4, 1), (4, 3), (4, 4),
-(5, 1), (5, 3),
-(6, 1), (6, 4),
-(7, 1), (7, 3),
-(8, 1), (8, 2), (8, 4),
-(9, 1), (9, 2),
-(10, 1), (10, 2), (10, 4),
-(11, 2), (11, 4),
-(12, 1), (12, 2),
-(13, 1), (13, 2), (13, 3),
-(14, 1), (14, 3);
+(4, 2), (4, 3),
+(5, 2), (5, 3),
+(6, 2), (6, 3),
+(7, 1), (7, 3), (7, 4),
+(8, 1), (8, 3),
+(9, 1), (9, 4),
+(10, 1), (10, 3),
+(11, 1), (11, 3),
+(12, 1), (12, 3),
+(13, 1), (13, 2), (13, 4),
+(14, 1), (14, 2),
+(15, 1), (15, 2), (15, 4),
+(16, 2), (16, 4),
+(17, 1), (17, 2),
+(18, 1), (18, 2),
+(19, 1), (19, 2),
+(20, 1), (20, 4),
+(21, 1), (21, 2), (21, 3),
+(22, 1), (22, 3),
+(23, 1), (23, 2),
+(24, 2), (24, 3);
 
 -- Sample comments
 INSERT INTO comments (id, content, activity_id, user_id, created_at) VALUES
-(1, 'Great pace! Keep it up!', 1, 2, NOW() - INTERVAL '3 days'),
-(2, 'That elevation gain is impressive!', 1, 3, NOW() - INTERVAL '3 days'),
-(3, 'Beautiful route!', 2, 2, NOW() - INTERVAL '2 days'),
-(4, 'Love that coastal road', 2, 3, NOW() - INTERVAL '2 days'),
-(5, 'Nice recovery session', 3, 4, NOW() - INTERVAL '1 day'),
-(6, 'The Golden Gate views are amazing!', 4, 1, NOW() - INTERVAL '2 days'),
-(7, 'Those hills are brutal!', 5, 1, NOW() - INTERVAL '1 day'),
-(8, 'Marathon training is going strong!', 8, 1, NOW() - INTERVAL '4 days'),
-(9, 'That is dedication!', 8, 2, NOW() - INTERVAL '4 days'),
-(10, 'Keep pushing Jane!', 9, 2, NOW() - INTERVAL '2 days'),
-(11, 'Love the Brooklyn Bridge route', 10, 1, NOW() - INTERVAL '1 day'),
-(12, 'Fast intervals! Ready for race day!', 12, 1, NOW()),
-(13, 'Thames Path is beautiful!', 13, 1, NOW() - INTERVAL '1 day');
+(1, 'Great pace! Keep it up!', 1, 2, NOW() - INTERVAL '5 days'),
+(2, 'That elevation gain is impressive!', 1, 3, NOW() - INTERVAL '5 days'),
+(3, 'Beautiful route!', 2, 2, NOW() - INTERVAL '4 days'),
+(4, 'Love that coastal road', 2, 3, NOW() - INTERVAL '4 days'),
+(5, 'Nice recovery session', 3, 4, NOW() - INTERVAL '3 days'),
+(6, 'The Golden Gate views are amazing!', 7, 1, NOW() - INTERVAL '4 days'),
+(7, 'Those hills are brutal!', 8, 1, NOW() - INTERVAL '3 days'),
+(8, 'Marathon training is going strong!', 13, 1, NOW() - INTERVAL '5 days'),
+(9, 'That is dedication!', 13, 2, NOW() - INTERVAL '5 days'),
+(10, 'Keep pushing Jane!', 14, 2, NOW() - INTERVAL '3 days'),
+(11, 'Love the Brooklyn Bridge route', 15, 1, NOW() - INTERVAL '2 days'),
+(12, 'Fast intervals! Ready for race day!', 17, 1, NOW() - INTERVAL '1 day'),
+(13, 'Thames Path is beautiful!', 21, 1, NOW() - INTERVAL '2 days'),
+(14, 'Great ride along the bay!', 11, 1, NOW() - INTERVAL '1 day'),
+(15, 'Nice Prospect Park loop!', 18, 2, NOW());
 
-SELECT setval('comments_id_seq', 13);
+SELECT setval('comments_id_seq', 15);
 
 -- Sample clubs
 INSERT INTO clubs (id, name, description, city, country, sport_type, is_private, owner_id, created_at) VALUES
