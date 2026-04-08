@@ -20,4 +20,7 @@ public class UpdateUserRequest {
     private String country;
     private Double weight;
     private Double height;
+    private Boolean emailNotifications;
+    private Boolean pushNotifications;
+    private Boolean weeklySummary;
 }

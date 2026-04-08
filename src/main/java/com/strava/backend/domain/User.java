@@ -64,6 +64,15 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
+    @Builder.Default
+    private boolean emailNotifications = true;
+
+    @Builder.Default
+    private boolean pushNotifications = true;
+
+    @Builder.Default
+    private boolean weeklySummary = true;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

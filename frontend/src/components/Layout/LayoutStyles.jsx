@@ -17,6 +17,22 @@ export const MainContent = styled.main`
   }
 `;
 
+export const TopBar = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 40px;
+  background: ${({ theme }) => theme.bgPrimary};
+  transition: background-color 0.3s ease;
+
+  @media (max-width: 768px) {
+    padding: 8px 20px;
+  }
+`;
+
 export const ContentWrapper = styled.div`
   max-width: 1400px;
   margin: 0 auto;

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiCheck, FiX, FiAlertCircle, FiInfo, FiCopy } from "react-icons/fi";
+import { FiCheck, FiX, FiAlertCircle, FiInfo, FiBell, FiCopy } from "react-icons/fi";
 import {
   ToastWrapper,
   IconWrapper,
@@ -18,6 +18,8 @@ const getIcon = (type) => {
       return <FiX size={18} />;
     case "warning":
       return <FiAlertCircle size={18} />;
+    case "notification":
+      return <FiBell size={18} />;
     default:
       return <FiInfo size={18} />;
   }

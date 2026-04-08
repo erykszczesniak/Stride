@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -32,6 +33,7 @@ const App = () => {
       <ToastProvider>
         <Router>
           <AuthProvider>
+            <NotificationProvider>
             <Routes>
           {/* Public routes */}
           <Route
@@ -213,6 +215,7 @@ const App = () => {
             }
           />
             </Routes>
+            </NotificationProvider>
           </AuthProvider>
         </Router>
       </ToastProvider>

@@ -4,6 +4,7 @@ import com.strava.backend.domain.User;
 import com.strava.backend.dto.user.UpdateUserRequest;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.service.NotificationService;
 import com.strava.backend.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private UserServiceImpl userService;

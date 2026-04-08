@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { FiActivity, FiClock, FiZap, FiTarget, FiPlus, FiUser, FiSettings, FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
+import NotificationDropdown from "../components/Navbar/NotificationDropdown";
 import StatsCard from "../components/StatsCard/StatsCard";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
 import WeeklyChart from "../components/WeeklyChart/WeeklyChart";
@@ -187,6 +188,8 @@ const Dashboard = () => {
             <p>Here's your training summary</p>
           </WelcomeText>
         </WelcomeSection>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <NotificationDropdown />
         <UserMenuWrapper ref={dropdownRef}>
           <UserAvatar onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
             {user?.firstName?.[0] || 'A'}
@@ -211,6 +214,7 @@ const Dashboard = () => {
             </UserDropdownButton>
           </UserDropdown>
         </UserMenuWrapper>
+        </div>
       </DashboardHeader>
 
       <StatsGrid>

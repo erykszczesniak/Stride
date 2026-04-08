@@ -70,6 +70,15 @@ public class UserServiceImpl implements UserService {
         user.setCountry(request.getCountry());
         user.setWeight(request.getWeight());
         user.setHeight(request.getHeight());
+        if (request.getEmailNotifications() != null) {
+            user.setEmailNotifications(request.getEmailNotifications());
+        }
+        if (request.getPushNotifications() != null) {
+            user.setPushNotifications(request.getPushNotifications());
+        }
+        if (request.getWeeklySummary() != null) {
+            user.setWeeklySummary(request.getWeeklySummary());
+        }
         return userRepository.save(user);
     }
 

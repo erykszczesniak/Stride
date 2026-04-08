@@ -112,6 +112,7 @@ public final class PathConstants {
     public static final String READ = "/read";
     public static final String READ_ALL = "/read-all";
     public static final String UNREAD_COUNT = "/unread-count";
+    public static final String STREAM = "/stream";
 
     // Export
     public static final String EXPORT = "/export";

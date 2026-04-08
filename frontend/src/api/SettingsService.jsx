@@ -28,9 +28,17 @@ class SettingsService {
     return defaults;
   }
 
-  savePreferences(preferences) {
+  async savePreferences(preferences) {
+    // Save notification preferences to backend
+    await apiClient.put(`/users/me`, {
+      emailNotifications: preferences.emailNotifications,
+      pushNotifications: preferences.pushNotifications,
+      weeklySummary: preferences.weeklySummary,
+    });
+
+    // Save local-only preferences to localStorage
     localStorage.setItem("userPreferences", JSON.stringify(preferences));
-    return Promise.resolve({ success: true });
+    return { success: true };
   }
 }
 

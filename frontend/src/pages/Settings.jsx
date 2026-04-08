@@ -103,6 +103,13 @@ const Settings = () => {
         weight: response.data.weight || "",
         height: response.data.height || "",
       });
+      // Load notification preferences from backend user data
+      setPreferences((prev) => ({
+        ...prev,
+        emailNotifications: response.data.emailNotifications !== undefined ? response.data.emailNotifications : prev.emailNotifications,
+        pushNotifications: response.data.pushNotifications !== undefined ? response.data.pushNotifications : prev.pushNotifications,
+        weeklySummary: response.data.weeklySummary !== undefined ? response.data.weeklySummary : prev.weeklySummary,
+      }));
     } catch (error) {
     } finally {
       setLoading(false);
@@ -126,7 +133,7 @@ const Settings = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Save profile data to backend
+      // Save profile data and notification preferences to backend
       await SettingsService.updateProfile({
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -135,9 +142,12 @@ const Settings = () => {
         country: formData.country || null,
         weight: formData.weight ? parseFloat(formData.weight) : null,
         height: formData.height ? parseFloat(formData.height) : null,
+        emailNotifications: preferences.emailNotifications,
+        pushNotifications: preferences.pushNotifications,
+        weeklySummary: preferences.weeklySummary,
       });
 
-      // Save preferences to localStorage
+      // Save all preferences (localStorage + backend notification prefs)
       await SettingsService.savePreferences(preferences);
 
       // Apply dark mode change if it differs from current theme

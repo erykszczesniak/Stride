@@ -75,6 +75,11 @@ export const ToastProvider = ({ children }) => {
     [addToast]
   );
 
+  const notification = useCallback(
+    (message, title) => addToast({ type: "notification", message, title }),
+    [addToast]
+  );
+
   const value = {
     addToast,
     removeToast,
@@ -82,6 +87,7 @@ export const ToastProvider = ({ children }) => {
     error,
     warning,
     info,
+    notification,
   };
 
   return (

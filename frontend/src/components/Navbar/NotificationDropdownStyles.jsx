@@ -10,23 +10,23 @@ export const NotificationWrapper = styled.div`
 `;
 
 export const BellButton = styled.button`
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.border};
+  color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
-  padding: 8px;
+  padding: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  min-width: 40px;
-  min-height: 40px;
+  width: 46px;
+  height: 46px;
   position: relative;
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
 
   &:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: ${({ theme }) => theme.bgHover};
   }
 `;
 

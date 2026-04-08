@@ -20,4 +20,7 @@ public class UserResponse extends BaseUserResponse {
     private int followersCount;
     private int followingCount;
     private int activitiesCount;
+    private boolean emailNotifications;
+    private boolean pushNotifications;
+    private boolean weeklySummary;
 }

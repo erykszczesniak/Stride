@@ -9,6 +9,7 @@ import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.CommentReactionRepository;
 import com.strava.backend.repository.CommentRepository;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.service.NotificationService;
 import com.strava.backend.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +48,9 @@ class CommentServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private CommentServiceImpl commentService;

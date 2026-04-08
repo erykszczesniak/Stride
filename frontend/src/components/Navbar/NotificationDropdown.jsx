@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiBell } from "react-icons/fi";
-import notificationService from "../../api/NotificationService";
+import { useNotifications } from "../../context/NotificationContext";
 import { getTimeAgo } from "../../utils/formatters";
 import {
   NotificationWrapper,
@@ -43,38 +43,9 @@ const TYPE_ICONS = {
 
 const NotificationDropdown = () => {
   const navigate = useNavigate();
+  const { unreadCount, notifications, fetchNotifications, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
-  const pollRef = useRef(null);
-
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const response = await notificationService.getUnreadCount();
-      setUnreadCount(response.data.count);
-    } catch (error) {
-      // Silently fail for polling
-    }
-  }, []);
-
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const response = await notificationService.getNotifications();
-      setNotifications(response.data);
-    } catch (error) {
-      // Silently fail
-    }
-  }, []);
-
-  // Poll for unread count every 30 seconds
-  useEffect(() => {
-    fetchUnreadCount();
-    pollRef.current = setInterval(fetchUnreadCount, 30000);
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [fetchUnreadCount]);
 
   // Fetch full notifications when dropdown opens
   useEffect(() => {
@@ -102,15 +73,7 @@ const NotificationDropdown = () => {
 
   const handleNotificationClick = async (notification) => {
     if (!notification.read) {
-      try {
-        await notificationService.markAsRead(notification.id);
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      } catch (error) {
-        // Silently fail
-      }
+      markAsRead(notification.id);
     }
 
     setIsOpen(false);
@@ -124,16 +87,6 @@ const NotificationDropdown = () => {
     }
   };
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      await notificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      // Silently fail
-    }
-  };
-
   const getInitials = (firstName, lastName) => {
     const first = (firstName || "")[0] || "";
     const last = (lastName || "")[0] || "";
@@ -143,7 +96,7 @@ const NotificationDropdown = () => {
   return (
     <NotificationWrapper ref={dropdownRef}>
       <BellButton title="Notifications" onClick={handleToggle}>
-        <FiBell size={20} />
+        <FiBell size={28} />
         {unreadCount > 0 && (
           <BadgeCount>{unreadCount > 99 ? "99+" : unreadCount}</BadgeCount>
         )}
@@ -154,7 +107,7 @@ const NotificationDropdown = () => {
           <DropdownHeader>
             <DropdownTitle>Notifications</DropdownTitle>
             {unreadCount > 0 && (
-              <MarkAllButton onClick={handleMarkAllAsRead}>
+              <MarkAllButton onClick={markAllAsRead}>
                 Mark all as read
               </MarkAllButton>
             )}

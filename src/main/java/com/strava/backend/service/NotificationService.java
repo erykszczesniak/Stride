@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final EmailNotificationService emailNotificationService;
+    private final SseEmitterService sseEmitterService;
 
     @Transactional(readOnly = true)
     public List<NotificationDTO> getNotifications(Long userId) {
@@ -71,7 +73,26 @@ public class NotificationService {
                 .isRead(false)
                 .build();
 
-        return notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Send email notification (async, won't block)
+        try {
+            emailNotificationService.sendNotificationEmail(saved);
+        } catch (Exception e) {
+            log.warn("Failed to queue email notification: {}", e.getMessage());
+        }
+
+        // Push via SSE if user is connected
+        try {
+            if (recipient.isPushNotifications()) {
+                NotificationDTO dto = toDTO(saved);
+                sseEmitterService.sendNotification(recipient.getId(), dto);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send SSE notification: {}", e.getMessage());
+        }
+
+        return saved;
     }
 
     private NotificationDTO toDTO(Notification notification) {

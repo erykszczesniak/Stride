@@ -38,6 +38,8 @@ export const ToastWrapper = styled.div`
         return "#ef4444";
       case "warning":
         return "#f59e0b";
+      case "notification":
+        return "#fc4c02";
       default:
         return "#3b82f6";
     }
@@ -63,6 +65,8 @@ export const IconWrapper = styled.div`
         return "rgba(239, 68, 68, 0.1)";
       case "warning":
         return "rgba(245, 158, 11, 0.1)";
+      case "notification":
+        return "rgba(252, 76, 2, 0.1)";
       default:
         return "rgba(59, 130, 246, 0.1)";
     }
@@ -75,6 +79,8 @@ export const IconWrapper = styled.div`
         return "#ef4444";
       case "warning":
         return "#f59e0b";
+      case "notification":
+        return "#fc4c02";
       default:
         return "#3b82f6";
     }

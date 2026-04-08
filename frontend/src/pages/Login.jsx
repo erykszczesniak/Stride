@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiMail, FiLock, FiActivity, FiEye, FiEyeOff } from "react-icons/fi";
+import { FiMail, FiLock, FiActivity, FiEye, FiEyeOff, FiSun, FiMoon } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import {
   Container,
   LeftPanel,
@@ -34,6 +35,7 @@ import {
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -59,6 +61,26 @@ const Login = () => {
 
   return (
     <Container>
+      <button
+        onClick={toggleTheme}
+        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        style={{
+          position: "fixed",
+          top: 20,
+          right: 20,
+          zIndex: 100,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: isDarkMode ? "#ededef" : "#1a1a2e",
+          opacity: 0.6,
+          transition: "opacity 0.2s",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
+      >
+        {isDarkMode ? <FiSun size={22} /> : <FiMoon size={22} />}
+      </button>
       <LeftPanel>
         <BrandLogo>
           <LogoIcon>
