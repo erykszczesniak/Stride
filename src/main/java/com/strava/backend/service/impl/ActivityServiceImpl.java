@@ -143,16 +143,18 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setElevationGain(request.getElevationGain());
         activity.setCalories(request.getCalories());
         activity.setAverageSpeed(request.getAverageSpeed());
-        activity.setMaxSpeed(request.getMaxSpeed());
-        activity.setAverageHeartRate(request.getAverageHeartRate());
-        activity.setMaxHeartRate(request.getMaxHeartRate());
-        activity.setAverageCadence(request.getAverageCadence());
-        activity.setAveragePower(request.getAveragePower());
-        activity.setStartTime(request.getStartTime());
-        activity.setStartLocation(request.getStartLocation());
-        activity.setEndLocation(request.getEndLocation());
-        activity.setRoutePolyline(request.getRoutePolyline());
         activity.setPrivate(request.isPrivate());
+
+        // Only update optional fields if provided (preserve existing GPS/route data)
+        if (request.getMaxSpeed() != null) activity.setMaxSpeed(request.getMaxSpeed());
+        if (request.getAverageHeartRate() != null) activity.setAverageHeartRate(request.getAverageHeartRate());
+        if (request.getMaxHeartRate() != null) activity.setMaxHeartRate(request.getMaxHeartRate());
+        if (request.getAverageCadence() != null) activity.setAverageCadence(request.getAverageCadence());
+        if (request.getAveragePower() != null) activity.setAveragePower(request.getAveragePower());
+        if (request.getStartTime() != null) activity.setStartTime(request.getStartTime());
+        if (request.getStartLocation() != null) activity.setStartLocation(request.getStartLocation());
+        if (request.getEndLocation() != null) activity.setEndLocation(request.getEndLocation());
+        if (request.getRoutePolyline() != null) activity.setRoutePolyline(request.getRoutePolyline());
 
         return activityRepository.save(activity);
     }

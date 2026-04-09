@@ -50,7 +50,11 @@ export const UserInfo = styled.div``;
 export const UserName = styled.p`
   font-weight: 600;
   color: ${({ theme }) => theme.textPrimary};
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #fc4c02;
+  }
 `;
 
 export const ActivityTime = styled.p`

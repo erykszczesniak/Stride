@@ -290,9 +290,17 @@ const ActivityDetails = () => {
 
       <ActivityHeader>
         <UserSection>
-          <Avatar>{activity.user?.firstName?.charAt(0) || "U"}</Avatar>
+          <Avatar
+            onClick={() => activity.user?.id && navigate(`/profile/${activity.user.id}`)}
+            style={{ cursor: "pointer" }}
+          >
+            {activity.user?.firstName?.charAt(0) || "U"}
+          </Avatar>
           <UserInfo>
-            <UserName>
+            <UserName
+              onClick={() => activity.user?.id && navigate(`/profile/${activity.user.id}`)}
+              style={{ cursor: "pointer" }}
+            >
               {activity.user?.firstName} {activity.user?.lastName}
             </UserName>
             <ActivityTime>

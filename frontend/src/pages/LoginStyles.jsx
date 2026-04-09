@@ -223,7 +223,7 @@ export const Divider = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  margin: 24px 0;
+  margin: 12px 0;
 
   &::before,
   &::after {
@@ -242,6 +242,7 @@ export const Divider = styled.div`
 export const RegisterLink = styled.p`
   text-align: center;
   font-size: 14px;
+  margin-top: 20px;
   color: ${({ theme }) => theme.textSecondary};
 
   a {

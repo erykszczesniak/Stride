@@ -83,7 +83,7 @@ const ActivityCard = ({ activity, onLike }) => {
     <>
       <Card to={`/activities/${activity.id}`}>
         <CardHeader>
-          <UserAvatar>
+          <UserAvatar onClick={handleUserClick} style={{ cursor: "pointer" }}>
             {activity.user?.avatarUrl ? (
               <img src={activity.user.avatarUrl} alt={activity.user.firstName} />
             ) : (

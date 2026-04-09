@@ -40,6 +40,7 @@ const RecordActivity = () => {
   const [saving, setSaving] = useState(false);
   const [originalStartTime, setOriginalStartTime] = useState(null);
   const [photos, setPhotos] = useState([]);
+  const [existingPhotos, setExistingPhotos] = useState([]);
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -79,6 +80,9 @@ const RecordActivity = () => {
           avgHeartRate: a.averageHeartRate ? String(a.averageHeartRate) : '',
           avgPace: ''
         });
+        if (a.photos && a.photos.length > 0) {
+          setExistingPhotos(a.photos);
+        }
       } catch (err) {
         setError('Failed to load activity');
       }
@@ -181,6 +185,13 @@ const RecordActivity = () => {
 
       if (isEditMode) {
         await ActivityService.updateActivity(id, activityData);
+        if (photos.length > 0) {
+          try {
+            await ActivityService.uploadPhotos(id, photos.map(p => p.file));
+          } catch (photoErr) {
+            console.error('Photo upload failed:', photoErr);
+          }
+        }
       } else {
         const res = await ActivityService.createActivity(activityData);
         if (photos.length > 0 && res.data?.id) {
@@ -323,43 +334,63 @@ const RecordActivity = () => {
         </StatsGrid>
       </Section>
 
-      {!isEditMode && (
-        <Section>
-          <SectionTitle>Photos</SectionTitle>
-          <PhotoUploadArea>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              onChange={handlePhotoSelect}
-              style={{ display: 'none' }}
-            />
-            {photos.length > 0 && (
-              <PhotoPreviewGrid>
-                {photos.map((photo, index) => (
-                  <PhotoPreviewItem key={index}>
-                    <PhotoPreviewImage src={photo.preview} alt={`Photo ${index + 1}`} />
-                    <PhotoRemoveButton onClick={() => handleRemovePhoto(index)}>
-                      <FiX size={14} />
-                    </PhotoRemoveButton>
-                  </PhotoPreviewItem>
-                ))}
-              </PhotoPreviewGrid>
-            )}
-            {photos.length < 5 && (
-              <PhotoUploadButton
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <FiCamera size={20} />
-                Add Photos
-              </PhotoUploadButton>
-            )}
-            <PhotoCount>{photos.length}/5 photos</PhotoCount>
-          </PhotoUploadArea>
-        </Section>
-      )}
+      <Section>
+        <SectionTitle>Photos</SectionTitle>
+        <PhotoUploadArea>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={handlePhotoSelect}
+            style={{ display: 'none' }}
+          />
+          {existingPhotos.length > 0 && (
+            <PhotoPreviewGrid>
+              {existingPhotos.map((photoUrl, index) => (
+                <PhotoPreviewItem key={`existing-${index}`}>
+                  <PhotoPreviewImage
+                    src={photoUrl.startsWith('http') ? photoUrl : `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}${photoUrl}`}
+                    alt={`Photo ${index + 1}`}
+                  />
+                  <PhotoRemoveButton onClick={async () => {
+                    try {
+                      await ActivityService.deletePhoto(id, index);
+                      setExistingPhotos(prev => prev.filter((_, i) => i !== index));
+                    } catch (err) {
+                      console.error('Failed to delete photo:', err);
+                    }
+                  }}>
+                    <FiX size={14} />
+                  </PhotoRemoveButton>
+                </PhotoPreviewItem>
+              ))}
+            </PhotoPreviewGrid>
+          )}
+          {photos.length > 0 && (
+            <PhotoPreviewGrid>
+              {photos.map((photo, index) => (
+                <PhotoPreviewItem key={`new-${index}`}>
+                  <PhotoPreviewImage src={photo.preview} alt={`New photo ${index + 1}`} />
+                  <PhotoRemoveButton onClick={() => handleRemovePhoto(index)}>
+                    <FiX size={14} />
+                  </PhotoRemoveButton>
+                </PhotoPreviewItem>
+              ))}
+            </PhotoPreviewGrid>
+          )}
+          {(existingPhotos.length + photos.length) < 5 && (
+            <PhotoUploadButton
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FiCamera size={20} />
+              Add Photos
+            </PhotoUploadButton>
+          )}
+          <PhotoCount>{existingPhotos.length + photos.length}/5 photos</PhotoCount>
+        </PhotoUploadArea>
+      </Section>
 
       {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 
