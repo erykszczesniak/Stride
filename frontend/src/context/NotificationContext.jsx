@@ -115,8 +115,6 @@ export const NotificationProvider = ({ children }) => {
   const [showPrompt, setShowPrompt] = useState(false);
   const pollRef = useRef(null);
   const sseRef = useRef(null);
-  const sseReconnectRef = useRef(null);
-  const connectedRef = useRef(false);
 
   // Show notification permission prompt once per user
   useEffect(() => {
@@ -128,28 +126,24 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [isAuthenticated, user]);
 
-  const handlePromptAllow = useCallback(async () => {
+  const handlePromptAllow = useCallback(() => {
     setShowPrompt(false);
     const key = `notif_prompt_dismissed_${user?.id || user?.email}`;
     localStorage.setItem(key, "allowed");
-    try {
-      await settingsService.savePreferences({
-        ...settingsService.getPreferences(),
-        pushNotifications: true,
-      });
-    } catch {}
+    settingsService.savePreferences({
+      ...settingsService.getPreferences(),
+      pushNotifications: true,
+    });
   }, [user]);
 
-  const handlePromptDismiss = useCallback(async () => {
+  const handlePromptDismiss = useCallback(() => {
     setShowPrompt(false);
     const key = `notif_prompt_dismissed_${user?.id || user?.email}`;
     localStorage.setItem(key, "dismissed");
-    try {
-      await settingsService.savePreferences({
-        ...settingsService.getPreferences(),
-        pushNotifications: false,
-      });
-    } catch {}
+    settingsService.savePreferences({
+      ...settingsService.getPreferences(),
+      pushNotifications: false,
+    });
   }, [user]);
 
   const fetchUnreadCount = useCallback(async () => {
@@ -170,95 +164,44 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
-  const showNotificationToast = useCallback((notification) => {
-    toast.notification(notification.message, "New Notification");
-  }, [toast]);
+  // Use ref for toast so SSE effect doesn't re-run when toast changes
+  const toastRef = useRef(toast);
+  useEffect(() => { toastRef.current = toast; }, [toast]);
 
-  // SSE connection — single instance
+  // SSE connection using native EventSource
   useEffect(() => {
     if (!isAuthenticated) return;
-    if (connectedRef.current) return;
-    connectedRef.current = true;
 
-    const connectSSE = () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-      const abortController = new AbortController();
+    const url = `${BASE_API_URL}/notifications/stream?token=${encodeURIComponent(token)}`;
+    const eventSource = new EventSource(url);
 
-      fetch(`${BASE_API_URL}/notifications/stream`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "text/event-stream",
-        },
-        signal: abortController.signal,
-      })
-        .then((response) => {
-          if (!response.ok || !response.body) return;
+    eventSource.addEventListener("notification", (event) => {
+      try {
+        const notification = JSON.parse(event.data);
+        setUnreadCount((prev) => prev + 1);
+        setNotifications((prev) => [notification, ...prev]);
+        const prefs = settingsService.getPreferences();
+        if (prefs.pushNotifications !== false) {
+          toastRef.current.notification(notification.message, "New Notification");
+        }
+      } catch (e) {
+        // Invalid JSON
+      }
+    });
 
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = "";
-          let eventName = "";
-          let eventData = "";
-
-          const readStream = () => {
-            reader
-              .read()
-              .then(({ done, value }) => {
-                if (done) {
-                  sseReconnectRef.current = setTimeout(connectSSE, 5000);
-                  return;
-                }
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split("\n");
-                buffer = lines.pop() || "";
-
-                for (const line of lines) {
-                  if (line.startsWith("event:")) {
-                    eventName = line.substring(6).trim();
-                  } else if (line.startsWith("data:")) {
-                    eventData = line.substring(5).trim();
-                  } else if (line.trim() === "" && eventData) {
-                    if (eventName === "notification" && eventData) {
-                      try {
-                        const notification = JSON.parse(eventData);
-                        setUnreadCount((prev) => prev + 1);
-                        setNotifications((prev) => [notification, ...prev]);
-                        showNotificationToast(notification);
-                      } catch (e) {
-                        // Invalid JSON
-                      }
-                    }
-                    eventName = "";
-                    eventData = "";
-                  }
-                }
-
-                readStream();
-              })
-              .catch(() => {
-                sseReconnectRef.current = setTimeout(connectSSE, 5000);
-              });
-          };
-
-          readStream();
-          sseRef.current = abortController;
-        })
-        .catch(() => {
-          sseReconnectRef.current = setTimeout(connectSSE, 5000);
-        });
+    eventSource.onerror = () => {
+      // EventSource auto-reconnects, no manual handling needed
     };
 
-    connectSSE();
+    sseRef.current = eventSource;
 
     return () => {
-      connectedRef.current = false;
-      if (sseRef.current) sseRef.current.abort();
-      if (sseReconnectRef.current) clearTimeout(sseReconnectRef.current);
+      eventSource.close();
     };
-  }, [isAuthenticated, showNotificationToast]);
+  }, [isAuthenticated]);
 
   // Polling as fallback
   useEffect(() => {

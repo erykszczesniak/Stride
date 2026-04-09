@@ -28,15 +28,9 @@ class SettingsService {
     return defaults;
   }
 
-  async savePreferences(preferences) {
-    // Save notification preferences to backend
-    await apiClient.put(`/users/me`, {
-      emailNotifications: preferences.emailNotifications,
-      pushNotifications: preferences.pushNotifications,
-      weeklySummary: preferences.weeklySummary,
-    });
-
+  savePreferences(preferences) {
     // Save local-only preferences to localStorage
+    // (notification prefs are saved via updateProfile to avoid duplicate PUT)
     localStorage.setItem("userPreferences", JSON.stringify(preferences));
     return { success: true };
   }

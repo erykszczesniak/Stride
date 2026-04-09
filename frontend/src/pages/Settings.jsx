@@ -348,8 +348,8 @@ const Settings = () => {
 
                   <ToggleItem>
                     <ToggleInfo>
-                      <ToggleTitle>Push Notifications</ToggleTitle>
-                      <ToggleDescription>Receive push notifications</ToggleDescription>
+                      <ToggleTitle>Toast Notifications</ToggleTitle>
+                      <ToggleDescription>Show real-time popup notifications</ToggleDescription>
                     </ToggleInfo>
                     <Toggle>
                       <input

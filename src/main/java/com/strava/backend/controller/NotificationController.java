@@ -3,10 +3,12 @@ package com.strava.backend.controller;
 import com.strava.backend.dto.NotificationDTO;
 import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.NotificationService;
+import com.strava.backend.service.WeeklySummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import static com.strava.backend.constants.PathConstants.*;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final WeeklySummaryService weeklySummaryService;
 
     private Long getAuthenticatedUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -53,5 +56,12 @@ public class NotificationController {
         Long currentUserId = getAuthenticatedUserId();
         notificationService.markAllAsRead(currentUserId);
         return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
+    }
+
+    @PostMapping("/weekly-summary/trigger")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> triggerWeeklySummary() {
+        weeklySummaryService.sendWeeklySummaries();
+        return ResponseEntity.ok(Map.of("message", "Weekly summary triggered"));
     }
 }

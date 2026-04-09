@@ -2,6 +2,7 @@ package com.strava.backend.service;
 
 import com.strava.backend.dto.NotificationDTO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -69,6 +70,19 @@ public class SseEmitterService {
             log.debug("Failed to send SSE notification to user {}, removing emitter", userId);
             emitters.remove(userId);
         }
+    }
+
+    // Heartbeat every 25 seconds to keep connections alive through proxies
+    @Scheduled(fixedRate = 25000)
+    public void sendHeartbeats() {
+        emitters.forEach((userId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event().comment("heartbeat"));
+            } catch (IOException e) {
+                log.debug("Heartbeat failed for user {}, removing emitter", userId);
+                emitters.remove(userId);
+            }
+        });
     }
 
     public void removeEmitter(Long userId) {

@@ -31,10 +31,16 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - Track weekly and monthly progress
 - Visual progress charts and statistics
 
+### Notifications
+- Real-time toast notifications via SSE (Server-Sent Events)
+- Email notifications (likes, comments, follows, achievements)
+- Weekly training summary emails
+- Configurable per-user: toast notifications, email notifications, weekly summary
+- Duplicate notification prevention (e.g. re-liking same activity)
+
 ### User Experience
 - Dark/Light theme toggle
 - Responsive design
-- Real-time notifications
 - User profile customization
 
 ## Screenshots
@@ -136,9 +142,13 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 ![Settings Profile](docs/screenshots/settings-profile.png)
 *Edit profile information - name, bio, location, weight, height*
 
+#### Settings - Notifications
+![Settings Notifications](docs/screenshots/settings-notifications.png)
+*Notification settings - email, toast notifications, weekly summary*
+
 #### Settings - Preferences
 ![Settings Preferences](docs/screenshots/settings-preferences.png)
-*App preferences - notifications, units, language, theme*
+*App preferences - units, activity type, pace display, language, theme*
 
 ---
 
@@ -243,9 +253,10 @@ That's it! The application will be available at:
 
 | Email | Password | Role |
 |-------|----------|------|
+| pan@example.com | password123 | USER |
 | john@example.com | password123 | USER |
 | jane@example.com | password123 | USER |
-| admin@example.com | admin123 | ADMIN |
+| admin@example.com | password123 | ADMIN |
 
 #### Useful Commands
 
@@ -299,6 +310,42 @@ npm start
 ```
 
 The app will be available at `http://localhost:3000`
+
+#### Email Notifications (Optional)
+
+To enable email notifications locally, create `src/main/resources/application-local.yml`:
+
+```yaml
+spring:
+  mail:
+    username: your.email@gmail.com
+    password: xxxx-xxxx-xxxx-xxxx   # Gmail App Password
+```
+
+Then run the backend with the `local` profile:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+**Gmail setup:**
+1. Enable 2FA on your Google account
+2. Go to https://myaccount.google.com/apppasswords
+3. Generate an App Password for "Mail"
+4. Paste it in `application-local.yml`
+
+> **Note:** `application-local.yml` is in `.gitignore` and will not be committed.
+
+#### Testing Weekly Summary Email
+
+The weekly summary runs automatically every Monday at 9:00 AM. To trigger it manually for testing, log in as admin and run:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/notifications/weekly-summary/trigger \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+Get the admin token by logging in as `admin@example.com` / `password123` and copying `localStorage.token` from DevTools.
 
 ---
 
@@ -490,6 +537,11 @@ Once the backend is running, API documentation is available at:
 | `GET /api/v1/clubs` | Get clubs |
 | `GET /api/v1/events` | Get events |
 | `GET /api/v1/users/profile` | Get user profile |
+| `GET /api/v1/notifications` | Get user notifications |
+| `GET /api/v1/notifications/unread-count` | Get unread count |
+| `PUT /api/v1/notifications/{id}/read` | Mark as read |
+| `PUT /api/v1/notifications/read-all` | Mark all as read |
+| `GET /api/v1/notifications/stream` | SSE stream (real-time) |
 
 ## Project Structure
 
@@ -515,6 +567,7 @@ strava/
 │   ├── domain/            # Entity models
 │   ├── dto/               # Data transfer objects
 │   ├── graphql/           # GraphQL resolvers
+│   ├── event/             # Spring events (async notifications)
 │   ├── repository/        # JPA repositories
 │   ├── security/          # JWT & auth
 │   └── service/           # Business logic

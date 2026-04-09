@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+        .wrapper { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #fc4c02 0%, #ff6b35 100%); padding: 28px 32px; border-radius: 16px 16px 0 0; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; }
+        .header p { color: #fed7aa; margin: 8px 0 0; font-size: 14px; }
+        .body { background: #ffffff; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .greeting { color: #1e293b; font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+        .subtitle { color: #64748b; font-size: 14px; margin: 0 0 24px; }
+        .stats-grid { width: 100%; margin-bottom: 24px; }
+        .stat-card { padding: 12px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: 700; }
+        .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        .spacer { width: 8px; }
+        .motivation { color: #64748b; font-size: 14px; margin: 0; text-align: center; }
+        .footer { background: #f8fafc; padding: 20px 32px; border-radius: 0 0 16px 16px; border-top: 1px solid #e2e8f0; }
+        .footer p { color: #94a3b8; font-size: 12px; margin: 0; text-align: center; }
+        .footer a { color: #fc4c02; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <h1 th:text="${appName}">Stride</h1>
+        <p>Weekly Training Summary</p>
+    </div>
+    <div class="body">
+        <p class="greeting">Hi <span th:text="${firstName}">User</span>! &#128075;</p>
+        <p class="subtitle">Here's your training summary for <strong th:text="${weekLabel}">Apr 1 - Apr 7, 2026</strong></p>
+
+        <table class="stats-grid" cellpadding="0" cellspacing="0">
+            <tr>
+                <td width="50%" class="stat-card" style="background:#fff7ed;">
+                    <div class="stat-value" style="color:#ea580c;" th:text="${distance + ' km'}">0 km</div>
+                    <div class="stat-label" style="color:#9a3412;">Distance</div>
+                </td>
+                <td class="spacer"></td>
+                <td width="50%" class="stat-card" style="background:#eff6ff;">
+                    <div class="stat-value" style="color:#2563eb;" th:text="${hours + 'h ' + minutes + 'm'}">0h 0m</div>
+                    <div class="stat-label" style="color:#1e40af;">Time</div>
+                </td>
+            </tr>
+            <tr><td colspan="3" height="8"></td></tr>
+            <tr>
+                <td width="50%" class="stat-card" style="background:#f0fdf4;">
+                    <div class="stat-value" style="color:#16a34a;" th:text="${activities}">0</div>
+                    <div class="stat-label" style="color:#166534;">Activities</div>
+                </td>
+                <td class="spacer"></td>
+                <td width="50%" class="stat-card" style="background:#fef2f2;">
+                    <div class="stat-value" style="color:#dc2626;" th:text="${calories + ' kcal'}">0 kcal</div>
+                    <div class="stat-label" style="color:#991b1b;">Calories</div>
+                </td>
+            </tr>
+            <tr><td colspan="3" height="8"></td></tr>
+            <tr>
+                <td colspan="3" class="stat-card" style="background:#faf5ff;">
+                    <div class="stat-value" style="color:#7c3aed;" th:text="${elevation + ' m'}">0 m</div>
+                    <div class="stat-label" style="color:#5b21b6;">Elevation Gain</div>
+                </td>
+            </tr>
+        </table>
+
+        <p class="motivation" th:text="${motivationMessage}">Keep up the great work!</p>
+    </div>
+    <div class="footer">
+        <p>You're receiving this because you have weekly summaries enabled.
+            Manage your preferences in <a th:href="${settingsUrl}">Settings</a>.</p>
+    </div>
+</div>
+</body>
+</html>

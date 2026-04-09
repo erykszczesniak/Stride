@@ -39,6 +39,8 @@ strava_session_backup.jsonl
 ### Environment files ###
 .env
 *.env.local
+application-local.yml
+src/main/resources/application-local.yml
 
 ### Claude ###
 .claude/
