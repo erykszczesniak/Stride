@@ -6,14 +6,11 @@ import com.strava.backend.dto.activity.ActivityResponse;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
-import com.strava.backend.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -27,19 +24,12 @@ import static com.strava.backend.constants.PathConstants.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_EXPORT)
-public class ExportController {
+public class ExportController extends BaseController {
 
     private final ActivityRepository activityRepository;
     private final CommonMapper commonMapper;
     private final ObjectMapper objectMapper;
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @GetMapping(ACTIVITIES + JSON)
     public ResponseEntity<byte[]> exportActivitiesAsJson() throws Exception {

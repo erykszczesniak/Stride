@@ -367,12 +367,12 @@ class ActivityServiceImplTest {
         void shouldReturnPublicActivities() {
             Pageable pageable = PageRequest.of(0, 10);
             Page<Activity> page = new PageImpl<>(List.of(testActivity));
-            when(activityRepository.findAll(pageable)).thenReturn(page);
+            when(activityRepository.findByIsPrivateFalse(pageable)).thenReturn(page);
 
             Page<Activity> result = activityService.getPublicActivities(pageable);
 
             assertThat(result.getContent()).hasSize(1);
-            verify(activityRepository).findAll(pageable);
+            verify(activityRepository).findByIsPrivateFalse(pageable);
         }
     }
 

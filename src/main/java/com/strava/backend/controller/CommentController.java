@@ -4,14 +4,11 @@ import com.strava.backend.dto.activity.CommentRequest;
 import com.strava.backend.dto.activity.CommentResponse;
 import com.strava.backend.dto.activity.ReactionRequest;
 import com.strava.backend.mapper.CommonMapper;
-import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,18 +19,11 @@ import static com.strava.backend.constants.PathConstants.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_ACTIVITIES)
-public class CommentController {
+public class CommentController extends BaseController {
 
     private final CommentService commentService;
     private final CommonMapper commonMapper;
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @GetMapping(ACTIVITY_ID + COMMENTS)
     public ResponseEntity<List<CommentResponse>> getActivityComments(

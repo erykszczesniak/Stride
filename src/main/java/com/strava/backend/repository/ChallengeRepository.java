@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.strava.backend.domain.User;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -40,4 +42,7 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
            "UPPER(c.name) LIKE UPPER(CONCAT('%', :searchText, '%')) " +
            "ORDER BY c.startDate DESC")
     Page<Challenge> searchChallenges(@Param("searchText") String searchText, Pageable pageable);
+
+    @Query("SELECT p FROM Challenge c JOIN c.participants p WHERE c.id = :challengeId")
+    Page<User> findParticipantsByChallengeId(@Param("challengeId") Long challengeId, Pageable pageable);
 }

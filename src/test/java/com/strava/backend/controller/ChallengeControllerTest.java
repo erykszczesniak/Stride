@@ -37,6 +37,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
@@ -318,9 +319,10 @@ class ChallengeControllerTest {
         @Test
         @DisplayName("Should return challenge leaderboard")
         void shouldReturnChallengeLeaderboard() throws Exception {
-            testChallenge.setParticipants(new HashSet<>(List.of(testUser)));
-            given(challengeService.getChallengeById(1L)).willReturn(testChallenge);
-            given(challengeService.getUserProgressInChallenge(1L, 1L)).willReturn(75.0);
+            List<Map<String, Object>> leaderboard = List.of(
+                    Map.of("userId", 1L, "userName", "Test User", "avatar", "", "progress", 75.0, "percentage", 75.0)
+            );
+            given(challengeService.getLeaderboard(eq(1L), any(Pageable.class))).willReturn(leaderboard);
 
             mockMvc.perform(get("/api/v1/challenges/1/leaderboard"))
                     .andExpect(status().isOk())

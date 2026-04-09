@@ -17,6 +17,8 @@ import java.util.Optional;
 @Repository
 public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
+    Page<Activity> findByIsPrivateFalse(Pageable pageable);
+
     @Query("SELECT a FROM Activity a WHERE a.user.id = :userId ORDER BY a.createdAt DESC")
     Page<ActivityProjection> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 

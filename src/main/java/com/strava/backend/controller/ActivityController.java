@@ -3,7 +3,6 @@ package com.strava.backend.controller;
 import com.strava.backend.dto.activity.*;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.mapper.ActivityMapper;
-import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ActivityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,18 +21,11 @@ import static com.strava.backend.constants.PathConstants.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_ACTIVITIES)
-public class ActivityController {
+public class ActivityController extends BaseController {
 
     private final ActivityMapper activityMapper;
     private final ActivityService activityService;
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @GetMapping(ACTIVITY_ID)
     public ResponseEntity<FullActivityResponse> getActivityById(@PathVariable Long activityId) {

@@ -76,7 +76,7 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional(readOnly = true)
     public Page<Activity> getPublicActivities(Pageable pageable) {
-        return activityRepository.findAll(pageable);
+        return activityRepository.findByIsPrivateFalse(pageable);
     }
 
     @Override

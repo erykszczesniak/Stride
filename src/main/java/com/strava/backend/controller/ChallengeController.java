@@ -3,7 +3,6 @@ package com.strava.backend.controller;
 import com.strava.backend.domain.Challenge;
 import com.strava.backend.dto.challenge.ChallengeRequest;
 import com.strava.backend.dto.challenge.ChallengeResponse;
-import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ChallengeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,17 +22,10 @@ import static com.strava.backend.constants.PathConstants.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_CHALLENGES)
-public class ChallengeController {
+public class ChallengeController extends BaseController {
 
     private final ChallengeService challengeService;
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @GetMapping
     public ResponseEntity<List<ChallengeResponse>> getActiveChallenges(
@@ -118,24 +108,9 @@ public class ChallengeController {
 
     @GetMapping(CHALLENGE_ID + LEADERBOARD)
     public ResponseEntity<List<Map<String, Object>>> getChallengeLeaderboard(
-            @PathVariable Long challengeId) {
-        Challenge challenge = challengeService.getChallengeById(challengeId);
-
-        List<Map<String, Object>> leaderboard = challenge.getParticipants().stream()
-                .map(user -> {
-                    Double progress = challengeService.getUserProgressInChallenge(challengeId, user.getId());
-                    return Map.<String, Object>of(
-                            "userId", user.getId(),
-                            "userName", user.getFirstName() + " " + user.getLastName(),
-                            "avatar", user.getAvatar() != null ? user.getAvatar() : "",
-                            "progress", progress,
-                            "percentage", Math.min((progress / challenge.getTargetValue()) * 100, 100)
-                    );
-                })
-                .sorted((a, b) -> Double.compare((Double) b.get("progress"), (Double) a.get("progress")))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(leaderboard);
+            @PathVariable Long challengeId,
+            @PageableDefault(size = 50) Pageable pageable) {
+        return ResponseEntity.ok(challengeService.getLeaderboard(challengeId, pageable));
     }
 
     @GetMapping(SEARCH)

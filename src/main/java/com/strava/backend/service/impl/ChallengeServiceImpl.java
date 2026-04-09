@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static com.strava.backend.constants.ErrorMessage.*;
 
@@ -184,5 +185,26 @@ public class ChallengeServiceImpl implements ChallengeService {
     @Transactional(readOnly = true)
     public Page<Challenge> searchChallenges(String searchText, Pageable pageable) {
         return challengeRepository.searchChallenges(searchText, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getLeaderboard(Long challengeId, Pageable pageable) {
+        Challenge challenge = getChallengeById(challengeId);
+        Page<User> participants = challengeRepository.findParticipantsByChallengeId(challengeId, pageable);
+
+        return participants.getContent().stream()
+                .map(user -> {
+                    Double progress = getUserProgressInChallenge(challengeId, user.getId());
+                    return Map.<String, Object>of(
+                            "userId", user.getId(),
+                            "userName", user.getFirstName() + " " + user.getLastName(),
+                            "avatar", user.getAvatar() != null ? user.getAvatar() : "",
+                            "progress", progress,
+                            "percentage", Math.min((progress / challenge.getTargetValue()) * 100, 100)
+                    );
+                })
+                .sorted((a, b) -> Double.compare((Double) b.get("progress"), (Double) a.get("progress")))
+                .toList();
     }
 }

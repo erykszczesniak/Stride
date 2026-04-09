@@ -1,13 +1,10 @@
 package com.strava.backend.controller;
 
 import com.strava.backend.dto.NotificationDTO;
-import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.WeeklySummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,18 +16,11 @@ import static com.strava.backend.constants.PathConstants.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_NOTIFICATIONS)
-public class NotificationController {
+public class NotificationController extends BaseController {
 
     private final NotificationService notificationService;
     private final WeeklySummaryService weeklySummaryService;
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @GetMapping
     public ResponseEntity<List<NotificationDTO>> getNotifications() {

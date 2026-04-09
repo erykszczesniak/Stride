@@ -3,14 +3,11 @@ package com.strava.backend.controller;
 import com.strava.backend.domain.Goal;
 import com.strava.backend.dto.goal.GoalRequest;
 import com.strava.backend.dto.goal.GoalResponse;
-import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.GoalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,17 +18,10 @@ import static com.strava.backend.constants.PathConstants.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_GOALS)
-public class GoalController {
+public class GoalController extends BaseController {
 
     private final GoalService goalService;
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @GetMapping
     public ResponseEntity<List<GoalResponse>> getActiveGoals() {
