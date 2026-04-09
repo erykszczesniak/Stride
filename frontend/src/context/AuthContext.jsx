@@ -53,6 +53,18 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   }, []);
 
+  const googleLogin = useCallback(async (idToken) => {
+    const response = await AuthService.googleLogin(idToken);
+    const { accessToken, refreshToken, user: userData } = response.data;
+
+    localStorage.setItem("token", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+
+    setUser(userData);
+
+    return response.data;
+  }, []);
+
   const register = useCallback(async (firstName, lastName, email, password, confirmPassword) => {
     const response = await AuthService.register(
       firstName,
@@ -76,10 +88,11 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     login,
+    googleLogin,
     register,
     logout,
     checkAuth,
-  }), [user, loading, isAuthenticated, login, register, logout, checkAuth]);
+  }), [user, loading, isAuthenticated, login, googleLogin, register, logout, checkAuth]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

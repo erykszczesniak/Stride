@@ -13,6 +13,7 @@ public final class PathConstants {
     public static final String LOGOUT = "/logout";
     public static final String FORGOT_PASSWORD = "/forgot-password";
     public static final String RESET_PASSWORD = "/reset-password";
+    public static final String GOOGLE = "/google";
 
     // Users
     public static final String USERS = "/users";

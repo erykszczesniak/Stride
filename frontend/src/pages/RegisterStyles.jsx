@@ -279,6 +279,40 @@ export const LoginLink = styled.p`
   }
 `;
 
+export const GoogleButton = styled.button`
+  width: 100%;
+  padding: 14px;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textPrimary};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  &:hover {
+    background: ${({ theme }) => theme.bgSecondary || theme.bgInput};
+    border-color: ${({ theme }) => theme.textMuted};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+`;
+
 export const ErrorMessage = styled.div`
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.3);

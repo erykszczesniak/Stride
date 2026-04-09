@@ -15,6 +15,10 @@ class AuthService {
     });
   }
 
+  googleLogin(idToken) {
+    return apiClient.post("/auth/google", { idToken });
+  }
+
   refreshToken(refreshToken) {
     return apiClient.post("/auth/refresh", { refreshToken });
   }

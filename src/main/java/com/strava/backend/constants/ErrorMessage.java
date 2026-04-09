@@ -53,6 +53,11 @@ public final class ErrorMessage {
     public static final String COMMENT_NOT_FOUND = "Comment not found";
     public static final String EMPTY_COMMENT = "Comment cannot be empty";
 
+    // OAuth errors
+    public static final String INVALID_GOOGLE_TOKEN = "Invalid Google ID token";
+    public static final String GOOGLE_AUTH_ERROR = "Google authentication failed";
+    public static final String GOOGLE_AUTH_EMAIL_MISMATCH = "Email from Google account is already registered with a different auth provider";
+
     // JWT errors
     public static final String INVALID_JWT_TOKEN = "Invalid JWT token";
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";

@@ -2,6 +2,7 @@ package com.strava.backend.controller;
 
 import com.strava.backend.dto.auth.AuthenticationRequest;
 import com.strava.backend.dto.auth.AuthenticationResponse;
+import com.strava.backend.dto.auth.GoogleAuthRequest;
 import com.strava.backend.dto.auth.RegistrationRequest;
 import com.strava.backend.service.AuthenticationService;
 import jakarta.validation.Valid;
@@ -32,6 +33,12 @@ public class AuthenticationController {
             @Valid @RequestBody RegistrationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(authenticationService.register(request));
+    }
+
+    @PostMapping(GOOGLE)
+    public ResponseEntity<AuthenticationResponse> googleLogin(
+            @Valid @RequestBody GoogleAuthRequest request) {
+        return ResponseEntity.ok(authenticationService.googleLogin(request));
     }
 
     @PostMapping(REFRESH)

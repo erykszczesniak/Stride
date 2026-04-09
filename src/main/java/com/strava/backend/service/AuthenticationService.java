@@ -2,6 +2,7 @@ package com.strava.backend.service;
 
 import com.strava.backend.dto.auth.AuthenticationRequest;
 import com.strava.backend.dto.auth.AuthenticationResponse;
+import com.strava.backend.dto.auth.GoogleAuthRequest;
 import com.strava.backend.dto.auth.RegistrationRequest;
 
 public interface AuthenticationService {
@@ -9,6 +10,8 @@ public interface AuthenticationService {
     AuthenticationResponse login(AuthenticationRequest request);
 
     AuthenticationResponse register(RegistrationRequest request);
+
+    AuthenticationResponse googleLogin(GoogleAuthRequest request);
 
     AuthenticationResponse refreshToken(String refreshToken);
 
