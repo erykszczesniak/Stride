@@ -26,6 +26,7 @@ import ChallengeDetails from "./pages/ChallengeDetails";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import TrainingPlans from "./pages/TrainingPlans";
+import Reports from "./pages/Reports";
 
 const App = () => {
   return (
@@ -211,6 +212,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <TrainingPlans />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Reports />
               </ProtectedRoute>
             }
           />

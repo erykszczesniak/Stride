@@ -3,6 +3,7 @@ package com.strava.backend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.dto.activity.ActivityResponse;
+import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 import static com.strava.backend.constants.ErrorMessage.ACTIVITY_NOT_FOUND;
 import static com.strava.backend.constants.ErrorMessage.ACTIVITY_ACCESS_DENIED;
@@ -201,5 +203,71 @@ public class ExportController extends BaseController {
         } else {
             return String.format("%ds", seconds);
         }
+    }
+
+    @PostMapping("/report/csv")
+    public ResponseEntity<byte[]> exportReportCsv(@RequestBody Map<String, Object> request) {
+        Long currentUserId = getAuthenticatedUserId();
+        String dateFrom = (String) request.get("dateFrom");
+        String dateTo = (String) request.get("dateTo");
+        String activityTypeStr = (String) request.get("activityType");
+        @SuppressWarnings("unchecked")
+        List<String> fields = (List<String>) request.get("fields");
+
+        LocalDateTime from = LocalDateTime.parse(dateFrom + "T00:00:00");
+        LocalDateTime to = LocalDateTime.parse(dateTo + "T23:59:59");
+
+        List<Activity> activities;
+        if (activityTypeStr != null && !activityTypeStr.isEmpty()) {
+            ActivityType type = ActivityType.valueOf(activityTypeStr);
+            activities = activityRepository.findByUserIdAndActivityTypeAndDateRange(currentUserId, type, from, to);
+        } else {
+            activities = activityRepository.findByUserIdAndDateRange(currentUserId, from, to);
+        }
+
+        StringBuilder csv = new StringBuilder();
+        csv.append(String.join(",", fields)).append("\n");
+
+        for (Activity a : activities) {
+            List<String> values = new java.util.ArrayList<>();
+            for (String field : fields) {
+                values.add(switch (field) {
+                    case "activityTitle" -> quote(a.getTitle());
+                    case "activityType" -> a.getActivityType().name();
+                    case "date" -> a.getStartTime() != null
+                            ? a.getStartTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "";
+                    case "distance" -> String.valueOf(a.getDistance() != null ? a.getDistance() : 0);
+                    case "duration" -> formatDuration(a.getDuration() != null ? a.getDuration() : 0);
+                    case "elevationGain" -> String.valueOf(a.getElevationGain() != null ? a.getElevationGain() : 0);
+                    case "calories" -> String.valueOf(a.getCalories() != null ? a.getCalories() : 0);
+                    case "averageSpeed" -> String.valueOf(a.getAverageSpeed() != null ? a.getAverageSpeed() : 0);
+                    case "averageHeartRate" -> String.valueOf(a.getAverageHeartRate() != null ? a.getAverageHeartRate() : 0);
+                    case "pace" -> calculatePace(a);
+                    case "likesCount" -> String.valueOf(a.getLikesCount());
+                    case "commentsCount" -> String.valueOf(a.getComments() != null ? a.getComments().size() : 0);
+                    default -> "";
+                });
+            }
+            csv.append(String.join(",", values)).append("\n");
+        }
+
+        byte[] csvBytes = csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "report.csv");
+        return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+    }
+
+    private String quote(String s) {
+        if (s == null) return "";
+        return "\"" + s.replace("\"", "\"\"") + "\"";
+    }
+
+    private String calculatePace(Activity a) {
+        if (a.getDistance() == null || a.getDistance() == 0 || a.getDuration() == null || a.getDuration() == 0) return "-";
+        double pace = (a.getDuration() / 60.0) / a.getDistance();
+        int mins = (int) pace;
+        int secs = (int) ((pace - mins) * 60);
+        return String.format("%d:%02d", mins, secs);
     }
 }

@@ -11,12 +11,15 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 ### Activity Tracking
 - Record and track various activity types (Running, Cycling, Swimming, Hiking, Workouts)
 - View detailed activity statistics (distance, duration, pace, calories, elevation)
+- Upload up to 5 photos per activity (gallery view, card cover)
 - Like and comment on activities
 - Add reactions to comments
 
 ### Social Features
 - Follow other athletes
+- Public user profiles with stats, recent activities, and follow button
 - Activity feed showing followed users' activities
+- Clickable usernames/avatars → navigate to user profile
 - Clubs - join communities based on sport types
 - Events - create and join local fitness events
 
@@ -37,6 +40,21 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - Weekly training summary emails
 - Configurable per-user: toast notifications, email notifications, weekly summary
 - Duplicate notification prevention (e.g. re-liking same activity)
+
+### Report Builder
+- Dynamic report generation via GraphQL query
+- Drag-and-drop column reorder
+- Sortable table columns (asc/desc)
+- Activity type filter
+- Date range picker with quick presets (7 days, 30 days, this month, last month, this year)
+- Save/load report templates (localStorage)
+- Export to CSV (backend) and PDF (frontend, branded)
+- Summary row with totals and averages
+
+### Authentication
+- Email/password login with JWT tokens
+- Google OAuth2 login ("Continue with Google")
+- Auto-creates user on first Google login
 
 ### User Experience
 - Dark/Light theme toggle
@@ -192,10 +210,14 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 
 ### Backend
 - **Java 21** with **Spring Boot 3.4**
-- **Spring Security** with JWT authentication
+- **Spring Security** with JWT authentication + **Google OAuth2**
 - **Spring Data JPA** with PostgreSQL
-- **GraphQL** API support
+- **GraphQL** API (queries for report builder)
+- **REST API** for all CRUD operations
+- **SSE** (Server-Sent Events) for real-time notifications
+- **Async event-driven** architecture (Spring ApplicationEventPublisher)
 - **Flyway** for database migrations
+- **Thymeleaf** email templates
 - **Swagger/OpenAPI** documentation
 - **Testcontainers** for integration testing
 
@@ -205,6 +227,8 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - **Styled Components** for styling
 - **Recharts** for data visualization
 - **Axios** for API communication
+- **jsPDF** for PDF report generation
+- **Playwright** for E2E testing
 - **React Icons** for iconography
 
 ### Infrastructure & Observability
@@ -542,6 +566,22 @@ Once the backend is running, API documentation is available at:
 | `PUT /api/v1/notifications/{id}/read` | Mark as read |
 | `PUT /api/v1/notifications/read-all` | Mark all as read |
 | `GET /api/v1/notifications/stream` | SSE stream (real-time) |
+| `POST /api/v1/auth/google` | Google OAuth2 login |
+| `POST /api/v1/activities/{id}/photos` | Upload activity photos |
+| `DELETE /api/v1/activities/{id}/photos/{index}` | Delete activity photo |
+| `GET /api/v1/users/{id}/profile` | Public user profile |
+| `POST /api/v1/export/report/csv` | Export report as CSV |
+
+### GraphQL API
+
+| Query/Mutation | Description |
+|----------------|-------------|
+| `generateReport(dateFrom, dateTo, fields, activityType)` | Dynamic report with selected fields |
+| `dashboard` | Dashboard stats, weekly chart, recent activities |
+| `activities(userId, page, size)` | Paginated activities |
+| `createActivity(input)` | Create new activity |
+| `likeActivity(id)` / `unlikeActivity(id)` | Like/unlike |
+| `followUser(userId)` / `unfollowUser(userId)` | Follow/unfollow |
 
 ## Project Structure
 

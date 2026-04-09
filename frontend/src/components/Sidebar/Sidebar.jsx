@@ -8,6 +8,7 @@ import {
   FiClipboard,
   FiCalendar,
   FiUsers,
+  FiFileText,
   FiSettings,
   FiLogOut,
   FiPlus,
@@ -49,6 +50,7 @@ const Sidebar = () => {
     { path: "/training", label: "Training Plans", icon: FiClipboard },
     { path: "/clubs", label: "Clubs", icon: FiUsers },
     { path: "/events", label: "Events", icon: FiCalendar },
+    { path: "/reports", label: "Reports", icon: FiFileText },
     ...(user?.role === "ADMIN" ? [{ path: "/admin", label: "Admin Panel", icon: RiAdminLine }] : []),
   ];
 
