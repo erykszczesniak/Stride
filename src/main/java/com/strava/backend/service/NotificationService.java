@@ -17,6 +17,10 @@ public interface NotificationService {
 
     void markAllAsRead(Long userId);
 
+    void deleteNotification(Long notificationId, Long userId);
+
+    void clearAllNotifications(Long userId);
+
     Notification createNotification(User recipient, User sender, NotificationType type,
                                     String message, Long referenceId, String referenceType);
 }

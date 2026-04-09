@@ -58,6 +58,20 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
     }
 
+    @DeleteMapping(NOTIFICATION_ID)
+    public ResponseEntity<Map<String, String>> deleteNotification(@PathVariable Long notificationId) {
+        Long currentUserId = getAuthenticatedUserId();
+        notificationService.deleteNotification(notificationId, currentUserId);
+        return ResponseEntity.ok(Map.of("message", "Notification deleted"));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Map<String, String>> clearAllNotifications() {
+        Long currentUserId = getAuthenticatedUserId();
+        notificationService.clearAllNotifications(currentUserId);
+        return ResponseEntity.ok(Map.of("message", "All notifications cleared"));
+    }
+
     @PostMapping("/weekly-summary/trigger")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> triggerWeeklySummary() {

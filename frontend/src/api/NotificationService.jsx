@@ -16,6 +16,14 @@ class NotificationService {
   markAllAsRead() {
     return apiClient.put(`/notifications/read-all`);
   }
+
+  deleteNotification(notificationId) {
+    return apiClient.delete(`/notifications/${notificationId}`);
+  }
+
+  clearAll() {
+    return apiClient.delete(`/notifications`);
+  }
 }
 
 const notificationService = new NotificationService();

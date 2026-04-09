@@ -233,6 +233,29 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
+  const deleteNotification = useCallback(async (id) => {
+    try {
+      const notification = notifications.find((n) => n.id === id);
+      await notificationService.deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      if (notification && !notification.read) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      // Silently fail
+    }
+  }, [notifications]);
+
+  const clearAllNotifications = useCallback(async () => {
+    try {
+      await notificationService.clearAll();
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      // Silently fail
+    }
+  }, []);
+
   return (
     <NotificationContext.Provider
       value={{
@@ -241,6 +264,8 @@ export const NotificationProvider = ({ children }) => {
         fetchNotifications,
         markAsRead,
         markAllAsRead,
+        deleteNotification,
+        clearAllNotifications,
       }}
     >
       {children}

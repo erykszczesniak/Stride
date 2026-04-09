@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiBell } from "react-icons/fi";
+import { FiBell, FiTrash2 } from "react-icons/fi";
 import { useNotifications } from "../../context/NotificationContext";
 import { getTimeAgo } from "../../utils/formatters";
 import {
@@ -10,6 +10,7 @@ import {
   DropdownPanel,
   DropdownHeader,
   DropdownTitle,
+  HeaderActions,
   MarkAllButton,
   NotificationList,
   NotificationItem,
@@ -18,6 +19,7 @@ import {
   NotificationMessage,
   NotificationTime,
   UnreadDot,
+  DeleteButton,
   EmptyState,
   EmptyIcon,
   EmptyText,
@@ -43,7 +45,7 @@ const TYPE_ICONS = {
 
 const NotificationDropdown = () => {
   const navigate = useNavigate();
-  const { unreadCount, notifications, fetchNotifications, markAsRead, markAllAsRead } = useNotifications();
+  const { unreadCount, notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -106,11 +108,18 @@ const NotificationDropdown = () => {
         <DropdownPanel>
           <DropdownHeader>
             <DropdownTitle>Notifications</DropdownTitle>
-            {unreadCount > 0 && (
-              <MarkAllButton onClick={markAllAsRead}>
-                Mark all as read
-              </MarkAllButton>
-            )}
+            <HeaderActions>
+              {unreadCount > 0 && (
+                <MarkAllButton onClick={markAllAsRead}>
+                  Mark all as read
+                </MarkAllButton>
+              )}
+              {notifications.length > 0 && (
+                <MarkAllButton onClick={clearAllNotifications} title="Clear all notifications">
+                  <FiTrash2 size={14} />
+                </MarkAllButton>
+              )}
+            </HeaderActions>
           </DropdownHeader>
 
           <NotificationList>
@@ -142,6 +151,15 @@ const NotificationDropdown = () => {
                     </NotificationTime>
                   </NotificationContent>
                   {!notification.read && <UnreadDot />}
+                  <DeleteButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNotification(notification.id);
+                    }}
+                    title="Delete notification"
+                  >
+                    <FiTrash2 size={14} />
+                  </DeleteButton>
                 </NotificationItem>
               ))
             )}

@@ -65,6 +65,25 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    public void deleteNotification(Long notificationId, Long userId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ApiRequestException("Notification not found", HttpStatus.NOT_FOUND));
+
+        if (!notification.getRecipient().getId().equals(userId)) {
+            throw new ApiRequestException("Access denied", HttpStatus.FORBIDDEN);
+        }
+
+        notificationRepository.delete(notification);
+    }
+
+    @Override
+    @Transactional
+    public void clearAllNotifications(Long userId) {
+        notificationRepository.deleteAllByRecipientId(userId);
+    }
+
+    @Override
+    @Transactional
     public Notification createNotification(User recipient, User sender, NotificationType type,
                                            String message, Long referenceId, String referenceType) {
         if (sender != null && recipient.getId().equals(sender.getId())) {

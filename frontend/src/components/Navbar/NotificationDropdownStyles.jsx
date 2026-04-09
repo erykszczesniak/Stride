@@ -82,6 +82,12 @@ export const DropdownTitle = styled.h3`
   color: ${({ theme }) => theme.textPrimary};
 `;
 
+export const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
 export const MarkAllButton = styled.button`
   background: none;
   border: none;
@@ -162,6 +168,30 @@ export const UnreadDot = styled.div`
   background: ${({ theme }) => theme.primary};
   flex-shrink: 0;
   margin-top: 6px;
+`;
+
+export const DeleteButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.textMuted};
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s;
+  flex-shrink: 0;
+
+  ${NotificationItem}:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
 `;
 
 export const EmptyState = styled.div`
