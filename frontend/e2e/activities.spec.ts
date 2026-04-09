@@ -1,9 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers";
 
+const BACKEND = "http://localhost:8080/api/v1";
+
 test.describe("Activities", () => {
+  let token: string;
+
   test.beforeEach(async ({ page }) => {
-    await login(page, "john@example.com", "password123");
+    token = await login(page, "john@example.com", "password123");
     await page.goto("/activities");
     await expect(page.locator("a[href^='/activities/']:not([href='/activities/new'])").first()).toBeVisible({ timeout: 10_000 });
 
@@ -14,7 +18,7 @@ test.describe("Activities", () => {
     }
   });
 
-  test("create a new activity", async ({ page }) => {
+  test("create a new activity and clean up", async ({ page }) => {
     await page.goto("/activities/new");
 
     await expect(page.locator("h1, h2").filter({ hasText: "Record Activity" })).toBeVisible({
@@ -31,10 +35,22 @@ test.describe("Activities", () => {
 
     await page.getByRole("button", { name: "Save Activity" }).click();
     await page.waitForURL("/activities", { timeout: 10_000 });
+
+    // Clean up: delete the created activity via API
+    const res = await page.request.get(`${BACKEND}/activities/user/2?page=0&size=5`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    const activities = data.content || data;
+    const testActivity = activities.find((a: any) => a.title === "E2E Test Ride");
+    if (testActivity) {
+      await page.request.delete(`${BACKEND}/activities/${testActivity.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
   });
 
   test("view activity details", async ({ page }) => {
-    // Click on the activity title text to navigate
     const card = page.locator("a[href^='/activities/']:not([href='/activities/new'])").first();
     await card.click({ position: { x: 150, y: 20 } });
 
