@@ -5,6 +5,7 @@ import com.strava.backend.enums.ActivityType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class ActivityResponse {
@@ -28,4 +29,5 @@ public class ActivityResponse {
     private String routePolyline;
     private Integer averageHeartRate;
     private Integer maxHeartRate;
+    private List<String> photos;
 }

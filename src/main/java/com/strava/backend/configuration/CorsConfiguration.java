@@ -35,6 +35,13 @@ public class CorsConfiguration implements WebMvcConfigurer {
                 .allowCredentials(true)
                 .maxAge(3600);
 
+        // Uploaded files
+        registry.addMapping("/uploads/**")
+                .allowedOrigins(allowedOrigins.split(","))
+                .allowedMethods("GET", "OPTIONS")
+                .allowedHeaders("*")
+                .maxAge(3600);
+
     }
 
     @Bean

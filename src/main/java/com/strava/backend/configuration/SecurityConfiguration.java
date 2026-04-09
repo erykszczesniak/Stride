@@ -42,6 +42,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
                         .requestMatchers("/h2-console/**").authenticated()
                         .requestMatchers("/graphql").authenticated()
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/actuator/health/**", "/actuator/prometheus").permitAll()
                         .requestMatchers("/actuator/**").authenticated()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")

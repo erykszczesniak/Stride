@@ -42,6 +42,9 @@ strava_session_backup.jsonl
 application-local.yml
 src/main/resources/application-local.yml
 
+### Uploads ###
+uploads/
+
 ### Claude ###
 .claude/
 

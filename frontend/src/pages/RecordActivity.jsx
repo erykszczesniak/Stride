@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { FiCamera, FiX } from 'react-icons/fi';
 import Layout from '../components/Layout/Layout';
 import ActivityService from '../api/ActivityService';
 import {
@@ -20,7 +21,14 @@ import {
   StatInput,
   StatLabel,
   SaveButton,
-  ErrorMessage
+  ErrorMessage,
+  PhotoUploadArea,
+  PhotoUploadButton,
+  PhotoPreviewGrid,
+  PhotoPreviewItem,
+  PhotoPreviewImage,
+  PhotoRemoveButton,
+  PhotoCount,
 } from './RecordActivityStyles';
 
 const RecordActivity = () => {
@@ -31,6 +39,8 @@ const RecordActivity = () => {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [originalStartTime, setOriginalStartTime] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -84,6 +94,46 @@ const RecordActivity = () => {
     }));
   };
 
+  const handlePhotoSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    const validFiles = files.filter(file => {
+      if (!allowedTypes.includes(file.type)) {
+        setError('Only JPG, PNG, and WebP images are allowed');
+        return false;
+      }
+      if (file.size > maxSize) {
+        setError('Each photo must be less than 5MB');
+        return false;
+      }
+      return true;
+    });
+
+    if (photos.length + validFiles.length > 5) {
+      setError('Maximum 5 photos per activity');
+      return;
+    }
+
+    const newPhotos = validFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setPhotos(prev => [...prev, ...newPhotos]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemovePhoto = (index) => {
+    setPhotos(prev => {
+      const updated = [...prev];
+      URL.revokeObjectURL(updated[index].preview);
+      updated.splice(index, 1);
+      return updated;
+    });
+  };
+
   const handleSaveActivity = async () => {
     if (saving) return;
 
@@ -132,7 +182,18 @@ const RecordActivity = () => {
       if (isEditMode) {
         await ActivityService.updateActivity(id, activityData);
       } else {
-        await ActivityService.createActivity(activityData);
+        const res = await ActivityService.createActivity(activityData);
+        if (photos.length > 0 && res.data?.id) {
+          try {
+            await ActivityService.uploadPhotos(
+              res.data.id,
+              photos.map(p => p.file)
+            );
+          } catch (photoErr) {
+            // Activity was created, photos failed — still navigate
+            console.error('Photo upload failed:', photoErr);
+          }
+        }
       }
       navigate('/activities');
     } catch (err) {
@@ -261,6 +322,44 @@ const RecordActivity = () => {
           </div>
         </StatsGrid>
       </Section>
+
+      {!isEditMode && (
+        <Section>
+          <SectionTitle>Photos</SectionTitle>
+          <PhotoUploadArea>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onChange={handlePhotoSelect}
+              style={{ display: 'none' }}
+            />
+            {photos.length > 0 && (
+              <PhotoPreviewGrid>
+                {photos.map((photo, index) => (
+                  <PhotoPreviewItem key={index}>
+                    <PhotoPreviewImage src={photo.preview} alt={`Photo ${index + 1}`} />
+                    <PhotoRemoveButton onClick={() => handleRemovePhoto(index)}>
+                      <FiX size={14} />
+                    </PhotoRemoveButton>
+                  </PhotoPreviewItem>
+                ))}
+              </PhotoPreviewGrid>
+            )}
+            {photos.length < 5 && (
+              <PhotoUploadButton
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FiCamera size={20} />
+                Add Photos
+              </PhotoUploadButton>
+            )}
+            <PhotoCount>{photos.length}/5 photos</PhotoCount>
+          </PhotoUploadArea>
+        </Section>
+      )}
 
       {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 

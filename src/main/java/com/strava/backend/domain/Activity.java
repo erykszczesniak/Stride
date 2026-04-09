@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -96,6 +98,12 @@ public class Activity {
     @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<Comment> comments = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "activity_photos", joinColumns = @JoinColumn(name = "activity_id"))
+    @Column(name = "photo_url")
+    @Builder.Default
+    private List<String> photos = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

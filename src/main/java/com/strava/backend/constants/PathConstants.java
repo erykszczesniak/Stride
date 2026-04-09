@@ -46,6 +46,8 @@ public final class PathConstants {
     public static final String TARGET_USER_ID = "/{targetUserId}";
     public static final String BY_TYPE = "/by-type";
     public static final String PUBLIC = "/public";
+    public static final String PHOTOS = "/photos";
+    public static final String PHOTO_INDEX = "/{photoIndex}";
 
     // Common
     public static final String MY = "/my";

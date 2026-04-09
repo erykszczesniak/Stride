@@ -11,6 +11,7 @@ import {
   FiTrash2,
   FiX,
   FiCheck,
+  FiImage,
 } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
@@ -62,6 +63,11 @@ import {
   EditActions,
   EditButton,
   NoComments,
+  PhotoGallerySection,
+  PhotoGallerySectionTitle,
+  PhotoGrid,
+  PhotoGridItem,
+  PhotoGridImage,
 } from "./ActivityDetailsStyles";
 
 const ActivityDetails = () => {
@@ -369,6 +375,27 @@ const ActivityDetails = () => {
         </MapSectionTitle>
         <ActivityMap coordinates={activity.routePolyline} height="400px" />
       </MapSection>
+
+      {activity.photos && activity.photos.length > 0 && (
+        <PhotoGallerySection>
+          <PhotoGallerySectionTitle>
+            <FiImage size={20} />
+            Photos ({activity.photos.length})
+          </PhotoGallerySectionTitle>
+          <PhotoGrid>
+            {activity.photos.map((photo, index) => {
+              const photoUrl = photo.startsWith('http')
+                ? photo
+                : `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}${photo}`;
+              return (
+                <PhotoGridItem key={index}>
+                  <PhotoGridImage src={photoUrl} alt={`Activity photo ${index + 1}`} />
+                </PhotoGridItem>
+              );
+            })}
+          </PhotoGrid>
+        </PhotoGallerySection>
+      )}
 
       <CommentsSection ref={commentsSectionRef}>
         <CommentsSectionTitle>

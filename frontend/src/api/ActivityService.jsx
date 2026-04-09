@@ -59,6 +59,18 @@ class ActivityService {
   getWeeklyStats() {
     return apiClient.get(`/activities/stats/weekly`);
   }
+
+  uploadPhotos(activityId, files) {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return apiClient.post(`/activities/${activityId}/photos`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+
+  deletePhoto(activityId, photoIndex) {
+    return apiClient.delete(`/activities/${activityId}/photos/${photoIndex}`);
+  }
 }
 
 const activityService = new ActivityService();

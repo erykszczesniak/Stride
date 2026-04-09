@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -146,5 +147,23 @@ public class ActivityController extends BaseController {
             @PageableDefault(size = 10) Pageable pageable) {
         Long currentUserId = getAuthenticatedUserId();
         return ResponseEntity.ok(activityMapper.getPublicActivities(currentUserId, pageable));
+    }
+
+    @PostMapping(ACTIVITY_ID + PHOTOS)
+    public ResponseEntity<List<String>> uploadPhotos(
+            @PathVariable Long activityId,
+            @RequestParam("files") List<MultipartFile> files) {
+        Long currentUserId = getAuthenticatedUserId();
+        List<String> photos = activityService.uploadPhotos(activityId, currentUserId, files);
+        return ResponseEntity.status(HttpStatus.CREATED).body(photos);
+    }
+
+    @DeleteMapping(ACTIVITY_ID + PHOTOS + PHOTO_INDEX)
+    public ResponseEntity<Void> deletePhoto(
+            @PathVariable Long activityId,
+            @PathVariable int photoIndex) {
+        Long currentUserId = getAuthenticatedUserId();
+        activityService.deletePhoto(activityId, currentUserId, photoIndex);
+        return ResponseEntity.noContent().build();
     }
 }

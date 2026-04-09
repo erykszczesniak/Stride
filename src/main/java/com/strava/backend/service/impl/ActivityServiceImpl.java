@@ -14,13 +14,19 @@ import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
@@ -28,19 +34,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.strava.backend.constants.ErrorMessage.ACTIVITY_ACCESS_DENIED;
-import static com.strava.backend.constants.ErrorMessage.ACTIVITY_NOT_FOUND;
+import static com.strava.backend.constants.ErrorMessage.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActivityServiceImpl implements ActivityService {
 
+    private static final long MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final int MAX_PHOTOS_PER_ACTIVITY = 5;
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/webp"
+    );
+
     private final ActivityRepository activityRepository;
     private final UserService userService;
     private final NotificationService notificationService;
+
+    @Value("${app.upload.dir:uploads/photos}")
+    private String uploadDir;
 
     @Override
     @Transactional(readOnly = true)
@@ -341,6 +357,91 @@ public class ActivityServiceImpl implements ActivityService {
         stats.put("totalDistanceKm", totalDistance != null ? totalDistance : 0.0);
         stats.put("totalDurationSeconds", totalDuration != null ? totalDuration : 0L);
         return stats;
+    }
+
+    @Override
+    @Transactional
+    public List<String> uploadPhotos(Long activityId, Long userId, List<MultipartFile> files) {
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (!activity.getUser().getId().equals(userId)) {
+            throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+        }
+
+        int currentCount = activity.getPhotos().size();
+        if (currentCount + files.size() > MAX_PHOTOS_PER_ACTIVITY) {
+            throw new ApiRequestException(PHOTO_LIMIT_EXCEEDED, HttpStatus.BAD_REQUEST);
+        }
+
+        for (MultipartFile file : files) {
+            if (file.getSize() > MAX_PHOTO_SIZE) {
+                throw new ApiRequestException(PHOTO_TOO_LARGE, HttpStatus.BAD_REQUEST);
+            }
+            String contentType = file.getContentType();
+            if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+                throw new ApiRequestException(INVALID_PHOTO_TYPE, HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        try {
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            List<String> newUrls = new ArrayList<>();
+            for (MultipartFile file : files) {
+                String extension = getFileExtension(file.getOriginalFilename());
+                String filename = UUID.randomUUID() + extension;
+                Path filePath = uploadPath.resolve(filename);
+                Files.copy(file.getInputStream(), filePath);
+                String photoUrl = "/uploads/photos/" + filename;
+                activity.getPhotos().add(photoUrl);
+                newUrls.add(photoUrl);
+            }
+
+            activityRepository.save(activity);
+            return activity.getPhotos();
+        } catch (IOException e) {
+            log.error("Failed to upload photos for activity {}", activityId, e);
+            throw new ApiRequestException("Failed to upload photos", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deletePhoto(Long activityId, Long userId, int photoIndex) {
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (!activity.getUser().getId().equals(userId)) {
+            throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+        }
+
+        if (photoIndex < 0 || photoIndex >= activity.getPhotos().size()) {
+            throw new ApiRequestException(INVALID_PHOTO_INDEX, HttpStatus.BAD_REQUEST);
+        }
+
+        String photoUrl = activity.getPhotos().get(photoIndex);
+        activity.getPhotos().remove(photoIndex);
+        activityRepository.save(activity);
+
+        // Delete file from disk
+        try {
+            String filename = photoUrl.substring(photoUrl.lastIndexOf('/') + 1);
+            Path filePath = Paths.get(uploadDir).resolve(filename);
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            log.warn("Failed to delete photo file: {}", photoUrl, e);
+        }
+    }
+
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return ".jpg";
+        }
+        return filename.substring(filename.lastIndexOf('.'));
     }
 
     private Double calculateTrendNumeric(Double current, Double previous) {

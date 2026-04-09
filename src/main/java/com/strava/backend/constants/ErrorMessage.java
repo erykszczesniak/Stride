@@ -26,6 +26,10 @@ public final class ErrorMessage {
     public static final String EMPTY_ACTIVITY_TITLE = "Activity title cannot be empty";
     public static final String INVALID_DISTANCE = "Distance must be greater than 0";
     public static final String INVALID_DURATION = "Duration must be greater than 0";
+    public static final String PHOTO_LIMIT_EXCEEDED = "Maximum 5 photos per activity";
+    public static final String INVALID_PHOTO_TYPE = "Only JPG, PNG, and WebP images are allowed";
+    public static final String PHOTO_TOO_LARGE = "Photo must be less than 5MB";
+    public static final String INVALID_PHOTO_INDEX = "Invalid photo index";
 
     // Club errors
     public static final String CLUB_NOT_FOUND = "Club not found";

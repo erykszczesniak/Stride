@@ -460,3 +460,48 @@ export const NoComments = styled.p`
   padding: 20px 0;
   transition: color 0.3s ease;
 `;
+
+export const PhotoGallerySection = styled.div`
+  background: ${({ theme }) => theme.bgCard};
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
+`;
+
+export const PhotoGallerySectionTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s ease;
+`;
+
+export const PhotoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+`;
+
+export const PhotoGridItem = styled.div`
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+`;
+
+export const PhotoGridImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;

@@ -37,4 +37,5 @@ public class FullActivityResponse {
     private LocalDateTime updatedAt;
     private BaseUserResponse user;
     private List<CommentResponse> comments;
+    private List<String> photos;
 }

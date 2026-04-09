@@ -194,6 +194,19 @@ export const ActionsGroup = styled.div`
   gap: 4px;
 `;
 
+export const CoverPhoto = styled.div`
+  margin: 12px 0 16px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 200px;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
 export const MapPreview = styled.div`
   margin: 12px 0 16px 0;
   border-radius: 12px;

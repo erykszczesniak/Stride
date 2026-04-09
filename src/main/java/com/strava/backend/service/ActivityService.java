@@ -7,6 +7,7 @@ import com.strava.backend.dto.activity.WeeklyStatsResponse;
 import com.strava.backend.enums.ActivityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -46,4 +47,8 @@ public interface ActivityService {
     Page<Activity> getActivitiesByUserIdAndType(Long userId, ActivityType activityType, Pageable pageable);
 
     Map<String, Object> getUserTotalStats(Long userId);
+
+    List<String> uploadPhotos(Long activityId, Long userId, List<MultipartFile> files);
+
+    void deletePhoto(Long activityId, Long userId, int photoIndex);
 }

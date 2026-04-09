@@ -225,3 +225,78 @@ export const ErrorMessage = styled.div`
   font-size: 14px;
   border-left: 4px solid #c00;
 `;
+
+export const PhotoUploadArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+export const PhotoUploadButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px dashed ${({ theme }) => theme.border};
+  border-radius: 12px;
+  background: ${({ theme }) => theme.bgInput};
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &:hover {
+    border-color: #fc5200;
+    color: #fc5200;
+    background: ${({ theme }) => theme.bgHover};
+  }
+`;
+
+export const PhotoPreviewGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+`;
+
+export const PhotoPreviewItem = styled.div`
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
+export const PhotoPreviewImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+export const PhotoRemoveButton = styled.button`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(220, 38, 38, 0.9);
+  }
+`;
+
+export const PhotoCount = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.textMuted};
+  text-align: center;
+`;

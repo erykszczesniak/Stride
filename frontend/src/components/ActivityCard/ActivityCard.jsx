@@ -29,6 +29,7 @@ import {
   ActionButton,
   ActionsGroup,
   MapPreview,
+  CoverPhoto,
 } from "./ActivityCardStyles";
 import ShareModal from "../ShareModal/ShareModal";
 import ActivityMap from "../ActivityMap/ActivityMap";
@@ -105,7 +106,20 @@ const ActivityCard = ({ activity, onLike }) => {
           <ActivityDescription>{activity.description}</ActivityDescription>
         )}
 
-        {activity.routePolyline && (
+        {activity.photos && activity.photos.length > 0 && (
+          <CoverPhoto>
+            <img
+              src={
+                activity.photos[0].startsWith('http')
+                  ? activity.photos[0]
+                  : `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}${activity.photos[0]}`
+              }
+              alt={activity.title}
+            />
+          </CoverPhoto>
+        )}
+
+        {activity.routePolyline && !(activity.photos && activity.photos.length > 0) && (
           <MapPreview onClick={(e) => e.preventDefault()}>
             <ActivityMap
               coordinates={activity.routePolyline}
