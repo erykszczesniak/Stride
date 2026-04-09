@@ -32,6 +32,10 @@ class UserService {
   getSuggestedUsers(limit = 5) {
     return apiClient.get(`/users/suggested?limit=${limit}`);
   }
+
+  getUserProfile(userId) {
+    return apiClient.get(`/users/${userId}/profile`);
+  }
 }
 
 const userService = new UserService();

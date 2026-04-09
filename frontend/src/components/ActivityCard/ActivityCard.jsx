@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiClock, FiTrendingUp, FiZap } from "react-icons/fi";
 import {
   FaRunning,
@@ -52,6 +53,7 @@ const activityColors = {
 };
 
 const ActivityCard = ({ activity, onLike }) => {
+  const navigate = useNavigate();
   const [showShareModal, setShowShareModal] = useState(false);
   const colors = activityColors[activity.activityType] || activityColors.RUN;
   const icon = activityIcons[activity.activityType] || activityIcons.RUN;
@@ -68,6 +70,14 @@ const ActivityCard = ({ activity, onLike }) => {
     setShowShareModal(true);
   };
 
+  const handleUserClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (activity.user?.id) {
+      navigate(`/profile/${activity.user.id}`);
+    }
+  };
+
   return (
     <>
       <Card to={`/activities/${activity.id}`}>
@@ -80,7 +90,7 @@ const ActivityCard = ({ activity, onLike }) => {
             )}
           </UserAvatar>
           <UserInfo>
-            <UserName>
+            <UserName onClick={handleUserClick} style={{ cursor: "pointer" }}>
               {activity.user?.firstName} {activity.user?.lastName}
             </UserName>
             <ActivityTime>{getTimeAgo(activity.createdAt)}</ActivityTime>

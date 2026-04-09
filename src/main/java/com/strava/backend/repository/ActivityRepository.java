@@ -221,4 +221,8 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     // Get total duration for user
     @Query("SELECT COALESCE(SUM(a.duration), 0) FROM Activity a WHERE a.user.id = :userId")
     Long sumDurationByUserId(@Param("userId") Long userId);
+
+    // Get recent public (non-private) activities for a user
+    @Query("SELECT a FROM Activity a WHERE a.user.id = :userId AND a.isPrivate = false ORDER BY a.createdAt DESC")
+    List<Activity> findRecentPublicByUserId(@Param("userId") Long userId, Pageable pageable);
 }

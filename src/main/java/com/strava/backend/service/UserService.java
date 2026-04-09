@@ -2,6 +2,7 @@ package com.strava.backend.service;
 
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.user.UpdateUserRequest;
+import com.strava.backend.dto.user.UserProfileResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -30,4 +31,6 @@ public interface UserService {
     boolean isFollowing(Long userId, Long followerId);
 
     List<User> getSuggestedUsers(Long userId, int limit);
+
+    UserProfileResponse getUserProfile(Long userId, Long currentUserId);
 }

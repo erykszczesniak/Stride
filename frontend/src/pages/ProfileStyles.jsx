@@ -312,3 +312,54 @@ export const EmptyState = styled.div`
   color: ${({ theme }) => theme.textSecondary};
   border: 1px solid ${({ theme }) => theme.border};
 `;
+
+export const ProfileActions = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
+`;
+
+export const FollowButton = styled.button`
+  padding: 12px 32px;
+  background: ${props => props.$followed ? props.theme.bgCard : '#fc5200'};
+  color: ${props => props.$followed ? props.theme.textPrimary : '#ffffff'};
+  border: 2px solid ${props => props.$followed ? props.theme.border : '#fc5200'};
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${props => props.$followed ? props.theme.bgHover : '#e04900'};
+    border-color: ${props => props.$followed ? '#fc5200' : '#e04900'};
+    color: ${props => props.$followed ? '#fc5200' : '#ffffff'};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+export const ShareButton = styled.button`
+  padding: 12px 24px;
+  background: ${({ theme }) => theme.bgCard};
+  border: 2px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #fc5200;
+    color: #fc5200;
+  }
+`;

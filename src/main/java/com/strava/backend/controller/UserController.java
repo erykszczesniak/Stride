@@ -3,6 +3,7 @@ package com.strava.backend.controller;
 import com.strava.backend.dto.HeaderResponse;
 import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.dto.user.UpdateUserRequest;
+import com.strava.backend.dto.user.UserProfileResponse;
 import com.strava.backend.dto.user.UserResponse;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.mapper.UserMapper;
@@ -40,6 +41,12 @@ public class UserController extends BaseController {
     @GetMapping(USER_ID)
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(userMapper.getUserById(userId));
+    }
+
+    @GetMapping(USER_ID + PROFILE)
+    public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable Long userId) {
+        Long currentUserId = getAuthenticatedUserId();
+        return ResponseEntity.ok(userService.getUserProfile(userId, currentUserId));
     }
 
     @GetMapping

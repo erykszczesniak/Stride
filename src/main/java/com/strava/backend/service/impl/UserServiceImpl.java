@@ -1,9 +1,15 @@
 package com.strava.backend.service.impl;
 
+import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.User;
+import com.strava.backend.dto.activity.ActivityResponse;
+import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.dto.user.UpdateUserRequest;
+import com.strava.backend.dto.user.UserProfileResponse;
 import com.strava.backend.enums.NotificationType;
 import com.strava.backend.exception.ApiRequestException;
+import com.strava.backend.mapper.CommonMapper;
+import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.UserService;
@@ -18,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.strava.backend.constants.ErrorMessage.USER_NOT_FOUND;
 
@@ -27,6 +34,8 @@ import static com.strava.backend.constants.ErrorMessage.USER_NOT_FOUND;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final ActivityRepository activityRepository;
+    private final CommonMapper commonMapper;
     private final NotificationService notificationService;
 
     @Override
@@ -153,5 +162,50 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<User> getSuggestedUsers(Long userId, int limit) {
         return userRepository.findSuggestedUsers(userId, PageRequest.of(0, limit));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfile(Long userId, Long currentUserId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        int followersCount = userRepository.countFollowers(userId);
+        int followingCount = userRepository.countFollowing(userId);
+        int totalActivities = activityRepository.countByUserId(userId);
+        Double totalDistance = activityRepository.sumDistanceByUserId(userId);
+
+        List<Activity> recentPublic = activityRepository.findRecentPublicByUserId(userId, PageRequest.of(0, 5));
+        List<ActivityResponse> recentActivities = recentPublic.stream()
+                .map(activity -> {
+                    ActivityResponse response = commonMapper.convertToResponse(activity, ActivityResponse.class);
+                    response.setLikesCount(activity.getLikesCount());
+                    response.setCommentsCount(activity.getCommentsCount());
+                    if (currentUserId != null) {
+                        response.setLikedByCurrentUser(activityRepository.isLikedByUser(activity.getId(), currentUserId));
+                    }
+                    return response;
+                })
+                .collect(Collectors.toList());
+
+        boolean isFollowed = currentUserId != null && !currentUserId.equals(userId)
+                && userRepository.isFollowing(userId, currentUserId);
+
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .bio(user.getBio())
+                .city(user.getCity())
+                .country(user.getCountry())
+                .avatar(user.getAvatar())
+                .createdAt(user.getCreatedAt())
+                .totalActivities(totalActivities)
+                .totalDistance(totalDistance != null ? totalDistance : 0.0)
+                .followersCount(followersCount)
+                .followingCount(followingCount)
+                .recentActivities(recentActivities)
+                .isFollowedByCurrentUser(isFollowed)
+                .build();
     }
 }

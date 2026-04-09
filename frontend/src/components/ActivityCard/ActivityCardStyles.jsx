@@ -55,7 +55,11 @@ export const UserName = styled.p`
   font-weight: 600;
   color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 2px 0;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #fc5200;
+  }
 `;
 
 export const ActivityTime = styled.p`
