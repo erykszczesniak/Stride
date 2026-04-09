@@ -40,7 +40,7 @@ class GroqServiceTest {
 
     @BeforeEach
     void setUp() {
-        groqService = new GroqService(new ObjectMapper());
+        groqService = new com.strava.backend.service.impl.GroqServiceImpl(new ObjectMapper());
         ReflectionTestUtils.setField(groqService, "restTemplate", restTemplate);
         ReflectionTestUtils.setField(groqService, "apiKey", "test-api-key");
         ReflectionTestUtils.setField(groqService, "model", "test-model");

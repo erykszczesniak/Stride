@@ -17,7 +17,7 @@ class TrainingPlanTemplateServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TrainingPlanTemplateService();
+        service = new com.strava.backend.service.impl.TrainingPlanTemplateServiceImpl();
     }
 
     @Nested
