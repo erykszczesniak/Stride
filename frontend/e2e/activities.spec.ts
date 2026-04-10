@@ -29,7 +29,10 @@ test.describe("Activities", () => {
     await page.locator("input[name='title']").fill("E2E Test Ride");
     await page.locator("textarea[name='description']").fill("Automated test activity");
     await page.locator("input[name='distance']").fill("25.5");
-    await page.locator("input[name='duration']").fill("60");
+    // Duration is now three side-by-side h/m/s inputs (PR #75)
+    await page.locator("input[name='durationHours']").fill("1");
+    await page.locator("input[name='durationMinutes']").fill("0");
+    await page.locator("input[name='durationSeconds']").fill("0");
     await page.locator("input[name='elevation']").fill("150");
     await page.locator("input[name='calories']").fill("600");
 

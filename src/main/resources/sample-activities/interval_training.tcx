@@ -3,6 +3,7 @@
   <Activities>
     <Activity Sport="Running">
       <Id>2024-03-18T17:00:00Z</Id>
+      <Notes>Track interval training: 5x1km hard with 400m recovery, evening session around the Warsaw Agrykola loop. Felt strong on reps 3-4, cruised the cooldown.</Notes>
       <Lap StartTime="2024-03-18T17:00:00Z">
         <TotalTimeSeconds>300</TotalTimeSeconds>
         <DistanceMeters>1000</DistanceMeters>

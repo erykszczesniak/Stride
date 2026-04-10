@@ -350,9 +350,11 @@ public class FitParser implements ActivityFileParser {
     }
 
     private ParsedActivity buildParsedActivity(List<GpsPoint> points, Map<String, Object> sessionData) {
+        // FIT files don't carry a free-text activity name; we synthesize one from the
+        // sport + start time so each imported activity gets a meaningful title rather
+        // than every file ending up as "Imported FIT Activity".
         ParsedActivity.ParsedActivityBuilder builder = ParsedActivity.builder()
-                .gpsPoints(points)
-                .title("Imported FIT Activity");
+                .gpsPoints(points);
 
         // Use session data if available
         if (sessionData.containsKey("sport")) {
@@ -408,7 +410,43 @@ public class FitParser implements ActivityFileParser {
             }
         }
 
+        // Synthesize a title from sport + time of day (e.g. "Morning Run", "Evening Ride").
+        // Falls back to "Imported FIT Activity" when we have neither.
+        ActivityType type = sessionData.containsKey("sport")
+                ? mapFitSport((int) sessionData.get("sport"))
+                : null;
+        LocalDateTime startTime = !points.isEmpty() ? points.getFirst().getTime() : null;
+        builder.title(synthesizeFitTitle(type, startTime));
+
         return builder.build();
+    }
+
+    private String synthesizeFitTitle(ActivityType type, LocalDateTime startTime) {
+        String sportLabel = switch (type == null ? ActivityType.OTHER : type) {
+            case RUN, VIRTUAL_RUN -> "Run";
+            case RIDE, VIRTUAL_RIDE -> "Ride";
+            case SWIM -> "Swim";
+            case HIKE -> "Hike";
+            case WALK -> "Walk";
+            case ROWING -> "Row";
+            case KAYAKING -> "Paddle";
+            case ALPINE_SKI, BACKCOUNTRY_SKI, NORDIC_SKI -> "Ski";
+            case SNOWBOARD -> "Snowboard";
+            case ROCK_CLIMBING -> "Climb";
+            case YOGA -> "Yoga";
+            default -> "Activity";
+        };
+        if (startTime == null) {
+            return "Imported " + sportLabel;
+        }
+        int hour = startTime.getHour();
+        String timeOfDay;
+        if (hour < 5) timeOfDay = "Night";
+        else if (hour < 12) timeOfDay = "Morning";
+        else if (hour < 17) timeOfDay = "Afternoon";
+        else if (hour < 21) timeOfDay = "Evening";
+        else timeOfDay = "Night";
+        return timeOfDay + " " + sportLabel;
     }
 
     private ActivityType mapFitSport(int sport) {

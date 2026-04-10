@@ -144,6 +144,14 @@ public class ImportServiceImpl implements ImportService {
                 .downloadUrl("/api/v1/import/samples/cycling_workout.tcx")
                 .build());
 
+        samples.add(SampleFileInfo.builder()
+                .filename("Night_Run.fit")
+                .format("FIT")
+                .activityType("Running")
+                .description("Real night run captured by a Decathlon Kiprun GPS 900 watch — ~6 km around Warsaw with full GPS, heart rate, and cadence data")
+                .downloadUrl("/api/v1/import/samples/Night_Run.fit")
+                .build());
+
         return samples;
     }
 

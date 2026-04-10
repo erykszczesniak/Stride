@@ -39,6 +39,11 @@ public class TcxParser implements ActivityFileParser {
         String sport = activityElement.getAttribute("Sport");
         ActivityType activityType = mapSportToActivityType(sport);
 
+        // TCX activities can carry a free-text description in <Notes> (right after <Id>).
+        // Garmin Training Center, Strava export and most third-party apps put the
+        // workout name and notes here. Use it as the activity description.
+        String notes = getDirectChildText(activityElement, "Notes");
+
         // Aggregate data from all laps
         int totalCalories = 0;
         double totalDistanceMeters = 0;
@@ -129,9 +134,25 @@ public class TcxParser implements ActivityFileParser {
             }
         }
 
-        // Generate title
-        String title = "Imported " + (sport != null && !sport.isEmpty() ? sport : "Activity");
+        // Title preference order:
+        //   1. First non-blank line of <Notes>, capped at 100 chars (so a notes block
+        //      that starts with the workout name like "5x1km intervals" becomes the title)
+        //   2. "Imported {sport}" fallback
+        // Description: the full <Notes> text (may be null)
+        String title = null;
+        if (notes != null && !notes.isBlank()) {
+            String firstLine = notes.split("\\R", 2)[0].trim();
+            if (!firstLine.isEmpty()) {
+                title = firstLine.length() > 100 ? firstLine.substring(0, 100) : firstLine;
+            }
+        }
+        if (title == null) {
+            title = "Imported " + (sport != null && !sport.isEmpty() ? sport : "Activity");
+        }
         activityBuilder.title(title);
+        if (notes != null && !notes.isBlank()) {
+            activityBuilder.description(notes.trim());
+        }
 
         return activityBuilder.build();
     }

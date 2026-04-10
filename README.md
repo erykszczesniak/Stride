@@ -11,9 +11,32 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 ### Activity Tracking
 - Record and track various activity types (Running, Cycling, Swimming, Hiking, Workouts)
 - View detailed activity statistics (distance, duration, pace, calories, elevation)
+- **Pace display for running** — RUN/WALK/HIKE activities show pace (min/km) instead of speed (km/h), matching how runners think about their stats
+- **Hours/minutes/seconds duration input** — record an activity down to the second (a 24:30 run is no longer rounded to whole minutes)
 - Upload up to 5 photos per activity (gallery view, card cover)
 - Like and comment on activities
 - Add reactions to comments
+
+### Activity File Import
+Import activities directly from any GPS watch or fitness platform that exports **GPX**, **TCX**, or **FIT** files (Garmin, Polar, Suunto, Decathlon Kiprun, Wahoo, etc.).
+
+- **GPX parser** — XML format, extracts GPS track, elevation, heart rate, cadence (via Garmin TrackPointExtension)
+- **TCX parser** — XML format, extracts multi-lap data, heart rate, cadence, power, `<Notes>` as activity description
+- **FIT parser** — Garmin/ANT+ binary format, hand-rolled parser with little-endian handling, developer fields, compressed timestamps, and FIT "invalid" sentinel filtering
+- **Drag-and-drop upload** on the Record Activity page with a Manual Entry / Upload File mode toggle
+- **Bundled sample files** — real-world GPX/TCX/FIT examples (5K run in Warsaw, 20K cycling in Amsterdam, Tatras hike, interval training, Lake Zegrze cycling loop, Night Run captured by a Decathlon Kiprun GPS 900) that you can download and re-import to test the feature
+- Automatic title synthesis for FIT files from sport + time-of-day ("Morning Run", "Evening Ride")
+- GPS tracks stored as compact Google Encoded Polyline (~10× smaller than JSON)
+
+### Personal Records
+Automatic detection and tracking of personal best times for standard distances across each sport.
+
+- **Standard distances:** 1 km, 5 km, 10 km, Half Marathon (21.0975 km), Marathon (42.195 km)
+- **Sliding-window GPS analysis** — when the activity has a GPS track, finds the fastest sub-segment of each standard distance. The best 5 km within a 10 km run still counts as a 5 km PR.
+- **Pace estimation fallback** — for activities without GPS, time is scaled proportionally from the overall pace
+- Detection runs automatically on every activity create/update — no manual trigger
+- **Recalculate** button on the profile rebuilds every PR from the full activity history (useful after bulk-importing GPX files)
+- Displayed as a new **Personal Records** tab on the profile, grouped by sport, showing distance, best time, pace, improvement vs. previous PR, and a link to the activity where the PR was set
 
 ### Social Features
 - Follow other athletes
@@ -217,6 +240,7 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - **SSE** (Server-Sent Events) for real-time notifications
 - **Async event-driven** architecture (Spring ApplicationEventPublisher)
 - **Flyway** for database migrations
+- **Hand-rolled GPX/TCX/FIT parsers** for activity file import (no external SDK dependencies)
 - **Thymeleaf** email templates
 - **Swagger/OpenAPI** documentation
 - **Testcontainers** for integration testing
@@ -226,8 +250,10 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 - **React Router** for navigation
 - **Styled Components** for styling
 - **Recharts** for data visualization
+- **Leaflet** + **React-Leaflet** for interactive route maps (decodes both legacy JSON and Google Encoded Polyline formats)
 - **Axios** for API communication
 - **jsPDF** for PDF report generation
+- **Jest** + **React Testing Library** for unit/component tests
 - **Playwright** for E2E testing
 - **React Icons** for iconography
 
@@ -569,6 +595,13 @@ Once the backend is running, API documentation is available at:
 | `POST /api/v1/auth/google` | Google OAuth2 login |
 | `POST /api/v1/activities/{id}/photos` | Upload activity photos |
 | `DELETE /api/v1/activities/{id}/photos/{index}` | Delete activity photo |
+| `POST /api/v1/import/activities` | Import GPX/TCX/FIT file and create activity |
+| `GET /api/v1/import/samples` | List bundled sample files available for download |
+| `GET /api/v1/import/samples/{filename}` | Download a bundled sample file |
+| `GET /api/v1/personal-records` | Current user's personal records |
+| `GET /api/v1/personal-records/user/{userId}` | Another user's personal records |
+| `GET /api/v1/personal-records/activity-type/{type}` | Filter PRs by sport |
+| `POST /api/v1/personal-records/recalculate` | Rebuild all PRs from activity history |
 | `GET /api/v1/users/{id}/profile` | Public user profile |
 | `POST /api/v1/export/report/csv` | Export report as CSV |
 
@@ -739,16 +772,41 @@ Request 12: 429
 
 ## Running Tests
 
-### Backend Tests
+The project has a three-layer test pyramid covering backend, frontend unit/component, and frontend end-to-end.
+
+### Backend (JUnit 5 + Mockito + Testcontainers)
 ```bash
 ./mvnw test
 ```
 
-### Frontend Tests
+Key suites for recently added features:
+- `GeoUtilsTest` — polyline format detection (legacy JSON vs Google Encoded), Haversine, encode/decode round-trip
+- `FitParserTest` — hand-crafted byte-stream fixtures covering little-endian header parsing, developer fields, compressed timestamps, signature validation
+- `PersonalRecordServiceImplTest` — PR detection thresholds, sliding-window algorithm, recalculate delete-before-fetch ordering
+- `ImportServiceImplTest` — parser selection, validation, sample listing, path-traversal rejection
+- `FitParserDebugTest` — opt-in regression test that runs the parser against a real `.fit` file passed via `-Dfit.debug.file=/path/to/file.fit`
+
+### Frontend unit + component (Jest + React Testing Library)
 ```bash
 cd frontend
 npm test
 ```
+
+Covers `utils/polyline`, `utils/formatters`, API services (`ImportService`, `PersonalRecordService`), and the `PersonalRecords` component (loading/empty/data states, Recalculate flow, improvement badge, date-as-link).
+
+### Frontend end-to-end (Playwright)
+```bash
+# Requires backend on :8080 and frontend on :3000
+cd frontend
+npx playwright test
+```
+
+Suites in `frontend/e2e/`:
+- `auth.spec.ts` — login / logout flow
+- `activities.spec.ts` — create, view, like/unlike
+- `notifications.spec.ts` — real-time notification delivery
+- `import.spec.ts` — mode toggle, dropzone, sample download, GPX upload + clean-up, client-side validation rejection
+- `personal-records.spec.ts` — PR tab on own and public profiles, Recalculate network roundtrip, seeded activity → grouped PR row
 
 ## Contributing
 
