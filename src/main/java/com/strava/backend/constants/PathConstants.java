@@ -117,6 +117,11 @@ public final class PathConstants {
     public static final String UNREAD_COUNT = "/unread-count";
     public static final String STREAM = "/stream";
 
+    // Import
+    public static final String IMPORT = "/import";
+    public static final String API_V1_IMPORT = API_V1 + IMPORT;
+    public static final String SAMPLES = "/samples";
+
     // Export
     public static final String EXPORT = "/export";
     public static final String API_V1_EXPORT = API_V1 + EXPORT;

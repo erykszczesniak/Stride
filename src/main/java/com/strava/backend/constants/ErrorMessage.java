@@ -67,6 +67,14 @@ public final class ErrorMessage {
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
     public static final String JWT_TOKEN_UNSUPPORTED = "JWT token is unsupported";
 
+    // Import errors
+    public static final String IMPORT_FILE_EMPTY = "Import file is empty";
+    public static final String IMPORT_FILE_TOO_LARGE = "Import file must be less than 10MB";
+    public static final String UNSUPPORTED_FILE_FORMAT = "Unsupported file format. Supported: GPX, TCX, FIT";
+    public static final String IMPORT_PARSE_ERROR = "Failed to parse activity file";
+    public static final String INVALID_SAMPLE_FILENAME = "Invalid sample filename";
+    public static final String SAMPLE_FILE_NOT_FOUND = "Sample file not found";
+
     // General errors
     public static final String ACCESS_DENIED = "Access denied";
     public static final String INTERNAL_SERVER_ERROR = "Internal server error";
