@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiCamera, FiX } from 'react-icons/fi';
+import { FiCamera, FiX, FiEdit3, FiUploadCloud, FiFileText } from 'react-icons/fi';
 import Layout from '../components/Layout/Layout';
 import ActivityService from '../api/ActivityService';
+import ImportService from '../api/ImportService';
 import {
   Container,
   Header,
@@ -29,7 +30,44 @@ import {
   PhotoPreviewImage,
   PhotoRemoveButton,
   PhotoCount,
+  ModeTabs,
+  ModeTab,
+  ImportDropzone,
+  DropzoneIcon,
+  DropzoneText,
+  DropzoneSubtext,
+  SelectedFileBox,
+  SelectedFileInfo,
+  FileIcon,
+  FileDetails,
+  FileName,
+  FileMeta,
+  ClearFileButton,
+  SamplesContainer,
+  SamplesTitle,
+  SamplesSubtitle,
+  SamplesGrid,
+  SampleCard,
+  SampleHeader,
+  SampleFormatBadge,
+  SampleType,
+  SampleName,
+  SuccessMessage,
 } from './RecordActivityStyles';
+
+const ALLOWED_IMPORT_EXTENSIONS = ['gpx', 'tcx', 'fit'];
+const MAX_IMPORT_SIZE = 10 * 1024 * 1024; // 10MB
+
+const formatBytes = (bytes) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const getFileExtension = (filename) => {
+  if (!filename || !filename.includes('.')) return '';
+  return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+};
 
 const RecordActivity = () => {
   const navigate = useNavigate();
@@ -42,6 +80,13 @@ const RecordActivity = () => {
   const [photos, setPhotos] = useState([]);
   const [existingPhotos, setExistingPhotos] = useState([]);
   const fileInputRef = useRef(null);
+  const importFileInputRef = useRef(null);
+  const [mode, setMode] = useState('manual'); // 'manual' | 'import'
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importSuccess, setImportSuccess] = useState('');
+  const [sampleFiles, setSampleFiles] = useState([]);
+  const [dragging, setDragging] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -61,6 +106,19 @@ const RecordActivity = () => {
     { type: 'WALK', label: 'Walk', icon: '🚶', color: '#9c27b0' },
     { type: 'WORKOUT', label: 'Workout', icon: '💪', color: '#37474f' }
   ];
+
+  useEffect(() => {
+    if (isEditMode || mode !== 'import') return;
+    let cancelled = false;
+    ImportService.listSampleFiles()
+      .then((res) => {
+        if (!cancelled) setSampleFiles(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error('Failed to load sample files:', err);
+      });
+    return () => { cancelled = true; };
+  }, [isEditMode, mode]);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -127,6 +185,97 @@ const RecordActivity = () => {
 
     setPhotos(prev => [...prev, ...newPhotos]);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const validateImportFile = (file) => {
+    const ext = getFileExtension(file.name);
+    if (!ALLOWED_IMPORT_EXTENSIONS.includes(ext)) {
+      setError(`Unsupported file format. Use: ${ALLOWED_IMPORT_EXTENSIONS.join(', ').toUpperCase()}`);
+      return false;
+    }
+    if (file.size > MAX_IMPORT_SIZE) {
+      setError('File must be smaller than 10MB');
+      return false;
+    }
+    return true;
+  };
+
+  const handleImportFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setImportSuccess('');
+    if (validateImportFile(file)) {
+      setImportFile(file);
+    }
+    if (importFileInputRef.current) importFileInputRef.current.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    setError('');
+    setImportSuccess('');
+    if (validateImportFile(file)) {
+      setImportFile(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!dragging) setDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragging(false);
+  };
+
+  const handleClearImportFile = () => {
+    setImportFile(null);
+    setError('');
+    setImportSuccess('');
+  };
+
+  const handleImportActivity = async () => {
+    if (importing || !importFile) return;
+    try {
+      setError('');
+      setImportSuccess('');
+      setImporting(true);
+      const res = await ImportService.importActivity(importFile);
+      const created = res.data?.activity;
+      if (created?.id) {
+        setImportSuccess(`Successfully imported "${created.title}"`);
+        setTimeout(() => navigate(`/activities/${created.id}`), 800);
+      } else {
+        navigate('/activities');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to import file. Please try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleDownloadSample = async (sample) => {
+    try {
+      const res = await ImportService.downloadSampleFile(sample.filename);
+      const blob = new Blob([res.data], { type: 'application/octet-stream' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = sample.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download sample file:', err);
+      setError('Failed to download sample file');
+    }
   };
 
   const handleRemovePhoto = (index) => {
@@ -221,6 +370,96 @@ const RecordActivity = () => {
         <Title>{isEditMode ? 'Edit Activity' : 'Record Activity'}</Title>
       </Header>
 
+      {!isEditMode && (
+        <ModeTabs>
+          <ModeTab $active={mode === 'manual'} onClick={() => { setMode('manual'); setError(''); setImportSuccess(''); }}>
+            <FiEdit3 size={18} />
+            Manual Entry
+          </ModeTab>
+          <ModeTab $active={mode === 'import'} onClick={() => { setMode('import'); setError(''); setImportSuccess(''); }}>
+            <FiUploadCloud size={18} />
+            Upload File
+          </ModeTab>
+        </ModeTabs>
+      )}
+
+      {!isEditMode && mode === 'import' && (
+        <>
+          <Section>
+            <SectionTitle>Upload and Sync Your Activity</SectionTitle>
+            <input
+              ref={importFileInputRef}
+              type="file"
+              accept=".gpx,.tcx,.fit"
+              onChange={handleImportFileSelect}
+              style={{ display: 'none' }}
+            />
+            <ImportDropzone
+              $dragging={dragging}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => importFileInputRef.current?.click()}
+            >
+              <DropzoneIcon>📁</DropzoneIcon>
+              <DropzoneText>
+                {dragging ? 'Drop file here' : 'Click to choose a file or drag it here'}
+              </DropzoneText>
+              <DropzoneSubtext>
+                Works for <strong>.gpx</strong>, <strong>.tcx</strong>, or <strong>.fit</strong> files up to 10MB.
+                Activities from Garmin, Polar, Suunto, and other devices.
+              </DropzoneSubtext>
+            </ImportDropzone>
+
+            {importFile && (
+              <SelectedFileBox>
+                <SelectedFileInfo>
+                  <FileIcon><FiFileText /></FileIcon>
+                  <FileDetails>
+                    <FileName>{importFile.name}</FileName>
+                    <FileMeta>
+                      {getFileExtension(importFile.name).toUpperCase()} · {formatBytes(importFile.size)}
+                    </FileMeta>
+                  </FileDetails>
+                </SelectedFileInfo>
+                <ClearFileButton type="button" onClick={handleClearImportFile} aria-label="Remove file">
+                  <FiX size={18} />
+                </ClearFileButton>
+              </SelectedFileBox>
+            )}
+
+            {sampleFiles.length > 0 && (
+              <SamplesContainer>
+                <SamplesTitle>Don't have a file? Try a sample</SamplesTitle>
+                <SamplesSubtitle>
+                  Download one of these example activities to test the import feature.
+                </SamplesSubtitle>
+                <SamplesGrid>
+                  {sampleFiles.map((sample) => (
+                    <SampleCard key={sample.filename} onClick={() => handleDownloadSample(sample)}>
+                      <SampleHeader>
+                        <SampleFormatBadge>{sample.format}</SampleFormatBadge>
+                        <SampleType>{sample.activityType}</SampleType>
+                      </SampleHeader>
+                      <SampleName>{sample.filename}</SampleName>
+                    </SampleCard>
+                  ))}
+                </SamplesGrid>
+              </SamplesContainer>
+            )}
+
+            {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
+            {importSuccess && <SuccessMessage role="status">{importSuccess}</SuccessMessage>}
+
+            <SaveButton onClick={handleImportActivity} disabled={importing || !importFile}>
+              {importing ? 'Importing...' : 'Import Activity'}
+            </SaveButton>
+          </Section>
+        </>
+      )}
+
+      {(isEditMode || mode === 'manual') && (
+      <>
       <Section>
         <SectionTitle>What did you do?</SectionTitle>
         <ActivityTypeGrid>
@@ -397,6 +636,8 @@ const RecordActivity = () => {
       <SaveButton onClick={handleSaveActivity} disabled={saving}>
         {saving ? 'Saving...' : isEditMode ? 'Update Activity' : 'Save Activity'}
       </SaveButton>
+      </>
+      )}
     </Container>
     </Layout>
   );

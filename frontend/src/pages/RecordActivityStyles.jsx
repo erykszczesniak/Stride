@@ -300,3 +300,243 @@ export const PhotoCount = styled.span`
   color: ${({ theme }) => theme.textMuted};
   text-align: center;
 `;
+
+export const ModeTabs = styled.div`
+  display: flex;
+  gap: 4px;
+  background: ${({ theme }) => theme.bgCard};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 12px;
+  padding: 6px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+`;
+
+export const ModeTab = styled.button`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: ${props => props.$active ? 'white' : props.theme.textSecondary};
+  background: ${props => props.$active ? 'linear-gradient(135deg, #fc5200 0%, #ff7746 100%)' : 'transparent'};
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: ${props => props.$active ? '0 2px 8px rgba(252, 82, 0, 0.25)' : 'none'};
+
+  &:hover {
+    color: ${props => props.$active ? 'white' : props.theme.textPrimary};
+    background: ${props => props.$active
+      ? 'linear-gradient(135deg, #fc5200 0%, #ff7746 100%)'
+      : props.theme.bgHover};
+  }
+`;
+
+export const ImportDropzone = styled.label`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 32px;
+  border: 2px dashed ${props => props.$dragging ? '#fc5200' : props.theme.border};
+  border-radius: 16px;
+  background: ${props => props.$dragging ? 'rgba(252, 82, 0, 0.05)' : props.theme.bgInput};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+
+  &:hover {
+    border-color: #fc5200;
+    background: rgba(252, 82, 0, 0.04);
+  }
+`;
+
+export const DropzoneIcon = styled.div`
+  font-size: 56px;
+  line-height: 1;
+  opacity: 0.7;
+`;
+
+export const DropzoneText = styled.div`
+  font-size: 17px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+`;
+
+export const DropzoneSubtext = styled.div`
+  font-size: 14px;
+  color: ${({ theme }) => theme.textSecondary};
+  max-width: 420px;
+  line-height: 1.5;
+`;
+
+export const SelectedFileBox = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  background: ${({ theme }) => theme.bgInput};
+  border: 2px solid #fc5200;
+  border-radius: 12px;
+  margin-top: 16px;
+`;
+
+export const SelectedFileInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+`;
+
+export const FileIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(252, 82, 0, 0.1);
+  color: #fc5200;
+  font-size: 22px;
+  flex-shrink: 0;
+`;
+
+export const FileDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+`;
+
+export const FileName = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const FileMeta = styled.div`
+  font-size: 13px;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const ClearFileButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  color: ${({ theme }) => theme.textSecondary};
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.bgHover};
+    color: ${({ theme }) => theme.textPrimary};
+  }
+`;
+
+export const SamplesContainer = styled.div`
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid ${({ theme }) => theme.border};
+`;
+
+export const SamplesTitle = styled.h3`
+  font-size: 15px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0 0 6px 0;
+`;
+
+export const SamplesSubtitle = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.textSecondary};
+  margin: 0 0 16px 0;
+`;
+
+export const SamplesGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+`;
+
+export const SampleCard = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px 16px;
+  background: ${({ theme }) => theme.bgInput};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: left;
+
+  &:hover {
+    border-color: #fc5200;
+    background: rgba(252, 82, 0, 0.04);
+    transform: translateY(-1px);
+  }
+`;
+
+export const SampleHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+`;
+
+export const SampleFormatBadge = styled.span`
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(252, 82, 0, 0.1);
+  color: #fc5200;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+`;
+
+export const SampleType = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.textSecondary};
+  font-weight: 500;
+`;
+
+export const SampleName = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+`;
+
+export const SuccessMessage = styled.div`
+  background: #e6f9ed;
+  color: #15803d;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-top: 16px;
+  font-size: 14px;
+  border-left: 4px solid #15803d;
+  font-weight: 500;
+`;

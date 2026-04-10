@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { parseRouteCoordinates } from "../../utils/polyline";
 import {
   MapWrapper,
   EmptyMapState,
@@ -62,20 +63,13 @@ const FitBounds = ({ coordinates }) => {
 };
 
 const ActivityMap = ({ coordinates, height = "400px", showMarkers = true }) => {
-  // Parse coordinates if they're a string (JSON)
-  let parsedCoordinates = coordinates;
-  if (typeof coordinates === "string") {
-    try {
-      parsedCoordinates = JSON.parse(coordinates);
-    } catch (e) {
-      parsedCoordinates = null;
-    }
-  }
+  // Accepts either:
+  //  - a JSON-stringified [[lat,lng],...] array (legacy manual activities)
+  //  - a Google Encoded Polyline string (imported GPX/TCX/FIT activities)
+  //  - an already-parsed array
+  const parsedCoordinates = parseRouteCoordinates(coordinates);
 
-  // Validate coordinates array
   const hasValidCoordinates =
-    parsedCoordinates &&
-    Array.isArray(parsedCoordinates) &&
     parsedCoordinates.length > 0 &&
     parsedCoordinates.every(
       (coord) =>
