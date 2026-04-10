@@ -58,11 +58,12 @@ public class FitParser implements ActivityFileParser {
     public ParsedActivity parse(InputStream input) throws Exception {
         DataInputStream dis = new DataInputStream(input);
 
-        // Parse FIT file header
+        // Parse FIT file header. Per the FIT SDK, multi-byte fields in the header
+        // (profile_version, data_size, header CRC) are encoded LITTLE-ENDIAN.
         int headerSize = dis.readUnsignedByte();
         int protocolVersion = dis.readUnsignedByte();
-        int profileVersion = readUint16(dis);
-        long dataSize = readUint32(dis);
+        int profileVersion = readUint16LE(dis);
+        long dataSize = readUint32LE(dis);
         byte[] dataType = new byte[4];
         dis.readFully(dataType);
         String signature = new String(dataType);
@@ -86,15 +87,42 @@ public class FitParser implements ActivityFileParser {
             int recordHeader = dis.readUnsignedByte();
             bytesRead++;
 
-            boolean isDefinition = (recordHeader & 0x40) != 0;
-            int localMessageType = recordHeader & 0x0F;
+            boolean isCompressedTimestamp = (recordHeader & 0x80) != 0;
+            int localMessageType;
+            boolean isDefinition;
+            boolean hasDeveloperFields;
+
+            if (isCompressedTimestamp) {
+                // Compressed timestamp header layout:
+                //   bit 7  = 1
+                //   bits 5-6 = local message type (0-3 only)
+                //   bits 0-4 = time offset (5 bits)
+                localMessageType = (recordHeader >> 5) & 0x03;
+                isDefinition = false;
+                hasDeveloperFields = false;
+            } else {
+                // Normal record header:
+                //   bit 7  = 0
+                //   bit 6  = definition flag
+                //   bit 5  = developer data flag
+                //   bit 4  = reserved
+                //   bits 0-3 = local message type
+                isDefinition = (recordHeader & 0x40) != 0;
+                hasDeveloperFields = (recordHeader & 0x20) != 0;
+                localMessageType = recordHeader & 0x0F;
+            }
+
+            log.debug("FIT record at byte {}: header=0x{} def={} devFields={} compressedTs={} localType={}",
+                    bytesRead - 1, String.format("%02x", recordHeader),
+                    isDefinition, hasDeveloperFields, isCompressedTimestamp, localMessageType);
 
             if (isDefinition) {
-                bytesRead += parseDefinitionMessage(dis, localMessageType, localDefinitions);
+                bytesRead += parseDefinitionMessage(dis, localMessageType, localDefinitions, hasDeveloperFields);
             } else {
                 List<FieldDef> fields = localDefinitions.get(localMessageType);
                 if (fields == null) {
-                    log.warn("No definition for local message type {}, skipping", localMessageType);
+                    log.warn("FIT parser: no definition for local message type {} at byte {}, aborting",
+                            localMessageType, bytesRead - 1);
                     break;
                 }
                 bytesRead += parseDataMessage(dis, fields, points, sessionData);
@@ -110,7 +138,8 @@ public class FitParser implements ActivityFileParser {
     }
 
     private long parseDefinitionMessage(DataInputStream dis, int localMessageType,
-                                        Map<Integer, List<FieldDef>> definitions) throws Exception {
+                                        Map<Integer, List<FieldDef>> definitions,
+                                        boolean hasDeveloperFields) throws Exception {
         long bytes = 0;
         dis.readUnsignedByte(); // reserved
         bytes++;
@@ -133,6 +162,32 @@ public class FitParser implements ActivityFileParser {
             fields.add(new FieldDef(fieldDefNum, fieldSize, baseType, globalMessageNumber, architecture));
             bytes += 3;
         }
+
+        // Developer field definitions follow if the dev-fields bit was set in the record header.
+        // We can't decode developer fields meaningfully (their semantics live in developer_data_id /
+        // field_description messages), but we still need to consume their bytes from the stream
+        // AND track their sizes so subsequent data messages stay aligned.
+        if (hasDeveloperFields) {
+            int numDevFields = dis.readUnsignedByte();
+            bytes++;
+            for (int i = 0; i < numDevFields; i++) {
+                int devFieldDefNum = dis.readUnsignedByte();
+                int devFieldSize = dis.readUnsignedByte();
+                int devFieldDataIdx = dis.readUnsignedByte();
+                // Store as a placeholder field with a synthetic high definition number so we
+                // never collide with normal field def numbers. We use baseType = byte array so
+                // decodeField returns null and parseDataMessage just consumes the bytes.
+                fields.add(new FieldDef(1000 + devFieldDefNum, devFieldSize, 0x0D, globalMessageNumber, architecture));
+                bytes += 3;
+                // touch idx to silence unused warning
+                if (devFieldDataIdx < 0) {
+                    log.trace("dev field data idx: {}", devFieldDataIdx);
+                }
+            }
+        }
+
+        log.debug("FIT def msg: localType={} globalMsg={} fields={} devFields={}",
+                localMessageType, globalMessageNumber, numFields, hasDeveloperFields);
 
         definitions.put(localMessageType, fields);
         return bytes;
@@ -168,24 +223,51 @@ public class FitParser implements ActivityFileParser {
         ByteBuffer buf = ByteBuffer.wrap(data);
         buf.order(field.architecture == 0 ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
 
+        // The high bit of the base type byte is the endian flag; the low 5 bits identify the type.
         int baseType = field.baseType & 0x1F;
         try {
             return switch (baseType) {
-                case 0 -> buf.get() & 0xFF;         // enum (uint8)
-                case 1 -> buf.get();                  // sint8
-                case 2 -> buf.get() & 0xFF;          // uint8
-                case 4 -> buf.getShort() & 0xFFFF;   // uint16
-                case 5 -> (int) buf.getInt();         // sint32
-                case 6 -> buf.getInt() & 0xFFFFFFFFL; // uint32
-                case 0x84 -> buf.getShort();          // sint16
-                case 0x85 -> buf.getInt() & 0xFFFFFFFFL; // uint32
-                case 0x86 -> (long) buf.getInt();     // sint32
-                default -> {
-                    if (field.size == 1) yield buf.get() & 0xFF;
-                    else if (field.size == 2) yield buf.getShort() & 0xFFFF;
-                    else if (field.size == 4) yield buf.getInt() & 0xFFFFFFFFL;
-                    else yield null;
+                case 0 -> {
+                    int v = buf.get() & 0xFF;
+                    yield v == 0xFF ? null : v;             // enum, invalid = 0xFF
                 }
+                case 1 -> {
+                    int v = buf.get();
+                    yield v == 0x7F ? null : v;             // sint8, invalid = 0x7F
+                }
+                case 2 -> {
+                    int v = buf.get() & 0xFF;
+                    yield v == 0xFF ? null : v;             // uint8, invalid = 0xFF
+                }
+                case 3 -> {
+                    int v = buf.getShort();
+                    yield v == 0x7FFF ? null : v;           // sint16, invalid = 0x7FFF
+                }
+                case 4 -> {
+                    int v = buf.getShort() & 0xFFFF;
+                    yield v == 0xFFFF ? null : v;           // uint16, invalid = 0xFFFF
+                }
+                case 5 -> {
+                    int v = buf.getInt();
+                    yield v == 0x7FFFFFFF ? null : v;       // sint32, invalid = 0x7FFFFFFF
+                }
+                case 6 -> {
+                    long v = buf.getInt() & 0xFFFFFFFFL;
+                    yield v == 0xFFFFFFFFL ? null : v;      // uint32, invalid = 0xFFFFFFFF
+                }
+                case 10 -> {
+                    int v = buf.get() & 0xFF;
+                    yield v == 0 ? null : v;                // uint8z, invalid = 0
+                }
+                case 11 -> {
+                    int v = buf.getShort() & 0xFFFF;
+                    yield v == 0 ? null : v;                // uint16z, invalid = 0
+                }
+                case 12 -> {
+                    long v = buf.getInt() & 0xFFFFFFFFL;
+                    yield v == 0L ? null : v;               // uint32z, invalid = 0
+                }
+                default -> null; // string, byte array, float, etc. — bytes already consumed
             };
         } catch (Exception e) {
             return null;
@@ -371,6 +453,13 @@ public class FitParser implements ActivityFileParser {
                 | ((long) dis.readUnsignedByte() << 16)
                 | ((long) dis.readUnsignedByte() << 8)
                 | dis.readUnsignedByte();
+    }
+
+    private long readUint32LE(DataInputStream dis) throws Exception {
+        return (long) dis.readUnsignedByte()
+                | ((long) dis.readUnsignedByte() << 8)
+                | ((long) dis.readUnsignedByte() << 16)
+                | ((long) dis.readUnsignedByte() << 24);
     }
 
     private record FieldDef(int defNum, int size, int baseType, int globalMessageNumber, int architecture) {
