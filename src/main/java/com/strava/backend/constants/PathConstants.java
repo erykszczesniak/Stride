@@ -122,6 +122,12 @@ public final class PathConstants {
     public static final String API_V1_IMPORT = API_V1 + IMPORT;
     public static final String SAMPLES = "/samples";
 
+    // Personal Records
+    public static final String PERSONAL_RECORDS = "/personal-records";
+    public static final String API_V1_PERSONAL_RECORDS = API_V1 + PERSONAL_RECORDS;
+    public static final String ACTIVITY_TYPE = "/activity-type";
+    public static final String RECALCULATE = "/recalculate";
+
     // Export
     public static final String EXPORT = "/export";
     public static final String API_V1_EXPORT = API_V1 + EXPORT;

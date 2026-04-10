@@ -9,6 +9,7 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.service.NotificationService;
+import com.strava.backend.service.PersonalRecordService;
 import com.strava.backend.service.UserService;
 import com.strava.backend.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,9 @@ class ActivityServiceImplTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private PersonalRecordService personalRecordService;
 
     @InjectMocks
     private ActivityServiceImpl activityService;

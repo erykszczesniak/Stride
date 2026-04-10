@@ -11,6 +11,7 @@ import com.strava.backend.enums.NotificationType;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.NotificationService;
+import com.strava.backend.service.PersonalRecordService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final ActivityRepository activityRepository;
     private final UserService userService;
     private final NotificationService notificationService;
+    private final PersonalRecordService personalRecordService;
 
     @Value("${app.upload.dir:uploads/photos}")
     private String uploadDir;
@@ -122,7 +124,9 @@ public class ActivityServiceImpl implements ActivityService {
                 .user(user)
                 .build();
 
-        return activityRepository.save(activity);
+        Activity saved = activityRepository.save(activity);
+        personalRecordService.checkAndUpdatePRs(saved);
+        return saved;
     }
 
     @Override
@@ -156,7 +160,9 @@ public class ActivityServiceImpl implements ActivityService {
         if (request.getEndLocation() != null) activity.setEndLocation(request.getEndLocation());
         if (request.getRoutePolyline() != null) activity.setRoutePolyline(request.getRoutePolyline());
 
-        return activityRepository.save(activity);
+        Activity saved = activityRepository.save(activity);
+        personalRecordService.checkAndUpdatePRs(saved);
+        return saved;
     }
 
     @Override

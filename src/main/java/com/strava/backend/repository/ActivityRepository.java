@@ -225,4 +225,8 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     // Get recent public (non-private) activities for a user
     @Query("SELECT a FROM Activity a WHERE a.user.id = :userId AND a.isPrivate = false ORDER BY a.createdAt DESC")
     List<Activity> findRecentPublicByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    // Get all activities for a user ordered by start time (for PR recalculation)
+    @Query("SELECT a FROM Activity a WHERE a.user.id = :userId ORDER BY a.startTime ASC")
+    List<Activity> findAllByUserIdOrderByStartTimeAsc(@Param("userId") Long userId);
 }
