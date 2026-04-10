@@ -186,6 +186,19 @@ export const StatInput = styled.input`
   }
 `;
 
+export const DurationInputGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+export const DurationSeparator = styled.span`
+  font-size: 22px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.textSecondary};
+  user-select: none;
+`;
+
 export const SaveButton = styled.button`
   width: 100%;
   padding: 18px;

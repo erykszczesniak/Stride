@@ -104,6 +104,9 @@ export const ProfileLocation = styled.p`
 `;
 
 export const EditButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 24px;
   background: ${({ theme }) => theme.bgCard};
   border: 2px solid ${({ theme }) => theme.border};
@@ -113,7 +116,9 @@ export const EditButton = styled.button`
   color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 8px;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
 
   &:hover {
     border-color: #fc5200;
@@ -348,6 +353,9 @@ export const FollowButton = styled.button`
 `;
 
 export const ShareButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 24px;
   background: ${({ theme }) => theme.bgCard};
   border: 2px solid ${({ theme }) => theme.border};
@@ -357,6 +365,9 @@ export const ShareButton = styled.button`
   color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
 
   &:hover {
     border-color: #fc5200;

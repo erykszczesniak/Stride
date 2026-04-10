@@ -20,7 +20,7 @@ import ActivityMap from "../components/ActivityMap/ActivityMap";
 import ShareModal from "../components/ShareModal/ShareModal";
 import { useAuth } from "../context/AuthContext";
 import { LoadingSpinner } from "./DashboardStyles";
-import { formatDuration, getTimeAgo, getInitials } from "../utils/formatters";
+import { formatDuration, getTimeAgo, getInitials, isPaceActivity, formatPace } from "../utils/formatters";
 import {
   BackLink,
   ActivityHeader,
@@ -332,8 +332,17 @@ const ActivityDetails = () => {
             <StatLabel>Calories</StatLabel>
           </StatItem>
           <StatItem>
-            <StatValue>{activity.averageSpeed?.toFixed(1) || 0}</StatValue>
-            <StatLabel>Avg Speed (km/h)</StatLabel>
+            {isPaceActivity(activity.activityType) ? (
+              <>
+                <StatValue>{formatPace(activity.distance, activity.duration)}</StatValue>
+                <StatLabel>Avg Pace</StatLabel>
+              </>
+            ) : (
+              <>
+                <StatValue>{activity.averageSpeed?.toFixed(1) || 0}</StatValue>
+                <StatLabel>Avg Speed (km/h)</StatLabel>
+              </>
+            )}
           </StatItem>
           <StatItem>
             <StatValue>{activity.averageHeartRate || "-"}</StatValue>

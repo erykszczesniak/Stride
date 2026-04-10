@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
+import { FiSettings, FiShare2, FiCheck } from "react-icons/fi";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
 import Layout from "../components/Layout/Layout";
@@ -324,9 +325,13 @@ const Profile = () => {
           <ProfileActions>
             {isOwnProfile ? (
               <>
-                <EditButton onClick={() => navigate('/settings')}>{"\u2699\uFE0F"} Edit Profile</EditButton>
+                <EditButton onClick={() => navigate('/settings')}>
+                  <FiSettings size={16} />
+                  Edit Profile
+                </EditButton>
                 <ShareButton onClick={handleShareProfile}>
-                  {shareTooltip ? "Copied!" : "\u{1F517} Share Profile"}
+                  {shareTooltip ? <FiCheck size={16} /> : <FiShare2 size={16} />}
+                  {shareTooltip ? "Copied!" : "Share Profile"}
                 </ShareButton>
               </>
             ) : (

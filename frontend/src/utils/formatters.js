@@ -47,6 +47,36 @@ export const formatDistance = (km) => {
 };
 
 /**
+ * Activity types where pace (min/km) is more meaningful than speed (km/h).
+ */
+const PACE_ACTIVITY_TYPES = new Set([
+  "RUN",
+  "VIRTUAL_RUN",
+  "WALK",
+  "HIKE",
+  "TRAIL_RUN",
+]);
+
+/**
+ * Whether the given activity type should display pace instead of speed.
+ */
+export const isPaceActivity = (activityType) => PACE_ACTIVITY_TYPES.has(activityType);
+
+/**
+ * Format pace as min:sec /km from distance and duration.
+ * @param {number} distanceKm
+ * @param {number} durationSeconds
+ * @returns {string} Formatted pace (e.g., "5:30 /km")
+ */
+export const formatPace = (distanceKm, durationSeconds) => {
+  if (!distanceKm || !durationSeconds || distanceKm <= 0) return "—";
+  const secondsPerKm = durationSeconds / distanceKm;
+  const minutes = Math.floor(secondsPerKm / 60);
+  const seconds = Math.round(secondsPerKm % 60);
+  return `${minutes}:${seconds.toString().padStart(2, "0")} /km`;
+};
+
+/**
  * Format an ISO date string to a locale date string.
  * @param {string} dateString - ISO date string
  * @returns {string} Formatted date (e.g., "Jan 15, 2025")

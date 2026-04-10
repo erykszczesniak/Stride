@@ -21,6 +21,8 @@ import {
   StatsGrid,
   StatInput,
   StatLabel,
+  DurationInputGroup,
+  DurationSeparator,
   SaveButton,
   ErrorMessage,
   PhotoUploadArea,
@@ -91,11 +93,12 @@ const RecordActivity = () => {
     title: '',
     description: '',
     distance: '',
-    duration: '',
+    durationHours: '',
+    durationMinutes: '',
+    durationSeconds: '',
     elevation: '',
     calories: '',
     avgHeartRate: '',
-    avgPace: ''
   });
 
   const activityTypes = [
@@ -128,15 +131,17 @@ const RecordActivity = () => {
         const a = res.data;
         setSelectedType(a.activityType || 'RUN');
         setOriginalStartTime(a.startTime);
+        const totalSeconds = a.duration || 0;
         setFormData({
           title: a.title || '',
           description: a.description || '',
           distance: a.distance ? String(a.distance) : '',
-          duration: a.duration ? String(Math.round(a.duration / 60)) : '',
+          durationHours: totalSeconds >= 3600 ? String(Math.floor(totalSeconds / 3600)) : '',
+          durationMinutes: totalSeconds > 0 ? String(Math.floor((totalSeconds % 3600) / 60)) : '',
+          durationSeconds: totalSeconds > 0 ? String(totalSeconds % 60) : '',
           elevation: a.elevationGain ? String(a.elevationGain) : '',
           calories: a.calories ? String(a.calories) : '',
           avgHeartRate: a.averageHeartRate ? String(a.averageHeartRate) : '',
-          avgPace: ''
         });
         if (a.photos && a.photos.length > 0) {
           setExistingPhotos(a.photos);
@@ -304,14 +309,18 @@ const RecordActivity = () => {
         return;
       }
 
-      if (!formData.duration || parseInt(formData.duration) <= 0) {
+      const totalDurationSeconds =
+        (parseInt(formData.durationHours) || 0) * 3600 +
+        (parseInt(formData.durationMinutes) || 0) * 60 +
+        (parseInt(formData.durationSeconds) || 0);
+
+      if (totalDurationSeconds <= 0) {
         setError('Please enter a valid duration');
         return;
       }
 
       setSaving(true);
 
-      const durationMinutes = parseInt(formData.duration);
       const distanceKm = parseFloat(formData.distance);
 
       // Prepare activity data matching backend ActivityRequest DTO
@@ -321,12 +330,12 @@ const RecordActivity = () => {
         description: formData.description || null,
         activityType: selectedType,
         distance: distanceKm,
-        duration: durationMinutes * 60,
+        duration: totalDurationSeconds,
         elevationGain: formData.elevation ? parseInt(formData.elevation) : 0,
         calories: formData.calories ? parseInt(formData.calories) : 0,
         averageHeartRate: formData.avgHeartRate ? parseInt(formData.avgHeartRate) : null,
-        averageSpeed: distanceKm && durationMinutes
-          ? parseFloat((distanceKm / (durationMinutes / 60)).toFixed(2))
+        averageSpeed: distanceKm && totalDurationSeconds
+          ? parseFloat((distanceKm / (totalDurationSeconds / 3600)).toFixed(2))
           : null,
         startTime: isEditMode && originalStartTime ? originalStartTime : new Date().toISOString(),
         isPrivate: false
@@ -517,14 +526,40 @@ const RecordActivity = () => {
           </div>
 
           <div>
-            <StatLabel>⏱️ Duration (min)</StatLabel>
-            <StatInput
-              type="number"
-              name="duration"
-              value={formData.duration}
-              onChange={handleInputChange}
-              placeholder="0"
-            />
+            <StatLabel>⏱️ Duration (h : m : s)</StatLabel>
+            <DurationInputGroup>
+              <StatInput
+                type="number"
+                name="durationHours"
+                value={formData.durationHours}
+                onChange={handleInputChange}
+                placeholder="0"
+                min="0"
+                aria-label="Hours"
+              />
+              <DurationSeparator>:</DurationSeparator>
+              <StatInput
+                type="number"
+                name="durationMinutes"
+                value={formData.durationMinutes}
+                onChange={handleInputChange}
+                placeholder="00"
+                min="0"
+                max="59"
+                aria-label="Minutes"
+              />
+              <DurationSeparator>:</DurationSeparator>
+              <StatInput
+                type="number"
+                name="durationSeconds"
+                value={formData.durationSeconds}
+                onChange={handleInputChange}
+                placeholder="00"
+                min="0"
+                max="59"
+                aria-label="Seconds"
+              />
+            </DurationInputGroup>
           </div>
 
           <div>
@@ -557,17 +592,6 @@ const RecordActivity = () => {
               value={formData.avgHeartRate}
               onChange={handleInputChange}
               placeholder="0"
-            />
-          </div>
-
-          <div>
-            <StatLabel>⚡ Avg Pace</StatLabel>
-            <StatInput
-              type="text"
-              name="avgPace"
-              value={formData.avgPace}
-              onChange={handleInputChange}
-              placeholder="5:30/km"
             />
           </div>
         </StatsGrid>
