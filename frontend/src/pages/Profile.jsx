@@ -5,6 +5,7 @@ import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
 import Layout from "../components/Layout/Layout";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
+import PersonalRecords from "../components/PersonalRecords/PersonalRecords";
 import {
   Container,
   ProfileHeader,
@@ -382,6 +383,12 @@ const Profile = () => {
               >
                 Achievements
               </Tab>
+              <Tab
+                active={activeTab === "personalRecords"}
+                onClick={() => setActiveTab("personalRecords")}
+              >
+                Personal Records
+              </Tab>
             </TabsContainer>
 
             {activeTab === "overview" && (
@@ -615,31 +622,62 @@ const Profile = () => {
                 </AchievementsGrid>
               </TabContent>
             )}
+
+            {activeTab === "personalRecords" && (
+              <TabContent>
+                <PersonalRecords userId={user.id} isOwnProfile={true} />
+              </TabContent>
+            )}
           </>
         ) : (
           /* Public profile view - other user */
-          <TabContent>
-            <SectionTitle>Recent Activities</SectionTitle>
-            {activities.length > 0 ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                }}
+          <>
+            <TabsContainer>
+              <Tab
+                active={activeTab === "overview"}
+                onClick={() => setActiveTab("overview")}
               >
-                {activities.map((activity) => (
-                  <ActivityCard
-                    key={activity.id}
-                    activity={activity}
-                    onLike={handleLikeActivity}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState>No public activities yet</EmptyState>
+                Activities
+              </Tab>
+              <Tab
+                active={activeTab === "personalRecords"}
+                onClick={() => setActiveTab("personalRecords")}
+              >
+                Personal Records
+              </Tab>
+            </TabsContainer>
+
+            {activeTab === "overview" && (
+              <TabContent>
+                <SectionTitle>Recent Activities</SectionTitle>
+                {activities.length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "16px",
+                    }}
+                  >
+                    {activities.map((activity) => (
+                      <ActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        onLike={handleLikeActivity}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState>No public activities yet</EmptyState>
+                )}
+              </TabContent>
             )}
-          </TabContent>
+
+            {activeTab === "personalRecords" && (
+              <TabContent>
+                <PersonalRecords userId={user.id} isOwnProfile={false} />
+              </TabContent>
+            )}
+          </>
         )}
       </Container>
     </Layout>
