@@ -2,6 +2,10 @@
 
 A full-stack fitness activity tracking application inspired by Strava. Track your workouts, join challenges, connect with other athletes, and achieve your fitness goals.
 
+<img width="1985" height="1239" alt="image" src="https://github.com/user-attachments/assets/eb45b949-40b1-4a08-b218-1cc0d3e0896c" />
+
+
+
 > **Note:** This project is currently in active development. Features and UI may change.
 
 ![Dashboard Preview](docs/screenshots/dashboard.png)
