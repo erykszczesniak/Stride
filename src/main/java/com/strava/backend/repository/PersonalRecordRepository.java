@@ -4,6 +4,7 @@ import com.strava.backend.domain.PersonalRecord;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.enums.DistanceType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,5 +29,18 @@ public interface PersonalRecordRepository extends JpaRepository<PersonalRecord, 
     @Query("SELECT pr FROM PersonalRecord pr WHERE pr.user.id = :userId AND pr.achievedAt >= :since ORDER BY pr.achievedAt DESC")
     List<PersonalRecord> findRecentByUserId(@Param("userId") Long userId, @Param("since") LocalDateTime since);
 
-    void deleteByUserId(Long userId);
+    /**
+     * Bulk-delete every PR for a user as a single SQL statement, executed
+     * immediately rather than batched into the persistence context. This is
+     * what recalculateAllPRs() needs: without it, Hibernate would order the
+     * subsequent INSERTs of fresh PRs BEFORE the DELETEs at flush time, and
+     * the unique (user_id, activity_type, distance_type) constraint would
+     * blow up on the very first new PR for the same distance.
+     *
+     * clearAutomatically removes the now-stale PRs from the persistence
+     * context so subsequent finds in the same transaction don't return them.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM PersonalRecord pr WHERE pr.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }
