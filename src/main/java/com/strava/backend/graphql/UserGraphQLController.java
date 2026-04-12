@@ -3,7 +3,7 @@ package com.strava.backend.graphql;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.user.UpdateUserRequest;
 import com.strava.backend.repository.UserRepository;
-import com.strava.backend.security.UserPrincipal;
+import com.strava.backend.controller.BaseController;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -12,27 +12,17 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-public class UserGraphQLController {
+public class UserGraphQLController extends BaseController {
 
     private final UserService userService;
     private final UserRepository userRepository;
     private final ActivityService activityService;
-
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @QueryMapping
     public User user(@Argument Long id) {

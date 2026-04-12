@@ -5,7 +5,7 @@ import com.strava.backend.domain.Comment;
 import com.strava.backend.dto.activity.ActivityRequest;
 import com.strava.backend.dto.activity.ActivityStatsResponse;
 import com.strava.backend.dto.activity.WeeklyStatsResponse;
-import com.strava.backend.security.UserPrincipal;
+import com.strava.backend.controller.BaseController;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.CommentService;
 import lombok.RequiredArgsConstructor;
@@ -14,26 +14,16 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-public class ActivityGraphQLController {
+public class ActivityGraphQLController extends BaseController {
 
     private final ActivityService activityService;
     private final CommentService commentService;
-
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @QueryMapping
     public Activity activity(@Argument Long id) {

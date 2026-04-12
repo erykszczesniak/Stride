@@ -3,12 +3,10 @@ package com.strava.backend.graphql;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.repository.ActivityRepository;
-import com.strava.backend.security.UserPrincipal;
+import com.strava.backend.controller.BaseController;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
@@ -17,17 +15,9 @@ import java.util.*;
 
 @Controller
 @RequiredArgsConstructor
-public class ReportGraphQLController {
+public class ReportGraphQLController extends BaseController {
 
     private final ActivityRepository activityRepository;
-
-    private Long getAuthenticatedUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) auth.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @QueryMapping
     public Map<String, Object> generateReport(

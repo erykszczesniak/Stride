@@ -1,7 +1,7 @@
 package com.strava.backend.graphql;
 
+import com.strava.backend.controller.BaseController;
 import com.strava.backend.domain.Event;
-import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -9,25 +9,15 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-public class EventGraphQLController {
+public class EventGraphQLController extends BaseController {
 
     private final EventService eventService;
-
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @QueryMapping
     public Event event(@Argument Long id) {

@@ -1,8 +1,8 @@
 package com.strava.backend.graphql;
 
+import com.strava.backend.controller.BaseController;
 import com.strava.backend.domain.Club;
 import com.strava.backend.domain.User;
-import com.strava.backend.security.UserPrincipal;
 import com.strava.backend.service.ClubService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -10,25 +10,15 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-public class ClubGraphQLController {
+public class ClubGraphQLController extends BaseController {
 
     private final ClubService clubService;
-
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            return ((UserPrincipal) authentication.getPrincipal()).getId();
-        }
-        return null;
-    }
 
     @QueryMapping
     public Club club(@Argument Long id) {
