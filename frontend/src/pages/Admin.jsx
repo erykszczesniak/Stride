@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiUsers, FiActivity, FiMap, FiCalendar, FiPlus, FiDownload, FiFileText } from "react-icons/fi";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
@@ -58,6 +59,7 @@ import {
 } from "./AdminStyles";
 
 const Admin = () => {
+  const { t } = useTranslation();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState("activities");
   const [stats, setStats] = useState(null);
@@ -93,7 +95,7 @@ const Admin = () => {
       setStats(response.data);
     } catch (error) {
       if (error.response?.status === 403) {
-        toast.error("Access denied. You need ADMIN role to view this page.");
+        toast.error(t("admin.toast.accessDenied"));
       }
     }
   };
@@ -108,7 +110,7 @@ const Admin = () => {
       setActivitiesTotalPages(response.data.totalPages || 0);
     } catch (error) {
       if (error.response?.status === 403) {
-        toast.error("Access denied. You need ADMIN role to view activities.");
+        toast.error(t("admin.toast.accessDeniedActivities"));
       }
     } finally {
       setLoading(false);
@@ -123,7 +125,7 @@ const Admin = () => {
       setUsersTotalPages(response.data.totalPages || 0);
     } catch (error) {
       if (error.response?.status === 403) {
-        toast.error("Access denied. You need ADMIN role to view users.");
+        toast.error(t("admin.toast.accessDeniedUsers"));
       }
     } finally {
       setLoading(false);
@@ -137,25 +139,25 @@ const Admin = () => {
   };
 
   const handleDeleteActivity = async (activityId) => {
-    if (window.confirm("Are you sure you want to delete this activity?")) {
+    if (window.confirm(t("admin.toast.confirmDeleteActivity"))) {
       try {
         await AdminService.deleteActivity(activityId);
-        toast.success("Activity deleted successfully.");
+        toast.success(t("admin.toast.activityDeleted"));
         loadActivities();
       } catch (error) {
-        toast.error("Failed to delete activity.");
+        toast.error(t("admin.toast.activityDeleteFailed"));
       }
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+    if (window.confirm(t("admin.toast.confirmDeleteUser"))) {
       try {
         await AdminService.deleteUser(userId);
-        toast.success("User deleted successfully.");
+        toast.success(t("admin.toast.userDeleted"));
         loadUsers();
       } catch (error) {
-        toast.error("Failed to delete user.");
+        toast.error(t("admin.toast.userDeleteFailed"));
       }
     }
   };
@@ -279,7 +281,7 @@ const Admin = () => {
     const data = exportType === "activities" ? activities : users;
 
     if (data.length === 0) {
-      toast.warning("No data to export. Please load data first.");
+      toast.warning(t("admin.toast.noData"));
       return;
     }
 
@@ -307,8 +309,8 @@ const Admin = () => {
             <FiArrowLeft size={20} />
           </BackButton>
           <HeaderContent>
-            <Title>Admin Panel</Title>
-            <Subtitle>Manage users, activities, and export data</Subtitle>
+            <Title>{t("admin.title")}</Title>
+            <Subtitle>{t("admin.subtitle")}</Subtitle>
           </HeaderContent>
         </Header>
 
@@ -318,40 +320,40 @@ const Admin = () => {
               <FiUsers size={24} />
             </StatIcon>
             <StatValue>{stats?.totalUsers || 0}</StatValue>
-            <StatLabel>Total Users</StatLabel>
+            <StatLabel>{t("admin.totalUsers")}</StatLabel>
           </StatCard>
           <StatCard>
             <StatIcon color="#10b981">
               <FiActivity size={24} />
             </StatIcon>
             <StatValue>{stats?.totalActivities || 0}</StatValue>
-            <StatLabel>Total Activities</StatLabel>
+            <StatLabel>{t("admin.totalActivities")}</StatLabel>
           </StatCard>
           <StatCard>
             <StatIcon color="#f59e0b">
               <FiMap size={24} />
             </StatIcon>
             <StatValue>{stats?.totalDistanceKm?.toFixed(0) || 0}</StatValue>
-            <StatLabel>Total Distance (km)</StatLabel>
+            <StatLabel>{t("admin.totalDistance")}</StatLabel>
           </StatCard>
           <StatCard>
             <StatIcon color="#8b5cf6">
               <FiCalendar size={24} />
             </StatIcon>
             <StatValue>{stats?.activitiesThisMonth || 0}</StatValue>
-            <StatLabel>This Month</StatLabel>
+            <StatLabel>{t("admin.thisMonth")}</StatLabel>
           </StatCard>
         </StatsGrid>
 
         <TabsContainer>
           <Tab active={activeTab === "activities"} onClick={() => setActiveTab("activities")}>
-            Activities
+            {t("admin.tabs.activities")}
           </Tab>
           <Tab active={activeTab === "users"} onClick={() => setActiveTab("users")}>
-            Users
+            {t("admin.tabs.users")}
           </Tab>
           <Tab active={activeTab === "export"} onClick={() => setActiveTab("export")}>
-            Export
+            {t("admin.tabs.export")}
           </Tab>
         </TabsContainer>
 
@@ -362,14 +364,14 @@ const Admin = () => {
                 <form onSubmit={handleSearch}>
                   <SearchInput
                     type="text"
-                    placeholder="Search activities..."
+                    placeholder={t("admin.searchActivities")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </form>
                 <AddButton as="a" href="/activities/new">
                   <FiPlus size={18} />
-                  Add Activity
+                  {t("nav.addActivity")}
                 </AddButton>
               </TableHeader>
               {loading ? (
@@ -379,20 +381,20 @@ const Admin = () => {
                   <EmptyIcon>
                     <FiActivity size={48} />
                   </EmptyIcon>
-                  <EmptyText>No activities found</EmptyText>
+                  <EmptyText>{t("admin.noActivitiesFound")}</EmptyText>
                 </EmptyState>
               ) : (
                 <>
                   <Table>
                     <thead>
                       <tr>
-                        <Th>Activity</Th>
-                        <Th>Type</Th>
-                        <Th>Distance</Th>
-                        <Th>Duration</Th>
-                        <Th>Date</Th>
-                        <Th>User</Th>
-                        <Th>Actions</Th>
+                        <Th>{t("admin.columns.activity")}</Th>
+                        <Th>{t("admin.columns.type")}</Th>
+                        <Th>{t("admin.columns.distance")}</Th>
+                        <Th>{t("admin.columns.duration")}</Th>
+                        <Th>{t("admin.columns.date")}</Th>
+                        <Th>{t("admin.columns.user")}</Th>
+                        <Th>{t("admin.columns.actions")}</Th>
                       </tr>
                     </thead>
                     <tbody>
@@ -421,10 +423,10 @@ const Admin = () => {
                           </Td>
                           <Td>
                             <ActionButton as="a" href={`/activities/${activity.id}`}>
-                              View
+                              {t("admin.view")}
                             </ActionButton>
                             <ActionButton className="danger" onClick={() => handleDeleteActivity(activity.id)}>
-                              Delete
+                              {t("admin.delete")}
                             </ActionButton>
                           </Td>
                         </Tr>
@@ -437,16 +439,16 @@ const Admin = () => {
                         disabled={activitiesPage === 0}
                         onClick={() => setActivitiesPage(activitiesPage - 1)}
                       >
-                        Previous
+                        {t("admin.previous")}
                       </PageButton>
                       <span>
-                        Page {activitiesPage + 1} of {activitiesTotalPages}
+                        {t("admin.pageOf", { current: activitiesPage + 1, total: activitiesTotalPages })}
                       </span>
                       <PageButton
                         disabled={activitiesPage >= activitiesTotalPages - 1}
                         onClick={() => setActivitiesPage(activitiesPage + 1)}
                       >
-                        Next
+                        {t("admin.next")}
                       </PageButton>
                     </Pagination>
                   )}
@@ -460,7 +462,7 @@ const Admin = () => {
               <TableHeader>
                 <SearchInput
                   type="text"
-                  placeholder="Search users..."
+                  placeholder={t("admin.searchUsers")}
                 />
               </TableHeader>
               {loading ? (
@@ -470,20 +472,20 @@ const Admin = () => {
                   <EmptyIcon>
                     <FiUsers size={48} />
                   </EmptyIcon>
-                  <EmptyText>No users found</EmptyText>
+                  <EmptyText>{t("admin.noUsersFound")}</EmptyText>
                 </EmptyState>
               ) : (
                 <>
                   <Table>
                     <thead>
                       <tr>
-                        <Th>User</Th>
-                        <Th>Role</Th>
-                        <Th>Status</Th>
-                        <Th>Activities</Th>
-                        <Th>Followers</Th>
-                        <Th>Joined</Th>
-                        <Th>Actions</Th>
+                        <Th>{t("admin.columns.user")}</Th>
+                        <Th>{t("admin.columns.role")}</Th>
+                        <Th>{t("admin.columns.status")}</Th>
+                        <Th>{t("admin.columns.activities")}</Th>
+                        <Th>{t("admin.columns.followers")}</Th>
+                        <Th>{t("admin.columns.joined")}</Th>
+                        <Th>{t("admin.columns.actions")}</Th>
                       </tr>
                     </thead>
                     <tbody>
@@ -511,7 +513,7 @@ const Admin = () => {
                           </Td>
                           <Td>
                             <Badge type={user.active ? "active" : "inactive"}>
-                              {user.active ? "Active" : "Inactive"}
+                              {user.active ? t("admin.active") : t("admin.inactive")}
                             </Badge>
                           </Td>
                           <Td>{user.activitiesCount}</Td>
@@ -519,10 +521,10 @@ const Admin = () => {
                           <Td>{formatDate(user.createdAt)}</Td>
                           <Td>
                             <ActionButton as="a" href={`/profile/${user.id}`}>
-                              View
+                              {t("admin.view")}
                             </ActionButton>
                             <ActionButton className="danger" onClick={() => handleDeleteUser(user.id)}>
-                              Delete
+                              {t("admin.delete")}
                             </ActionButton>
                           </Td>
                         </Tr>
@@ -535,16 +537,16 @@ const Admin = () => {
                         disabled={usersPage === 0}
                         onClick={() => setUsersPage(usersPage - 1)}
                       >
-                        Previous
+                        {t("admin.previous")}
                       </PageButton>
                       <span>
-                        Page {usersPage + 1} of {usersTotalPages}
+                        {t("admin.pageOf", { current: usersPage + 1, total: usersTotalPages })}
                       </span>
                       <PageButton
                         disabled={usersPage >= usersTotalPages - 1}
                         onClick={() => setUsersPage(usersPage + 1)}
                       >
-                        Next
+                        {t("admin.next")}
                       </PageButton>
                     </Pagination>
                   )}
@@ -555,22 +557,22 @@ const Admin = () => {
 
           {activeTab === "export" && (
             <ExportSection>
-              <ExportTitle>Export Data</ExportTitle>
+              <ExportTitle>{t("admin.export.title")}</ExportTitle>
               <ExportDescription>
-                Export your data in various formats for reporting and analysis.
+                {t("admin.export.description")}
               </ExportDescription>
 
               <ExportOptions>
                 <ExportRow>
-                  <ExportLabel>Data Type</ExportLabel>
+                  <ExportLabel>{t("admin.export.dataType")}</ExportLabel>
                   <Select value={exportType} onChange={(e) => setExportType(e.target.value)}>
-                    <option value="activities">Activities</option>
-                    <option value="users">Users</option>
+                    <option value="activities">{t("admin.export.activities")}</option>
+                    <option value="users">{t("admin.export.users")}</option>
                   </Select>
                 </ExportRow>
 
                 <ExportRow>
-                  <ExportLabel>Format</ExportLabel>
+                  <ExportLabel>{t("admin.export.format")}</ExportLabel>
                   <FormatCards>
                     <FormatCard
                       selected={exportFormat === "txt"}
@@ -609,13 +611,13 @@ const Admin = () => {
                       checked={includeAllData}
                       onChange={(e) => setIncludeAllData(e.target.checked)}
                     />
-                    Include all pages (may take longer for large datasets)
+                    {t("admin.export.includeAll")}
                   </Checkbox>
                 </ExportRow>
 
                 <ExportButton onClick={handleExport}>
                   <FiDownload size={18} />
-                  Export Data
+                  {t("admin.export.exportButton")}
                 </ExportButton>
               </ExportOptions>
             </ExportSection>

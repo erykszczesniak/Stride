@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import {
   FiArrowLeft,
   FiUsers,
@@ -59,23 +61,24 @@ import {
   EmptyLeaderboard,
 } from "./ChallengeDetailsStyles";
 
-const activityTypeConfig = {
-  RUN: { icon: "🏃", label: "Run", color: "#fc5200" },
-  RIDE: { icon: "🚴", label: "Cycling", color: "#0095ff" },
-  SWIM: { icon: "🏊", label: "Swimming", color: "#00bcd4" },
-  HIKE: { icon: "⛰️", label: "Hiking", color: "#4caf50" },
-  WALK: { icon: "🚶", label: "Walking", color: "#9c27b0" },
-  ANY: { icon: "🏆", label: "Any Activity", color: "#ff9800" },
+const activityTypeColors = {
+  RUN: "#fc5200",
+  RIDE: "#0095ff",
+  SWIM: "#00bcd4",
+  HIKE: "#4caf50",
+  WALK: "#9c27b0",
+  ANY: "#ff9800",
 };
 
-const challengeTypeConfig = {
-  DISTANCE: { label: "Distance", color: "#2196f3" },
-  TIME: { label: "Time", color: "#9c27b0" },
-  ELEVATION: { label: "Elevation", color: "#4caf50" },
-  ACTIVITIES_COUNT: { label: "Activity Count", color: "#ff9800" },
+const challengeTypeColors = {
+  DISTANCE: "#2196f3",
+  TIME: "#9c27b0",
+  ELEVATION: "#4caf50",
+  ACTIVITIES_COUNT: "#ff9800",
 };
 
 const ChallengeDetails = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -115,9 +118,9 @@ const ChallengeDetails = () => {
     try {
       await ChallengeService.joinChallenge(id);
       await Promise.all([fetchChallenge(), fetchLeaderboard()]);
-      toast.success("Successfully joined the challenge!");
+      toast.success(t("challenges.toast.joinSuccess"));
     } catch (error) {
-      toast.error("Failed to join the challenge.");
+      toast.error(t("challenges.toast.joinFailed"));
     } finally {
       setActionLoading(false);
     }
@@ -128,23 +131,23 @@ const ChallengeDetails = () => {
     try {
       await ChallengeService.leaveChallenge(id);
       await Promise.all([fetchChallenge(), fetchLeaderboard()]);
-      toast.success("You left the challenge.");
+      toast.success(t("challenges.toast.leaveSuccess"));
     } catch (error) {
-      toast.error("Failed to leave the challenge.");
+      toast.error(t("challenges.toast.leaveFailed"));
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this challenge?"))
+    if (!window.confirm(t("challenges.confirmDelete")))
       return;
     try {
       await ChallengeService.deleteChallenge(id);
-      toast.success("Challenge deleted.");
+      toast.success(t("challenges.toast.deleted"));
       navigate("/challenges");
     } catch (error) {
-      toast.error("Failed to delete the challenge.");
+      toast.error(t("challenges.toast.deleteFailed"));
     }
   };
 
@@ -160,10 +163,10 @@ const ChallengeDetails = () => {
     return (
       <Layout>
         <BackLink to="/challenges">
-          <FiArrowLeft /> Back to Challenges
+          <FiArrowLeft /> {t("challenges.backToChallenges")}
         </BackLink>
         <InfoCard>
-          <p>Challenge not found.</p>
+          <p>{t("challenges.notFound")}</p>
         </InfoCard>
       </Layout>
     );
@@ -175,12 +178,10 @@ const ChallengeDetails = () => {
   const isEnded = daysLeft === 0;
   const unit = formatUnit(challenge.challengeType);
   const icon = getIconForType(challenge.challengeType, challenge.activityType);
-  const activityConfig = activityTypeConfig[challenge.activityType] ||
-    activityTypeConfig.ANY;
-  const typeConfig = challengeTypeConfig[challenge.challengeType] || {
-    label: challenge.challengeType,
-    color: "#fc4c02",
-  };
+  const activityColor = activityTypeColors[challenge.activityType] || activityTypeColors.ANY;
+  const activityLabel = t(`activities.types.${challenge.activityType || "ANY"}`, { defaultValue: challenge.activityType || "" });
+  const typeColor = challengeTypeColors[challenge.challengeType] || "#fc4c02";
+  const typeLabel = t(`challenges.types.${challenge.challengeType}`, { defaultValue: challenge.challengeType });
 
   const progress = challenge.userProgress || 0;
   const percentage = challenge.targetValue
@@ -190,7 +191,7 @@ const ChallengeDetails = () => {
   return (
     <Layout>
       <BackLink to="/challenges">
-        <FiArrowLeft /> Back to Challenges
+        <FiArrowLeft /> {t("challenges.backToChallenges")}
       </BackLink>
 
       <HeaderCard>
@@ -199,9 +200,9 @@ const ChallengeDetails = () => {
         </CoverImage>
         <HeaderContent>
           <BadgeRow>
-            <TypeBadge color={typeConfig.color}>{typeConfig.label}</TypeBadge>
-            <TypeBadge color={activityConfig.color}>
-              {activityConfig.label}
+            <TypeBadge color={typeColor}>{typeLabel}</TypeBadge>
+            <TypeBadge color={activityColor}>
+              {activityLabel}
             </TypeBadge>
           </BadgeRow>
           <Title>{challenge.name}</Title>
@@ -215,8 +216,8 @@ const ChallengeDetails = () => {
               !isCreator && (
                 <LeaveButton onClick={handleLeave} disabled={actionLoading}>
                   {actionLoading
-                    ? "Processing..."
-                    : "✓ Joined - Click to Leave"}
+                    ? t("challenges.processing")
+                    : t("challenges.joinedClickToLeave")}
                 </LeaveButton>
               )
             ) : (
@@ -225,10 +226,10 @@ const ChallengeDetails = () => {
                 disabled={actionLoading || isEnded}
               >
                 {actionLoading
-                  ? "Processing..."
+                  ? t("challenges.processing")
                   : isEnded
-                    ? "Challenge Ended"
-                    : "Join Challenge"}
+                    ? t("challenges.challengeEnded")
+                    : t("challenges.joinChallenge")}
               </JoinButton>
             )}
             {isCreator && (
@@ -242,7 +243,7 @@ const ChallengeDetails = () => {
 
       <InfoCard>
         <CardTitle>
-          <FiAward /> Challenge Details
+          <FiAward /> {t("challenges.details")}
         </CardTitle>
         <InfoGrid>
           <InfoItem>
@@ -250,7 +251,7 @@ const ChallengeDetails = () => {
               <FiTarget size={18} />
             </InfoIconBox>
             <InfoContent>
-              <InfoLabel>Target</InfoLabel>
+              <InfoLabel>{t("challenges.target")}</InfoLabel>
               <InfoValue>
                 {challenge.targetValue} {unit}
               </InfoValue>
@@ -262,9 +263,9 @@ const ChallengeDetails = () => {
               <FiCalendar size={18} />
             </InfoIconBox>
             <InfoContent>
-              <InfoLabel>Start Date</InfoLabel>
+              <InfoLabel>{t("challenges.startDate")}</InfoLabel>
               <InfoValue>
-                {new Date(challenge.startDate).toLocaleDateString("en-US", {
+                {new Date(challenge.startDate).toLocaleDateString(i18n.language, {
                   month: "long",
                   day: "numeric",
                   year: "numeric",
@@ -278,9 +279,9 @@ const ChallengeDetails = () => {
               <FiCalendar size={18} />
             </InfoIconBox>
             <InfoContent>
-              <InfoLabel>End Date</InfoLabel>
+              <InfoLabel>{t("challenges.endDate")}</InfoLabel>
               <InfoValue>
-                {new Date(challenge.endDate).toLocaleDateString("en-US", {
+                {new Date(challenge.endDate).toLocaleDateString(i18n.language, {
                   month: "long",
                   day: "numeric",
                   year: "numeric",
@@ -294,8 +295,8 @@ const ChallengeDetails = () => {
               <FiClock size={18} />
             </InfoIconBox>
             <InfoContent>
-              <InfoLabel>Days Left</InfoLabel>
-              <InfoValue>{isEnded ? "Ended" : `${daysLeft} days`}</InfoValue>
+              <InfoLabel>{t("challenges.daysLeftLabel")}</InfoLabel>
+              <InfoValue>{isEnded ? t("challenges.ended") : t("challenges.daysValue", { count: daysLeft })}</InfoValue>
             </InfoContent>
           </InfoItem>
 
@@ -304,7 +305,7 @@ const ChallengeDetails = () => {
               <FiUsers size={18} />
             </InfoIconBox>
             <InfoContent>
-              <InfoLabel>Participants</InfoLabel>
+              <InfoLabel>{t("challenges.participants")}</InfoLabel>
               <InfoValue>{challenge.participantsCount || 0}</InfoValue>
             </InfoContent>
           </InfoItem>
@@ -314,9 +315,9 @@ const ChallengeDetails = () => {
               <FiEye size={18} />
             </InfoIconBox>
             <InfoContent>
-              <InfoLabel>Visibility</InfoLabel>
+              <InfoLabel>{t("challenges.visibility")}</InfoLabel>
               <InfoValue>
-                {challenge.visibility === "PRIVATE" ? "Private" : "Public"}
+                {challenge.visibility === "PRIVATE" ? t("challenges.private") : t("challenges.public")}
               </InfoValue>
             </InfoContent>
           </InfoItem>
@@ -326,12 +327,12 @@ const ChallengeDetails = () => {
       {isParticipating && (
         <InfoCard>
           <CardTitle>
-            <FiTrendingUp /> Your Progress
+            <FiTrendingUp /> {t("challenges.yourProgress")}
           </CardTitle>
           <ProgressContainer>
             <ProgressLabel>
               <ProgressText>
-                {percentage >= 100 ? "Completed!" : "In Progress"}
+                {percentage >= 100 ? t("challenges.completed") : t("challenges.inProgress")}
               </ProgressText>
               <ProgressValue>
                 {progress.toFixed(1)} / {challenge.targetValue} {unit}
@@ -346,15 +347,16 @@ const ChallengeDetails = () => {
 
       <LeaderboardContainer>
         <LeaderboardHeader>
-          <LeaderboardTitle>Leaderboard</LeaderboardTitle>
+          <LeaderboardTitle>{t("challenges.leaderboard")}</LeaderboardTitle>
           <LeaderboardSubtitle>
-            {leaderboard.length} participant
-            {leaderboard.length !== 1 ? "s" : ""}
+            {leaderboard.length === 1
+              ? t("challenges.participantsCount", { count: 1 })
+              : t("challenges.participantsCountPlural", { count: leaderboard.length })}
           </LeaderboardSubtitle>
         </LeaderboardHeader>
         <LeaderboardList>
           {leaderboard.length === 0 ? (
-            <EmptyLeaderboard>No participants yet</EmptyLeaderboard>
+            <EmptyLeaderboard>{t("challenges.empty.noParticipants")}</EmptyLeaderboard>
           ) : (
             leaderboard.map((entry, index) => {
               const isCurrentUser = entry.isCurrentUser;
@@ -371,7 +373,7 @@ const ChallengeDetails = () => {
                     {entry.userName?.charAt(0) || "?"}
                   </Avatar>
                   <UserName isCurrentUser={isCurrentUser}>
-                    {isCurrentUser ? "You" : entry.userName}
+                    {isCurrentUser ? t("challenges.you") : entry.userName}
                   </UserName>
                   <UserScore>
                     {(entry.progress || 0).toFixed(1)} {unit}

@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -63,6 +64,7 @@ const FitBounds = ({ coordinates }) => {
 };
 
 const ActivityMap = ({ coordinates, height = "400px", showMarkers = true }) => {
+  const { t } = useTranslation();
   // Accepts either:
   //  - a JSON-stringified [[lat,lng],...] array (legacy manual activities)
   //  - a Google Encoded Polyline string (imported GPX/TCX/FIT activities)
@@ -83,7 +85,7 @@ const ActivityMap = ({ coordinates, height = "400px", showMarkers = true }) => {
     return (
       <EmptyMapState $height={height}>
         <EmptyMapIcon>🗺️</EmptyMapIcon>
-        <EmptyMapText>No GPS data available for this activity</EmptyMapText>
+        <EmptyMapText>{t("errors.noGpsData")}</EmptyMapText>
       </EmptyMapState>
     );
   }

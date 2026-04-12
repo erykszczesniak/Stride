@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import { FiArrowLeft, FiMapPin, FiClock, FiUsers, FiCalendar, FiDollarSign, FiExternalLink, FiTrash2 } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import EventService from "../api/EventService";
@@ -38,18 +40,26 @@ import {
   ExternalLink,
 } from "./EventDetailsStyles";
 
-const activityTypeConfig = {
-  RUN: { icon: '🏃', label: 'Run', color: '#fc5200' },
-  RIDE: { icon: '🚴', label: 'Cycling', color: '#0095ff' },
-  SWIM: { icon: '🏊', label: 'Swimming', color: '#00bcd4' },
-  HIKE: { icon: '⛰️', label: 'Hiking', color: '#4caf50' },
-  WALK: { icon: '🚶', label: 'Walking', color: '#9c27b0' },
-  TRIATHLON: { icon: '🏆', label: 'Triathlon', color: '#ff9800' },
+const activityTypeIcons = {
+  RUN: '🏃',
+  RIDE: '🚴',
+  SWIM: '🏊',
+  HIKE: '⛰️',
+  WALK: '🚶',
+  TRIATHLON: '🏆',
 };
 
-const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const activityTypeColors = {
+  RUN: '#fc5200',
+  RIDE: '#0095ff',
+  SWIM: '#00bcd4',
+  HIKE: '#4caf50',
+  WALK: '#9c27b0',
+  TRIATHLON: '#ff9800',
+};
 
 const EventDetails = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -92,19 +102,19 @@ const EventDetails = () => {
         }));
       }
     } catch (error) {
-      toast.error("Failed to update registration. Please try again.");
+      toast.error(t("events.errors.registrationFailed"));
     } finally {
       setRegistering(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this event?")) return;
+    if (!window.confirm(t("events.confirmDelete"))) return;
     try {
       await EventService.deleteEvent(event.id);
       navigate("/events");
     } catch (error) {
-      toast.error("Failed to delete event.");
+      toast.error(t("events.errors.deleteFailed"));
     }
   };
 
@@ -120,17 +130,19 @@ const EventDetails = () => {
     return (
       <Layout>
         <BackLink to="/events">
-          <FiArrowLeft /> Back to Events
+          <FiArrowLeft /> {t("events.backToEvents")}
         </BackLink>
         <InfoCard>
-          <p>Event not found.</p>
+          <p>{t("events.notFound")}</p>
         </InfoCard>
       </Layout>
     );
   }
 
   const eventDate = new Date(event.eventDate);
-  const typeConfig = activityTypeConfig[event.activityType] || activityTypeConfig.RUN;
+  const typeIcon = activityTypeIcons[event.activityType] || activityTypeIcons.RUN;
+  const typeColor = activityTypeColors[event.activityType] || activityTypeColors.RUN;
+  const typeLabel = t(`activities.types.${event.activityType}`, { defaultValue: event.activityType });
   const participantPercent = event.maxParticipants
     ? Math.min(100, (event.registeredCount / event.maxParticipants) * 100)
     : 0;
@@ -140,22 +152,22 @@ const EventDetails = () => {
   return (
     <Layout>
       <BackLink to="/events">
-        <FiArrowLeft /> Back to Events
+        <FiArrowLeft /> {t("events.backToEvents")}
       </BackLink>
 
       <EventHeader>
         <CoverImage>
-          <EventIcon>{typeConfig.icon}</EventIcon>
+          <EventIcon>{typeIcon}</EventIcon>
         </CoverImage>
         <HeaderContent>
           <EventMeta>
             <DateBadge>
-              <DateMonth>{months[eventDate.getMonth()].substring(0, 3)}</DateMonth>
+              <DateMonth>{eventDate.toLocaleDateString(i18n.language, { month: "short" }).toUpperCase()}</DateMonth>
               <DateDay>{eventDate.getDate()}</DateDay>
               <DateYear>{eventDate.getFullYear()}</DateYear>
             </DateBadge>
             <EventTitleSection>
-              <EventType color={typeConfig.color}>{typeConfig.label}</EventType>
+              <EventType color={typeColor}>{typeLabel}</EventType>
               <Title>{event.name}</Title>
             </EventTitleSection>
           </EventMeta>
@@ -170,10 +182,10 @@ const EventDetails = () => {
               onClick={handleRegister}
               disabled={registering || isPast || (isFull && !event.isRegistered)}
             >
-              {registering ? "Processing..." :
-               isPast ? "Event Ended" :
-               event.isRegistered ? "✓ Registered - Click to Cancel" :
-               isFull ? "Event Full" : "Register for Event"}
+              {registering ? t("challenges.processing") :
+               isPast ? t("events.eventEnded") :
+               event.isRegistered ? t("events.registered") :
+               isFull ? t("events.eventFull") : t("events.registerForEvent")}
             </RegisterButton>
             <SecondaryButton onClick={handleDelete}>
               <FiTrash2 size={16} />
@@ -183,14 +195,14 @@ const EventDetails = () => {
       </EventHeader>
 
       <InfoCard>
-        <CardTitle><FiCalendar /> Event Details</CardTitle>
+        <CardTitle><FiCalendar /> {t("events.details")}</CardTitle>
         <InfoGrid>
           <InfoItem>
             <InfoIcon><FiCalendar size={18} /></InfoIcon>
             <InfoContent>
-              <InfoLabel>Date</InfoLabel>
+              <InfoLabel>{t("events.date")}</InfoLabel>
               <InfoValue>
-                {months[eventDate.getMonth()]} {eventDate.getDate()}, {eventDate.getFullYear()}
+                {eventDate.toLocaleDateString(i18n.language, { month: "long", day: "numeric", year: "numeric" })}
               </InfoValue>
             </InfoContent>
           </InfoItem>
@@ -198,9 +210,9 @@ const EventDetails = () => {
           <InfoItem>
             <InfoIcon><FiClock size={18} /></InfoIcon>
             <InfoContent>
-              <InfoLabel>Start Time</InfoLabel>
+              <InfoLabel>{t("events.startTime").replace(" *", "")}</InfoLabel>
               <InfoValue>
-                {eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                {eventDate.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" })}
               </InfoValue>
             </InfoContent>
           </InfoItem>
@@ -208,7 +220,7 @@ const EventDetails = () => {
           <InfoItem>
             <InfoIcon><FiMapPin size={18} /></InfoIcon>
             <InfoContent>
-              <InfoLabel>Location</InfoLabel>
+              <InfoLabel>{t("events.location")}</InfoLabel>
               <InfoValue>
                 {event.location}
                 {event.city && `, ${event.city}`}
@@ -220,7 +232,7 @@ const EventDetails = () => {
             <InfoItem>
               <InfoIcon>📏</InfoIcon>
               <InfoContent>
-                <InfoLabel>Distance</InfoLabel>
+                <InfoLabel>{t("activities.stats.distance")}</InfoLabel>
                 <InfoValue>{event.distance} km</InfoValue>
               </InfoContent>
             </InfoItem>
@@ -230,7 +242,7 @@ const EventDetails = () => {
             <InfoItem>
               <InfoIcon><FiDollarSign size={18} /></InfoIcon>
               <InfoContent>
-                <InfoLabel>Entry Fee</InfoLabel>
+                <InfoLabel>{t("events.entryFee")}</InfoLabel>
                 <InfoValue>{event.entryFee} {event.currency || 'USD'}</InfoValue>
               </InfoContent>
             </InfoItem>
@@ -240,9 +252,9 @@ const EventDetails = () => {
             <InfoItem>
               <InfoIcon><FiExternalLink size={18} /></InfoIcon>
               <InfoContent>
-                <InfoLabel>Website</InfoLabel>
+                <InfoLabel>{t("events.website")}</InfoLabel>
                 <ExternalLink href={event.externalUrl} target="_blank" rel="noopener noreferrer">
-                  Visit Event Website <FiExternalLink size={14} />
+                  {t("events.visitWebsite")} <FiExternalLink size={14} />
                 </ExternalLink>
               </InfoContent>
             </InfoItem>
@@ -250,19 +262,19 @@ const EventDetails = () => {
         </InfoGrid>
 
         <ParticipantsSection>
-          <CardTitle><FiUsers /> Participants</CardTitle>
+          <CardTitle><FiUsers /> {t("events.participants")}</CardTitle>
           {event.maxParticipants ? (
             <>
               <ProgressBar>
                 <ProgressFill percent={participantPercent} />
               </ProgressBar>
               <ParticipantStats>
-                <span>{event.registeredCount} registered</span>
-                <span>{event.maxParticipants - event.registeredCount} spots left</span>
+                <span>{t("events.registeredCount", { count: event.registeredCount })}</span>
+                <span>{t("events.spotsLeft", { count: event.maxParticipants - event.registeredCount })}</span>
               </ParticipantStats>
             </>
           ) : (
-            <InfoValue>{event.registeredCount} participants registered</InfoValue>
+            <InfoValue>{t("events.participantsRegistered", { count: event.registeredCount })}</InfoValue>
           )}
         </ParticipantsSection>
       </InfoCard>

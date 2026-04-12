@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { FiActivity, FiClock, FiZap, FiTarget, FiPlus, FiUser, FiSettings, FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Layout from "../components/Layout/Layout";
 import NotificationDropdown from "../components/Navbar/NotificationDropdown";
 import StatsCard from "../components/StatsCard/StatsCard";
@@ -50,6 +51,7 @@ import {
 } from "./DashboardStyles";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -126,8 +128,8 @@ const Dashboard = () => {
       <DashboardHeader>
         <WelcomeSection>
           <WelcomeText>
-            <h1>Welcome back, {user?.firstName || 'Athlete'}! <span>🏃</span></h1>
-            <p>Here's your training summary</p>
+            <h1>{t("dashboard.welcomeBack", { name: user?.firstName || t("dashboard.defaultAthlete") })} <span>🏃</span></h1>
+            <p>{t("dashboard.trainingSummary")}</p>
           </WelcomeText>
         </WelcomeSection>
         <UserAvatar>{user?.firstName?.[0] || 'A'}</UserAvatar>
@@ -144,7 +146,7 @@ const Dashboard = () => {
         <MainColumn>
           <Section>
             <SectionHeader>
-              <SectionTitle>Recent Activities</SectionTitle>
+              <SectionTitle>{t("dashboard.recentActivities")}</SectionTitle>
             </SectionHeader>
             <ActivitiesList>
               <SkeletonActivityCard />
@@ -158,14 +160,14 @@ const Dashboard = () => {
           <SkeletonChart />
           <Section>
             <SectionHeader>
-              <SectionTitle>Weekly Goals</SectionTitle>
+              <SectionTitle>{t("dashboard.weeklyGoals")}</SectionTitle>
             </SectionHeader>
             <SkeletonGoalProgress />
             <SkeletonGoalProgress />
           </Section>
           <Section>
             <SectionHeader>
-              <SectionTitle>Upcoming</SectionTitle>
+              <SectionTitle>{t("dashboard.upcoming")}</SectionTitle>
             </SectionHeader>
             <EventsList>
               <SkeletonEventCard />
@@ -184,8 +186,8 @@ const Dashboard = () => {
       <DashboardHeader>
         <WelcomeSection>
           <WelcomeText>
-            <h1>Welcome back, {user?.firstName || 'Athlete'}! <span>🏃</span></h1>
-            <p>Here's your training summary</p>
+            <h1>{t("dashboard.welcomeBack", { name: user?.firstName || t("dashboard.defaultAthlete") })} <span>🏃</span></h1>
+            <p>{t("dashboard.trainingSummary")}</p>
           </WelcomeText>
         </WelcomeSection>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -201,16 +203,16 @@ const Dashboard = () => {
             </UserDropdownHeader>
             <UserDropdownItem to="/profile" onClick={() => setIsDropdownOpen(false)}>
               <FiUser />
-              My Profile
+              {t("nav.myProfile")}
             </UserDropdownItem>
             <UserDropdownItem to="/settings" onClick={() => setIsDropdownOpen(false)}>
               <FiSettings />
-              Settings
+              {t("nav.settings")}
             </UserDropdownItem>
             <UserDropdownDivider />
             <UserDropdownButton onClick={handleLogout}>
               <FiLogOut />
-              Sign Out
+              {t("nav.signOut")}
             </UserDropdownButton>
           </UserDropdown>
         </UserMenuWrapper>
@@ -220,16 +222,16 @@ const Dashboard = () => {
       <StatsGrid>
         <StatsCard
           icon={<FiActivity />}
-          label="Total Distance"
+          label={t("dashboard.totalDistance")}
           value={monthlyStats?.totalDistance?.toFixed(1) || "0"}
-          unit="km"
+          unit={t("common.kilometers")}
           trend={monthlyStats?.distanceTrendPercentage}
           bgColor="#fff7ed"
           iconColor="#fc4c02"
         />
         <StatsCard
           icon={<FiClock />}
-          label="Active Time"
+          label={t("dashboard.activeTime")}
           value={formatDurationValue(monthlyStats?.totalDuration)}
           unit={formatDurationUnit(monthlyStats?.totalDuration)}
           trend={monthlyStats?.durationTrendPercentage}
@@ -238,18 +240,18 @@ const Dashboard = () => {
         />
         <StatsCard
           icon={<FiZap />}
-          label="Calories Burned"
+          label={t("dashboard.caloriesBurned")}
           value={monthlyStats?.totalCalories?.toLocaleString() || "0"}
-          unit="kcal"
+          unit={t("common.kcal")}
           trend={monthlyStats?.caloriesTrendPercentage}
           bgColor="#fdf2f8"
           iconColor="#ec4899"
         />
         <StatsCard
           icon={<FiTarget />}
-          label="Activities"
+          label={t("dashboard.activities")}
           value={monthlyStats?.totalActivities || "0"}
-          unit="this month"
+          unit={t("dashboard.thisMonth")}
           trend={monthlyStats?.activitiesTrendPercentage}
           bgColor="#f0fdf4"
           iconColor="#22c55e"
@@ -260,8 +262,8 @@ const Dashboard = () => {
         <MainColumn>
           <Section>
             <SectionHeader>
-              <SectionTitle>Recent Activities</SectionTitle>
-              <ViewAllLink to="/activities">View All</ViewAllLink>
+              <SectionTitle>{t("dashboard.recentActivities")}</SectionTitle>
+              <ViewAllLink to="/activities">{t("common.viewAll")}</ViewAllLink>
             </SectionHeader>
 
             {activities.length > 0 ? (
@@ -277,10 +279,10 @@ const Dashboard = () => {
             ) : (
               <EmptyState>
                 <EmptyIcon>🏃</EmptyIcon>
-                <EmptyText>No activities yet. Start tracking your workouts!</EmptyText>
+                <EmptyText>{t("dashboard.noActivitiesYet")}</EmptyText>
                 <AddButton to="/activities/new">
                   <FiPlus size={18} />
-                  Add Activity
+                  {t("nav.addActivity")}
                 </AddButton>
               </EmptyState>
             )}
@@ -296,8 +298,8 @@ const Dashboard = () => {
           {goals.length > 0 && (
             <Section>
               <SectionHeader>
-                <SectionTitle>Weekly Goals</SectionTitle>
-                <ViewAllLink to="/goals">Manage</ViewAllLink>
+                <SectionTitle>{t("dashboard.weeklyGoals")}</SectionTitle>
+                <ViewAllLink to="/goals">{t("common.manage")}</ViewAllLink>
               </SectionHeader>
               {goals.slice(0, 2).map((goal) => (
                 <GoalProgress key={goal.id} goal={goal} />
@@ -308,8 +310,8 @@ const Dashboard = () => {
           {events.length > 0 && (
             <Section>
               <EventsHeader>
-                <EventsTitle>Upcoming</EventsTitle>
-                <EventsViewAllLink to="/events">View All</EventsViewAllLink>
+                <EventsTitle>{t("dashboard.upcoming")}</EventsTitle>
+                <EventsViewAllLink to="/events">{t("common.viewAll")}</EventsViewAllLink>
               </EventsHeader>
               <EventsList>
                 {events.map((event) => (

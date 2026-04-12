@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FiTarget, FiCalendar, FiTrendingUp, FiZap, FiFileText, FiGrid, FiFile, FiClock, FiChevronRight, FiChevronDown, FiArrowLeft } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import AiService from "../api/AiService";
@@ -124,6 +125,7 @@ const parseAiResponse = (data) => {
 };
 
 const TrainingPlans = () => {
+  const { t } = useTranslation();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState("ready-made");
   const [generating, setGenerating] = useState(false);
@@ -142,7 +144,7 @@ const TrainingPlans = () => {
         const response = await TrainingPlanService.getTemplates();
         setReadyMadePlans(response.data);
       } catch (error) {
-        toast.error("Failed to load training plans");
+        toast.error(t("training.loadFailed"));
       } finally {
         setLoadingPlans(false);
       }
@@ -166,7 +168,7 @@ const TrainingPlans = () => {
 
   const handleGenerateGoal = async () => {
     if (!goalDescription.trim()) {
-      toast.warning("Please describe what you want to achieve");
+      toast.warning(t("training.goals.describeRequired"));
       return;
     }
     setGenerating(true);
@@ -176,7 +178,7 @@ const TrainingPlans = () => {
       setGeneratedGoal(data);
     } catch (error) {
       const details = error.response?.data?.message || error.message || String(error);
-      toast.error("Failed to generate goal. Please try again.", "Error", details);
+      toast.error(t("training.goals.generateFailed"), t("common.error"), details);
     } finally {
       setGenerating(false);
     }
@@ -184,7 +186,7 @@ const TrainingPlans = () => {
 
   const handleGeneratePlan = async () => {
     if (!targetDistance) {
-      toast.warning("Please enter a target distance");
+      toast.warning(t("training.plan.targetRequired"));
       return;
     }
     setGenerating(true);
@@ -199,7 +201,7 @@ const TrainingPlans = () => {
       setGeneratedPlan(data);
     } catch (error) {
       const details = error.response?.data?.message || error.message || String(error);
-      toast.error("Failed to generate training plan. Please try again.", "Error", details);
+      toast.error(t("training.plan.generateFailed"), t("common.error"), details);
     } finally {
       setGenerating(false);
     }
@@ -472,7 +474,7 @@ const TrainingPlans = () => {
   const renderReadyMadePlansTab = () => {
     if (loadingPlans) {
       return (
-        <LoadingPlans>Loading training plans...</LoadingPlans>
+        <LoadingPlans>{t("training.loadingPlans")}</LoadingPlans>
       );
     }
 
@@ -484,7 +486,7 @@ const TrainingPlans = () => {
         <>
           <BackButton onClick={() => { setSelectedPlan(null); setExpandedWeeks({}); }}>
             <FiArrowLeft size={16} />
-            Back to plans
+            {t("training.backToPlans")}
           </BackButton>
 
           <PlanDetailHeader gradient={plan.gradient}>
@@ -518,7 +520,7 @@ const TrainingPlans = () => {
             </DetailExportButtons>
           </PlanDetailHeader>
 
-          <WeeklyPlanTitle>Weekly Plan</WeeklyPlanTitle>
+          <WeeklyPlanTitle>{t("training.weeklyPlan")}</WeeklyPlanTitle>
 
           {plan.weeks.map((week) => (
             <WeekAccordion key={week.week}>
@@ -554,8 +556,8 @@ const TrainingPlans = () => {
     return (
       <>
         <PlansHeader>
-          <PlansTitle>Ready-Made Training Plans</PlansTitle>
-          <PlansSubtitle>Choose a plan tailored to your level</PlansSubtitle>
+          <PlansTitle>{t("training.readyMadeTitle")}</PlansTitle>
+          <PlansSubtitle>{t("training.readyMadeSubtitle")}</PlansSubtitle>
         </PlansHeader>
 
         <PlansGrid>
@@ -568,19 +570,19 @@ const TrainingPlans = () => {
               <PlanCardMeta>
                 <PlanMetaItem>
                   <FiCalendar size={14} />
-                  Duration: {plan.duration}
+                  {t("training.durationLabel", { value: plan.duration })}
                 </PlanMetaItem>
                 <PlanMetaItem>
                   <FiClock size={14} />
-                  Frequency: {plan.frequency}
+                  {t("training.frequencyLabel", { value: plan.frequency })}
                 </PlanMetaItem>
                 <PlanMetaItem>
                   <FiTarget size={14} />
-                  Goal: {plan.goal}
+                  {t("training.goalLabel", { value: plan.goal })}
                 </PlanMetaItem>
               </PlanCardMeta>
               <ViewPlanButton>
-                View Plan <FiChevronRight size={16} />
+                {t("training.viewPlan")} <FiChevronRight size={16} />
               </ViewPlanButton>
             </PlanCard>
           ))}
@@ -597,36 +599,36 @@ const TrainingPlans = () => {
             <FiTarget />
           </CardIcon>
           <CardTitleGroup>
-            <CardTitle>Set Your Goal</CardTitle>
-            <CardSubtitle>AI will help you create a SMART goal</CardSubtitle>
+            <CardTitle>{t("training.goals.title")}</CardTitle>
+            <CardSubtitle>{t("training.goals.subtitle")}</CardSubtitle>
           </CardTitleGroup>
         </CardHeader>
 
         <FormRow>
           <FormGroup noMargin>
-            <Label>Goal Type</Label>
+            <Label>{t("training.goals.goalType")}</Label>
             <Select value={goalType} onChange={(e) => setGoalType(e.target.value)}>
-              <option value="distance">Distance</option>
-              <option value="time">Training Time</option>
-              <option value="frequency">Activity Frequency</option>
-              <option value="race">Race Preparation</option>
+              <option value="distance">{t("training.goals.typeDistance")}</option>
+              <option value="time">{t("training.goals.typeTime")}</option>
+              <option value="frequency">{t("training.goals.typeFrequency")}</option>
+              <option value="race">{t("training.goals.typeRace")}</option>
             </Select>
           </FormGroup>
           <FormGroup noMargin>
-            <Label>Timeframe</Label>
+            <Label>{t("training.goals.timeframe")}</Label>
             <Select value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="3months">3 Months</option>
-              <option value="year">This Year</option>
+              <option value="week">{t("training.goals.tfWeek")}</option>
+              <option value="month">{t("training.goals.tfMonth")}</option>
+              <option value="3months">{t("training.goals.tf3Months")}</option>
+              <option value="year">{t("training.goals.tfYear")}</option>
             </Select>
           </FormGroup>
         </FormRow>
 
         <FormGroup>
-          <Label>What do you want to achieve?</Label>
+          <Label>{t("training.goals.whatLabel")}</Label>
           <Textarea
-            placeholder="E.g., I want to run my first 10K, lose weight, improve my endurance..."
+            placeholder={t("training.goals.whatPlaceholder")}
             value={goalDescription}
             onChange={(e) => setGoalDescription(e.target.value)}
           />
@@ -634,7 +636,7 @@ const TrainingPlans = () => {
 
         <GenerateButton onClick={handleGenerateGoal} disabled={generating}>
           <FiZap size={18} />
-          {generating ? "Generating..." : "Generate My Goal"}
+          {generating ? t("common.generating") : t("training.goals.generate")}
         </GenerateButton>
       </FormCard>
 
@@ -642,7 +644,7 @@ const TrainingPlans = () => {
         <>
           <ResultBanner>
             <BannerTitle>
-              <FiTarget /> Your SMART Goal
+              <FiTarget /> {t("training.goals.yourSmartGoal")}
             </BannerTitle>
             <BannerText>{generatedGoal.smartGoal}</BannerText>
           </ResultBanner>
@@ -650,7 +652,7 @@ const TrainingPlans = () => {
           <ResultCard>
             <ResultSection>
               <SectionTitle>
-                <FiTrendingUp color="#fc4c02" /> Why This Works For You
+                <FiTrendingUp color="#fc4c02" /> {t("training.goals.whyWorks")}
               </SectionTitle>
               <SectionText>{generatedGoal.analysis}</SectionText>
             </ResultSection>
@@ -659,7 +661,7 @@ const TrainingPlans = () => {
           <ResultCard>
             <ResultSection>
               <SectionTitle>
-                <FiCalendar color="#fc4c02" /> Key Milestones
+                <FiCalendar color="#fc4c02" /> {t("training.goals.keyMilestones")}
               </SectionTitle>
               <MilestoneList>
                 {(generatedGoal.milestones || []).map((milestone, index) => (
@@ -675,7 +677,7 @@ const TrainingPlans = () => {
           <ResultCard>
             <ResultSection>
               <SectionTitle>
-                <FiZap color="#fc4c02" /> Action Tips
+                <FiZap color="#fc4c02" /> {t("training.goals.actionTips")}
               </SectionTitle>
               {(generatedGoal.tips || []).map((tip, index) => (
                 <TipItem key={index}>
@@ -698,54 +700,54 @@ const TrainingPlans = () => {
             <FiCalendar />
           </CardIcon>
           <CardTitleGroup>
-            <CardTitle>Generate Training Plan</CardTitle>
-            <CardSubtitle>AI-powered personalized schedule</CardSubtitle>
+            <CardTitle>{t("training.plan.title")}</CardTitle>
+            <CardSubtitle>{t("training.plan.subtitle")}</CardSubtitle>
           </CardTitleGroup>
         </CardHeader>
 
         <FormRow>
           <FormGroup noMargin>
-            <Label>Activity Type</Label>
+            <Label>{t("training.plan.activityType")}</Label>
             <Select value={activityType} onChange={(e) => setActivityType(e.target.value)}>
-              <option value="running">Running</option>
-              <option value="cycling">Cycling</option>
-              <option value="swimming">Swimming</option>
+              <option value="running">{t("training.plan.running")}</option>
+              <option value="cycling">{t("training.plan.cycling")}</option>
+              <option value="swimming">{t("training.plan.swimming")}</option>
             </Select>
           </FormGroup>
           <FormGroup noMargin>
-            <Label>Experience Level</Label>
+            <Label>{t("training.plan.experienceLevel")}</Label>
             <Select value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)}>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
+              <option value="beginner">{t("training.plan.beginner")}</option>
+              <option value="intermediate">{t("training.plan.intermediate")}</option>
+              <option value="advanced">{t("training.plan.advanced")}</option>
             </Select>
           </FormGroup>
         </FormRow>
 
         <FormRow>
           <FormGroup noMargin>
-            <Label>Target Distance (km)</Label>
+            <Label>{t("training.plan.targetDistance")}</Label>
             <Input
               type="number"
-              placeholder="e.g., 10"
+              placeholder={t("training.plan.targetDistancePlaceholder")}
               value={targetDistance}
               onChange={(e) => setTargetDistance(e.target.value)}
             />
           </FormGroup>
           <FormGroup noMargin>
-            <Label>Plan Duration</Label>
+            <Label>{t("training.plan.planDuration")}</Label>
             <Select value={planDuration} onChange={(e) => setPlanDuration(e.target.value)}>
-              <option value="4">4 Weeks</option>
-              <option value="8">8 Weeks</option>
-              <option value="12">12 Weeks</option>
-              <option value="16">16 Weeks</option>
+              <option value="4">{t("training.plan.weeks4")}</option>
+              <option value="8">{t("training.plan.weeks8")}</option>
+              <option value="12">{t("training.plan.weeks12")}</option>
+              <option value="16">{t("training.plan.weeks16")}</option>
             </Select>
           </FormGroup>
         </FormRow>
 
         <GenerateButton variant="training" onClick={handleGeneratePlan} disabled={generating}>
           <FiZap size={18} />
-          {generating ? "Generating..." : "Generate Training Plan"}
+          {generating ? t("common.generating") : t("training.plan.generate")}
         </GenerateButton>
       </FormCard>
 
@@ -754,7 +756,7 @@ const TrainingPlans = () => {
           <ResultBanner variant="training">
             <BannerHeader>
               <BannerTitle>
-                <FiTarget /> Your Training Plan
+                <FiTarget /> {t("training.plan.yourPlan")}
               </BannerTitle>
               <ExportButtons>
                 <ExportButton onClick={exportToTxt}><FiFileText size={14} /> TXT</ExportButton>
@@ -768,7 +770,7 @@ const TrainingPlans = () => {
           {(generatedPlan.weeks || []).map((week) => (
             <WeekSection key={week.week}>
               <WeekHeader>
-                <WeekTitle>Week {week.week}</WeekTitle>
+                <WeekTitle>{t("training.plan.week", { number: week.week })}</WeekTitle>
                 <WeekDistance>{week.totalDistance} km</WeekDistance>
               </WeekHeader>
               <WeekSubtitle>{week.description}</WeekSubtitle>
@@ -805,12 +807,12 @@ const TrainingPlans = () => {
         <HeaderLeft>
           <PageIcon>🧠</PageIcon>
           <TitleGroup>
-            <PageTitle>Training Plans</PageTitle>
-            <PageSubtitle>AI-powered goals and personalized training plans</PageSubtitle>
+            <PageTitle>{t("training.title")}</PageTitle>
+            <PageSubtitle>{t("training.subtitle")}</PageSubtitle>
           </TitleGroup>
         </HeaderLeft>
         <AiBadge>
-          <FiZap /> AI Powered
+          <FiZap /> {t("training.aiPowered")}
         </AiBadge>
       </PageHeader>
 
@@ -819,20 +821,20 @@ const TrainingPlans = () => {
           active={activeTab === "ready-made"}
           onClick={() => { setActiveTab("ready-made"); setSelectedPlan(null); setExpandedWeeks({}); }}
         >
-          <FiZap size={16} /> Ready-Made Plans
+          <FiZap size={16} /> {t("training.tabs.readyMade")}
         </Tab>
         <Tab
           active={activeTab === "goals"}
           onClick={() => setActiveTab("goals")}
         >
-          <FiTarget size={16} /> Goals
+          <FiTarget size={16} /> {t("training.tabs.goals")}
         </Tab>
         <Tab
           active={activeTab === "training"}
           variant="training"
           onClick={() => setActiveTab("training")}
         >
-          <FiCalendar size={16} /> AI Generator
+          <FiCalendar size={16} /> {t("training.tabs.aiGenerator")}
         </Tab>
       </TabsContainer>
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   FiArrowLeft,
   FiHeart,
@@ -21,6 +22,7 @@ import ShareModal from "../components/ShareModal/ShareModal";
 import { useAuth } from "../context/AuthContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import { formatDuration, getTimeAgo, getInitials, isPaceActivity, formatPace } from "../utils/formatters";
+import i18n from "../i18n";
 import {
   BackLink,
   ActivityHeader,
@@ -71,6 +73,7 @@ import {
 } from "./ActivityDetailsStyles";
 
 const ActivityDetails = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -189,7 +192,7 @@ const ActivityDetails = () => {
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Are you sure you want to delete this comment?"))
+    if (!window.confirm(t("activities.details.confirmDeleteComment")))
       return;
 
     try {
@@ -265,7 +268,7 @@ const ActivityDetails = () => {
   const isOwner = user && activity?.user?.id === user.id;
 
   const handleDeleteActivity = async () => {
-    if (!window.confirm(`Delete "${activity.title}"? This cannot be undone.`)) return;
+    if (!window.confirm(t("activities.details.confirmDelete", { title: activity.title }))) return;
     try {
       await ActivityService.deleteActivity(id);
       navigate('/activities');
@@ -276,7 +279,7 @@ const ActivityDetails = () => {
   if (!activity) {
     return (
       <Layout>
-        <p>Activity not found</p>
+        <p>{t("activities.details.activityNotFound")}</p>
       </Layout>
     );
   }
@@ -285,7 +288,7 @@ const ActivityDetails = () => {
     <Layout>
       <BackLink to="/activities">
         <FiArrowLeft size={18} />
-        Back to Activities
+        {t("activities.details.backToActivities")}
       </BackLink>
 
       <ActivityHeader>
@@ -304,7 +307,7 @@ const ActivityDetails = () => {
               {activity.user?.firstName} {activity.user?.lastName}
             </UserName>
             <ActivityTime>
-              {new Date(activity.createdAt).toLocaleDateString()}
+              {new Date(activity.createdAt).toLocaleDateString(i18n.language)}
             </ActivityTime>
           </UserInfo>
         </UserSection>
@@ -317,36 +320,36 @@ const ActivityDetails = () => {
         <StatsGrid>
           <StatItem>
             <StatValue>{activity.distance?.toFixed(2) || 0}</StatValue>
-            <StatLabel>Distance (km)</StatLabel>
+            <StatLabel>{t("activities.stats.distanceKm")}</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>{formatDuration(activity.duration)}</StatValue>
-            <StatLabel>Duration</StatLabel>
+            <StatLabel>{t("activities.stats.duration")}</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>{activity.elevationGain || 0}</StatValue>
-            <StatLabel>Elevation (m)</StatLabel>
+            <StatLabel>{t("activities.stats.elevationM")}</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>{activity.calories || 0}</StatValue>
-            <StatLabel>Calories</StatLabel>
+            <StatLabel>{t("activities.stats.calories")}</StatLabel>
           </StatItem>
           <StatItem>
             {isPaceActivity(activity.activityType) ? (
               <>
                 <StatValue>{formatPace(activity.distance, activity.duration)}</StatValue>
-                <StatLabel>Avg Pace</StatLabel>
+                <StatLabel>{t("activities.stats.avgPace")}</StatLabel>
               </>
             ) : (
               <>
                 <StatValue>{activity.averageSpeed?.toFixed(1) || 0}</StatValue>
-                <StatLabel>Avg Speed (km/h)</StatLabel>
+                <StatLabel>{t("activities.stats.avgSpeed")}</StatLabel>
               </>
             )}
           </StatItem>
           <StatItem>
             <StatValue>{activity.averageHeartRate || "-"}</StatValue>
-            <StatLabel>Avg HR (bpm)</StatLabel>
+            <StatLabel>{t("activities.stats.avgHr")}</StatLabel>
           </StatItem>
         </StatsGrid>
 
@@ -356,7 +359,7 @@ const ActivityDetails = () => {
             style={{ color: likedByMe ? "#fc4c02" : "#666" }}
           >
             <FiHeart size={18} fill={likedByMe ? "#fc4c02" : "none"} />
-            {likesCount} Likes
+            {likesCount} {t("activities.details.likes")}
           </ActionButton>
           <ActionButton
             onClick={() =>
@@ -364,21 +367,21 @@ const ActivityDetails = () => {
             }
           >
             <FiMessageCircle size={18} />
-            {comments.length} Comments
+            {comments.length} {t("activities.details.comments")}
           </ActionButton>
           <ActionButton onClick={() => setShowShareModal(true)}>
             <FiShare2 size={18} />
-            Share
+            {t("common.share")}
           </ActionButton>
           {isOwner && (
             <>
               <ActionButton onClick={() => navigate(`/activities/${id}/edit`)}>
                 <FiEdit2 size={18} />
-                Edit
+                {t("common.edit")}
               </ActionButton>
               <ActionButton onClick={handleDeleteActivity} style={{ color: "#ef4444" }}>
                 <FiTrash2 size={18} />
-                Delete
+                {t("common.delete")}
               </ActionButton>
             </>
           )}
@@ -388,7 +391,7 @@ const ActivityDetails = () => {
       <MapSection>
         <MapSectionTitle>
           <FiMapPin size={20} />
-          Route Map
+          {t("activities.details.routeMap")}
         </MapSectionTitle>
         <ActivityMap coordinates={activity.routePolyline} height="400px" />
       </MapSection>
@@ -397,7 +400,7 @@ const ActivityDetails = () => {
         <PhotoGallerySection>
           <PhotoGallerySectionTitle>
             <FiImage size={20} />
-            Photos ({activity.photos.length})
+            {t("activities.details.photos")} ({activity.photos.length})
           </PhotoGallerySectionTitle>
           <PhotoGrid>
             {activity.photos.map((photo, index) => {
@@ -406,7 +409,7 @@ const ActivityDetails = () => {
                 : `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}${photo}`;
               return (
                 <PhotoGridItem key={index}>
-                  <PhotoGridImage src={photoUrl} alt={`Activity photo ${index + 1}`} />
+                  <PhotoGridImage src={photoUrl} alt={t("activities.details.photoAlt", { index: index + 1 })} />
                 </PhotoGridItem>
               );
             })}
@@ -417,13 +420,13 @@ const ActivityDetails = () => {
       <CommentsSection ref={commentsSectionRef}>
         <CommentsSectionTitle>
           <FiMessageCircle size={20} />
-          Comments ({comments.length})
+          {t("activities.details.comments")} ({comments.length})
         </CommentsSectionTitle>
 
         <CommentForm onSubmit={handleSubmitComment}>
           <CommentInput
             type="text"
-            placeholder="Write a comment..."
+            placeholder={t("activities.details.writeComment")}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
           />
@@ -437,7 +440,7 @@ const ActivityDetails = () => {
 
         <CommentsList>
           {comments.length === 0 ? (
-            <NoComments>No comments yet. Be the first to comment!</NoComments>
+            <NoComments>{t("activities.details.noComments")}</NoComments>
           ) : (
             comments.map((comment) => (
               <CommentItem key={comment.id}>
@@ -471,14 +474,14 @@ const ActivityDetails = () => {
                           onClick={() => handleSaveEdit(comment.id)}
                         >
                           <FiCheck size={14} />
-                          Save
+                          {t("common.save")}
                         </EditButton>
                         <EditButton
                           className="cancel"
                           onClick={handleCancelEdit}
                         >
                           <FiX size={14} />
-                          Cancel
+                          {t("common.cancel")}
                         </EditButton>
                       </EditActions>
                     </>
@@ -534,14 +537,14 @@ const ActivityDetails = () => {
                             onClick={() => handleEditComment(comment)}
                           >
                             <FiEdit2 size={12} />
-                            Edit
+                            {t("common.edit")}
                           </CommentActionButton>
                           <CommentActionButton
                             danger
                             onClick={() => handleDeleteComment(comment.id)}
                           >
                             <FiTrash2 size={12} />
-                            Delete
+                            {t("common.delete")}
                           </CommentActionButton>
                         </CommentActions>
                       )}

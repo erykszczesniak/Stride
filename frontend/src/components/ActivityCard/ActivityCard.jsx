@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiHeart, FiMessageCircle, FiShare2, FiMapPin, FiClock, FiTrendingUp, FiZap } from "react-icons/fi";
 import {
   FaRunning,
@@ -54,6 +55,7 @@ const activityColors = {
 };
 
 const ActivityCard = ({ activity, onLike }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [showShareModal, setShowShareModal] = useState(false);
   const colors = activityColors[activity.activityType] || activityColors.RUN;
@@ -135,7 +137,7 @@ const ActivityCard = ({ activity, onLike }) => {
               <FiMapPin />
             </StatIcon>
             <StatContent>
-              <StatLabel>Distance</StatLabel>
+              <StatLabel>{t("activities.stats.distance")}</StatLabel>
               <StatValue>{formatDistance(activity.distance || 0)}</StatValue>
             </StatContent>
           </StatItem>
@@ -144,7 +146,7 @@ const ActivityCard = ({ activity, onLike }) => {
               <FiClock />
             </StatIcon>
             <StatContent>
-              <StatLabel>Time</StatLabel>
+              <StatLabel>{t("activities.stats.time")}</StatLabel>
               <StatValue>{formatDuration(activity.duration || 0)}</StatValue>
             </StatContent>
           </StatItem>
@@ -154,7 +156,7 @@ const ActivityCard = ({ activity, onLike }) => {
                 <FiTrendingUp />
               </StatIcon>
               <StatContent>
-                <StatLabel>Elevation</StatLabel>
+                <StatLabel>{t("activities.stats.elevation")}</StatLabel>
                 <StatValue>{activity.elevationGain}m</StatValue>
               </StatContent>
             </StatItem>
@@ -165,7 +167,7 @@ const ActivityCard = ({ activity, onLike }) => {
                 <FiZap />
               </StatIcon>
               <StatContent>
-                <StatLabel>Calories</StatLabel>
+                <StatLabel>{t("activities.stats.calories")}</StatLabel>
                 <StatValue>{activity.calories}</StatValue>
               </StatContent>
             </StatItem>

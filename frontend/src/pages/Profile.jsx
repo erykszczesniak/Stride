@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
+import { useTranslation } from "react-i18next";
 import { FiSettings, FiShare2, FiCheck } from "react-icons/fi";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
@@ -41,55 +42,60 @@ import {
   ProfileActions,
 } from "./ProfileStyles";
 
-const allAchievements = [
+const achievementMetadata = [
   {
+    key: "club100km",
     icon: "\u{1F451}",
-    title: "100km Club",
-    description: "Ran 100km in a month",
     color: "#FFD700",
     check: (totals) => totals.distance >= 100,
   },
   {
+    key: "mountainGoat",
     icon: "\u{26F0}\uFE0F",
-    title: "Mountain Goat",
-    description: "5,000m elevation gained",
     color: "#4CAF50",
     check: (totals) => totals.elevation >= 5000,
   },
   {
+    key: "calorieCrusher",
     icon: "\u{1F525}",
-    title: "Calorie Crusher",
-    description: "Burned 10,000 calories",
     color: "#FF6B35",
     check: (totals) => totals.calories >= 10000,
   },
   {
+    key: "speedDemon",
     icon: "\u26A1",
-    title: "Speed Demon",
-    description: "Avg speed over 12 km/h",
     color: "#9C27B0",
     check: (totals) => totals.count > 0 && totals.avgSpeed > 12,
   },
   {
+    key: "risingStar",
     icon: "\u2B50",
-    title: "Rising Star",
-    description: "50 activities completed",
     color: "#2196F3",
     check: (totals) => totals.count >= 50,
   },
   {
+    key: "consistent",
     icon: "\u{1F3C5}",
-    title: "Consistent",
-    description: "10+ activities completed",
     color: "#C0C0C0",
     check: (totals) => totals.count >= 10,
   },
 ];
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
+
+  const allAchievements = useMemo(
+    () =>
+      achievementMetadata.map((m) => ({
+        ...m,
+        title: t(`profile.badges.${m.key}`),
+        description: t(`profile.badges.${m.key}Desc`),
+      })),
+    [t]
+  );
   const [user, setUser] = useState(null);
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState(null);
@@ -252,7 +258,7 @@ const Profile = () => {
 
   const earnedAchievements = useMemo(() => {
     return allAchievements.filter((a) => a.check(totals));
-  }, [totals]);
+  }, [totals, allAchievements]);
 
   const monthlyProgress = stats?.monthlyStats || [];
 
@@ -279,7 +285,7 @@ const Profile = () => {
     return (
       <Layout>
         <Container>
-          <LoadingSpinner>Loading profile...</LoadingSpinner>
+          <LoadingSpinner>{t("profile.loading")}</LoadingSpinner>
         </Container>
       </Layout>
     );
@@ -289,7 +295,7 @@ const Profile = () => {
     return (
       <Layout>
         <Container>
-          <EmptyState>User not found</EmptyState>
+          <EmptyState>{t("profile.userNotFound")}</EmptyState>
         </Container>
       </Layout>
     );
@@ -320,23 +326,23 @@ const Profile = () => {
                 {"\u{1F4CD}"} {user.city}, {user.country}
               </ProfileLocation>
             )}
-            <ProfileLocation>{"\u{1F4C5}"} Joined {user.joinedDate}</ProfileLocation>
+            <ProfileLocation>{"\u{1F4C5}"} {t("profile.joined", { year: user.joinedDate })}</ProfileLocation>
           </ProfileInfo>
           <ProfileActions>
             {isOwnProfile ? (
               <>
                 <EditButton onClick={() => navigate('/settings')}>
                   <FiSettings size={16} />
-                  Edit Profile
+                  {t("profile.editProfile")}
                 </EditButton>
                 <ShareButton onClick={handleShareProfile}>
                   {shareTooltip ? <FiCheck size={16} /> : <FiShare2 size={16} />}
-                  {shareTooltip ? "Copied!" : "Share Profile"}
+                  {shareTooltip ? t("profile.copied") : t("profile.shareProfile")}
                 </ShareButton>
               </>
             ) : (
               <FollowButton $followed={isFollowed} onClick={handleFollowToggle} disabled={followLoading}>
-                {isFollowed ? "Following" : "Follow"}
+                {isFollowed ? t("profile.following") : t("profile.follow")}
               </FollowButton>
             )}
           </ProfileActions>
@@ -345,15 +351,15 @@ const Profile = () => {
         <ProfileStats>
           <StatItem>
             <StatValue>{activities.length}</StatValue>
-            <StatLabel>Activities</StatLabel>
+            <StatLabel>{t("profile.stats.activities")}</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>{followersCount.toLocaleString()}</StatValue>
-            <StatLabel>Followers</StatLabel>
+            <StatLabel>{t("profile.stats.followers")}</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>{followingCount.toLocaleString()}</StatValue>
-            <StatLabel>Following</StatLabel>
+            <StatLabel>{t("profile.stats.following")}</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>
@@ -361,7 +367,7 @@ const Profile = () => {
                 .reduce((sum, a) => sum + (a.likesCount || 0), 0)
                 .toLocaleString()}
             </StatValue>
-            <StatLabel>Kudos</StatLabel>
+            <StatLabel>{t("profile.stats.kudos")}</StatLabel>
           </StatItem>
         </ProfileStats>
       </ProfileHeader>
@@ -374,57 +380,57 @@ const Profile = () => {
                 active={activeTab === "overview"}
                 onClick={() => setActiveTab("overview")}
               >
-                Overview
+                {t("profile.tabs.overview")}
               </Tab>
               <Tab
                 active={activeTab === "activities"}
                 onClick={() => setActiveTab("activities")}
               >
-                Activities
+                {t("profile.tabs.activities")}
               </Tab>
               <Tab
                 active={activeTab === "achievements"}
                 onClick={() => setActiveTab("achievements")}
               >
-                Achievements
+                {t("profile.tabs.achievements")}
               </Tab>
               <Tab
                 active={activeTab === "personalRecords"}
                 onClick={() => setActiveTab("personalRecords")}
               >
-                Personal Records
+                {t("profile.tabs.personalRecords")}
               </Tab>
             </TabsContainer>
 
             {activeTab === "overview" && (
               <TabContent>
-                <SectionTitle>{"\u{1F3C6}"} All-Time Stats</SectionTitle>
+                <SectionTitle>{"\u{1F3C6}"} {t("profile.allTimeStats")}</SectionTitle>
                 <StatsGrid>
                   <StatCard color="#fc5200">
                     <StatIcon>{"\u{1F3C3}"}</StatIcon>
                     <StatValue>{totals.distance.toFixed(0)}</StatValue>
-                    <StatLabel>Total km</StatLabel>
+                    <StatLabel>{t("profile.totalKm")}</StatLabel>
                   </StatCard>
                   <StatCard color="#0095ff">
                     <StatIcon>{"\u{1F4C5}"}</StatIcon>
                     <StatValue>{Math.floor(totals.time / 3600)}</StatValue>
-                    <StatLabel>Hours Active</StatLabel>
+                    <StatLabel>{t("profile.hoursActive")}</StatLabel>
                   </StatCard>
                   <StatCard color="#4caf50">
                     <StatIcon>{"\u{26F0}\uFE0F"}</StatIcon>
                     <StatValue>{totals.elevation.toLocaleString()}</StatValue>
-                    <StatLabel>m Elevation</StatLabel>
+                    <StatLabel>{t("profile.mElevation")}</StatLabel>
                   </StatCard>
                   <StatCard color="#9c27b0">
                     <StatIcon>{"\u26A1"}</StatIcon>
                     <StatValue>{totals.count}</StatValue>
-                    <StatLabel>Activities</StatLabel>
+                    <StatLabel>{t("profile.stats.activities")}</StatLabel>
                   </StatCard>
                 </StatsGrid>
 
                 {monthlyProgress.length > 0 && (
                   <>
-                    <SectionTitle>{"\u{1F4CA}"} Monthly Progress</SectionTitle>
+                    <SectionTitle>{"\u{1F4CA}"} {t("profile.monthlyProgress")}</SectionTitle>
                     <MonthlyChart>
                       {monthlyProgress.map((stat) => (
                         <div key={stat.month}>
@@ -439,9 +445,9 @@ const Profile = () => {
                   </>
                 )}
 
-                <SectionTitle>{"\u{1F3C5}"} Achievements</SectionTitle>
+                <SectionTitle>{"\u{1F3C5}"} {t("profile.achievements")}</SectionTitle>
                 {earnedAchievements.length === 0 ? (
-                  <EmptyState>No achievements earned yet. Keep training!</EmptyState>
+                  <EmptyState>{t("profile.noAchievements")}</EmptyState>
                 ) : (
                 <AchievementsGrid>
                   {earnedAchievements.map((achievement, index) => (
@@ -507,7 +513,7 @@ const Profile = () => {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState>No activities yet</EmptyState>
+                  <EmptyState>{t("profile.noActivitiesOwn")}</EmptyState>
                 )}
               </TabContent>
             )}
@@ -539,10 +545,10 @@ const Profile = () => {
                           color: theme.textPrimary,
                         }}
                       >
-                        Achievement Progress
+                        {t("profile.achievementProgress")}
                       </h3>
                       <p style={{ fontSize: "14px", color: theme.textSecondary }}>
-                        You've earned {earnedAchievements.length} of {allAchievements.length} badges
+                        {t("profile.earnedOfTotal", { earned: earnedAchievements.length, total: allAchievements.length })}
                       </p>
                     </div>
                     <div style={{ textAlign: "right" }}>
@@ -556,7 +562,7 @@ const Profile = () => {
                         {allAchievements.length > 0 ? Math.round((earnedAchievements.length / allAchievements.length) * 100) : 0}%
                       </div>
                       <div style={{ fontSize: "14px", color: theme.textSecondary }}>
-                        Complete
+                        {t("profile.complete")}
                       </div>
                     </div>
                   </div>
@@ -642,19 +648,19 @@ const Profile = () => {
                 active={activeTab === "overview"}
                 onClick={() => setActiveTab("overview")}
               >
-                Activities
+                {t("profile.tabs.activities")}
               </Tab>
               <Tab
                 active={activeTab === "personalRecords"}
                 onClick={() => setActiveTab("personalRecords")}
               >
-                Personal Records
+                {t("profile.tabs.personalRecords")}
               </Tab>
             </TabsContainer>
 
             {activeTab === "overview" && (
               <TabContent>
-                <SectionTitle>Recent Activities</SectionTitle>
+                <SectionTitle>{t("profile.recentActivities")}</SectionTitle>
                 {activities.length > 0 ? (
                   <div
                     style={{
@@ -672,7 +678,7 @@ const Profile = () => {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState>No public activities yet</EmptyState>
+                  <EmptyState>{t("profile.noActivitiesPublic")}</EmptyState>
                 )}
               </TabContent>
             )}

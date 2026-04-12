@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   FiHome,
   FiActivity,
@@ -36,22 +37,23 @@ import {
 } from "./SidebarStyles";
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
 
   const mainNavItems = [
-    { path: "/", label: "Dashboard", icon: FiHome },
-    { path: "/activities", label: "Activities", icon: FiActivity },
-    { path: "/profile", label: "Profile", icon: FiUser },
-    { path: "/goals", label: "Goals", icon: FiTarget },
-    { path: "/challenges", label: "Challenges", icon: FiAward },
-    { path: "/training", label: "Training Plans", icon: FiClipboard },
-    { path: "/clubs", label: "Clubs", icon: FiUsers },
-    { path: "/events", label: "Events", icon: FiCalendar },
-    { path: "/reports", label: "Reports", icon: FiFileText },
-    ...(user?.role === "ADMIN" ? [{ path: "/admin", label: "Admin Panel", icon: RiAdminLine }] : []),
+    { path: "/", label: t("nav.dashboard"), icon: FiHome },
+    { path: "/activities", label: t("nav.activities"), icon: FiActivity },
+    { path: "/profile", label: t("nav.profile"), icon: FiUser },
+    { path: "/goals", label: t("nav.goals"), icon: FiTarget },
+    { path: "/challenges", label: t("nav.challenges"), icon: FiAward },
+    { path: "/training", label: t("nav.trainingPlans"), icon: FiClipboard },
+    { path: "/clubs", label: t("nav.clubs"), icon: FiUsers },
+    { path: "/events", label: t("nav.events"), icon: FiCalendar },
+    { path: "/reports", label: t("nav.reports"), icon: FiFileText },
+    ...(user?.role === "ADMIN" ? [{ path: "/admin", label: t("nav.adminPanel"), icon: RiAdminLine }] : []),
   ];
 
   const handleLogout = () => {
@@ -75,7 +77,7 @@ const Sidebar = () => {
 
       <RecordButton onClick={() => navigate("/activities/new")}>
         <FiPlus size={18} />
-        Record Activity
+        {t("nav.recordActivity")}
       </RecordButton>
 
       <NavSection>
@@ -95,11 +97,11 @@ const Sidebar = () => {
       </NavSection>
 
       <BottomSection>
-        <ThemeToggle onClick={toggleTheme} title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+        <ThemeToggle onClick={toggleTheme} title={isDarkMode ? t("nav.switchToLightMode") : t("nav.switchToDarkMode")}>
           <NavIcon>
             {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
           </NavIcon>
-          <NavLabel>{isDarkMode ? "Light Mode" : "Dark Mode"}</NavLabel>
+          <NavLabel>{isDarkMode ? t("nav.lightMode") : t("nav.darkMode")}</NavLabel>
         </ThemeToggle>
         <NavItem
           to="/settings"
@@ -108,13 +110,13 @@ const Sidebar = () => {
           <NavIcon>
             <FiSettings size={20} />
           </NavIcon>
-          <NavLabel>Settings</NavLabel>
+          <NavLabel>{t("nav.settings")}</NavLabel>
         </NavItem>
         <LogoutButton onClick={handleLogout}>
           <NavIcon>
             <FiLogOut size={20} />
           </NavIcon>
-          <NavLabel>Sign Out</NavLabel>
+          <NavLabel>{t("nav.signOut")}</NavLabel>
         </LogoutButton>
       </BottomSection>
     </SidebarContainer>

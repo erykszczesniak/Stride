@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiX, FiCopy, FiCheck } from "react-icons/fi";
 import {
   Overlay,
@@ -13,6 +14,7 @@ import {
 } from "./ShareModalStyles";
 
 const ShareModal = ({ isOpen, onClose, activityId }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -38,8 +40,8 @@ const ShareModal = ({ isOpen, onClose, activityId }) => {
     <Overlay onClick={handleOverlayClick}>
       <Modal>
         <Header>
-          <Title>Share Activity</Title>
-          <CloseButton onClick={onClose} aria-label="Close share dialog">
+          <Title>{t("share.shareActivity")}</Title>
+          <CloseButton onClick={onClose} aria-label={t("share.closeDialog")}>
             <FiX size={20} />
           </CloseButton>
         </Header>
@@ -49,7 +51,7 @@ const ShareModal = ({ isOpen, onClose, activityId }) => {
             {copied ? <FiCheck size={20} /> : <FiCopy size={20} />}
           </CopyButton>
         </UrlContainer>
-        <HelpText>Share this link with friends to show them your activity</HelpText>
+        <HelpText>{t("share.helpText")}</HelpText>
       </Modal>
     </Overlay>
   );

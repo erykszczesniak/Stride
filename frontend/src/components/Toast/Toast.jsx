@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiCheck, FiX, FiAlertCircle, FiInfo, FiBell, FiCopy } from "react-icons/fi";
 import {
   ToastWrapper,
@@ -25,21 +26,22 @@ const getIcon = (type) => {
   }
 };
 
-const getTitle = (type) => {
-  switch (type) {
-    case "success":
-      return "Success";
-    case "error":
-      return "Error";
-    case "warning":
-      return "Warning";
-    default:
-      return "Info";
-  }
-};
-
 const Toast = ({ type = "info", message, title, details, onClose, isExiting }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+
+  const getTitle = (toastType) => {
+    switch (toastType) {
+      case "success":
+        return t("common.success");
+      case "error":
+        return t("common.error");
+      case "warning":
+        return t("common.warning");
+      default:
+        return t("common.info");
+    }
+  };
 
   const handleCopy = async (e) => {
     e.stopPropagation();
@@ -59,7 +61,7 @@ const Toast = ({ type = "info", message, title, details, onClose, isExiting }) =
         <Message>{message}</Message>
       </Content>
       {type === "error" && (
-        <CopyButton onClick={handleCopy} title="Copy error to clipboard">
+        <CopyButton onClick={handleCopy} title={t("common.copy")}>
           {copied ? <FiCheck size={14} /> : <FiCopy size={14} />}
         </CopyButton>
       )}

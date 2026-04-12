@@ -1,5 +1,6 @@
 import React from "react";
 import { FiMapPin, FiUsers, FiClock } from "react-icons/fi";
+import i18n from "../../i18n";
 import {
   Card,
   DateBox,
@@ -12,20 +13,21 @@ import {
   MetaItem,
 } from "./EventCardStyles";
 
-const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-
 const formatTime = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleTimeString("en-US", {
+  return date.toLocaleTimeString(i18n.language, {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
   });
+};
+
+const formatMonthAbbr = (date) => {
+  return date.toLocaleDateString(i18n.language, { month: "short" }).toUpperCase();
 };
 
 const EventCard = ({ event, compact = false }) => {
   const eventDate = new Date(event.eventDate);
-  const month = months[eventDate.getMonth()];
+  const month = formatMonthAbbr(eventDate);
   const day = eventDate.getDate();
 
   return (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   FiSearch,
   FiHome,
@@ -39,37 +40,42 @@ import {
   FooterHint,
 } from "./SearchModalStyles";
 
-const SEARCH_ITEMS = [
-  // Pages
-  { id: "dashboard", label: "Dashboard", category: "Pages", icon: FiHome, path: "/" },
-  { id: "activities", label: "Activities", category: "Pages", icon: FiActivity, path: "/activities" },
-  { id: "profile", label: "Profile", category: "Pages", icon: FiUser, path: "/profile" },
-  { id: "goals", label: "Goals", category: "Pages", icon: FiTarget, path: "/goals" },
-  { id: "challenges", label: "Challenges", category: "Pages", icon: FiAward, path: "/challenges" },
-  { id: "training", label: "Training Plans", category: "Pages", icon: FiBook, path: "/training" },
-  { id: "clubs", label: "Clubs", category: "Pages", icon: FiUsers, path: "/clubs" },
-  { id: "events", label: "Events", category: "Pages", icon: FiCalendar, path: "/events" },
-  { id: "settings", label: "Settings", category: "Pages", icon: FiSettings, path: "/settings" },
-  { id: "record-activity", label: "Record Activity", category: "Pages", icon: FiPlus, path: "/activities/new" },
-
-  // Settings
-  { id: "dark-mode", label: "Dark Mode", category: "Settings", icon: FiSun, path: "/settings", settingsSection: "preferences" },
-  { id: "email-notifications", label: "Email Notifications", category: "Settings", icon: FiMail, path: "/settings", settingsSection: "notifications" },
-  { id: "push-notifications", label: "Push Notifications", category: "Settings", icon: FiBell, path: "/settings", settingsSection: "notifications" },
-  { id: "weekly-summary", label: "Weekly Summary", category: "Settings", icon: FiFileText, path: "/settings", settingsSection: "notifications" },
-  { id: "change-password", label: "Change Password", category: "Settings", icon: FiLock, path: "/settings", settingsSection: "account" },
-  { id: "delete-account", label: "Delete Account", category: "Settings", icon: FiTrash2, path: "/settings", settingsSection: "account" },
-  { id: "privacy-settings", label: "Privacy Settings", category: "Settings", icon: FiShield, path: "/settings", settingsSection: "preferences" },
-  { id: "language", label: "Language", category: "Settings", icon: FiGlobe, path: "/settings", settingsSection: "preferences" },
-  { id: "units", label: "Units", category: "Settings", icon: FiSliders, path: "/settings", settingsSection: "preferences" },
-];
-
 const SearchModal = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
   const resultsRef = useRef(null);
+
+  const SEARCH_ITEMS = useMemo(() => {
+    const pages = t("search.categories.pages");
+    const settings = t("search.categories.settings");
+    return [
+      // Pages
+      { id: "dashboard", label: t("search.items.dashboard"), category: pages, icon: FiHome, path: "/" },
+      { id: "activities", label: t("search.items.activities"), category: pages, icon: FiActivity, path: "/activities" },
+      { id: "profile", label: t("search.items.profile"), category: pages, icon: FiUser, path: "/profile" },
+      { id: "goals", label: t("search.items.goals"), category: pages, icon: FiTarget, path: "/goals" },
+      { id: "challenges", label: t("search.items.challenges"), category: pages, icon: FiAward, path: "/challenges" },
+      { id: "training", label: t("search.items.trainingPlans"), category: pages, icon: FiBook, path: "/training" },
+      { id: "clubs", label: t("search.items.clubs"), category: pages, icon: FiUsers, path: "/clubs" },
+      { id: "events", label: t("search.items.events"), category: pages, icon: FiCalendar, path: "/events" },
+      { id: "settings", label: t("search.items.settings"), category: pages, icon: FiSettings, path: "/settings" },
+      { id: "record-activity", label: t("search.items.recordActivity"), category: pages, icon: FiPlus, path: "/activities/new" },
+
+      // Settings
+      { id: "dark-mode", label: t("search.items.darkMode"), category: settings, icon: FiSun, path: "/settings", settingsSection: "preferences" },
+      { id: "email-notifications", label: t("search.items.emailNotifications"), category: settings, icon: FiMail, path: "/settings", settingsSection: "notifications" },
+      { id: "push-notifications", label: t("search.items.pushNotifications"), category: settings, icon: FiBell, path: "/settings", settingsSection: "notifications" },
+      { id: "weekly-summary", label: t("search.items.weeklySummary"), category: settings, icon: FiFileText, path: "/settings", settingsSection: "notifications" },
+      { id: "change-password", label: t("search.items.changePassword"), category: settings, icon: FiLock, path: "/settings", settingsSection: "account" },
+      { id: "delete-account", label: t("search.items.deleteAccount"), category: settings, icon: FiTrash2, path: "/settings", settingsSection: "account" },
+      { id: "privacy-settings", label: t("search.items.privacySettings"), category: settings, icon: FiShield, path: "/settings", settingsSection: "preferences" },
+      { id: "language", label: t("search.items.language"), category: settings, icon: FiGlobe, path: "/settings", settingsSection: "preferences" },
+      { id: "units", label: t("search.items.units"), category: settings, icon: FiSliders, path: "/settings", settingsSection: "preferences" },
+    ];
+  }, [t]);
 
   const filteredItems = useMemo(() => {
     if (!query.trim()) return SEARCH_ITEMS;
@@ -79,7 +85,7 @@ const SearchModal = ({ isOpen, onClose }) => {
         item.label.toLowerCase().includes(lower) ||
         item.category.toLowerCase().includes(lower)
     );
-  }, [query]);
+  }, [query, SEARCH_ITEMS]);
 
   const groupedResults = useMemo(() => {
     const groups = [];
@@ -175,7 +181,7 @@ const SearchModal = ({ isOpen, onClose }) => {
           <SearchInput
             ref={inputRef}
             type="text"
-            placeholder="Search pages and settings..."
+            placeholder={t("search.placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -184,7 +190,7 @@ const SearchModal = ({ isOpen, onClose }) => {
 
         <ResultsList ref={resultsRef}>
           {filteredItems.length === 0 ? (
-            <EmptyState>No results found for "{query}"</EmptyState>
+            <EmptyState>{t("search.noResults", { query })}</EmptyState>
           ) : (
             groupedResults.map((entry, i) => {
               if (entry.type === "category") {
@@ -218,13 +224,13 @@ const SearchModal = ({ isOpen, onClose }) => {
 
         <Footer>
           <FooterHint>
-            <kbd>↑</kbd><kbd>↓</kbd> navigate
+            <kbd>↑</kbd><kbd>↓</kbd> {t("search.hints.navigate")}
           </FooterHint>
           <FooterHint>
-            <kbd>↵</kbd> select
+            <kbd>↵</kbd> {t("search.hints.select")}
           </FooterHint>
           <FooterHint>
-            <kbd>esc</kbd> close
+            <kbd>esc</kbd> {t("search.hints.close")}
           </FooterHint>
         </Footer>
       </ModalContainer>

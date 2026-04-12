@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FiPlus,
   FiSearch,
@@ -66,6 +67,7 @@ import {
 } from "./ActivitiesStyles";
 
 const Activities = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [mainTab, setMainTab] = useState("all"); // all, following, my
@@ -222,10 +224,10 @@ const Activities = () => {
     return (
       <Layout>
         <PageHeader>
-          <PageTitle>Activities</PageTitle>
+          <PageTitle>{t("activities.pageTitle")}</PageTitle>
           <AddButton to="/activities/new">
             <FiPlus size={18} />
-            Add Activity
+            {t("nav.addActivity")}
           </AddButton>
         </PageHeader>
         <StatsGrid>
@@ -246,10 +248,10 @@ const Activities = () => {
   return (
     <Layout>
       <PageHeader>
-        <PageTitle>Activities</PageTitle>
+        <PageTitle>{t("activities.pageTitle")}</PageTitle>
         <AddButton to="/activities/new">
           <FiPlus size={18} />
-          Add Activity
+          {t("nav.addActivity")}
         </AddButton>
       </PageHeader>
 
@@ -259,7 +261,7 @@ const Activities = () => {
         </SearchIcon>
         <SearchInput
           type="text"
-          placeholder="Search activities, athletes..."
+          placeholder={t("activities.searchPlaceholder")}
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
         />
@@ -268,42 +270,42 @@ const Activities = () => {
       <MainTabs>
         <MainTab active={mainTab === "all"} onClick={() => setMainTab("all")}>
           <FiGlobe />
-          All
+          {t("activities.tabs.all")}
         </MainTab>
         <MainTab
           active={mainTab === "following"}
           onClick={() => setMainTab("following")}
         >
           <FiUsers />
-          Following
+          {t("activities.tabs.following")}
         </MainTab>
         <MainTab active={mainTab === "my"} onClick={() => setMainTab("my")}>
           <FiUser />
-          My Activities
+          {t("activities.tabs.myActivities")}
         </MainTab>
       </MainTabs>
 
       <FilterTabs>
         <FilterTab active={filter === "all"} onClick={() => setFilter("all")}>
-          All Types
+          {t("activities.filters.allTypes")}
         </FilterTab>
         <FilterTab active={filter === "RUN"} onClick={() => setFilter("RUN")}>
-          Run
+          {t("activities.typesShort.RUN")}
         </FilterTab>
         <FilterTab active={filter === "RIDE"} onClick={() => setFilter("RIDE")}>
-          Ride
+          {t("activities.typesShort.RIDE")}
         </FilterTab>
         <FilterTab active={filter === "SWIM"} onClick={() => setFilter("SWIM")}>
-          Swim
+          {t("activities.typesShort.SWIM")}
         </FilterTab>
         <FilterTab active={filter === "HIKE"} onClick={() => setFilter("HIKE")}>
-          Hike
+          {t("activities.typesShort.HIKE")}
         </FilterTab>
         <FilterTab
           active={filter === "WORKOUT"}
           onClick={() => setFilter("WORKOUT")}
         >
-          Workout
+          {t("activities.typesShort.WORKOUT")}
         </FilterTab>
       </FilterTabs>
 
@@ -315,7 +317,7 @@ const Activities = () => {
             </StatIconWrapper>
             <StatContent>
               <StatValue>{stats.totalActivities || 0}</StatValue>
-              <StatLabel>Activities</StatLabel>
+              <StatLabel>{t("activities.stats.activities")}</StatLabel>
             </StatContent>
           </StatCard>
           <StatCard>
@@ -324,7 +326,7 @@ const Activities = () => {
             </StatIconWrapper>
             <StatContent>
               <StatValue>{stats.totalDistanceKm?.toFixed(1) || 0}</StatValue>
-              <StatLabel>Total km</StatLabel>
+              <StatLabel>{t("activities.stats.totalKm")}</StatLabel>
             </StatContent>
           </StatCard>
           <StatCard>
@@ -335,7 +337,7 @@ const Activities = () => {
               <StatValue>
                 {formatDuration(stats.totalDurationSeconds || 0)}
               </StatValue>
-              <StatLabel>Total Time</StatLabel>
+              <StatLabel>{t("activities.stats.totalTime")}</StatLabel>
             </StatContent>
           </StatCard>
         </StatsGrid>
@@ -358,17 +360,17 @@ const Activities = () => {
               <EmptyIcon>🏃</EmptyIcon>
               <EmptyText>
                 {searchQuery
-                  ? "No activities found matching your search."
+                  ? t("activities.empty.noMatch")
                   : mainTab === "following"
-                    ? "No activities from people you follow yet."
+                    ? t("activities.empty.noFollowing")
                     : mainTab === "my"
-                      ? "No activities yet. Start tracking your workouts!"
-                      : "No activities found. Check back later!"}
+                      ? t("activities.empty.myEmpty")
+                      : t("activities.empty.noActivities")}
               </EmptyText>
               {mainTab === "my" && !searchQuery && (
                 <AddButton to="/activities/new">
                   <FiPlus size={18} />
-                  Add Activity
+                  {t("nav.addActivity")}
                 </AddButton>
               )}
             </EmptyState>
@@ -378,7 +380,7 @@ const Activities = () => {
         <SidebarColumn>
           {suggestedAthletes.length > 0 && (
             <SidebarCard>
-              <SidebarTitle>Athletes to Follow</SidebarTitle>
+              <SidebarTitle>{t("activities.sidebar.athletesToFollow")}</SidebarTitle>
               <AthletesList>
                 {suggestedAthletes.map((athlete) => (
                   <AthleteItem key={athlete.id}>
@@ -393,10 +395,10 @@ const Activities = () => {
                       <AthleteName to={`/profile/${athlete.id}`}>
                         {athlete.firstName} {athlete.lastName}
                       </AthleteName>
-                      <AthleteStats>Athlete</AthleteStats>
+                      <AthleteStats>{t("activities.sidebar.athlete")}</AthleteStats>
                     </AthleteInfo>
                     <FollowButton onClick={() => handleFollow(athlete.id)}>
-                      Follow
+                      {t("activities.sidebar.follow")}
                     </FollowButton>
                   </AthleteItem>
                 ))}
@@ -414,11 +416,11 @@ const Activities = () => {
               </ChallengeDescription>
               <ProgressBox>
                 <ProgressHeader>
-                  <ProgressLabel>Your progress</ProgressLabel>
+                  <ProgressLabel>{t("activities.sidebar.yourProgress")}</ProgressLabel>
                   <ProgressValue>
                     {activeChallenge.userProgress?.toFixed(1) || 0} /{" "}
                     {activeChallenge.targetValue}{" "}
-                    {activeChallenge.challengeType === "ELEVATION" ? "m" : "km"}
+                    {activeChallenge.challengeType === "ELEVATION" ? t("common.meters") : t("common.kilometers")}
                   </ProgressValue>
                 </ProgressHeader>
                 <ProgressBar>
@@ -433,7 +435,7 @@ const Activities = () => {
               </ProgressBox>
               <ParticipantsCount>
                 {activeChallenge.participantsCount?.toLocaleString() || 0}{" "}
-                participants
+                {t("activities.sidebar.participants")}
               </ParticipantsCount>
             </ChallengeCard>
           )}

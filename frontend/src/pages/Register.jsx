@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiMail, FiLock, FiActivity, FiEye, FiEyeOff, FiUser, FiSun, FiMoon } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -49,6 +50,7 @@ const GoogleIcon = () => (
 );
 
 const Register = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { register, googleLogin } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -75,12 +77,12 @@ const Register = () => {
       navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Google sign-up failed. Please try again."
+        err.response?.data?.message || t("auth.errors.googleSignupFailed")
       );
     } finally {
       setGoogleLoading(false);
     }
-  }, [googleLogin, navigate]);
+  }, [googleLogin, navigate, t]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || googleInitialized.current) return;
@@ -131,32 +133,32 @@ const Register = () => {
 
   const getStrengthText = (strength) => {
     if (strength === 0) return "";
-    if (strength === 1) return "Weak";
-    if (strength === 2) return "Medium";
-    return "Strong";
+    if (strength === 1) return t("auth.strengthWeak");
+    if (strength === 2) return t("auth.strengthMedium");
+    return t("auth.strengthStrong");
   };
 
   const validate = () => {
     const errors = {};
 
     if (!formData.firstName.trim()) {
-      errors.firstName = "First name is required";
+      errors.firstName = t("auth.errors.firstNameRequired");
     }
     if (!formData.lastName.trim()) {
-      errors.lastName = "Last name is required";
+      errors.lastName = t("auth.errors.lastNameRequired");
     }
     if (!formData.email.trim()) {
-      errors.email = "Email is required";
+      errors.email = t("auth.errors.emailRequired");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Invalid email format";
+      errors.email = t("auth.errors.emailInvalid");
     }
     if (!formData.password) {
-      errors.password = "Password is required";
+      errors.password = t("auth.errors.passwordRequired");
     } else if (formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters";
+      errors.password = t("auth.errors.passwordTooShort");
     }
     if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match";
+      errors.confirmPassword = t("auth.errors.passwordsDontMatch");
     }
 
     setFieldErrors(errors);
@@ -182,7 +184,7 @@ const Register = () => {
       navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Registration failed. Please try again."
+        err.response?.data?.message || t("auth.errors.registrationFailed")
       );
     } finally {
       setLoading(false);
@@ -195,7 +197,7 @@ const Register = () => {
     <Container>
       <button
         onClick={toggleTheme}
-        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        title={isDarkMode ? t("nav.switchToLightMode") : t("nav.switchToDarkMode")}
         style={{
           position: "fixed",
           top: 20,
@@ -220,9 +222,9 @@ const Register = () => {
           </LogoIcon>
           <LogoText>STRIDE</LogoText>
         </BrandLogo>
-        <Tagline>Start Your Journey</Tagline>
+        <Tagline>{t("auth.startYourJourney")}</Tagline>
         <Subtitle>
-          Create your account and join the community of athletes pushing their limits every day.
+          {t("auth.startYourJourneySubtitle")}
         </Subtitle>
       </LeftPanel>
 
@@ -235,15 +237,15 @@ const Register = () => {
             <MobileLogoText>STRIDE</MobileLogoText>
           </MobileLogo>
 
-          <Title>Create account</Title>
-          <Description>Fill in your details to get started</Description>
+          <Title>{t("auth.createAccount")}</Title>
+          <Description>{t("auth.createAccountDescription")}</Description>
 
           {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 
           <Form onSubmit={handleSubmit}>
             <Row>
               <InputGroup>
-                <InputLabel>First Name</InputLabel>
+                <InputLabel>{t("auth.firstName")}</InputLabel>
                 <InputWrapper>
                   <InputIcon>
                     <FiUser size={18} />
@@ -251,7 +253,7 @@ const Register = () => {
                   <Input
                     type="text"
                     name="firstName"
-                    placeholder="John"
+                    placeholder={t("auth.firstNamePlaceholder")}
                     value={formData.firstName}
                     onChange={handleChange}
                     error={fieldErrors.firstName}
@@ -261,7 +263,7 @@ const Register = () => {
               </InputGroup>
 
               <InputGroup>
-                <InputLabel>Last Name</InputLabel>
+                <InputLabel>{t("auth.lastName")}</InputLabel>
                 <InputWrapper>
                   <InputIcon>
                     <FiUser size={18} />
@@ -269,7 +271,7 @@ const Register = () => {
                   <Input
                     type="text"
                     name="lastName"
-                    placeholder="Doe"
+                    placeholder={t("auth.lastNamePlaceholder")}
                     value={formData.lastName}
                     onChange={handleChange}
                     error={fieldErrors.lastName}
@@ -280,7 +282,7 @@ const Register = () => {
             </Row>
 
             <InputGroup>
-              <InputLabel>Email</InputLabel>
+              <InputLabel>{t("auth.email")}</InputLabel>
               <InputWrapper>
                 <InputIcon>
                   <FiMail size={18} />
@@ -298,7 +300,7 @@ const Register = () => {
             </InputGroup>
 
             <InputGroup>
-              <InputLabel>Password</InputLabel>
+              <InputLabel>{t("auth.password")}</InputLabel>
               <InputWrapper>
                 <InputIcon>
                   <FiLock size={18} />
@@ -306,7 +308,7 @@ const Register = () => {
                 <Input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="Min. 8 characters"
+                  placeholder={t("auth.passwordMinPlaceholder")}
                   value={formData.password}
                   onChange={handleChange}
                   error={fieldErrors.password}
@@ -314,7 +316,7 @@ const Register = () => {
                 <PasswordToggle
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                 >
                   {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                 </PasswordToggle>
@@ -333,7 +335,7 @@ const Register = () => {
             </InputGroup>
 
             <InputGroup>
-              <InputLabel>Confirm Password</InputLabel>
+              <InputLabel>{t("auth.confirmPassword")}</InputLabel>
               <InputWrapper>
                 <InputIcon>
                   <FiLock size={18} />
@@ -341,7 +343,7 @@ const Register = () => {
                 <Input
                   type={showConfirmPassword ? "text" : "password"}
                   name="confirmPassword"
-                  placeholder="Repeat your password"
+                  placeholder={t("auth.confirmPasswordPlaceholder")}
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   error={fieldErrors.confirmPassword}
@@ -349,7 +351,7 @@ const Register = () => {
                 <PasswordToggle
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? "Hide password confirmation" : "Show password confirmation"}
+                  aria-label={showConfirmPassword ? t("auth.hidePasswordConfirm") : t("auth.showPasswordConfirm")}
                 >
                   {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                 </PasswordToggle>
@@ -360,14 +362,14 @@ const Register = () => {
             </InputGroup>
 
             <SubmitButton type="submit" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? t("auth.creatingAccount") : t("auth.signUp")}
             </SubmitButton>
           </Form>
 
           {GOOGLE_CLIENT_ID && (
             <>
               <Divider>
-                <span>or</span>
+                <span>{t("auth.orDivider")}</span>
               </Divider>
 
               <GoogleButton
@@ -376,19 +378,19 @@ const Register = () => {
                 disabled={googleLoading}
               >
                 <GoogleIcon />
-                {googleLoading ? "Signing up..." : "Continue with Google"}
+                {googleLoading ? t("auth.signingUp") : t("auth.continueWithGoogle")}
               </GoogleButton>
             </>
           )}
 
           {!GOOGLE_CLIENT_ID && (
             <Divider>
-              <span>or</span>
+              <span>{t("auth.orDivider")}</span>
             </Divider>
           )}
 
           <LoginLink>
-            Already have an account? <Link to="/login">Sign in</Link>
+            {t("auth.alreadyHaveAccount")} <Link to="/login">{t("auth.signInLink")}</Link>
           </LoginLink>
         </FormContainer>
       </RightPanel>

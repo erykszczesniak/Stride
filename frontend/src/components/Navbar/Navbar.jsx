@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiPlus, FiSearch, FiSun, FiMoon, FiMenu, FiX, FiHome, FiActivity, FiAward, FiUsers, FiCalendar, FiUser, FiTarget, FiBook, FiSettings, FiShield, FiLogOut } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -28,6 +29,7 @@ import {
 } from "./NavbarStyles";
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -84,7 +86,7 @@ const Navbar = () => {
 
   return (
     <>
-      <Nav role="navigation" aria-label="Main navigation">
+      <Nav role="navigation" aria-label={t("nav.mainNavigation")}>
         <Logo to="/">
           <LogoIcon><FiActivity size={20} /></LogoIcon>
           <LogoText>STRIDE</LogoText>
@@ -92,41 +94,41 @@ const Navbar = () => {
 
         <NavLinks>
           <NavLink to="/" className={isActive("/") ? "active" : ""}>
-            Dashboard
+            {t("nav.dashboard")}
           </NavLink>
           <NavLink to="/activities" className={isActive("/activities") ? "active" : ""}>
-            Activities
+            {t("nav.activities")}
           </NavLink>
           <NavLink to="/challenges" className={isActive("/challenges") ? "active" : ""}>
-            Challenges
+            {t("nav.challenges")}
           </NavLink>
           <NavLink to="/clubs" className={isActive("/clubs") ? "active" : ""}>
-            Clubs
+            {t("nav.clubs")}
           </NavLink>
           <NavLink to="/events" className={isActive("/events") ? "active" : ""}>
-            Events
+            {t("nav.events")}
           </NavLink>
         </NavLinks>
 
         <NavRight>
           <HideOnMobile>
-            <IconButton title="Search (Cmd+K)" onClick={() => setShowSearch(true)}>
+            <IconButton title={t("nav.searchShortcut")} onClick={() => setShowSearch(true)}>
               <FiSearch size={20} />
             </IconButton>
           </HideOnMobile>
-          <IconButton title="Add Activity" onClick={() => navigate("/activities/new")}>
+          <IconButton title={t("nav.addActivity")} onClick={() => navigate("/activities/new")}>
             <FiPlus size={22} />
           </IconButton>
           <HideOnMobile>
             <NotificationDropdown />
-            <IconButton title={isDarkMode ? "Light Mode" : "Dark Mode"} onClick={toggleTheme}>
+            <IconButton title={isDarkMode ? t("nav.lightMode") : t("nav.darkMode")} onClick={toggleTheme}>
               {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
             </IconButton>
           </HideOnMobile>
           <AvatarWrapper>
             <Avatar onClick={() => setShowDropdown(!showDropdown)}>
               {user?.profileImageUrl ? (
-                <img src={user.profileImageUrl} alt="Profile" />
+                <img src={user.profileImageUrl} alt={t("nav.profile")} />
               ) : (
                 getInitials()
               )}
@@ -134,29 +136,29 @@ const Navbar = () => {
             {showDropdown && (
               <DropdownMenu>
                 <DropdownItem to="/profile" onClick={() => setShowDropdown(false)}>
-                  My Profile
+                  {t("nav.myProfile")}
                 </DropdownItem>
                 <DropdownItem to="/goals" onClick={() => setShowDropdown(false)}>
-                  Goals
+                  {t("nav.goals")}
                 </DropdownItem>
                 <DropdownItem to="/training" onClick={() => setShowDropdown(false)}>
-                  Training Plans
+                  {t("nav.trainingPlans")}
                 </DropdownItem>
                 {user?.role === "ADMIN" && (
                   <DropdownItem to="/admin" onClick={() => setShowDropdown(false)}>
-                    Admin Panel
+                    {t("nav.adminPanel")}
                   </DropdownItem>
                 )}
                 <DropdownItem to="/settings" onClick={() => setShowDropdown(false)}>
-                  Settings
+                  {t("nav.settings")}
                 </DropdownItem>
-                <DropdownButton onClick={handleLogout}>Log Out</DropdownButton>
+                <DropdownButton onClick={handleLogout}>{t("nav.logout")}</DropdownButton>
               </DropdownMenu>
             )}
           </AvatarWrapper>
           <MobileMenuButton
-            title="Menu"
-            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            title={t("nav.menu")}
+            aria-label={mobileMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
@@ -169,49 +171,49 @@ const Navbar = () => {
       <MobileMenuOverlay $isOpen={mobileMenuOpen} onClick={() => setMobileMenuOpen(false)} />
       <MobileMenu $isOpen={mobileMenuOpen}>
         <MobileNavLink to="/" className={isActive("/") ? "active" : ""}>
-          <FiHome /> Dashboard
+          <FiHome /> {t("nav.dashboard")}
         </MobileNavLink>
         <MobileNavLink to="/activities" className={isActive("/activities") ? "active" : ""}>
-          <FiActivity /> Activities
+          <FiActivity /> {t("nav.activities")}
         </MobileNavLink>
         <MobileNavLink to="/challenges" className={isActive("/challenges") ? "active" : ""}>
-          <FiAward /> Challenges
+          <FiAward /> {t("nav.challenges")}
         </MobileNavLink>
         <MobileNavLink to="/clubs" className={isActive("/clubs") ? "active" : ""}>
-          <FiUsers /> Clubs
+          <FiUsers /> {t("nav.clubs")}
         </MobileNavLink>
         <MobileNavLink to="/events" className={isActive("/events") ? "active" : ""}>
-          <FiCalendar /> Events
+          <FiCalendar /> {t("nav.events")}
         </MobileNavLink>
 
         <MobileDivider />
 
         <MobileNavLink to="/profile" className={isActive("/profile") ? "active" : ""}>
-          <FiUser /> My Profile
+          <FiUser /> {t("nav.myProfile")}
         </MobileNavLink>
         <MobileNavLink to="/goals" className={isActive("/goals") ? "active" : ""}>
-          <FiTarget /> Goals
+          <FiTarget /> {t("nav.goals")}
         </MobileNavLink>
         <MobileNavLink to="/training" className={isActive("/training") ? "active" : ""}>
-          <FiBook /> Training Plans
+          <FiBook /> {t("nav.trainingPlans")}
         </MobileNavLink>
         {user?.role === "ADMIN" && (
           <MobileNavLink to="/admin" className={isActive("/admin") ? "active" : ""}>
-            <FiShield /> Admin Panel
+            <FiShield /> {t("nav.adminPanel")}
           </MobileNavLink>
         )}
         <MobileNavLink to="/settings" className={isActive("/settings") ? "active" : ""}>
-          <FiSettings /> Settings
+          <FiSettings /> {t("nav.settings")}
         </MobileNavLink>
 
         <MobileDivider />
 
         <MobileNavLink as="button" onClick={toggleTheme} style={{ width: "100%", border: "none", background: "none", cursor: "pointer" }}>
           {isDarkMode ? <FiSun /> : <FiMoon />}
-          {isDarkMode ? "Light Mode" : "Dark Mode"}
+          {isDarkMode ? t("nav.lightMode") : t("nav.darkMode")}
         </MobileNavLink>
         <MobileNavLink as="button" onClick={handleLogout} style={{ width: "100%", border: "none", background: "none", cursor: "pointer", color: "#ef4444" }}>
-          <FiLogOut /> Log Out
+          <FiLogOut /> {t("nav.logout")}
         </MobileNavLink>
       </MobileMenu>
 

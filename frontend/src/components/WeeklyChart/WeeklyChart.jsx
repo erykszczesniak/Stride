@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   BarChart,
   Bar,
@@ -19,16 +20,6 @@ import {
   LegendItem,
   LegendDot,
 } from "./WeeklyChartStyles";
-
-const defaultData = [
-  { dayName: "Mon", distance: 0, duration: 0, activities: 0 },
-  { dayName: "Tue", distance: 0, duration: 0, activities: 0 },
-  { dayName: "Wed", distance: 0, duration: 0, activities: 0 },
-  { dayName: "Thu", distance: 0, duration: 0, activities: 0 },
-  { dayName: "Fri", distance: 0, duration: 0, activities: 0 },
-  { dayName: "Sat", distance: 0, duration: 0, activities: 0 },
-  { dayName: "Sun", distance: 0, duration: 0, activities: 0 },
-];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -56,13 +47,23 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const WeeklyChart = ({ data, trendPercentage }) => {
+  const { t } = useTranslation();
+  const defaultData = [
+    { dayName: "Mon", distance: 0, duration: 0, activities: 0 },
+    { dayName: "Tue", distance: 0, duration: 0, activities: 0 },
+    { dayName: "Wed", distance: 0, duration: 0, activities: 0 },
+    { dayName: "Thu", distance: 0, duration: 0, activities: 0 },
+    { dayName: "Fri", distance: 0, duration: 0, activities: 0 },
+    { dayName: "Sat", distance: 0, duration: 0, activities: 0 },
+    { dayName: "Sun", distance: 0, duration: 0, activities: 0 },
+  ];
   const chartData = data || defaultData;
   const isPositive = trendPercentage && !trendPercentage.startsWith("-");
 
   return (
     <ChartContainer>
       <ChartHeader>
-        <ChartTitle>Weekly Activity</ChartTitle>
+        <ChartTitle>{t("dashboard.weeklyActivity")}</ChartTitle>
         {trendPercentage && (
           <TrendBadge positive={isPositive}>
             {isPositive ? <FiTrendingUp size={14} /> : <FiTrendingDown size={14} />}
@@ -107,7 +108,7 @@ const WeeklyChart = ({ data, trendPercentage }) => {
       <ChartLegend>
         <LegendItem>
           <LegendDot color="#fc4c02" />
-          Distance (km)
+          {t("dashboard.distanceLabel")}
         </LegendItem>
       </ChartLegend>
     </ChartContainer>

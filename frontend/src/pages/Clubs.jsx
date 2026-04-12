@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { FiSearch, FiMapPin, FiUsers, FiActivity, FiLock, FiCheck, FiPlus } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ClubService from "../api/ClubService";
@@ -36,19 +37,21 @@ import {
   EmptyText,
 } from "./ClubsStyles";
 
-const getCategoryInfo = (sportType) => {
+const getCategoryInfo = (sportType, t) => {
   const categories = {
-    RUN: { label: "running", bgColor: "#fff3ed", textColor: "#fc4c02", borderColor: "#fc4c02", emoji: "🏃" },
-    RIDE: { label: "cycling", bgColor: "#e8f5e9", textColor: "#4caf50", borderColor: "#4caf50", emoji: "🚴" },
-    SWIM: { label: "swimming", bgColor: "#e3f2fd", textColor: "#2196f3", borderColor: "#2196f3", emoji: "🏊" },
-    HIKE: { label: "hiking", bgColor: "#fff8e1", textColor: "#ff9800", borderColor: "#ff9800", emoji: "🥾" },
-    OTHER: { label: "triathlon", bgColor: "#fce4ec", textColor: "#e91e63", borderColor: "#e91e63", emoji: "🏅" },
-    null: { label: "general", bgColor: null, textColor: null, borderColor: null, emoji: "⚡" },
+    RUN: { labelKey: "running", bgColor: "#fff3ed", textColor: "#fc4c02", borderColor: "#fc4c02", emoji: "🏃" },
+    RIDE: { labelKey: "cycling", bgColor: "#e8f5e9", textColor: "#4caf50", borderColor: "#4caf50", emoji: "🚴" },
+    SWIM: { labelKey: "swimming", bgColor: "#e3f2fd", textColor: "#2196f3", borderColor: "#2196f3", emoji: "🏊" },
+    HIKE: { labelKey: "hiking", bgColor: "#fff8e1", textColor: "#ff9800", borderColor: "#ff9800", emoji: "🥾" },
+    OTHER: { labelKey: "triathlon", bgColor: "#fce4ec", textColor: "#e91e63", borderColor: "#e91e63", emoji: "🏅" },
+    null: { labelKey: "general", bgColor: null, textColor: null, borderColor: null, emoji: "⚡" },
   };
-  return categories[sportType] || categories[null];
+  const entry = categories[sportType] || categories[null];
+  return { ...entry, label: t(`clubs.categories.${entry.labelKey}`) };
 };
 
 const Clubs = () => {
+  const { t } = useTranslation();
   const [clubs, setClubs] = useState([]);
   const [stats, setStats] = useState({ totalClubs: 0, userClubs: 0, totalMembers: 0 });
   const [loading, setLoading] = useState(true);
@@ -114,9 +117,9 @@ const Clubs = () => {
         <PageIcon>
           <FiUsers />
         </PageIcon>
-        <PageTitle>Clubs</PageTitle>
+        <PageTitle>{t("clubs.title")}</PageTitle>
       </PageHeader>
-      <PageSubtitle>Join communities and train together</PageSubtitle>
+      <PageSubtitle>{t("clubs.subtitle")}</PageSubtitle>
 
       <SearchFilterRow>
         <SearchContainer>
@@ -125,37 +128,37 @@ const Clubs = () => {
           </SearchIcon>
           <SearchInput
             type="text"
-            placeholder="Search clubs..."
+            placeholder={t("clubs.searchPlaceholder")}
             value={searchQuery}
             onChange={handleSearchChange}
           />
         </SearchContainer>
         <CategorySelect value={selectedCategory} onChange={handleCategoryChange}>
-          <option value="">All Categories</option>
-          <option value="RUN">Running</option>
-          <option value="RIDE">Cycling</option>
-          <option value="SWIM">Swimming</option>
-          <option value="OTHER">Triathlon</option>
-          <option value="HIKE">Hiking</option>
+          <option value="">{t("clubs.allCategories")}</option>
+          <option value="RUN">{t("clubs.categoryOptions.running")}</option>
+          <option value="RIDE">{t("clubs.categoryOptions.cycling")}</option>
+          <option value="SWIM">{t("clubs.categoryOptions.swimming")}</option>
+          <option value="OTHER">{t("clubs.categoryOptions.triathlon")}</option>
+          <option value="HIKE">{t("clubs.categoryOptions.hiking")}</option>
         </CategorySelect>
       </SearchFilterRow>
 
       <StatsGrid>
         <StatCard>
           <StatValue>{stats.totalClubs}</StatValue>
-          <StatLabel>Total Clubs</StatLabel>
+          <StatLabel>{t("clubs.totalClubs")}</StatLabel>
         </StatCard>
         <StatCard>
           <StatValue color="#fc4c02">{stats.userClubs}</StatValue>
-          <StatLabel>Your Clubs</StatLabel>
+          <StatLabel>{t("clubs.yourClubs")}</StatLabel>
         </StatCard>
         <StatCard>
           <StatValue>{stats.totalMembers}</StatValue>
-          <StatLabel>Total Members</StatLabel>
+          <StatLabel>{t("clubs.totalMembers")}</StatLabel>
         </StatCard>
         <StatCard>
           <StatValue color="#fc4c02">{totalActivities}</StatValue>
-          <StatLabel>Total Activities</StatLabel>
+          <StatLabel>{t("clubs.totalActivities")}</StatLabel>
         </StatCard>
       </StatsGrid>
 
@@ -172,11 +175,11 @@ const Clubs = () => {
         ) : clubs.length === 0 ? (
           <EmptyState>
             <EmptyIcon>🔍</EmptyIcon>
-            <EmptyText>No clubs found. Try a different search or category.</EmptyText>
+            <EmptyText>{t("clubs.empty")}</EmptyText>
           </EmptyState>
         ) : (
           clubs.map((club) => {
-            const categoryInfo = getCategoryInfo(club.sportType);
+            const categoryInfo = getCategoryInfo(club.sportType, t);
             return (
               <ClubCard key={club.id}>
                 <ClubCover>
@@ -216,7 +219,7 @@ const Clubs = () => {
                   {club.member ? (
                     <JoinButton isMember disabled>
                       <FiCheck size={16} />
-                      Member
+                      {t("clubs.member")}
                     </JoinButton>
                   ) : (
                     <JoinButton
@@ -224,7 +227,7 @@ const Clubs = () => {
                       disabled={joiningId === club.id || club.private}
                     >
                       <FiPlus size={16} />
-                      {club.private ? "Private Club" : "Join Club"}
+                      {club.private ? t("clubs.privateClub") : t("clubs.joinClub")}
                     </JoinButton>
                   )}
                 </ClubContent>

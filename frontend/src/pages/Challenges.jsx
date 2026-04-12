@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiUsers, FiCalendar, FiAward, FiPlus } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ChallengeService from "../api/ChallengeService";
@@ -50,6 +51,7 @@ import {
 } from "./ChallengesStyles";
 
 const Challenges = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("my");
@@ -156,7 +158,7 @@ const Challenges = () => {
       return (
         <EmptyState>
           <EmptyIcon>🏆</EmptyIcon>
-          <EmptyText>You haven't joined any challenges yet. Explore and join one!</EmptyText>
+          <EmptyText>{t("challenges.empty.my")}</EmptyText>
         </EmptyState>
       );
     }
@@ -182,16 +184,16 @@ const Challenges = () => {
               </MetaItem>
               <MetaItem>
                 <FiCalendar size={14} />
-                {getDaysLeft(challenge.endDate)} days left
+                {t("challenges.daysLeft", { count: getDaysLeft(challenge.endDate) })}
               </MetaItem>
               <Badge>
                 <FiAward size={12} />
-                Challenge Badge
+                {t("challenges.challengeBadge")}
               </Badge>
             </ChallengeMeta>
             <ProgressContainer>
               <ProgressLabel>
-                <ProgressText>Progress</ProgressText>
+                <ProgressText>{t("challenges.progress")}</ProgressText>
                 <ProgressValue>{progress.toFixed(1)} / {challenge.targetValue} {unit}</ProgressValue>
               </ProgressLabel>
               <ProgressBar>
@@ -204,7 +206,7 @@ const Challenges = () => {
               onClick={(e) => { e.stopPropagation(); handleLeaveChallenge(challenge.id); }}
               disabled={leavingId === challenge.id}
             >
-              {leavingId === challenge.id ? "Leaving..." : "Leave"}
+              {leavingId === challenge.id ? t("challenges.leaving") : t("challenges.leave")}
             </LeaveButton>
           )}
         </ChallengeCard>
@@ -217,7 +219,7 @@ const Challenges = () => {
       return (
         <EmptyState>
           <EmptyIcon>🔍</EmptyIcon>
-          <EmptyText>No new challenges available at the moment.</EmptyText>
+          <EmptyText>{t("challenges.empty.explore")}</EmptyText>
         </EmptyState>
       );
     }
@@ -240,11 +242,11 @@ const Challenges = () => {
               </MetaItem>
               <MetaItem>
                 <FiCalendar size={14} />
-                {getDaysLeft(challenge.endDate)} days left
+                {t("challenges.daysLeft", { count: getDaysLeft(challenge.endDate) })}
               </MetaItem>
               <Badge>
                 <FiAward size={12} />
-                Challenge Badge
+                {t("challenges.challengeBadge")}
               </Badge>
             </ChallengeMeta>
           </ChallengeContent>
@@ -252,7 +254,7 @@ const Challenges = () => {
             onClick={(e) => { e.stopPropagation(); handleJoinChallenge(challenge.id); }}
             disabled={joiningId === challenge.id}
           >
-            {joiningId === challenge.id ? "Joining..." : "Join"}
+            {joiningId === challenge.id ? t("challenges.joining") : t("challenges.join")}
           </JoinButton>
         </ChallengeCard>
       );
@@ -264,7 +266,7 @@ const Challenges = () => {
       return (
         <EmptyState>
           <EmptyIcon>📊</EmptyIcon>
-          <EmptyText>Join a challenge to see the leaderboard.</EmptyText>
+          <EmptyText>{t("challenges.empty.leaderboard")}</EmptyText>
         </EmptyState>
       );
     }
@@ -282,12 +284,12 @@ const Challenges = () => {
         <LeaderboardContainer>
           <LeaderboardHeader>
             <LeaderboardTitle>{selectedChallenge?.name}</LeaderboardTitle>
-            <LeaderboardSubtitle>Top performers this month</LeaderboardSubtitle>
+            <LeaderboardSubtitle>{t("challenges.topPerformers")}</LeaderboardSubtitle>
           </LeaderboardHeader>
           <LeaderboardList>
             {leaderboard.length === 0 ? (
               <LeaderboardItem>
-                <UserName>No participants yet</UserName>
+                <UserName>{t("challenges.empty.noParticipants")}</UserName>
               </LeaderboardItem>
             ) : (
               leaderboard.map((entry, index) => {
@@ -302,7 +304,7 @@ const Challenges = () => {
                       {entry.userName?.charAt(0) || "?"}
                     </Avatar>
                     <UserName isCurrentUser={isCurrentUser}>
-                      {isCurrentUser ? "You" : entry.userName}
+                      {isCurrentUser ? t("challenges.you") : entry.userName}
                     </UserName>
                     <UserScore>{entry.progress?.toFixed(1)} {unit}</UserScore>
                   </LeaderboardItem>
@@ -318,7 +320,7 @@ const Challenges = () => {
   if (loading) {
     return (
       <Layout>
-        <LoadingSpinner>Loading challenges...</LoadingSpinner>
+        <LoadingSpinner>{t("challenges.loading")}</LoadingSpinner>
       </Layout>
     );
   }
@@ -327,31 +329,31 @@ const Challenges = () => {
     <Layout>
       <PageHeader>
         <HeaderLeft>
-          <PageTitle>Challenges</PageTitle>
-          <PageSubtitle>Compete and earn rewards</PageSubtitle>
+          <PageTitle>{t("challenges.title")}</PageTitle>
+          <PageSubtitle>{t("challenges.subtitle")}</PageSubtitle>
         </HeaderLeft>
         <HeaderRight>
           <ActiveBadge>
             <FiAward size={18} />
-            {myChallenges.length} Active
+            {myChallenges.length} {t("challenges.active")}
           </ActiveBadge>
           <CreateButton onClick={() => navigate("/challenges/new")}>
             <FiPlus size={16} />
-            Create
+            {t("challenges.create.createButton")}
           </CreateButton>
         </HeaderRight>
       </PageHeader>
 
       <TabsContainer>
         <Tab active={activeTab === "my"} onClick={() => setActiveTab("my")}>
-          My Challenges
+          {t("challenges.tabs.my")}
         </Tab>
         <Tab active={activeTab === "explore"} onClick={() => setActiveTab("explore")}>
-          Explore
+          {t("challenges.tabs.explore")}
           {exploreChallenges.length > 0 && <TabBadge />}
         </Tab>
         <Tab active={activeTab === "leaderboard"} onClick={() => setActiveTab("leaderboard")}>
-          Leaderboard
+          {t("challenges.tabs.leaderboard")}
         </Tab>
       </TabsContainer>
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiArrowLeft } from "react-icons/fi";
 import { FaRunning, FaBicycle, FaSwimmer, FaHiking, FaWalking, FaDumbbell } from "react-icons/fa";
 import Layout from "../components/Layout/Layout";
@@ -24,30 +25,31 @@ import {
   UnitHint,
 } from "./CreateGoalStyles";
 
-const goalTypes = [
-  { value: "DISTANCE", label: "Distance", unit: "km", icon: "📏" },
-  { value: "TIME", label: "Time", unit: "hours", icon: "⏱️" },
-  { value: "ACTIVITIES", label: "Activities", unit: "activities", icon: "🔢" },
-  { value: "ELEVATION", label: "Elevation", unit: "m", icon: "⛰️" },
-];
-
-const periods = [
-  { value: "WEEKLY", label: "Weekly" },
-  { value: "MONTHLY", label: "Monthly" },
-  { value: "YEARLY", label: "Yearly" },
-];
-
-const activityTypes = [
-  { value: "RUN", label: "Run", icon: <FaRunning /> },
-  { value: "RIDE", label: "Ride", icon: <FaBicycle /> },
-  { value: "SWIM", label: "Swim", icon: <FaSwimmer /> },
-  { value: "HIKE", label: "Hike", icon: <FaHiking /> },
-  { value: "WALK", label: "Walk", icon: <FaWalking /> },
-  { value: "WEIGHT_TRAINING", label: "Weights", icon: <FaDumbbell /> },
-];
-
 const CreateGoal = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const goalTypes = [
+    { value: "DISTANCE", label: t("goals.types.DISTANCE"), unit: t("goals.units.km"), icon: "📏" },
+    { value: "TIME", label: t("goals.types.TIME"), unit: t("goals.units.hours"), icon: "⏱️" },
+    { value: "ACTIVITIES", label: t("goals.types.ACTIVITIES"), unit: t("goals.units.activities"), icon: "🔢" },
+    { value: "ELEVATION", label: t("goals.types.ELEVATION"), unit: t("goals.units.m"), icon: "⛰️" },
+  ];
+
+  const periods = [
+    { value: "WEEKLY", label: t("goals.weekly") },
+    { value: "MONTHLY", label: t("goals.monthly") },
+    { value: "YEARLY", label: t("goals.yearly") },
+  ];
+
+  const activityTypes = [
+    { value: "RUN", label: t("activities.typesShort.RUN"), icon: <FaRunning /> },
+    { value: "RIDE", label: t("activities.typesShort.RIDE"), icon: <FaBicycle /> },
+    { value: "SWIM", label: t("activities.typesShort.SWIM"), icon: <FaSwimmer /> },
+    { value: "HIKE", label: t("activities.typesShort.HIKE"), icon: <FaHiking /> },
+    { value: "WALK", label: t("activities.typesShort.WALK"), icon: <FaWalking /> },
+    { value: "WEIGHT_TRAINING", label: t("activities.typesShort.WEIGHT_TRAINING"), icon: <FaDumbbell /> },
+  ];
   const [form, setForm] = useState({
     goalType: "DISTANCE",
     period: "WEEKLY",
@@ -64,7 +66,7 @@ const CreateGoal = () => {
     setError("");
 
     if (!form.targetValue || parseFloat(form.targetValue) <= 0) {
-      setError("Target value must be a positive number");
+      setError(t("goals.errors.targetPositive"));
       return;
     }
 
@@ -78,7 +80,7 @@ const CreateGoal = () => {
       });
       navigate("/goals");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create goal");
+      setError(err.response?.data?.message || t("goals.errors.createFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -89,15 +91,15 @@ const CreateGoal = () => {
       <CreateGoalContainer>
         <BackLink to="/goals">
           <FiArrowLeft size={18} />
-          Back to Goals
+          {t("goals.backToGoals")}
         </BackLink>
 
-        <CreateGoalTitle>Create Goal</CreateGoalTitle>
+        <CreateGoalTitle>{t("goals.createGoal")}</CreateGoalTitle>
 
         <form onSubmit={handleSubmit}>
           <FormCard>
             <FormSection>
-              <FormSectionTitle>What do you want to track?</FormSectionTitle>
+              <FormSectionTitle>{t("goals.whatToTrack")}</FormSectionTitle>
               <OptionGrid>
                 {goalTypes.map((type) => (
                   <OptionButton
@@ -114,7 +116,7 @@ const CreateGoal = () => {
             </FormSection>
 
             <FormSection>
-              <FormSectionTitle>Activity Type</FormSectionTitle>
+              <FormSectionTitle>{t("goals.activityType")}</FormSectionTitle>
               <OptionGrid>
                 {activityTypes.map((type) => (
                   <OptionButton
@@ -131,7 +133,7 @@ const CreateGoal = () => {
             </FormSection>
 
             <FormSection>
-              <FormSectionTitle>Period</FormSectionTitle>
+              <FormSectionTitle>{t("goals.period")}</FormSectionTitle>
               <FormGroup>
                 <FormSelect
                   value={form.period}
@@ -147,28 +149,28 @@ const CreateGoal = () => {
             </FormSection>
 
             <FormSection>
-              <FormSectionTitle>Target</FormSectionTitle>
+              <FormSectionTitle>{t("goals.target")}</FormSectionTitle>
               <FormGroup>
                 <FormLabel>
-                  How {form.goalType === "ACTIVITIES" ? "many" : "much"}?
+                  {t("goals.howMuchMany", { question: form.goalType === "ACTIVITIES" ? t("goals.howMany") : t("goals.howMuch") })}
                 </FormLabel>
                 <FormInput
                   type="number"
                   step={form.goalType === "ACTIVITIES" ? "1" : "0.1"}
                   min="0.1"
-                  placeholder={`e.g. ${form.goalType === "DISTANCE" ? "50" : form.goalType === "TIME" ? "10" : form.goalType === "ACTIVITIES" ? "5" : "500"}`}
+                  placeholder={t("goals.placeholder", { example: form.goalType === "DISTANCE" ? "50" : form.goalType === "TIME" ? "10" : form.goalType === "ACTIVITIES" ? "5" : "500" })}
                   value={form.targetValue}
                   onChange={(e) => setForm((f) => ({ ...f, targetValue: e.target.value }))}
                   required
                 />
-                <UnitHint>{selectedGoalType?.unit} per {form.period.toLowerCase().replace("ly", "")}</UnitHint>
+                <UnitHint>{t("goals.unitPer", { unit: selectedGoalType?.unit || "", period: form.period.toLowerCase().replace("ly", "") })}</UnitHint>
               </FormGroup>
             </FormSection>
 
             {error && <ErrorMessage>{error}</ErrorMessage>}
 
             <SubmitButton type="submit" disabled={submitting}>
-              {submitting ? "Creating..." : "Create Goal"}
+              {submitting ? t("common.creating") : t("goals.createGoal")}
             </SubmitButton>
           </FormCard>
         </form>

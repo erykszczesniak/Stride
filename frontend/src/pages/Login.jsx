@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiMail, FiLock, FiActivity, FiEye, FiEyeOff, FiSun, FiMoon } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -45,6 +46,7 @@ const GoogleIcon = () => (
 );
 
 const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, googleLogin } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -64,12 +66,12 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Google login failed. Please try again."
+        err.response?.data?.message || t("auth.errors.googleLoginFailed")
       );
     } finally {
       setGoogleLoading(false);
     }
-  }, [googleLogin, navigate]);
+  }, [googleLogin, navigate, t]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || googleInitialized.current) return;
@@ -113,7 +115,7 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Invalid email or password. Please try again."
+        err.response?.data?.message || t("auth.errors.loginFailed")
       );
     } finally {
       setLoading(false);
@@ -124,7 +126,7 @@ const Login = () => {
     <Container>
       <button
         onClick={toggleTheme}
-        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        title={isDarkMode ? t("nav.switchToLightMode") : t("nav.switchToDarkMode")}
         style={{
           position: "fixed",
           top: 20,
@@ -149,9 +151,9 @@ const Login = () => {
           </LogoIcon>
           <LogoText>STRIDE</LogoText>
         </BrandLogo>
-        <Tagline>Track Your Journey</Tagline>
+        <Tagline>{t("auth.trackYourJourney")}</Tagline>
         <Subtitle>
-          Join thousands of athletes tracking their progress, setting goals, and achieving greatness.
+          {t("auth.trackYourJourneySubtitle")}
         </Subtitle>
       </LeftPanel>
 
@@ -164,21 +166,21 @@ const Login = () => {
             <MobileLogoText>STRIDE</MobileLogoText>
           </MobileLogo>
 
-          <Title>Welcome back</Title>
-          <Description>Enter your credentials to access your account</Description>
+          <Title>{t("auth.welcomeBack")}</Title>
+          <Description>{t("auth.welcomeDescription")}</Description>
 
           {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 
           <Form onSubmit={handleSubmit}>
             <InputGroup>
-              <InputLabel>Email</InputLabel>
+              <InputLabel>{t("auth.email")}</InputLabel>
               <InputWrapper>
                 <InputIcon>
                   <FiMail size={18} />
                 </InputIcon>
                 <Input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("auth.emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -187,14 +189,14 @@ const Login = () => {
             </InputGroup>
 
             <InputGroup>
-              <InputLabel>Password</InputLabel>
+              <InputLabel>{t("auth.password")}</InputLabel>
               <InputWrapper>
                 <InputIcon>
                   <FiLock size={18} />
                 </InputIcon>
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t("auth.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -202,24 +204,24 @@ const Login = () => {
                 <PasswordToggle
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                 >
                   {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                 </PasswordToggle>
               </InputWrapper>
             </InputGroup>
 
-            <ForgotLink to="/forgot-password">Forgot password?</ForgotLink>
+            <ForgotLink to="/forgot-password">{t("auth.forgotPassword")}</ForgotLink>
 
             <SubmitButton type="submit" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("auth.signingIn") : t("auth.signIn")}
             </SubmitButton>
           </Form>
 
           {GOOGLE_CLIENT_ID && (
             <>
               <Divider>
-                <span>or</span>
+                <span>{t("auth.orDivider")}</span>
               </Divider>
 
               <GoogleButton
@@ -228,19 +230,19 @@ const Login = () => {
                 disabled={googleLoading}
               >
                 <GoogleIcon />
-                {googleLoading ? "Signing in..." : "Continue with Google"}
+                {googleLoading ? t("auth.signingIn") : t("auth.continueWithGoogle")}
               </GoogleButton>
             </>
           )}
 
           {!GOOGLE_CLIENT_ID && (
             <Divider>
-              <span>or</span>
+              <span>{t("auth.orDivider")}</span>
             </Divider>
           )}
 
           <RegisterLink>
-            Don't have an account? <Link to="/register">Create one</Link>
+            {t("auth.dontHaveAccount")} <Link to="/register">{t("auth.createOne")}</Link>
           </RegisterLink>
         </FormContainer>
       </RightPanel>

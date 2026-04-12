@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiBell, FiTrash2 } from "react-icons/fi";
 import { useNotifications } from "../../context/NotificationContext";
 import { getTimeAgo } from "../../utils/formatters";
@@ -44,6 +45,7 @@ const TYPE_ICONS = {
 };
 
 const NotificationDropdown = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { unreadCount, notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
@@ -97,7 +99,7 @@ const NotificationDropdown = () => {
 
   return (
     <NotificationWrapper ref={dropdownRef}>
-      <BellButton title="Notifications" onClick={handleToggle}>
+      <BellButton title={t("notifications.title")} onClick={handleToggle}>
         <FiBell size={28} />
         {unreadCount > 0 && (
           <BadgeCount>{unreadCount > 99 ? "99+" : unreadCount}</BadgeCount>
@@ -107,15 +109,15 @@ const NotificationDropdown = () => {
       {isOpen && (
         <DropdownPanel>
           <DropdownHeader>
-            <DropdownTitle>Notifications</DropdownTitle>
+            <DropdownTitle>{t("notifications.title")}</DropdownTitle>
             <HeaderActions>
               {unreadCount > 0 && (
                 <MarkAllButton onClick={markAllAsRead}>
-                  Mark all as read
+                  {t("notifications.markAllAsRead")}
                 </MarkAllButton>
               )}
               {notifications.length > 0 && (
-                <MarkAllButton onClick={clearAllNotifications} title="Clear all notifications">
+                <MarkAllButton onClick={clearAllNotifications} title={t("notifications.clearAll")}>
                   <FiTrash2 size={14} />
                 </MarkAllButton>
               )}
@@ -128,7 +130,7 @@ const NotificationDropdown = () => {
                 <EmptyIcon>
                   <FiBell size={32} />
                 </EmptyIcon>
-                <EmptyText>No notifications yet</EmptyText>
+                <EmptyText>{t("notifications.empty")}</EmptyText>
               </EmptyState>
             ) : (
               notifications.map((notification) => (
@@ -156,7 +158,7 @@ const NotificationDropdown = () => {
                       e.stopPropagation();
                       deleteNotification(notification.id);
                     }}
-                    title="Delete notification"
+                    title={t("notifications.deleteNotification")}
                   >
                     <FiTrash2 size={14} />
                   </DeleteButton>

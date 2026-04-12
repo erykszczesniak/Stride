@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FiArrowLeft, FiCalendar, FiMapPin, FiUsers, FiDollarSign } from 'react-icons/fi';
 import Layout from '../components/Layout/Layout';
 import EventService from '../api/EventService';
@@ -28,6 +29,7 @@ import {
 } from './CreateEventStyles';
 
 const CreateEvent = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,12 +51,12 @@ const CreateEvent = () => {
   });
 
   const activityTypes = [
-    { type: 'RUN', label: 'Run', icon: '🏃', color: '#fc5200' },
-    { type: 'RIDE', label: 'Ride', icon: '🚴', color: '#0095ff' },
-    { type: 'SWIM', label: 'Swim', icon: '🏊', color: '#00bcd4' },
-    { type: 'HIKE', label: 'Hike', icon: '⛰️', color: '#4caf50' },
-    { type: 'WALK', label: 'Walk', icon: '🚶', color: '#9c27b0' },
-    { type: 'TRIATHLON', label: 'Triathlon', icon: '🏆', color: '#ff9800' }
+    { type: 'RUN', label: t('activities.typesShort.RUN'), icon: '🏃', color: '#fc5200' },
+    { type: 'RIDE', label: t('activities.typesShort.RIDE'), icon: '🚴', color: '#0095ff' },
+    { type: 'SWIM', label: t('activities.typesShort.SWIM'), icon: '🏊', color: '#00bcd4' },
+    { type: 'HIKE', label: t('activities.typesShort.HIKE'), icon: '⛰️', color: '#4caf50' },
+    { type: 'WALK', label: t('activities.typesShort.WALK'), icon: '🚶', color: '#9c27b0' },
+    { type: 'TRIATHLON', label: t('activities.typesShort.TRIATHLON'), icon: '🏆', color: '#ff9800' }
   ];
 
   const handleInputChange = (e) => {
@@ -71,17 +73,17 @@ const CreateEvent = () => {
 
     // Validation
     if (!formData.name.trim()) {
-      setError('Please enter an event name');
+      setError(t('events.errors.nameRequired'));
       return;
     }
 
     if (!formData.eventDate || !formData.eventTime) {
-      setError('Please enter event date and time');
+      setError(t('events.errors.dateRequired'));
       return;
     }
 
     if (!formData.location.trim()) {
-      setError('Please enter event location');
+      setError(t('events.errors.locationRequired'));
       return;
     }
 
@@ -109,7 +111,7 @@ const CreateEvent = () => {
       await EventService.createEvent(eventData);
       navigate('/events');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create event. Please try again.');
+      setError(err.response?.data?.message || t('events.errors.createFailed'));
     } finally {
       setLoading(false);
     }
@@ -121,14 +123,14 @@ const CreateEvent = () => {
         <BackButton onClick={() => navigate('/events')}>
           <FiArrowLeft size={20} />
         </BackButton>
-        <PageTitle>Create Event</PageTitle>
+        <PageTitle>{t('events.createEvent')}</PageTitle>
       </PageHeader>
 
       <form onSubmit={handleSubmit}>
         {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 
         <FormCard>
-          <SectionTitle>Event Type</SectionTitle>
+          <SectionTitle>{t('events.eventType')}</SectionTitle>
           <ActivityTypeGrid>
             {activityTypes.map((activity) => (
               <ActivityTypeButton
@@ -146,58 +148,58 @@ const CreateEvent = () => {
         </FormCard>
 
         <FormCard>
-          <SectionTitle>Basic Information</SectionTitle>
+          <SectionTitle>{t('events.basicInformation')}</SectionTitle>
           <FormGroup>
-            <Label>Event Name *</Label>
+            <Label>{t('events.eventName')}</Label>
             <Input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="e.g., City Marathon 2025"
+              placeholder={t('events.eventNamePlaceholder')}
             />
           </FormGroup>
 
           <FormGroup>
-            <Label>Description</Label>
+            <Label>{t('events.description')}</Label>
             <TextArea
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Describe your event, what participants can expect..."
+              placeholder={t('events.descriptionPlaceholder')}
             />
           </FormGroup>
 
           <FormRow>
             <FormGroup noMargin>
-              <Label>Distance (km)</Label>
+              <Label>{t('events.distance')}</Label>
               <Input
                 type="number"
                 name="distance"
                 value={formData.distance}
                 onChange={handleInputChange}
-                placeholder="e.g., 42.2"
+                placeholder={t('events.distancePlaceholder')}
                 step="0.1"
               />
             </FormGroup>
             <FormGroup noMargin>
-              <Label>External URL</Label>
+              <Label>{t('events.externalUrl')}</Label>
               <Input
                 type="url"
                 name="externalUrl"
                 value={formData.externalUrl}
                 onChange={handleInputChange}
-                placeholder="https://event-website.com"
+                placeholder={t('events.externalUrlPlaceholder')}
               />
             </FormGroup>
           </FormRow>
         </FormCard>
 
         <FormCard>
-          <SectionTitle><FiCalendar /> Date & Time</SectionTitle>
+          <SectionTitle><FiCalendar /> {t('events.dateTime')}</SectionTitle>
           <FormRow>
             <FormGroup noMargin>
-              <Label>Event Date *</Label>
+              <Label>{t('events.eventDate')}</Label>
               <Input
                 type="date"
                 name="eventDate"
@@ -206,7 +208,7 @@ const CreateEvent = () => {
               />
             </FormGroup>
             <FormGroup noMargin>
-              <Label>Start Time *</Label>
+              <Label>{t('events.startTime')}</Label>
               <Input
                 type="time"
                 name="eventTime"
@@ -218,57 +220,57 @@ const CreateEvent = () => {
         </FormCard>
 
         <FormCard>
-          <SectionTitle><FiMapPin /> Location</SectionTitle>
+          <SectionTitle><FiMapPin /> {t('events.location')}</SectionTitle>
           <FormGroup>
-            <Label>Venue / Address *</Label>
+            <Label>{t('events.venue')}</Label>
             <Input
               type="text"
               name="location"
               value={formData.location}
               onChange={handleInputChange}
-              placeholder="e.g., Central Park, Main Entrance"
+              placeholder={t('events.venuePlaceholder')}
             />
           </FormGroup>
 
           <FormRow>
             <FormGroup noMargin>
-              <Label>City</Label>
+              <Label>{t('events.city')}</Label>
               <Input
                 type="text"
                 name="city"
                 value={formData.city}
                 onChange={handleInputChange}
-                placeholder="e.g., New York"
+                placeholder={t('events.cityPlaceholder')}
               />
             </FormGroup>
             <FormGroup noMargin>
-              <Label>Country</Label>
+              <Label>{t('events.country')}</Label>
               <Input
                 type="text"
                 name="country"
                 value={formData.country}
                 onChange={handleInputChange}
-                placeholder="e.g., USA"
+                placeholder={t('events.countryPlaceholder')}
               />
             </FormGroup>
           </FormRow>
         </FormCard>
 
         <FormCard>
-          <SectionTitle><FiUsers /> Registration</SectionTitle>
+          <SectionTitle><FiUsers /> {t('events.registration')}</SectionTitle>
           <FormRow>
             <FormGroup noMargin>
-              <Label>Max Participants</Label>
+              <Label>{t('events.maxParticipants')}</Label>
               <Input
                 type="number"
                 name="maxParticipants"
                 value={formData.maxParticipants}
                 onChange={handleInputChange}
-                placeholder="Leave empty for unlimited"
+                placeholder={t('events.maxParticipantsPlaceholder')}
               />
             </FormGroup>
             <FormGroup noMargin>
-              <Label><FiDollarSign /> Entry Fee</Label>
+              <Label><FiDollarSign /> {t('events.entryFee')}</Label>
               <FormRow columns="2fr 1fr" style={{ marginBottom: 0 }}>
                 <Input
                   type="number"
@@ -299,16 +301,16 @@ const CreateEvent = () => {
               checked={formData.isPublic}
               onChange={handleInputChange}
             />
-            Public event (visible to everyone)
+            {t('events.publicLabel')}
           </CheckboxGroup>
         </FormCard>
 
         <ButtonGroup>
           <CancelButton type="button" onClick={() => navigate('/events')}>
-            Cancel
+            {t('common.cancel')}
           </CancelButton>
           <SaveButton type="submit" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Event'}
+            {loading ? t('common.creating') : t('events.createButton')}
           </SaveButton>
         </ButtonGroup>
       </form>

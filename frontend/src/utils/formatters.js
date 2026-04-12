@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+
 /**
  * Format a duration in seconds to a human-readable string.
  * @param {number} seconds - Duration in seconds
@@ -26,15 +28,15 @@ export const formatDurationValue = (seconds) => {
 };
 
 /**
- * Get the unit label for a formatted duration value.
+ * Get the unit label for a formatted duration value (translated).
  * @param {number} seconds - Duration in seconds
  * @returns {string} Unit label ("hours" or "min")
  */
 export const formatDurationUnit = (seconds) => {
-  if (!seconds) return "hours";
+  if (!seconds) return i18n.t("common.hours");
   const hours = Math.floor(seconds / 3600);
-  if (hours > 0) return "hours";
-  return "min";
+  if (hours > 0) return i18n.t("common.hours");
+  return i18n.t("common.minutes");
 };
 
 /**
@@ -77,12 +79,12 @@ export const formatPace = (distanceKm, durationSeconds) => {
 };
 
 /**
- * Format an ISO date string to a locale date string.
+ * Format an ISO date string to a locale date string using the active i18n language.
  * @param {string} dateString - ISO date string
  * @returns {string} Formatted date (e.g., "Jan 15, 2025")
  */
 export const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
+  return new Date(dateString).toLocaleDateString(i18n.language, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -90,7 +92,7 @@ export const formatDate = (dateString) => {
 };
 
 /**
- * Get a relative time string from an ISO date string.
+ * Get a relative time string from an ISO date string, translated to the active language.
  * @param {string} dateString - ISO date string
  * @returns {string} Relative time (e.g., "5m ago", "2h ago", "3d ago")
  */
@@ -102,12 +104,12 @@ export const getTimeAgo = (dateString) => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  if (diffDays < 30) return `${diffDays} days ago`;
-  return date.toLocaleDateString();
+  if (diffMins < 1) return i18n.t("time.justNow");
+  if (diffMins < 60) return i18n.t("time.minutesAgo", { count: diffMins });
+  if (diffHours < 24) return i18n.t("time.hoursAgo", { count: diffHours });
+  if (diffDays < 7) return i18n.t("time.daysAgo", { count: diffDays });
+  if (diffDays < 30) return i18n.t("time.daysAgoLong", { count: diffDays });
+  return date.toLocaleDateString(i18n.language);
 };
 
 /**

@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FaRunning, FaBicycle, FaSwimmer, FaHiking } from "react-icons/fa";
 import { FiTarget, FiEdit2, FiTrash2 } from "react-icons/fi";
 import {
@@ -27,20 +28,6 @@ const activityIcons = {
   HIKE: <FaHiking />,
 };
 
-const goalTypeLabels = {
-  DISTANCE: "Distance",
-  TIME: "Time",
-  ELEVATION: "Elevation",
-  ACTIVITIES: "Activities",
-};
-
-const goalTypeUnits = {
-  DISTANCE: "km",
-  TIME: "hours",
-  ELEVATION: "m",
-  ACTIVITIES: "activities",
-};
-
 const formatValue = (value, goalType) => {
   if (goalType === "TIME") {
     return (value / 3600).toFixed(1);
@@ -52,21 +39,25 @@ const formatValue = (value, goalType) => {
 };
 
 const GoalProgress = ({ goal, clickable = true, onEdit, onDelete }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const progress = (goal.currentValue / goal.targetValue) * 100;
   const isCompleted = progress >= 100;
   const icon = activityIcons[goal.activityType] || <FiTarget />;
-  const unit = goalTypeUnits[goal.goalType] || "";
+  const unit = t(`goals.units.${goal.goalType === "DISTANCE" ? "km" : goal.goalType === "TIME" ? "hours" : goal.goalType === "ELEVATION" ? "m" : "activities"}`);
   const handleClick = clickable ? () => navigate(`/goals/${goal.id}`) : undefined;
   const stopAndCall = (e, fn) => { e.stopPropagation(); fn(goal); };
+
+  const periodLabelKey = goal.period === "WEEKLY" ? "weeklyGoal" : goal.period === "MONTHLY" ? "monthlyGoal" : "yearlyGoal";
+  const activityTypeLabel = goal.activityType ? t(`activities.typesShort.${goal.activityType}`, { defaultValue: goal.activityType }) : "";
 
   return (
     <GoalCard onClick={handleClick} style={clickable ? { cursor: "pointer" } : undefined}>
       <GoalHeader>
-        <GoalTitle>{goal.period === "WEEKLY" ? "Weekly" : goal.period === "MONTHLY" ? "Monthly" : "Yearly"} Goal</GoalTitle>
+        <GoalTitle>{t(`goals.${periodLabelKey}`)}</GoalTitle>
         <HeaderRight>
-          {onEdit && <ActionBtn onClick={(e) => stopAndCall(e, onEdit)} title="Edit"><FiEdit2 size={18} /></ActionBtn>}
-          {onDelete && <ActionBtn $danger onClick={(e) => stopAndCall(e, onDelete)} title="Delete"><FiTrash2 size={18} /></ActionBtn>}
+          {onEdit && <ActionBtn onClick={(e) => stopAndCall(e, onEdit)} title={t("common.edit")}><FiEdit2 size={18} /></ActionBtn>}
+          {onDelete && <ActionBtn $danger onClick={(e) => stopAndCall(e, onDelete)} title={t("common.delete")}><FiTrash2 size={18} /></ActionBtn>}
           <GoalPeriod>{goal.period}</GoalPeriod>
         </HeaderRight>
       </GoalHeader>
@@ -74,7 +65,7 @@ const GoalProgress = ({ goal, clickable = true, onEdit, onDelete }) => {
       <GoalType>
         <GoalIcon>{icon}</GoalIcon>
         <GoalLabel>
-          {goalTypeLabels[goal.goalType]} - {goal.activityType}
+          {t(`goals.types.${goal.goalType}`)} - {activityTypeLabel}
         </GoalLabel>
       </GoalType>
 
@@ -87,7 +78,7 @@ const GoalProgress = ({ goal, clickable = true, onEdit, onDelete }) => {
             {formatValue(goal.currentValue, goal.goalType)} {unit}
           </ProgressValue>
           <ProgressTarget>
-            of {formatValue(goal.targetValue, goal.goalType)} {unit}
+            {t("goals.ofTarget", { target: formatValue(goal.targetValue, goal.goalType), unit })}
           </ProgressTarget>
         </ProgressStats>
       </ProgressContainer>

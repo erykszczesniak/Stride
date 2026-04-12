@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { FiDownload, FiFileText, FiCalendar, FiCheck, FiMenu, FiSave, FiFolder, FiX } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import { useAuth } from "../context/AuthContext";
@@ -49,32 +50,22 @@ import {
   SelectedFieldsTitle,
 } from "./ReportsStyles";
 
-const AVAILABLE_FIELDS = [
-  { key: "activityTitle", label: "Title" },
-  { key: "activityType", label: "Type" },
-  { key: "date", label: "Date" },
-  { key: "distance", label: "Distance (km)" },
-  { key: "duration", label: "Duration" },
-  { key: "elevationGain", label: "Elevation (m)" },
-  { key: "calories", label: "Calories" },
-  { key: "averageSpeed", label: "Avg Speed (km/h)" },
-  { key: "averageHeartRate", label: "Avg Heart Rate" },
-  { key: "pace", label: "Pace (min/km)" },
-  { key: "likesCount", label: "Likes" },
-  { key: "commentsCount", label: "Comments" },
+const AVAILABLE_FIELD_KEYS = [
+  "activityTitle",
+  "activityType",
+  "date",
+  "distance",
+  "duration",
+  "elevationGain",
+  "calories",
+  "averageSpeed",
+  "averageHeartRate",
+  "pace",
+  "likesCount",
+  "commentsCount",
 ];
 
 const DEFAULT_FIELDS = ["activityTitle", "activityType", "date", "distance", "duration", "calories"];
-
-const ACTIVITY_TYPES = [
-  { value: "", label: "All Types" },
-  { value: "RUN", label: "Run" },
-  { value: "RIDE", label: "Ride" },
-  { value: "SWIM", label: "Swim" },
-  { value: "HIKE", label: "Hike" },
-  { value: "WALK", label: "Walk" },
-  { value: "WORKOUT", label: "Workout" },
-];
 
 const TEMPLATES_KEY = "report-templates";
 
@@ -131,8 +122,27 @@ const getRawValue = (key, value) => {
 };
 
 const Reports = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
+
+  const AVAILABLE_FIELDS = useMemo(
+    () => AVAILABLE_FIELD_KEYS.map((key) => ({ key, label: t(`reports.fields.${key}`) })),
+    [t]
+  );
+
+  const ACTIVITY_TYPES = useMemo(
+    () => [
+      { value: "", label: t("activities.filters.allTypes") },
+      { value: "RUN", label: t("activities.typesShort.RUN") },
+      { value: "RIDE", label: t("activities.typesShort.RIDE") },
+      { value: "SWIM", label: t("activities.typesShort.SWIM") },
+      { value: "HIKE", label: t("activities.typesShort.HIKE") },
+      { value: "WALK", label: t("activities.typesShort.WALK") },
+      { value: "WORKOUT", label: t("activities.typesShort.WORKOUT") },
+    ],
+    [t]
+  );
   const [selectedFields, setSelectedFields] = useState(DEFAULT_FIELDS);
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -247,7 +257,7 @@ const Reports = () => {
   // Template operations
   const handleSaveTemplate = () => {
     if (!templateName.trim()) {
-      toast.warning("Enter a template name");
+      toast.warning(t("reports.toast.templateNameRequired"));
       return;
     }
     const newTemplate = {
@@ -262,32 +272,32 @@ const Reports = () => {
     saveTemplates(updated);
     setShowSaveModal(false);
     setTemplateName("");
-    toast.success("Template saved!");
+    toast.success(t("reports.toast.templateSaved"));
   };
 
   const handleLoadTemplate = (e) => {
     const id = Number(e.target.value);
     if (!id) return;
-    const tmpl = templates.find((t) => t.id === id);
+    const tmpl = templates.find((tm) => tm.id === id);
     if (tmpl) {
       setSelectedFields(tmpl.selectedFields);
       if (tmpl.datePreset) applyPreset(tmpl.datePreset);
       if (tmpl.activityType !== undefined) setActivityTypeFilter(tmpl.activityType);
-      toast.success(`Loaded "${tmpl.name}"`);
+      toast.success(t("reports.toast.templateLoaded", { name: tmpl.name }));
     }
     e.target.value = "";
   };
 
   const handleDeleteTemplate = (id) => {
-    const updated = templates.filter((t) => t.id !== id);
+    const updated = templates.filter((tm) => tm.id !== id);
     setTemplates(updated);
     saveTemplates(updated);
-    toast.success("Template deleted");
+    toast.success(t("reports.toast.templateDeleted"));
   };
 
   const generateReport = useCallback(async () => {
     if (selectedFields.length === 0) {
-      toast.warning("Select at least one field");
+      toast.warning(t("reports.toast.selectField"));
       return;
     }
     setLoading(true);
@@ -324,17 +334,17 @@ const Reports = () => {
       });
       const json = await res.json();
       if (json.errors) {
-        toast.error("Failed to generate report");
+        toast.error(t("reports.toast.generateFailed"));
         return;
       }
       setRows(json.data.generateReport.rows);
       setSummary(json.data.generateReport.summary);
     } catch {
-      toast.error("Failed to generate report");
+      toast.error(t("reports.toast.generateFailed"));
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, selectedFields, activityTypeFilter, toast]);
+  }, [dateFrom, dateTo, selectedFields, activityTypeFilter, toast, t]);
 
   const exportCsv = async () => {
     try {
@@ -359,15 +369,15 @@ const Reports = () => {
       a.download = `stride-report-${dateFrom}-${dateTo}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("CSV exported!");
+      toast.success(t("reports.toast.csvSuccess"));
     } catch {
-      toast.error("CSV export failed");
+      toast.error(t("reports.toast.csvFailed"));
     }
   };
 
   const exportPdf = () => {
     if (rows.length === 0) {
-      toast.warning("Generate a report first");
+      toast.warning(t("reports.toast.generateFirst"));
       return;
     }
     const doc = new jsPDF({ orientation: "landscape" });
@@ -390,7 +400,7 @@ const Reports = () => {
     });
 
     doc.save(`stride-report-${dateFrom}-${dateTo}.pdf`);
-    toast.success("PDF exported!");
+    toast.success(t("reports.toast.pdfSuccess"));
   };
 
   return (
@@ -398,8 +408,8 @@ const Reports = () => {
       <Container>
         <TopBar>
           <div>
-            <PageTitle>Report Builder</PageTitle>
-            <PageDescription>Select fields, date range, and generate your training report</PageDescription>
+            <PageTitle>{t("reports.title")}</PageTitle>
+            <PageDescription>{t("reports.description")}</PageDescription>
           </div>
           <ExportButtons>
             <ExportButton onClick={exportCsv}>
@@ -414,18 +424,18 @@ const Reports = () => {
         {/* Template bar */}
         <TemplateBar>
           <TemplateButton onClick={() => setShowSaveModal(true)}>
-            <FiSave size={14} /> Save Template
+            <FiSave size={14} /> {t("reports.saveTemplate")}
           </TemplateButton>
           {templates.length > 0 && (
             <>
               <TemplateSelect onChange={handleLoadTemplate} defaultValue="">
-                <option value="" disabled>Load Template...</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                <option value="" disabled>{t("reports.loadTemplate")}</option>
+                {templates.map((tmpl) => (
+                  <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
                 ))}
               </TemplateSelect>
-              {templates.map((t) => (
-                <TemplateDeleteBtn key={t.id} title={`Delete "${t.name}"`} onClick={() => handleDeleteTemplate(t.id)}>
+              {templates.map((tmpl) => (
+                <TemplateDeleteBtn key={tmpl.id} title={t("reports.toast.templateDelete", { name: tmpl.name })} onClick={() => handleDeleteTemplate(tmpl.id)}>
                   <FiX size={12} />
                 </TemplateDeleteBtn>
               ))}
@@ -435,7 +445,7 @@ const Reports = () => {
 
         <MainLayout>
           <FieldsPanel>
-            <FieldsPanelTitle>Available Fields</FieldsPanelTitle>
+            <FieldsPanelTitle>{t("reports.availableFields")}</FieldsPanelTitle>
             {AVAILABLE_FIELDS.map((field) => (
               <FieldItem key={field.key} onClick={() => toggleField(field.key)}>
                 <FieldCheckbox $checked={selectedFields.includes(field.key)}>
@@ -448,7 +458,7 @@ const Reports = () => {
             {/* Drag-and-drop reorderable selected fields */}
             {selectedFields.length > 0 && (
               <SelectedFieldsList>
-                <SelectedFieldsTitle>Column Order (drag to reorder)</SelectedFieldsTitle>
+                <SelectedFieldsTitle>{t("reports.columnOrder")}</SelectedFieldsTitle>
                 {selectedFields.map((key, index) => {
                   const field = AVAILABLE_FIELDS.find((af) => af.key === key);
                   return (
@@ -477,30 +487,30 @@ const Reports = () => {
           <ReportArea>
             <DateBar>
               <div>
-                <DateLabel><FiCalendar size={14} /> From</DateLabel>
+                <DateLabel><FiCalendar size={14} /> {t("reports.from")}</DateLabel>
                 <DateInput type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setActivePreset(null); }} />
               </div>
               <div>
-                <DateLabel><FiCalendar size={14} /> To</DateLabel>
+                <DateLabel><FiCalendar size={14} /> {t("reports.to")}</DateLabel>
                 <DateInput type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setActivePreset(null); }} />
               </div>
               <div>
-                <DateLabel><FiFolder size={14} /> Activity Type</DateLabel>
+                <DateLabel><FiFolder size={14} /> {t("reports.activityType")}</DateLabel>
                 <FilterSelect value={activityTypeFilter} onChange={(e) => setActivityTypeFilter(e.target.value)}>
-                  {ACTIVITY_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
+                  {ACTIVITY_TYPES.map((at) => (
+                    <option key={at.value} value={at.value}>{at.label}</option>
                   ))}
                 </FilterSelect>
               </div>
               <Presets>
-                <PresetButton onClick={() => applyPreset(7)}>7 days</PresetButton>
-                <PresetButton onClick={() => applyPreset(30)}>30 days</PresetButton>
-                <PresetButton onClick={() => applyPreset("month")}>This month</PresetButton>
-                <PresetButton onClick={() => applyPreset("lastMonth")}>Last month</PresetButton>
-                <PresetButton onClick={() => applyPreset("year")}>This year</PresetButton>
+                <PresetButton onClick={() => applyPreset(7)}>{t("reports.presets.7days")}</PresetButton>
+                <PresetButton onClick={() => applyPreset(30)}>{t("reports.presets.30days")}</PresetButton>
+                <PresetButton onClick={() => applyPreset("month")}>{t("reports.presets.thisMonth")}</PresetButton>
+                <PresetButton onClick={() => applyPreset("lastMonth")}>{t("reports.presets.lastMonth")}</PresetButton>
+                <PresetButton onClick={() => applyPreset("year")}>{t("reports.presets.thisYear")}</PresetButton>
               </Presets>
               <ExportButton onClick={generateReport} disabled={loading} style={{ marginLeft: "auto" }}>
-                {loading ? "Generating..." : "Generate Report"}
+                {loading ? t("reports.generating") : t("reports.generateReport")}
               </ExportButton>
             </DateBar>
 
@@ -535,7 +545,7 @@ const Reports = () => {
                       <SummaryRow>
                         {selectedFields.map((f) => (
                           <Td key={f}>
-                            {f === "activityTitle" ? `${summary.totalActivities} activities` :
+                            {f === "activityTitle" ? t("reports.activitiesSuffix", { count: summary.totalActivities }) :
                              f === "distance" ? `${summary.totalDistance} km` :
                              f === "duration" ? formatDuration(summary.totalDuration) :
                              f === "calories" ? `${summary.totalCalories} kcal` :
@@ -551,7 +561,7 @@ const Reports = () => {
             ) : (
               <EmptyReport>
                 <FiFileText size={48} />
-                <p>Select fields, choose a date range, and click "Generate Report"</p>
+                <p>{t("reports.emptyReport")}</p>
               </EmptyReport>
             )}
           </ReportArea>
@@ -561,17 +571,17 @@ const Reports = () => {
         {showSaveModal && (
           <ModalOverlay onClick={() => setShowSaveModal(false)}>
             <ModalContent onClick={(e) => e.stopPropagation()}>
-              <ModalTitle>Save Report Template</ModalTitle>
+              <ModalTitle>{t("reports.saveTemplateTitle")}</ModalTitle>
               <ModalInput
-                placeholder="Template name..."
+                placeholder={t("reports.templateNamePlaceholder")}
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSaveTemplate()}
                 autoFocus
               />
               <ModalActions>
-                <ModalButton onClick={() => setShowSaveModal(false)}>Cancel</ModalButton>
-                <ModalButton $primary onClick={handleSaveTemplate}>Save</ModalButton>
+                <ModalButton onClick={() => setShowSaveModal(false)}>{t("common.cancel")}</ModalButton>
+                <ModalButton $primary onClick={handleSaveTemplate}>{t("common.save")}</ModalButton>
               </ModalActions>
             </ModalContent>
           </ModalOverlay>

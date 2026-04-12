@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiCalendar, FiTarget } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ChallengeService from "../api/ChallengeService";
@@ -26,24 +27,25 @@ import {
   ErrorMessage,
 } from "./CreateChallengeStyles";
 
-const challengeTypes = [
-  { type: "DISTANCE", label: "Distance", icon: "📍", unit: "km" },
-  { type: "TIME", label: "Time", icon: "⏱️", unit: "hours" },
-  { type: "ELEVATION", label: "Elevation", icon: "⛰️", unit: "m" },
-  { type: "ACTIVITIES_COUNT", label: "Activities", icon: "📅", unit: "days" },
-];
-
-const activityTypes = [
-  { type: "", label: "Any", icon: "🏆" },
-  { type: "RUN", label: "Run", icon: "🏃" },
-  { type: "RIDE", label: "Ride", icon: "🚴" },
-  { type: "SWIM", label: "Swim", icon: "🏊" },
-  { type: "HIKE", label: "Hike", icon: "⛰️" },
-  { type: "WALK", label: "Walk", icon: "🚶" },
-];
-
 const CreateChallenge = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const challengeTypes = [
+    { type: "DISTANCE", label: t("challenges.types.DISTANCE"), icon: "📍", unit: t("goals.units.km") },
+    { type: "TIME", label: t("challenges.types.TIME"), icon: "⏱️", unit: t("goals.units.hours") },
+    { type: "ELEVATION", label: t("challenges.types.ELEVATION"), icon: "⛰️", unit: t("goals.units.m") },
+    { type: "ACTIVITIES_COUNT", label: t("goals.types.ACTIVITIES"), icon: "📅", unit: t("common.days") },
+  ];
+
+  const activityTypes = [
+    { type: "", label: t("activities.typesShort.ANY"), icon: "🏆" },
+    { type: "RUN", label: t("activities.typesShort.RUN"), icon: "🏃" },
+    { type: "RIDE", label: t("activities.typesShort.RIDE"), icon: "🚴" },
+    { type: "SWIM", label: t("activities.typesShort.SWIM"), icon: "🏊" },
+    { type: "HIKE", label: t("activities.typesShort.HIKE"), icon: "⛰️" },
+    { type: "WALK", label: t("activities.typesShort.WALK"), icon: "🚶" },
+  ];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedChallengeType, setSelectedChallengeType] = useState("DISTANCE");
@@ -74,19 +76,19 @@ const CreateChallenge = () => {
     setError("");
 
     if (!formData.name.trim()) {
-      setError("Please enter a challenge name");
+      setError(t("challenges.create.errors.nameRequired"));
       return;
     }
     if (!formData.targetValue || parseFloat(formData.targetValue) <= 0) {
-      setError("Please enter a valid target value");
+      setError(t("challenges.create.errors.targetInvalid"));
       return;
     }
     if (!formData.startDate || !formData.endDate) {
-      setError("Please enter start and end dates");
+      setError(t("challenges.create.errors.datesRequired"));
       return;
     }
     if (new Date(formData.endDate) <= new Date(formData.startDate)) {
-      setError("End date must be after start date");
+      setError(t("challenges.create.errors.endAfterStart"));
       return;
     }
 
@@ -108,7 +110,7 @@ const CreateChallenge = () => {
       navigate("/challenges");
     } catch (err) {
       setError(
-        err.response?.data?.error || "Failed to create challenge. Please try again."
+        err.response?.data?.error || t("challenges.create.errors.createFailed")
       );
     } finally {
       setLoading(false);
@@ -121,14 +123,14 @@ const CreateChallenge = () => {
         <BackButton onClick={() => navigate("/challenges")}>
           <FiArrowLeft size={20} />
         </BackButton>
-        <PageTitle>Create Challenge</PageTitle>
+        <PageTitle>{t("challenges.createChallenge")}</PageTitle>
       </PageHeader>
 
       <form onSubmit={handleSubmit}>
         {error && <ErrorMessage>{error}</ErrorMessage>}
 
         <FormCard>
-          <SectionTitle><FiTarget /> Challenge Type</SectionTitle>
+          <SectionTitle><FiTarget /> {t("challenges.create.challengeType")}</SectionTitle>
           <TypeGrid>
             {challengeTypes.map((ct) => (
               <TypeButton
@@ -145,7 +147,7 @@ const CreateChallenge = () => {
         </FormCard>
 
         <FormCard>
-          <SectionTitle>Activity Type</SectionTitle>
+          <SectionTitle>{t("challenges.create.activityType")}</SectionTitle>
           <TypeGrid>
             {activityTypes.map((at) => (
               <TypeButton
@@ -162,30 +164,30 @@ const CreateChallenge = () => {
         </FormCard>
 
         <FormCard>
-          <SectionTitle>Details</SectionTitle>
+          <SectionTitle>{t("challenges.create.detailsSection")}</SectionTitle>
           <FormGroup>
-            <Label>Challenge Name *</Label>
+            <Label>{t("challenges.create.name")}</Label>
             <Input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="e.g., March Running Challenge"
+              placeholder={t("challenges.create.namePlaceholder")}
             />
           </FormGroup>
 
           <FormGroup>
-            <Label>Description</Label>
+            <Label>{t("challenges.create.description")}</Label>
             <TextArea
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Describe the challenge and motivate participants..."
+              placeholder={t("challenges.create.descriptionPlaceholder")}
             />
           </FormGroup>
 
           <FormGroup>
-            <Label>Target ({getUnit()}) *</Label>
+            <Label>{t("challenges.create.targetLabel", { unit: getUnit() })}</Label>
             <Input
               type="number"
               name="targetValue"
@@ -199,10 +201,10 @@ const CreateChallenge = () => {
         </FormCard>
 
         <FormCard>
-          <SectionTitle><FiCalendar /> Duration</SectionTitle>
+          <SectionTitle><FiCalendar /> {t("challenges.create.duration")}</SectionTitle>
           <FormRow>
             <FormGroup noMargin>
-              <Label>Start Date *</Label>
+              <Label>{t("challenges.create.startDate")}</Label>
               <Input
                 type="date"
                 name="startDate"
@@ -211,7 +213,7 @@ const CreateChallenge = () => {
               />
             </FormGroup>
             <FormGroup noMargin>
-              <Label>End Date *</Label>
+              <Label>{t("challenges.create.endDate")}</Label>
               <Input
                 type="date"
                 name="endDate"
@@ -223,7 +225,7 @@ const CreateChallenge = () => {
         </FormCard>
 
         <FormCard>
-          <SectionTitle>Visibility</SectionTitle>
+          <SectionTitle>{t("challenges.create.visibility")}</SectionTitle>
           <CheckboxGroup>
             <Checkbox
               type="checkbox"
@@ -231,16 +233,16 @@ const CreateChallenge = () => {
               checked={formData.isPublic}
               onChange={handleInputChange}
             />
-            Public challenge (visible to everyone)
+            {t("challenges.create.publicLabel")}
           </CheckboxGroup>
         </FormCard>
 
         <ButtonGroup>
           <CancelButton type="button" onClick={() => navigate("/challenges")}>
-            Cancel
+            {t("common.cancel")}
           </CancelButton>
           <SaveButton type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Challenge"}
+            {loading ? t("common.creating") : t("challenges.create.createButton")}
           </SaveButton>
         </ButtonGroup>
       </form>

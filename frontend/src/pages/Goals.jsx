@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiPlus } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import GoalProgress from "../components/GoalProgress/GoalProgress";
@@ -19,6 +20,7 @@ import {
 } from "./GoalsStyles";
 
 const Goals = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [goals, setGoals] = useState([]);
@@ -56,10 +58,10 @@ const Goals = () => {
   return (
     <Layout>
       <PageHeader>
-        <PageTitle>My Goals</PageTitle>
+        <PageTitle>{t("goals.myGoals")}</PageTitle>
         <AddButton to="/goals/new">
           <FiPlus size={18} />
-          Create Goal
+          {t("goals.createGoal")}
         </AddButton>
       </PageHeader>
 
@@ -77,10 +79,10 @@ const Goals = () => {
       ) : (
         <EmptyState>
           <EmptyIcon>🎯</EmptyIcon>
-          <EmptyText>No goals yet. Set your first goal to track your progress!</EmptyText>
+          <EmptyText>{t("goals.empty")}</EmptyText>
           <AddButton to="/goals/new">
             <FiPlus size={18} />
-            Create Goal
+            {t("goals.createGoal")}
           </AddButton>
         </EmptyState>
       )}
@@ -88,11 +90,11 @@ const Goals = () => {
       {deleteGoal && (
         <ConfirmOverlay onClick={() => setDeleteGoal(null)}>
           <ConfirmBox onClick={(e) => e.stopPropagation()}>
-            <ConfirmTitle>Delete Goal?</ConfirmTitle>
-            <ConfirmText>This action cannot be undone.</ConfirmText>
+            <ConfirmTitle>{t("goals.deleteTitle")}</ConfirmTitle>
+            <ConfirmText>{t("goals.deleteText")}</ConfirmText>
             <ConfirmButtons>
-              <CancelBtn onClick={() => setDeleteGoal(null)}>Cancel</CancelBtn>
-              <DeleteConfirmBtn onClick={handleDelete}>Delete</DeleteConfirmBtn>
+              <CancelBtn onClick={() => setDeleteGoal(null)}>{t("common.cancel")}</CancelBtn>
+              <DeleteConfirmBtn onClick={handleDelete}>{t("common.delete")}</DeleteConfirmBtn>
             </ConfirmButtons>
           </ConfirmBox>
         </ConfirmOverlay>

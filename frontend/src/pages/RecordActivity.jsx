@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FiCamera, FiX, FiEdit3, FiUploadCloud, FiFileText } from 'react-icons/fi';
 import Layout from '../components/Layout/Layout';
 import ActivityService from '../api/ActivityService';
@@ -72,6 +73,7 @@ const getFileExtension = (filename) => {
 };
 
 const RecordActivity = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
@@ -102,12 +104,12 @@ const RecordActivity = () => {
   });
 
   const activityTypes = [
-    { type: 'RUN', label: 'Run', icon: '🏃', color: '#fc5200' },
-    { type: 'RIDE', label: 'Ride', icon: '🚴', color: '#0095ff' },
-    { type: 'SWIM', label: 'Swim', icon: '🏊', color: '#00bcd4' },
-    { type: 'HIKE', label: 'Hike', icon: '⛰️', color: '#4caf50' },
-    { type: 'WALK', label: 'Walk', icon: '🚶', color: '#9c27b0' },
-    { type: 'WORKOUT', label: 'Workout', icon: '💪', color: '#37474f' }
+    { type: 'RUN', label: t('activities.typesShort.RUN'), icon: '🏃', color: '#fc5200' },
+    { type: 'RIDE', label: t('activities.typesShort.RIDE'), icon: '🚴', color: '#0095ff' },
+    { type: 'SWIM', label: t('activities.typesShort.SWIM'), icon: '🏊', color: '#00bcd4' },
+    { type: 'HIKE', label: t('activities.typesShort.HIKE'), icon: '⛰️', color: '#4caf50' },
+    { type: 'WALK', label: t('activities.typesShort.WALK'), icon: '🚶', color: '#9c27b0' },
+    { type: 'WORKOUT', label: t('activities.typesShort.WORKOUT'), icon: '💪', color: '#37474f' }
   ];
 
   useEffect(() => {
@@ -147,7 +149,7 @@ const RecordActivity = () => {
           setExistingPhotos(a.photos);
         }
       } catch (err) {
-        setError('Failed to load activity');
+        setError(t('activities.record.errors.loadFailed'));
       }
     };
     fetchActivity();
@@ -168,18 +170,18 @@ const RecordActivity = () => {
 
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        setError('Only JPG, PNG, and WebP images are allowed');
+        setError(t('activities.record.errors.invalidImageFormat'));
         return false;
       }
       if (file.size > maxSize) {
-        setError('Each photo must be less than 5MB');
+        setError(t('activities.record.errors.photoTooLarge'));
         return false;
       }
       return true;
     });
 
     if (photos.length + validFiles.length > 5) {
-      setError('Maximum 5 photos per activity');
+      setError(t('activities.record.errors.tooManyPhotos'));
       return;
     }
 
@@ -195,11 +197,11 @@ const RecordActivity = () => {
   const validateImportFile = (file) => {
     const ext = getFileExtension(file.name);
     if (!ALLOWED_IMPORT_EXTENSIONS.includes(ext)) {
-      setError(`Unsupported file format. Use: ${ALLOWED_IMPORT_EXTENSIONS.join(', ').toUpperCase()}`);
+      setError(t('activities.record.errors.unsupportedFormat', { formats: ALLOWED_IMPORT_EXTENSIONS.join(', ').toUpperCase() }));
       return false;
     }
     if (file.size > MAX_IMPORT_SIZE) {
-      setError('File must be smaller than 10MB');
+      setError(t('activities.record.errors.fileTooLarge'));
       return false;
     }
     return true;
@@ -253,13 +255,13 @@ const RecordActivity = () => {
       const res = await ImportService.importActivity(importFile);
       const created = res.data?.activity;
       if (created?.id) {
-        setImportSuccess(`Successfully imported "${created.title}"`);
+        setImportSuccess(t('activities.record.importSuccess', { title: created.title }));
         setTimeout(() => navigate(`/activities/${created.id}`), 800);
       } else {
         navigate('/activities');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to import file. Please try again.');
+      setError(err.response?.data?.message || t('activities.record.errors.importFailed'));
     } finally {
       setImporting(false);
     }
@@ -279,7 +281,7 @@ const RecordActivity = () => {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to download sample file:', err);
-      setError('Failed to download sample file');
+      setError(t('activities.record.errors.importFailed'));
     }
   };
 
@@ -300,12 +302,12 @@ const RecordActivity = () => {
 
       // Validation
       if (!formData.title.trim()) {
-        setError('Please enter an activity title');
+        setError(t('activities.record.errors.titleRequired'));
         return;
       }
 
       if (!formData.distance || parseFloat(formData.distance) <= 0) {
-        setError('Please enter a valid distance');
+        setError(t('activities.record.errors.distanceRequired'));
         return;
       }
 
@@ -315,7 +317,7 @@ const RecordActivity = () => {
         (parseInt(formData.durationSeconds) || 0);
 
       if (totalDurationSeconds <= 0) {
-        setError('Please enter a valid duration');
+        setError(t('activities.record.errors.durationRequired'));
         return;
       }
 
@@ -366,7 +368,7 @@ const RecordActivity = () => {
       }
       navigate('/activities');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save activity. Please try again.');
+      setError(err.response?.data?.message || t('activities.record.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -376,18 +378,18 @@ const RecordActivity = () => {
     <Layout>
     <Container>
       <Header>
-        <Title>{isEditMode ? 'Edit Activity' : 'Record Activity'}</Title>
+        <Title>{isEditMode ? t('activities.record.titleEdit') : t('activities.record.titleNew')}</Title>
       </Header>
 
       {!isEditMode && (
         <ModeTabs>
           <ModeTab $active={mode === 'manual'} onClick={() => { setMode('manual'); setError(''); setImportSuccess(''); }}>
             <FiEdit3 size={18} />
-            Manual Entry
+            {t('activities.record.manualEntry')}
           </ModeTab>
           <ModeTab $active={mode === 'import'} onClick={() => { setMode('import'); setError(''); setImportSuccess(''); }}>
             <FiUploadCloud size={18} />
-            Upload File
+            {t('activities.record.uploadFile')}
           </ModeTab>
         </ModeTabs>
       )}
@@ -395,7 +397,7 @@ const RecordActivity = () => {
       {!isEditMode && mode === 'import' && (
         <>
           <Section>
-            <SectionTitle>Upload and Sync Your Activity</SectionTitle>
+            <SectionTitle>{t('activities.record.uploadSyncTitle')}</SectionTitle>
             <input
               ref={importFileInputRef}
               type="file"
@@ -412,11 +414,10 @@ const RecordActivity = () => {
             >
               <DropzoneIcon>📁</DropzoneIcon>
               <DropzoneText>
-                {dragging ? 'Drop file here' : 'Click to choose a file or drag it here'}
+                {dragging ? t('activities.record.dropFileHere') : t('activities.record.chooseOrDrag')}
               </DropzoneText>
               <DropzoneSubtext>
-                Works for <strong>.gpx</strong>, <strong>.tcx</strong>, or <strong>.fit</strong> files up to 10MB.
-                Activities from Garmin, Polar, Suunto, and other devices.
+                {t('activities.record.dropzoneSubtext')}
               </DropzoneSubtext>
             </ImportDropzone>
 
@@ -431,7 +432,7 @@ const RecordActivity = () => {
                     </FileMeta>
                   </FileDetails>
                 </SelectedFileInfo>
-                <ClearFileButton type="button" onClick={handleClearImportFile} aria-label="Remove file">
+                <ClearFileButton type="button" onClick={handleClearImportFile} aria-label={t('activities.record.removeFile')}>
                   <FiX size={18} />
                 </ClearFileButton>
               </SelectedFileBox>
@@ -439,9 +440,9 @@ const RecordActivity = () => {
 
             {sampleFiles.length > 0 && (
               <SamplesContainer>
-                <SamplesTitle>Don't have a file? Try a sample</SamplesTitle>
+                <SamplesTitle>{t('activities.record.samplesTitle')}</SamplesTitle>
                 <SamplesSubtitle>
-                  Download one of these example activities to test the import feature.
+                  {t('activities.record.samplesSubtitle')}
                 </SamplesSubtitle>
                 <SamplesGrid>
                   {sampleFiles.map((sample) => (
@@ -461,7 +462,7 @@ const RecordActivity = () => {
             {importSuccess && <SuccessMessage role="status">{importSuccess}</SuccessMessage>}
 
             <SaveButton onClick={handleImportActivity} disabled={importing || !importFile}>
-              {importing ? 'Importing...' : 'Import Activity'}
+              {importing ? t('common.importing') : t('activities.record.importActivity')}
             </SaveButton>
           </Section>
         </>
@@ -470,7 +471,7 @@ const RecordActivity = () => {
       {(isEditMode || mode === 'manual') && (
       <>
       <Section>
-        <SectionTitle>What did you do?</SectionTitle>
+        <SectionTitle>{t('activities.record.whatDidYouDo')}</SectionTitle>
         <ActivityTypeGrid>
           {activityTypes.map((activity) => (
             <ActivityTypeButton
@@ -488,33 +489,33 @@ const RecordActivity = () => {
 
       <Section>
         <FormGroup>
-          <Label>Activity Title</Label>
+          <Label>{t('activities.record.activityTitle')}</Label>
           <Input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleInputChange}
-            placeholder="My run workout"
+            placeholder={t('activities.record.activityTitlePlaceholder')}
           />
         </FormGroup>
 
         <FormGroup>
-          <Label>Description (optional)</Label>
+          <Label>{t('activities.record.descriptionOptional')}</Label>
           <TextArea
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            placeholder="How did it feel? Any notes..."
+            placeholder={t('activities.record.descriptionPlaceholder')}
             rows={4}
           />
         </FormGroup>
       </Section>
 
       <Section>
-        <SectionTitle>Activity Stats</SectionTitle>
+        <SectionTitle>{t('activities.record.activityStats')}</SectionTitle>
         <StatsGrid>
           <div>
-            <StatLabel>📍 Distance (km)</StatLabel>
+            <StatLabel>📍 {t('activities.record.distance')}</StatLabel>
             <StatInput
               type="number"
               name="distance"
@@ -526,7 +527,7 @@ const RecordActivity = () => {
           </div>
 
           <div>
-            <StatLabel>⏱️ Duration (h : m : s)</StatLabel>
+            <StatLabel>⏱️ {t('activities.record.duration')}</StatLabel>
             <DurationInputGroup>
               <StatInput
                 type="number"
@@ -535,7 +536,7 @@ const RecordActivity = () => {
                 onChange={handleInputChange}
                 placeholder="0"
                 min="0"
-                aria-label="Hours"
+                aria-label={t('activities.record.hours')}
               />
               <DurationSeparator>:</DurationSeparator>
               <StatInput
@@ -546,7 +547,7 @@ const RecordActivity = () => {
                 placeholder="00"
                 min="0"
                 max="59"
-                aria-label="Minutes"
+                aria-label={t('activities.record.minutes')}
               />
               <DurationSeparator>:</DurationSeparator>
               <StatInput
@@ -557,13 +558,13 @@ const RecordActivity = () => {
                 placeholder="00"
                 min="0"
                 max="59"
-                aria-label="Seconds"
+                aria-label={t('activities.record.seconds')}
               />
             </DurationInputGroup>
           </div>
 
           <div>
-            <StatLabel>⛰️ Elevation (m)</StatLabel>
+            <StatLabel>⛰️ {t('activities.record.elevation')}</StatLabel>
             <StatInput
               type="number"
               name="elevation"
@@ -574,7 +575,7 @@ const RecordActivity = () => {
           </div>
 
           <div>
-            <StatLabel>🔥 Calories</StatLabel>
+            <StatLabel>🔥 {t('activities.record.calories')}</StatLabel>
             <StatInput
               type="number"
               name="calories"
@@ -585,7 +586,7 @@ const RecordActivity = () => {
           </div>
 
           <div>
-            <StatLabel>❤️ Avg Heart Rate</StatLabel>
+            <StatLabel>❤️ {t('activities.record.avgHeartRate')}</StatLabel>
             <StatInput
               type="number"
               name="avgHeartRate"
@@ -598,7 +599,7 @@ const RecordActivity = () => {
       </Section>
 
       <Section>
-        <SectionTitle>Photos</SectionTitle>
+        <SectionTitle>{t('activities.record.photos')}</SectionTitle>
         <PhotoUploadArea>
           <input
             ref={fileInputRef}
@@ -648,17 +649,17 @@ const RecordActivity = () => {
               onClick={() => fileInputRef.current?.click()}
             >
               <FiCamera size={20} />
-              Add Photos
+              {t('activities.record.addPhotos')}
             </PhotoUploadButton>
           )}
-          <PhotoCount>{existingPhotos.length + photos.length}/5 photos</PhotoCount>
+          <PhotoCount>{t('activities.record.photoCount', { current: existingPhotos.length + photos.length })}</PhotoCount>
         </PhotoUploadArea>
       </Section>
 
       {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
 
       <SaveButton onClick={handleSaveActivity} disabled={saving}>
-        {saving ? 'Saving...' : isEditMode ? 'Update Activity' : 'Save Activity'}
+        {saving ? t('common.saving') : isEditMode ? t('activities.record.updateActivity') : t('activities.record.saveActivity')}
       </SaveButton>
       </>
       )}

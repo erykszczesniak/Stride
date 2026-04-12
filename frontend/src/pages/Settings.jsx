@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun } from "react-icons/fi";
 import Navbar from "../components/Navbar/Navbar";
 import SettingsService from "../api/SettingsService";
 import { useToast } from "../context/ToastContext";
 import { useTheme } from "../context/ThemeContext";
+import i18n, { SUPPORTED_LANGUAGES } from "../i18n";
 import {
   SettingsContainer,
   SettingsContent,
@@ -45,6 +47,7 @@ import {
 const VALID_SECTIONS = ["profile", "notifications", "preferences", "account"];
 
 const Settings = () => {
+  const { t } = useTranslation();
   const toast = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
@@ -68,7 +71,7 @@ const Settings = () => {
     units: "metric",
     defaultActivityType: "RUN",
     paceDisplay: "pace",
-    language: "en",
+    language: i18n.language || "en",
     darkMode: false,
   });
 
@@ -128,6 +131,9 @@ const Settings = () => {
 
   const handlePreferenceChange = (key, value) => {
     setPreferences(prev => ({ ...prev, [key]: value }));
+    if (key === "language") {
+      i18n.changeLanguage(value);
+    }
   };
 
   const handleSave = async () => {
@@ -155,16 +161,16 @@ const Settings = () => {
         toggleTheme();
       }
 
-      toast.success("Settings saved successfully!");
+      toast.success(t("settings.saveSuccess"));
     } catch (error) {
-      toast.error("Failed to save settings. Please try again.");
+      toast.error(t("settings.saveFailed"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleSignOut = () => {
-    if (window.confirm("Are you sure you want to sign out?")) {
+    if (window.confirm(t("settings.confirmSignOut"))) {
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userPreferences");
@@ -178,10 +184,10 @@ const Settings = () => {
   };
 
   const tabs = [
-    { id: "profile", label: "Profile", icon: <FiUser size={18} /> },
-    { id: "notifications", label: "Notifications", icon: <FiBell size={18} /> },
-    { id: "preferences", label: "Preferences", icon: <FiSliders size={18} /> },
-    { id: "account", label: "Account", icon: <FiLock size={18} /> },
+    { id: "profile", label: t("settings.tabs.profile"), icon: <FiUser size={18} /> },
+    { id: "notifications", label: t("settings.tabs.notifications"), icon: <FiBell size={18} /> },
+    { id: "preferences", label: t("settings.tabs.preferences"), icon: <FiSliders size={18} /> },
+    { id: "account", label: t("settings.tabs.account"), icon: <FiLock size={18} /> },
   ];
 
   if (loading) {
@@ -203,10 +209,10 @@ const Settings = () => {
       <SettingsContainer>
         <SettingsContent>
           <SettingsHeader>
-            <SettingsTitle>Settings</SettingsTitle>
+            <SettingsTitle>{t("settings.title")}</SettingsTitle>
             <SaveButton onClick={handleSave} disabled={saving}>
               <FiSave size={18} />
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? t("settings.saving") : t("settings.save")}
             </SaveButton>
           </SettingsHeader>
 
@@ -230,8 +236,8 @@ const Settings = () => {
             <SettingsPanel>
               {activeTab === "profile" && (
                 <>
-                  <PanelTitle>Profile</PanelTitle>
-                  <PanelDescription>Manage your personal information</PanelDescription>
+                  <PanelTitle>{t("settings.profile.title")}</PanelTitle>
+                  <PanelDescription>{t("settings.profile.description")}</PanelDescription>
 
                   <ProfileHeader>
                     <ProfileAvatar>
@@ -248,19 +254,19 @@ const Settings = () => {
                   </ProfileHeader>
 
                   <FormGroup>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>{t("settings.profile.fullName")}</FormLabel>
                     <FormRow>
                       <FormInput
                         type="text"
                         name="firstName"
-                        placeholder="First Name"
+                        placeholder={t("settings.profile.firstNamePlaceholder")}
                         value={formData.firstName}
                         onChange={handleFormChange}
                       />
                       <FormInput
                         type="text"
                         name="lastName"
-                        placeholder="Last Name"
+                        placeholder={t("settings.profile.lastNamePlaceholder")}
                         value={formData.lastName}
                         onChange={handleFormChange}
                       />
@@ -268,11 +274,11 @@ const Settings = () => {
                   </FormGroup>
 
                   <FormGroup>
-                    <FormLabel>Bio</FormLabel>
+                    <FormLabel>{t("settings.profile.bio")}</FormLabel>
                     <FormInput
                       type="text"
                       name="bio"
-                      placeholder="Tell us about yourself..."
+                      placeholder={t("settings.profile.bioPlaceholder")}
                       value={formData.bio}
                       onChange={handleFormChange}
                     />
@@ -280,21 +286,21 @@ const Settings = () => {
 
                   <FormRow>
                     <FormGroup>
-                      <FormLabel>City</FormLabel>
+                      <FormLabel>{t("settings.profile.city")}</FormLabel>
                       <FormInput
                         type="text"
                         name="city"
-                        placeholder="Enter city"
+                        placeholder={t("settings.profile.cityPlaceholder")}
                         value={formData.city}
                         onChange={handleFormChange}
                       />
                     </FormGroup>
                     <FormGroup>
-                      <FormLabel>Country</FormLabel>
+                      <FormLabel>{t("settings.profile.country")}</FormLabel>
                       <FormInput
                         type="text"
                         name="country"
-                        placeholder="Enter country"
+                        placeholder={t("settings.profile.countryPlaceholder")}
                         value={formData.country}
                         onChange={handleFormChange}
                       />
@@ -303,21 +309,21 @@ const Settings = () => {
 
                   <FormRow>
                     <FormGroup>
-                      <FormLabel>Weight (kg)</FormLabel>
+                      <FormLabel>{t("settings.profile.weight")}</FormLabel>
                       <FormInput
                         type="number"
                         name="weight"
-                        placeholder="Enter weight"
+                        placeholder={t("settings.profile.weightPlaceholder")}
                         value={formData.weight}
                         onChange={handleFormChange}
                       />
                     </FormGroup>
                     <FormGroup>
-                      <FormLabel>Height (cm)</FormLabel>
+                      <FormLabel>{t("settings.profile.height")}</FormLabel>
                       <FormInput
                         type="number"
                         name="height"
-                        placeholder="Enter height"
+                        placeholder={t("settings.profile.heightPlaceholder")}
                         value={formData.height}
                         onChange={handleFormChange}
                       />
@@ -328,13 +334,13 @@ const Settings = () => {
 
               {activeTab === "notifications" && (
                 <>
-                  <PanelTitle>Notifications</PanelTitle>
-                  <PanelDescription>Configure how you receive updates</PanelDescription>
+                  <PanelTitle>{t("settings.notifications.title")}</PanelTitle>
+                  <PanelDescription>{t("settings.notifications.description")}</PanelDescription>
 
                   <ToggleItem>
                     <ToggleInfo>
-                      <ToggleTitle>Email Notifications</ToggleTitle>
-                      <ToggleDescription>Receive updates via email</ToggleDescription>
+                      <ToggleTitle>{t("settings.notifications.email")}</ToggleTitle>
+                      <ToggleDescription>{t("settings.notifications.emailDesc")}</ToggleDescription>
                     </ToggleInfo>
                     <Toggle>
                       <input
@@ -348,8 +354,8 @@ const Settings = () => {
 
                   <ToggleItem>
                     <ToggleInfo>
-                      <ToggleTitle>Toast Notifications</ToggleTitle>
-                      <ToggleDescription>Show real-time popup notifications</ToggleDescription>
+                      <ToggleTitle>{t("settings.notifications.toast")}</ToggleTitle>
+                      <ToggleDescription>{t("settings.notifications.toastDesc")}</ToggleDescription>
                     </ToggleInfo>
                     <Toggle>
                       <input
@@ -363,8 +369,8 @@ const Settings = () => {
 
                   <ToggleItem>
                     <ToggleInfo>
-                      <ToggleTitle>Weekly Summary</ToggleTitle>
-                      <ToggleDescription>Get a weekly training report</ToggleDescription>
+                      <ToggleTitle>{t("settings.notifications.weekly")}</ToggleTitle>
+                      <ToggleDescription>{t("settings.notifications.weeklyDesc")}</ToggleDescription>
                     </ToggleInfo>
                     <Toggle>
                       <input
@@ -380,56 +386,54 @@ const Settings = () => {
 
               {activeTab === "preferences" && (
                 <>
-                  <PanelTitle>Preferences</PanelTitle>
-                  <PanelDescription>Customize your experience</PanelDescription>
+                  <PanelTitle>{t("settings.preferences.title")}</PanelTitle>
+                  <PanelDescription>{t("settings.preferences.description")}</PanelDescription>
 
                   <FormGroup>
-                    <FormLabel>Units</FormLabel>
+                    <FormLabel>{t("settings.preferences.units")}</FormLabel>
                     <FormSelect
                       value={preferences.units}
                       onChange={(e) => handlePreferenceChange("units", e.target.value)}
                     >
-                      <option value="metric">Metric (km, kg)</option>
-                      <option value="imperial">Imperial (mi, lb)</option>
+                      <option value="metric">{t("settings.preferences.metric")}</option>
+                      <option value="imperial">{t("settings.preferences.imperial")}</option>
                     </FormSelect>
                   </FormGroup>
 
                   <FormGroup>
-                    <FormLabel>Default Activity Type</FormLabel>
+                    <FormLabel>{t("settings.preferences.defaultActivityType")}</FormLabel>
                     <FormSelect
                       value={preferences.defaultActivityType}
                       onChange={(e) => handlePreferenceChange("defaultActivityType", e.target.value)}
                     >
-                      <option value="RUN">Run</option>
-                      <option value="RIDE">Ride</option>
-                      <option value="SWIM">Swim</option>
-                      <option value="HIKE">Hike</option>
-                      <option value="WALK">Walk</option>
+                      <option value="RUN">{t("activities.typesShort.RUN")}</option>
+                      <option value="RIDE">{t("activities.typesShort.RIDE")}</option>
+                      <option value="SWIM">{t("activities.typesShort.SWIM")}</option>
+                      <option value="HIKE">{t("activities.typesShort.HIKE")}</option>
+                      <option value="WALK">{t("activities.typesShort.WALK")}</option>
                     </FormSelect>
                   </FormGroup>
 
                   <FormGroup>
-                    <FormLabel>Pace/Speed Display</FormLabel>
+                    <FormLabel>{t("settings.preferences.paceDisplay")}</FormLabel>
                     <FormSelect
                       value={preferences.paceDisplay}
                       onChange={(e) => handlePreferenceChange("paceDisplay", e.target.value)}
                     >
-                      <option value="pace">Pace (min/km or min/mi)</option>
-                      <option value="speed">Speed (km/h or mph)</option>
+                      <option value="pace">{t("settings.preferences.pace")}</option>
+                      <option value="speed">{t("settings.preferences.speed")}</option>
                     </FormSelect>
                   </FormGroup>
 
                   <FormGroup>
-                    <FormLabel>Language</FormLabel>
+                    <FormLabel>{t("settings.preferences.language")}</FormLabel>
                     <FormSelect
                       value={preferences.language}
                       onChange={(e) => handlePreferenceChange("language", e.target.value)}
                     >
-                      <option value="en">English</option>
-                      <option value="pl">Polish</option>
-                      <option value="de">German</option>
-                      <option value="fr">French</option>
-                      <option value="es">Spanish</option>
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>{lang.nativeName}</option>
+                      ))}
                     </FormSelect>
                   </FormGroup>
 
@@ -437,8 +441,8 @@ const Settings = () => {
                     <DarkModeIcon>
                       <FiSun size={20} color="#f59e0b" />
                       <ToggleInfo>
-                        <ToggleTitle>Dark Mode</ToggleTitle>
-                        <ToggleDescription>Use dark theme</ToggleDescription>
+                        <ToggleTitle>{t("settings.preferences.darkMode")}</ToggleTitle>
+                        <ToggleDescription>{t("settings.preferences.darkModeDesc")}</ToggleDescription>
                       </ToggleInfo>
                     </DarkModeIcon>
                     <Toggle>
@@ -455,17 +459,17 @@ const Settings = () => {
 
               {activeTab === "account" && (
                 <>
-                  <PanelTitle>Account</PanelTitle>
-                  <PanelDescription>Manage your account settings</PanelDescription>
+                  <PanelTitle>{t("settings.account.title")}</PanelTitle>
+                  <PanelDescription>{t("settings.account.description")}</PanelDescription>
 
                   <AccountEmail>
-                    <AccountEmailLabel>Email</AccountEmailLabel>
+                    <AccountEmailLabel>{t("settings.account.email")}</AccountEmailLabel>
                     <AccountEmailValue>{user?.email}</AccountEmailValue>
                   </AccountEmail>
 
                   <SignOutButton onClick={handleSignOut}>
                     <FiLogOut size={18} />
-                    Sign Out
+                    {t("nav.signOut")}
                   </SignOutButton>
                 </>
               )}

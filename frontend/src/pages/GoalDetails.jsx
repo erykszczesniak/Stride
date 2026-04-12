@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FaRunning, FaBicycle, FaSwimmer, FaHiking, FaWalking, FaDumbbell } from "react-icons/fa";
 import { FiArrowLeft, FiEdit2, FiTrash2, FiTarget } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
@@ -34,8 +35,7 @@ const activityIcons = {
   WEIGHT_TRAINING: <FaDumbbell />,
 };
 
-const goalTypeLabels = { DISTANCE: "Distance", TIME: "Time", ELEVATION: "Elevation", ACTIVITIES: "Activities" };
-const goalTypeUnits = { DISTANCE: "km", TIME: "hours", ELEVATION: "m", ACTIVITIES: "activities" };
+const goalTypeUnitKeys = { DISTANCE: "km", TIME: "hours", ELEVATION: "m", ACTIVITIES: "activities" };
 
 const formatValue = (value, goalType) => {
   if (goalType === "TIME") return (value / 3600).toFixed(1);
@@ -232,25 +232,27 @@ const DeleteConfirmBtn = styled.button`
   &:hover { background: #dc2626; }
 `;
 
-const goalTypes = [
-  { value: "DISTANCE", label: "Distance", icon: "📏" },
-  { value: "TIME", label: "Time", icon: "⏱️" },
-  { value: "ACTIVITIES", label: "Activities", icon: "🔢" },
-  { value: "ELEVATION", label: "Elevation", icon: "⛰️" },
-];
-
-const activityTypes = [
-  { value: "RUN", label: "Run", icon: <FaRunning /> },
-  { value: "RIDE", label: "Ride", icon: <FaBicycle /> },
-  { value: "SWIM", label: "Swim", icon: <FaSwimmer /> },
-  { value: "HIKE", label: "Hike", icon: <FaHiking /> },
-  { value: "WALK", label: "Walk", icon: <FaWalking /> },
-  { value: "WEIGHT_TRAINING", label: "Weights", icon: <FaDumbbell /> },
-];
-
 const GoalDetails = () => {
+  const { t } = useTranslation();
   const { goalId } = useParams();
   const navigate = useNavigate();
+
+  const goalTypes = [
+    { value: "DISTANCE", label: t("goals.types.DISTANCE"), icon: "📏" },
+    { value: "TIME", label: t("goals.types.TIME"), icon: "⏱️" },
+    { value: "ACTIVITIES", label: t("goals.types.ACTIVITIES"), icon: "🔢" },
+    { value: "ELEVATION", label: t("goals.types.ELEVATION"), icon: "⛰️" },
+  ];
+
+  const activityTypes = [
+    { value: "RUN", label: t("activities.typesShort.RUN"), icon: <FaRunning /> },
+    { value: "RIDE", label: t("activities.typesShort.RIDE"), icon: <FaBicycle /> },
+    { value: "SWIM", label: t("activities.typesShort.SWIM"), icon: <FaSwimmer /> },
+    { value: "HIKE", label: t("activities.typesShort.HIKE"), icon: <FaHiking /> },
+    { value: "WALK", label: t("activities.typesShort.WALK"), icon: <FaWalking /> },
+    { value: "WEIGHT_TRAINING", label: t("activities.typesShort.WEIGHT_TRAINING"), icon: <FaDumbbell /> },
+  ];
+
   const [goal, setGoal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -285,7 +287,7 @@ const GoalDetails = () => {
   const handleSave = async () => {
     setError("");
     if (!form.targetValue || parseFloat(form.targetValue) <= 0) {
-      setError("Target must be positive");
+      setError(t("goals.errors.targetMustBePositive"));
       return;
     }
     try {
@@ -298,7 +300,7 @@ const GoalDetails = () => {
       setGoal(res.data);
       setEditing(false);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update goal");
+      setError(err.response?.data?.message || t("goals.errors.updateFailed"));
     }
   };
 
@@ -307,16 +309,16 @@ const GoalDetails = () => {
 
   const progress = (goal.currentValue / goal.targetValue) * 100;
   const isCompleted = progress >= 100;
-  const unit = goalTypeUnits[goal.goalType] || "";
+  const unit = goalTypeUnitKeys[goal.goalType] ? t(`goals.units.${goalTypeUnitKeys[goal.goalType]}`) : "";
   const icon = activityIcons[goal.activityType] || <FiTarget />;
-  const periodLabel = goal.period === "WEEKLY" ? "Weekly" : goal.period === "MONTHLY" ? "Monthly" : "Yearly";
+  const periodLabel = goal.period === "WEEKLY" ? t("goals.weekly") : goal.period === "MONTHLY" ? t("goals.monthly") : t("goals.yearly");
 
   return (
     <Layout>
       <CreateGoalContainer>
         <BackLink to="/goals">
           <FiArrowLeft size={18} />
-          Back to Goals
+          {t("goals.backToGoals")}
         </BackLink>
 
         {!editing ? (
@@ -325,13 +327,13 @@ const GoalDetails = () => {
               <DetailHeader>
                 <DetailTitle>
                   <DetailIcon>{icon}</DetailIcon>
-                  {periodLabel} {goalTypeLabels[goal.goalType]} Goal
+                  {periodLabel} {t(`goals.types.${goal.goalType}`)}
                 </DetailTitle>
                 <ActionIcons>
-                  <IconBtn onClick={() => setEditing(true)} title="Edit">
+                  <IconBtn onClick={() => setEditing(true)} title={t("common.edit")}>
                     <FiEdit2 size={16} />
                   </IconBtn>
-                  <IconBtn $danger onClick={() => setShowDelete(true)} title="Delete">
+                  <IconBtn $danger onClick={() => setShowDelete(true)} title={t("common.delete")}>
                     <FiTrash2 size={16} />
                   </IconBtn>
                 </ActionIcons>
@@ -344,27 +346,27 @@ const GoalDetails = () => {
               <StatsRow>
                 <Stat>
                   <StatValue>{formatValue(goal.currentValue, goal.goalType)}</StatValue>
-                  <StatLabel>Current ({unit})</StatLabel>
+                  <StatLabel>{t("goals.current", { unit })}</StatLabel>
                 </Stat>
                 <Stat>
                   <StatValue>{formatValue(goal.targetValue, goal.goalType)}</StatValue>
-                  <StatLabel>Target ({unit})</StatLabel>
+                  <StatLabel>{t("goals.targetWith", { unit })}</StatLabel>
                 </Stat>
                 <Stat>
                   <StatValue>{Math.min(Math.round(progress), 100)}%</StatValue>
-                  <StatLabel>Progress</StatLabel>
+                  <StatLabel>{t("goals.progress")}</StatLabel>
                 </Stat>
               </StatsRow>
 
               {goal.activityType && (
                 <StatsRow style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
                   <Stat>
-                    <StatValue>{goal.activityType}</StatValue>
-                    <StatLabel>Activity Type</StatLabel>
+                    <StatValue>{t(`activities.typesShort.${goal.activityType}`, { defaultValue: goal.activityType })}</StatValue>
+                    <StatLabel>{t("goals.activityTypeLabel")}</StatLabel>
                   </Stat>
                   <Stat>
                     <StatValue>{formatValue(goal.remainingValue, goal.goalType)}</StatValue>
-                    <StatLabel>Remaining ({unit})</StatLabel>
+                    <StatLabel>{t("goals.remaining", { unit })}</StatLabel>
                   </Stat>
                 </StatsRow>
               )}
@@ -373,10 +375,10 @@ const GoalDetails = () => {
           </>
         ) : (
           <>
-            <CreateGoalTitle>Edit Goal</CreateGoalTitle>
+            <CreateGoalTitle>{t("goals.editGoal")}</CreateGoalTitle>
             <FormCard>
               <FormSection>
-                <FormSectionTitle>Goal Type</FormSectionTitle>
+                <FormSectionTitle>{t("goals.goalType")}</FormSectionTitle>
                 <OptionGrid>
                   {goalTypes.map((type) => (
                     <OptionButton
@@ -393,7 +395,7 @@ const GoalDetails = () => {
               </FormSection>
 
               <FormSection>
-                <FormSectionTitle>Activity Type</FormSectionTitle>
+                <FormSectionTitle>{t("goals.activityType")}</FormSectionTitle>
                 <OptionGrid>
                   {activityTypes.map((type) => (
                     <OptionButton
@@ -410,9 +412,9 @@ const GoalDetails = () => {
               </FormSection>
 
               <FormSection>
-                <FormSectionTitle>Target</FormSectionTitle>
+                <FormSectionTitle>{t("goals.target")}</FormSectionTitle>
                 <FormGroup>
-                  <FormLabel>New target value</FormLabel>
+                  <FormLabel>{t("goals.newTargetValue")}</FormLabel>
                   <FormInput
                     type="number"
                     step="0.1"
@@ -420,16 +422,16 @@ const GoalDetails = () => {
                     value={form.targetValue}
                     onChange={(e) => setForm((f) => ({ ...f, targetValue: e.target.value }))}
                   />
-                  <UnitHint>{goalTypeUnits[form.goalType] || ""}</UnitHint>
+                  <UnitHint>{goalTypeUnitKeys[form.goalType] ? t(`goals.units.${goalTypeUnitKeys[form.goalType]}`) : ""}</UnitHint>
                 </FormGroup>
               </FormSection>
 
               {error && <ErrorMessage>{error}</ErrorMessage>}
 
               <ButtonRow>
-                <EditButton type="button" onClick={() => setEditing(false)}>Cancel</EditButton>
+                <EditButton type="button" onClick={() => setEditing(false)}>{t("common.cancel")}</EditButton>
                 <SubmitButton type="button" onClick={handleSave} style={{ flex: 1 }}>
-                  Save Changes
+                  {t("goals.saveChanges")}
                 </SubmitButton>
               </ButtonRow>
             </FormCard>
@@ -440,11 +442,11 @@ const GoalDetails = () => {
       {showDelete && (
         <ConfirmOverlay onClick={() => setShowDelete(false)}>
           <ConfirmBox onClick={(e) => e.stopPropagation()}>
-            <ConfirmTitle>Delete Goal?</ConfirmTitle>
-            <ConfirmText>This action cannot be undone. Your progress will be lost.</ConfirmText>
+            <ConfirmTitle>{t("goals.deleteTitle")}</ConfirmTitle>
+            <ConfirmText>{t("goals.deleteTextWithProgress")}</ConfirmText>
             <ConfirmButtons>
-              <CancelBtn onClick={() => setShowDelete(false)}>Cancel</CancelBtn>
-              <DeleteConfirmBtn onClick={handleDelete}>Delete</DeleteConfirmBtn>
+              <CancelBtn onClick={() => setShowDelete(false)}>{t("common.cancel")}</CancelBtn>
+              <DeleteConfirmBtn onClick={handleDelete}>{t("common.delete")}</DeleteConfirmBtn>
             </ConfirmButtons>
           </ConfirmBox>
         </ConfirmOverlay>

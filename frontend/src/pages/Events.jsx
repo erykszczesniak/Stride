@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiPlus } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import EventCard from "../components/EventCard/EventCard";
@@ -7,6 +8,7 @@ import { LoadingSpinner, AddButton, EmptyState, EmptyIcon, EmptyText } from "./D
 import { PageHeader, PageTitle, EventsList } from "./EventsStyles";
 
 const Events = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
 
@@ -37,10 +39,10 @@ const Events = () => {
   return (
     <Layout>
       <PageHeader>
-        <PageTitle>Events</PageTitle>
+        <PageTitle>{t("events.title")}</PageTitle>
         <AddButton to="/events/new">
           <FiPlus size={18} />
-          Create Event
+          {t("events.createEvent")}
         </AddButton>
       </PageHeader>
 
@@ -53,10 +55,10 @@ const Events = () => {
       ) : (
         <EmptyState>
           <EmptyIcon>📅</EmptyIcon>
-          <EmptyText>No events found. Create your first event!</EmptyText>
+          <EmptyText>{t("events.empty")}</EmptyText>
           <AddButton to="/events/new">
             <FiPlus size={18} />
-            Create Event
+            {t("events.createEvent")}
           </AddButton>
         </EmptyState>
       )}

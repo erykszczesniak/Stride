@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiAward, FiRefreshCw } from "react-icons/fi";
 import PersonalRecordService from "../../api/PersonalRecordService";
+import i18n from "../../i18n";
 import {
   PRContainer,
   PRHeader,
@@ -32,13 +34,13 @@ import {
   PRLoadingState,
 } from "./PersonalRecordsStyles";
 
-const SPORT_META = {
-  RUN: { icon: "🏃", label: "Running" },
-  RIDE: { icon: "🚴", label: "Cycling" },
-  SWIM: { icon: "🏊", label: "Swimming" },
-  HIKE: { icon: "⛰️", label: "Hiking" },
-  WALK: { icon: "🚶", label: "Walking" },
-  WORKOUT: { icon: "💪", label: "Workout" },
+const SPORT_ICONS = {
+  RUN: "🏃",
+  RIDE: "🚴",
+  SWIM: "🏊",
+  HIKE: "⛰️",
+  WALK: "🚶",
+  WORKOUT: "💪",
 };
 
 const DISTANCE_ORDER = ["ONE_KM", "FIVE_KM", "TEN_KM", "HALF_MARATHON", "MARATHON"];
@@ -46,10 +48,11 @@ const DISTANCE_ORDER = ["ONE_KM", "FIVE_KM", "TEN_KM", "HALF_MARATHON", "MARATHO
 const formatDate = (iso) => {
   if (!iso) return "";
   const date = new Date(iso);
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return date.toLocaleDateString(i18n.language, { year: "numeric", month: "short", day: "numeric" });
 };
 
 const PersonalRecords = ({ userId, isOwnProfile = false }) => {
+  const { t } = useTranslation();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
@@ -65,7 +68,7 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
       setRecords(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to load personal records:", err);
-      setError("Failed to load personal records");
+      setError(t("personalRecords.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -84,7 +87,7 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
       await fetchRecords();
     } catch (err) {
       console.error("Failed to recalculate PRs:", err);
-      setError("Failed to recalculate personal records");
+      setError(t("personalRecords.recalcFailed"));
     } finally {
       setRecalculating(false);
     }
@@ -107,7 +110,7 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
   }, [records]);
 
   if (loading) {
-    return <PRLoadingState>Loading personal records...</PRLoadingState>;
+    return <PRLoadingState>{t("personalRecords.loading")}</PRLoadingState>;
   }
 
   return (
@@ -115,16 +118,16 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
       <PRHeader>
         <PRTitleGroup>
           <PRTitle>
-            <FiAward size={20} /> Personal Records
+            <FiAward size={20} /> {t("personalRecords.title")}
           </PRTitle>
           <PRSubtitle>
-            Your fastest times for standard distances across each sport
+            {t("personalRecords.subtitle")}
           </PRSubtitle>
         </PRTitleGroup>
         {isOwnProfile && records.length > 0 && (
           <RecalculateButton onClick={handleRecalculate} disabled={recalculating}>
             <FiRefreshCw size={14} className={recalculating ? "spinning" : ""} />
-            {recalculating ? "Recalculating..." : "Recalculate"}
+            {recalculating ? t("personalRecords.recalculating") : t("personalRecords.recalculate")}
           </RecalculateButton>
         )}
       </PRHeader>
@@ -136,36 +139,37 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
           <PREmptyIcon>🏆</PREmptyIcon>
           <PREmptyText>
             {isOwnProfile
-              ? "No personal records yet. Complete an activity covering at least 1km to set your first PR!"
-              : "This user hasn't set any personal records yet."}
+              ? t("personalRecords.emptyOwn")
+              : t("personalRecords.emptyOther")}
           </PREmptyText>
           {isOwnProfile && (
             <RecalculateButton onClick={handleRecalculate} disabled={recalculating}>
               <FiRefreshCw size={14} className={recalculating ? "spinning" : ""} />
-              {recalculating ? "Recalculating..." : "Recalculate from history"}
+              {recalculating ? t("personalRecords.recalculating") : t("personalRecords.recalculateFromHistory")}
             </RecalculateButton>
           )}
         </PREmptyState>
       ) : (
         Object.keys(groupedBySport).map((sport) => {
-          const meta = SPORT_META[sport] || { icon: "🏅", label: sport };
+          const icon = SPORT_ICONS[sport] || "🏅";
+          const label = t(`activities.types.${sport}`, { defaultValue: sport });
           const sportRecords = groupedBySport[sport];
           return (
             <PRSportSection key={sport}>
               <PRSportHeader>
-                <PRSportIcon>{meta.icon}</PRSportIcon>
-                <PRSportName>{meta.label}</PRSportName>
+                <PRSportIcon>{icon}</PRSportIcon>
+                <PRSportName>{label}</PRSportName>
                 <PRSportCount>
-                  {sportRecords.length} PR{sportRecords.length === 1 ? "" : "s"}
+                  {t("personalRecords.prCount", { count: sportRecords.length })}
                 </PRSportCount>
               </PRSportHeader>
               <PRTable>
                 <PRTableHeader>
-                  <PRTableHeaderCell>Distance</PRTableHeaderCell>
-                  <PRTableHeaderCell>Best Time</PRTableHeaderCell>
-                  <PRTableHeaderCell>Pace</PRTableHeaderCell>
-                  <PRTableHeaderCell>Improvement</PRTableHeaderCell>
-                  <PRTableHeaderCell>Date</PRTableHeaderCell>
+                  <PRTableHeaderCell>{t("personalRecords.columns.distance")}</PRTableHeaderCell>
+                  <PRTableHeaderCell>{t("personalRecords.columns.bestTime")}</PRTableHeaderCell>
+                  <PRTableHeaderCell>{t("personalRecords.columns.pace")}</PRTableHeaderCell>
+                  <PRTableHeaderCell>{t("personalRecords.columns.improvement")}</PRTableHeaderCell>
+                  <PRTableHeaderCell>{t("personalRecords.columns.date")}</PRTableHeaderCell>
                 </PRTableHeader>
                 {sportRecords.map((pr) => (
                   <PRTableRow key={pr.id}>
