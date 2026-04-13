@@ -41,10 +41,16 @@ export const formatDurationUnit = (seconds) => {
 
 /**
  * Format a distance in km to a string with 2 decimal places.
+ * When called with a units context, converts to the appropriate unit.
  * @param {number} km - Distance in kilometers
- * @returns {string} Formatted distance (e.g., "5.23 km")
+ * @param {object} [unitsCtx] - Optional units context from useUnits()
+ * @returns {string} Formatted distance (e.g., "5.23 km" or "3.25 mi")
  */
-export const formatDistance = (km) => {
+export const formatDistance = (km, unitsCtx) => {
+  if (unitsCtx) {
+    const value = unitsCtx.convertDistance(km || 0);
+    return `${value.toFixed(2)} ${unitsCtx.distanceUnit}`;
+  }
   return `${(km || 0).toFixed(2)} km`;
 };
 
@@ -59,19 +65,34 @@ const PACE_ACTIVITY_TYPES = new Set([
   "TRAIL_RUN",
 ]);
 
+const SWIM_ACTIVITY_TYPES = new Set(["SWIM"]);
+
 /**
  * Whether the given activity type should display pace instead of speed.
+ * Includes running-style activities and swimming.
  */
-export const isPaceActivity = (activityType) => PACE_ACTIVITY_TYPES.has(activityType);
+export const isPaceActivity = (activityType) =>
+  PACE_ACTIVITY_TYPES.has(activityType) || SWIM_ACTIVITY_TYPES.has(activityType);
+
+/**
+ * Whether the given activity type is a swim activity.
+ */
+export const isSwimActivity = (activityType) => SWIM_ACTIVITY_TYPES.has(activityType);
 
 /**
  * Format pace as min:sec /km from distance and duration.
+ * When called with a units context, uses sport-aware formatting.
  * @param {number} distanceKm
  * @param {number} durationSeconds
+ * @param {object} [unitsCtx] - Optional units context from useUnits()
+ * @param {string} [activityType] - Activity type for sport-aware formatting
  * @returns {string} Formatted pace (e.g., "5:30 /km")
  */
-export const formatPace = (distanceKm, durationSeconds) => {
-  if (!distanceKm || !durationSeconds || distanceKm <= 0) return "—";
+export const formatPace = (distanceKm, durationSeconds, unitsCtx, activityType) => {
+  if (!distanceKm || !durationSeconds || distanceKm <= 0) return "\u2014";
+  if (unitsCtx && activityType) {
+    return unitsCtx.formatPaceFromActivity(distanceKm, durationSeconds, activityType);
+  }
   const secondsPerKm = durationSeconds / distanceKm;
   const minutes = Math.floor(secondsPerKm / 60);
   const seconds = Math.round(secondsPerKm % 60);

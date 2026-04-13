@@ -4,6 +4,7 @@ import { FiDownload, FiFileText, FiCalendar, FiCheck, FiMenu, FiSave, FiFolder, 
 import Layout from "../components/Layout/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { useUnits } from "../context/UnitsContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -89,13 +90,22 @@ const formatDuration = (seconds) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-const formatValue = (key, value) => {
+const formatValue = (key, value, unitsCtx) => {
   if (value === null || value === undefined) return "-";
   switch (key) {
-    case "distance": return `${Number(value).toFixed(1)} km`;
+    case "distance":
+      return unitsCtx
+        ? `${unitsCtx.convertDistance(Number(value)).toFixed(1)} ${unitsCtx.distanceUnit}`
+        : `${Number(value).toFixed(1)} km`;
     case "duration": return formatDuration(value);
-    case "averageSpeed": return `${Number(value).toFixed(1)} km/h`;
-    case "elevationGain": return `${value} m`;
+    case "averageSpeed":
+      return unitsCtx
+        ? `${unitsCtx.convertSpeed(Number(value)).toFixed(1)} ${unitsCtx.speedUnit}`
+        : `${Number(value).toFixed(1)} km/h`;
+    case "elevationGain":
+      return unitsCtx
+        ? `${Math.round(unitsCtx.convertElevation(Number(value)))} ${unitsCtx.elevationUnit}`
+        : `${value} m`;
     case "calories": return `${value} kcal`;
     default: return String(value);
   }
@@ -125,6 +135,7 @@ const Reports = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
+  const unitsCtx = useUnits();
 
   const AVAILABLE_FIELDS = useMemo(
     () => AVAILABLE_FIELD_KEYS.map((key) => ({ key, label: t(`reports.fields.${key}`) })),
@@ -388,7 +399,7 @@ const Reports = () => {
 
     const headers = selectedFields.map((f) => AVAILABLE_FIELDS.find((af) => af.key === f)?.label || f);
     const body = sortedRows.map((row) =>
-      selectedFields.map((f) => formatValue(f, row[f]).replace(/ km\/h| km| m| kcal/g, ""))
+      selectedFields.map((f) => formatValue(f, row[f], unitsCtx).replace(/ km\/h| km| mi| mph| m| ft| kcal/g, ""))
     );
 
     autoTable(doc, {
@@ -537,7 +548,7 @@ const Reports = () => {
                     {sortedRows.map((row, i) => (
                       <tr key={i}>
                         {selectedFields.map((f) => (
-                          <Td key={f}>{formatValue(f, row[f])}</Td>
+                          <Td key={f}>{formatValue(f, row[f], unitsCtx)}</Td>
                         ))}
                       </tr>
                     ))}
@@ -546,10 +557,10 @@ const Reports = () => {
                         {selectedFields.map((f) => (
                           <Td key={f}>
                             {f === "activityTitle" ? t("reports.activitiesSuffix", { count: summary.totalActivities }) :
-                             f === "distance" ? `${summary.totalDistance} km` :
+                             f === "distance" ? `${unitsCtx.convertDistance(summary.totalDistance).toFixed(1)} ${unitsCtx.distanceUnit}` :
                              f === "duration" ? formatDuration(summary.totalDuration) :
                              f === "calories" ? `${summary.totalCalories} kcal` :
-                             f === "elevationGain" ? `${summary.totalElevation} m` :
+                             f === "elevationGain" ? `${Math.round(unitsCtx.convertElevation(summary.totalElevation))} ${unitsCtx.elevationUnit}` :
                              ""}
                           </Td>
                         ))}

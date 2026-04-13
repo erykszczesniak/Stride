@@ -5,6 +5,7 @@ import { FaRunning, FaBicycle, FaSwimmer, FaHiking, FaWalking, FaDumbbell } from
 import { FiArrowLeft, FiEdit2, FiTrash2, FiTarget } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import GoalService from "../api/GoalService";
+import { useUnits } from "../context/UnitsContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import {
   CreateGoalContainer,
@@ -37,9 +38,11 @@ const activityIcons = {
 
 const goalTypeUnitKeys = { DISTANCE: "km", TIME: "hours", ELEVATION: "m", ACTIVITIES: "activities" };
 
-const formatValue = (value, goalType) => {
+const formatValue = (value, goalType, unitsCtx) => {
   if (goalType === "TIME") return (value / 3600).toFixed(1);
+  if (goalType === "DISTANCE" && unitsCtx) return unitsCtx.convertDistance(value || 0).toFixed(1);
   if (goalType === "DISTANCE") return value?.toFixed(1);
+  if (goalType === "ELEVATION" && unitsCtx) return Math.round(unitsCtx.convertElevation(value || 0));
   return Math.round(value || 0);
 };
 
@@ -236,6 +239,7 @@ const GoalDetails = () => {
   const { t } = useTranslation();
   const { goalId } = useParams();
   const navigate = useNavigate();
+  const unitsCtx = useUnits();
 
   const goalTypes = [
     { value: "DISTANCE", label: t("goals.types.DISTANCE"), icon: "📏" },
@@ -309,7 +313,11 @@ const GoalDetails = () => {
 
   const progress = (goal.currentValue / goal.targetValue) * 100;
   const isCompleted = progress >= 100;
-  const unit = goalTypeUnitKeys[goal.goalType] ? t(`goals.units.${goalTypeUnitKeys[goal.goalType]}`) : "";
+  const unit = goal.goalType === "DISTANCE"
+    ? unitsCtx.distanceUnit
+    : goal.goalType === "ELEVATION"
+      ? unitsCtx.elevationUnit
+      : goalTypeUnitKeys[goal.goalType] ? t(`goals.units.${goalTypeUnitKeys[goal.goalType]}`) : "";
   const icon = activityIcons[goal.activityType] || <FiTarget />;
   const periodLabel = goal.period === "WEEKLY" ? t("goals.weekly") : goal.period === "MONTHLY" ? t("goals.monthly") : t("goals.yearly");
 
@@ -345,11 +353,11 @@ const GoalDetails = () => {
 
               <StatsRow>
                 <Stat>
-                  <StatValue>{formatValue(goal.currentValue, goal.goalType)}</StatValue>
+                  <StatValue>{formatValue(goal.currentValue, goal.goalType, unitsCtx)}</StatValue>
                   <StatLabel>{t("goals.current", { unit })}</StatLabel>
                 </Stat>
                 <Stat>
-                  <StatValue>{formatValue(goal.targetValue, goal.goalType)}</StatValue>
+                  <StatValue>{formatValue(goal.targetValue, goal.goalType, unitsCtx)}</StatValue>
                   <StatLabel>{t("goals.targetWith", { unit })}</StatLabel>
                 </Stat>
                 <Stat>
@@ -365,7 +373,7 @@ const GoalDetails = () => {
                     <StatLabel>{t("goals.activityTypeLabel")}</StatLabel>
                   </Stat>
                   <Stat>
-                    <StatValue>{formatValue(goal.remainingValue, goal.goalType)}</StatValue>
+                    <StatValue>{formatValue(goal.remainingValue, goal.goalType, unitsCtx)}</StatValue>
                     <StatLabel>{t("goals.remaining", { unit })}</StatLabel>
                   </Stat>
                 </StatsRow>
@@ -422,7 +430,7 @@ const GoalDetails = () => {
                     value={form.targetValue}
                     onChange={(e) => setForm((f) => ({ ...f, targetValue: e.target.value }))}
                   />
-                  <UnitHint>{goalTypeUnitKeys[form.goalType] ? t(`goals.units.${goalTypeUnitKeys[form.goalType]}`) : ""}</UnitHint>
+                  <UnitHint>{form.goalType === "DISTANCE" ? unitsCtx.distanceUnit : form.goalType === "ELEVATION" ? unitsCtx.elevationUnit : goalTypeUnitKeys[form.goalType] ? t(`goals.units.${goalTypeUnitKeys[form.goalType]}`) : ""}</UnitHint>
                 </FormGroup>
               </FormSection>
 

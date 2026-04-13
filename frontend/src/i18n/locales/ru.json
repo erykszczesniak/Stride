@@ -226,7 +226,7 @@
       "calories": "Калории",
       "duration": "Длительность",
       "avgPace": "Ср. темп",
-      "avgSpeed": "Ср. скорость (км/ч)",
+      "avgSpeed": "Ср. скорость",
       "avgHr": "Ср. ЧСС (уд/мин)",
       "distanceKm": "Дистанция (км)",
       "elevationM": "Набор высоты (м)"
@@ -329,6 +329,7 @@
     },
     "allTimeStats": "Статистика за всё время",
     "totalKm": "Всего км",
+    "totalDistance": "Всего",
     "hoursActive": "Часы активности",
     "mElevation": "м набора высоты",
     "monthlyProgress": "Месячный прогресс",

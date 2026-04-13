@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { FiSettings, FiShare2, FiCheck } from "react-icons/fi";
 import ActivityService from "../api/ActivityService";
 import UserService from "../api/UserService";
+import { useUnits } from "../context/UnitsContext";
 import Layout from "../components/Layout/Layout";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
 import PersonalRecords from "../components/PersonalRecords/PersonalRecords";
@@ -86,6 +87,7 @@ const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
+  const unitsCtx = useUnits();
 
   const allAchievements = useMemo(
     () =>
@@ -408,8 +410,8 @@ const Profile = () => {
                 <StatsGrid>
                   <StatCard color="#fc5200">
                     <StatIcon>{"\u{1F3C3}"}</StatIcon>
-                    <StatValue>{totals.distance.toFixed(0)}</StatValue>
-                    <StatLabel>{t("profile.totalKm")}</StatLabel>
+                    <StatValue>{unitsCtx.convertDistance(totals.distance).toFixed(0)}</StatValue>
+                    <StatLabel>{t("profile.totalDistance")} ({unitsCtx.distanceUnit})</StatLabel>
                   </StatCard>
                   <StatCard color="#0095ff">
                     <StatIcon>{"\u{1F4C5}"}</StatIcon>
@@ -418,8 +420,8 @@ const Profile = () => {
                   </StatCard>
                   <StatCard color="#4caf50">
                     <StatIcon>{"\u{26F0}\uFE0F"}</StatIcon>
-                    <StatValue>{totals.elevation.toLocaleString()}</StatValue>
-                    <StatLabel>{t("profile.mElevation")}</StatLabel>
+                    <StatValue>{Math.round(unitsCtx.convertElevation(totals.elevation)).toLocaleString()}</StatValue>
+                    <StatLabel>{unitsCtx.elevationUnit} {t("activities.stats.elevation")}</StatLabel>
                   </StatCard>
                   <StatCard color="#9c27b0">
                     <StatIcon>{"\u26A1"}</StatIcon>

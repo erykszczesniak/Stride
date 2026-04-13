@@ -35,6 +35,7 @@ import {
 import ShareModal from "../ShareModal/ShareModal";
 import ActivityMap from "../ActivityMap/ActivityMap";
 import { formatDuration, formatDistance, getTimeAgo } from "../../utils/formatters";
+import { useUnits } from "../../context/UnitsContext";
 
 const activityIcons = {
   RUN: <FaRunning />,
@@ -57,6 +58,7 @@ const activityColors = {
 const ActivityCard = ({ activity, onLike }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const unitsCtx = useUnits();
   const [showShareModal, setShowShareModal] = useState(false);
   const colors = activityColors[activity.activityType] || activityColors.RUN;
   const icon = activityIcons[activity.activityType] || activityIcons.RUN;
@@ -138,7 +140,7 @@ const ActivityCard = ({ activity, onLike }) => {
             </StatIcon>
             <StatContent>
               <StatLabel>{t("activities.stats.distance")}</StatLabel>
-              <StatValue>{formatDistance(activity.distance || 0)}</StatValue>
+              <StatValue>{formatDistance(activity.distance || 0, unitsCtx)}</StatValue>
             </StatContent>
           </StatItem>
           <StatItem>
@@ -157,7 +159,7 @@ const ActivityCard = ({ activity, onLike }) => {
               </StatIcon>
               <StatContent>
                 <StatLabel>{t("activities.stats.elevation")}</StatLabel>
-                <StatValue>{activity.elevationGain}m</StatValue>
+                <StatValue>{Math.round(unitsCtx.convertElevation(activity.elevationGain))}{unitsCtx.elevationUnit}</StatValue>
               </StatContent>
             </StatItem>
           )}

@@ -226,7 +226,7 @@
       "calories": "Kalorie",
       "duration": "Czas trwania",
       "avgPace": "Śr. tempo",
-      "avgSpeed": "Śr. prędkość (km/h)",
+      "avgSpeed": "Śr. prędkość",
       "avgHr": "Śr. tętno (bpm)",
       "distanceKm": "Dystans (km)",
       "elevationM": "Przewyższenie (m)"
@@ -329,6 +329,7 @@
     },
     "allTimeStats": "Statystyki łącznie",
     "totalKm": "Łącznie km",
+    "totalDistance": "Łącznie",
     "hoursActive": "Godziny aktywne",
     "mElevation": "m przewyższenia",
     "monthlyProgress": "Postęp miesięczny",

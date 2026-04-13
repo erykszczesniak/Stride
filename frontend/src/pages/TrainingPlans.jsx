@@ -5,6 +5,7 @@ import Layout from "../components/Layout/Layout";
 import AiService from "../api/AiService";
 import TrainingPlanService from "../api/TrainingPlanService";
 import { useToast } from "../context/ToastContext";
+import { useUnits } from "../context/UnitsContext";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -127,6 +128,7 @@ const parseAiResponse = (data) => {
 const TrainingPlans = () => {
   const { t } = useTranslation();
   const toast = useToast();
+  const unitsCtx = useUnits();
   const [activeTab, setActiveTab] = useState("ready-made");
   const [generating, setGenerating] = useState(false);
 
@@ -216,12 +218,12 @@ const TrainingPlans = () => {
 
     (generatedPlan.weeks || []).forEach((week) => {
       content += `${"─".repeat(50)}\n`;
-      content += `WEEK ${week.week} - Total: ${week.totalDistance} km\n`;
+      content += `WEEK ${week.week} - Total: ${unitsCtx.convertDistance(week.totalDistance).toFixed(1)} ${unitsCtx.distanceUnit}\n`;
       content += `${week.description}\n\n`;
 
       (week.workouts || []).forEach((workout) => {
         content += `  ${workout.day}: ${workout.type.toUpperCase()}\n`;
-        content += `    Distance: ${workout.distance} km | Duration: ${workout.duration} min\n`;
+        content += `    Distance: ${unitsCtx.convertDistance(workout.distance).toFixed(1)} ${unitsCtx.distanceUnit} | Duration: ${workout.duration} min\n`;
         content += `    ${workout.description}\n\n`;
       });
     });
@@ -245,17 +247,17 @@ const TrainingPlans = () => {
       ["Training Plan"],
       [generatedPlan.description],
       [],
-      ["Week", "Total Distance (km)", "Description"]
+      ["Week", `Total Distance (${unitsCtx.distanceUnit})`, "Description"]
     ];
     (generatedPlan.weeks || []).forEach((week) => {
-      summaryData.push([`Week ${week.week}`, week.totalDistance, week.description]);
+      summaryData.push([`Week ${week.week}`, unitsCtx.convertDistance(week.totalDistance).toFixed(1), week.description]);
     });
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
 
     // Workouts sheet
     const workoutsData = [
-      ["Week", "Day", "Type", "Distance (km)", "Duration (min)", "Description"]
+      ["Week", "Day", "Type", `Distance (${unitsCtx.distanceUnit})`, "Duration (min)", "Description"]
     ];
     (generatedPlan.weeks || []).forEach((week) => {
       (week.workouts || []).forEach((workout) => {
@@ -263,7 +265,7 @@ const TrainingPlans = () => {
           week.week,
           workout.day,
           workout.type,
-          workout.distance,
+          unitsCtx.convertDistance(workout.distance).toFixed(1),
           workout.duration,
           workout.description
         ]);
@@ -303,7 +305,7 @@ const TrainingPlans = () => {
       // Week header
       doc.setFontSize(14);
       doc.setTextColor(124, 31, 162);
-      doc.text(`Week ${week.week} - ${week.totalDistance} km`, 14, yPos);
+      doc.text(`Week ${week.week} - ${unitsCtx.convertDistance(week.totalDistance).toFixed(1)} ${unitsCtx.distanceUnit}`, 14, yPos);
       yPos += 6;
 
       doc.setFontSize(10);
@@ -315,7 +317,7 @@ const TrainingPlans = () => {
       const tableData = (week.workouts || []).map((w) => [
         w.day,
         w.type,
-        `${w.distance} km`,
+        `${unitsCtx.convertDistance(w.distance).toFixed(1)} ${unitsCtx.distanceUnit}`,
         `${w.duration} min`,
         w.description
       ]);
@@ -771,7 +773,7 @@ const TrainingPlans = () => {
             <WeekSection key={week.week}>
               <WeekHeader>
                 <WeekTitle>{t("training.plan.week", { number: week.week })}</WeekTitle>
-                <WeekDistance>{week.totalDistance} km</WeekDistance>
+                <WeekDistance>{unitsCtx.convertDistance(week.totalDistance).toFixed(1)} {unitsCtx.distanceUnit}</WeekDistance>
               </WeekHeader>
               <WeekSubtitle>{week.description}</WeekSubtitle>
 
@@ -786,7 +788,7 @@ const TrainingPlans = () => {
                           {workout.type}
                         </WorkoutType>
                         <WorkoutStats>
-                          {workout.distance} km • {workout.duration} min
+                          {unitsCtx.convertDistance(workout.distance).toFixed(1)} {unitsCtx.distanceUnit} • {workout.duration} min
                         </WorkoutStats>
                       </WorkoutHeader>
                       <WorkoutDescription>{workout.description}</WorkoutDescription>

@@ -24,6 +24,7 @@ import {
 } from "./DashboardStyles";
 import { SkeletonActivityCard, SkeletonStatsCard } from "../components/Skeleton/Skeleton";
 import { formatDuration } from "../utils/formatters";
+import { useUnits } from "../context/UnitsContext";
 import {
   PageHeader,
   PageTitle,
@@ -68,6 +69,7 @@ import {
 
 const Activities = () => {
   const { t } = useTranslation();
+  const unitsCtx = useUnits();
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [mainTab, setMainTab] = useState("all"); // all, following, my
@@ -325,8 +327,8 @@ const Activities = () => {
               <FiMapPin size={24} />
             </StatIconWrapper>
             <StatContent>
-              <StatValue>{stats.totalDistanceKm?.toFixed(1) || 0}</StatValue>
-              <StatLabel>{t("activities.stats.totalKm")}</StatLabel>
+              <StatValue>{unitsCtx.convertDistance(stats.totalDistanceKm)?.toFixed(1) || 0}</StatValue>
+              <StatLabel>{t("activities.stats.distance")} ({unitsCtx.distanceUnit})</StatLabel>
             </StatContent>
           </StatCard>
           <StatCard>
@@ -418,9 +420,10 @@ const Activities = () => {
                 <ProgressHeader>
                   <ProgressLabel>{t("activities.sidebar.yourProgress")}</ProgressLabel>
                   <ProgressValue>
-                    {activeChallenge.userProgress?.toFixed(1) || 0} /{" "}
-                    {activeChallenge.targetValue}{" "}
-                    {activeChallenge.challengeType === "ELEVATION" ? t("common.meters") : t("common.kilometers")}
+                    {activeChallenge.challengeType === "ELEVATION"
+                      ? `${Math.round(unitsCtx.convertElevation(activeChallenge.userProgress || 0))} / ${Math.round(unitsCtx.convertElevation(activeChallenge.targetValue))} ${unitsCtx.elevationUnit}`
+                      : `${unitsCtx.convertDistance(activeChallenge.userProgress || 0).toFixed(1)} / ${unitsCtx.convertDistance(activeChallenge.targetValue).toFixed(1)} ${unitsCtx.distanceUnit}`
+                    }
                   </ProgressValue>
                 </ProgressHeader>
                 <ProgressBar>

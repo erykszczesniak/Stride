@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
+import UnitsContext from "../../context/UnitsContext";
 import {
   BarChart,
   Bar,
@@ -22,7 +23,12 @@ import {
 } from "./WeeklyChartStyles";
 
 const CustomTooltip = ({ active, payload, label }) => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const unitsCtx = useContext(UnitsContext);
   if (active && payload && payload.length) {
+    const distanceVal = payload[0]?.value || 0;
+    const displayDist = unitsCtx ? unitsCtx.convertDistance(distanceVal) : distanceVal;
+    const distUnit = unitsCtx ? unitsCtx.distanceUnit : "km";
     return (
       <div style={{
         backgroundColor: "white",
@@ -33,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       }}>
         <p style={{ fontWeight: 600, marginBottom: 8, color: "#1a1a2e", fontSize: 13 }}>{label}</p>
         <p style={{ color: "#fc4c02", fontSize: 14, fontWeight: 600 }}>
-          {payload[0]?.value?.toFixed(2)} km
+          {displayDist.toFixed(2)} {distUnit}
         </p>
         {payload[1] && (
           <p style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
@@ -48,6 +54,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const WeeklyChart = ({ data, trendPercentage }) => {
   const { t } = useTranslation();
+  const unitsCtx = useContext(UnitsContext);
   const defaultData = [
     { dayName: "Mon", distance: 0, duration: 0, activities: 0 },
     { dayName: "Tue", distance: 0, duration: 0, activities: 0 },
@@ -108,7 +115,7 @@ const WeeklyChart = ({ data, trendPercentage }) => {
       <ChartLegend>
         <LegendItem>
           <LegendDot color="#fc4c02" />
-          {t("dashboard.distanceLabel")}
+          {t("activities.stats.distance")} ({unitsCtx ? unitsCtx.distanceUnit : "km"})
         </LegendItem>
       </ChartLegend>
     </ChartContainer>

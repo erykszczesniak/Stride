@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { UnitsProvider } from "./context/UnitsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -32,6 +33,7 @@ const App = () => {
   return (
     <ThemeProvider>
       <ToastProvider>
+        <UnitsProvider>
         <Router>
           <AuthProvider>
             <NotificationProvider>
@@ -227,6 +229,7 @@ const App = () => {
             </NotificationProvider>
           </AuthProvider>
         </Router>
+        </UnitsProvider>
       </ToastProvider>
     </ThemeProvider>
   );

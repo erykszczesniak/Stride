@@ -5,6 +5,7 @@ import { FiCamera, FiX, FiEdit3, FiUploadCloud, FiFileText } from 'react-icons/f
 import Layout from '../components/Layout/Layout';
 import ActivityService from '../api/ActivityService';
 import ImportService from '../api/ImportService';
+import { useUnits } from '../context/UnitsContext';
 import {
   Container,
   Header,
@@ -76,6 +77,7 @@ const RecordActivity = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const unitsCtx = useUnits();
   const isEditMode = Boolean(id);
   const [selectedType, setSelectedType] = useState('RUN');
   const [error, setError] = useState('');
@@ -134,14 +136,17 @@ const RecordActivity = () => {
         setSelectedType(a.activityType || 'RUN');
         setOriginalStartTime(a.startTime);
         const totalSeconds = a.duration || 0;
+        // Convert metric values from backend to display units
+        const displayDistance = a.distance ? unitsCtx.convertDistance(a.distance) : '';
+        const displayElevation = a.elevationGain ? Math.round(unitsCtx.convertElevation(a.elevationGain)) : '';
         setFormData({
           title: a.title || '',
           description: a.description || '',
-          distance: a.distance ? String(a.distance) : '',
+          distance: displayDistance ? String(parseFloat(displayDistance.toFixed(2))) : '',
           durationHours: totalSeconds >= 3600 ? String(Math.floor(totalSeconds / 3600)) : '',
           durationMinutes: totalSeconds > 0 ? String(Math.floor((totalSeconds % 3600) / 60)) : '',
           durationSeconds: totalSeconds > 0 ? String(totalSeconds % 60) : '',
-          elevation: a.elevationGain ? String(a.elevationGain) : '',
+          elevation: displayElevation ? String(displayElevation) : '',
           calories: a.calories ? String(a.calories) : '',
           avgHeartRate: a.averageHeartRate ? String(a.averageHeartRate) : '',
         });
@@ -153,7 +158,8 @@ const RecordActivity = () => {
       }
     };
     fetchActivity();
-  }, [id, isEditMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isEditMode, unitsCtx.isImperial]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -323,7 +329,11 @@ const RecordActivity = () => {
 
       setSaving(true);
 
-      const distanceKm = parseFloat(formData.distance);
+      // Convert input values from display units to metric for backend storage
+      const distanceKm = unitsCtx.convertDistanceToMetric(parseFloat(formData.distance));
+      const elevationM = formData.elevation
+        ? Math.round(unitsCtx.convertElevationToMetric(parseFloat(formData.elevation)))
+        : 0;
 
       // Prepare activity data matching backend ActivityRequest DTO
       // Duration is stored in seconds in the backend
@@ -331,9 +341,9 @@ const RecordActivity = () => {
         title: formData.title,
         description: formData.description || null,
         activityType: selectedType,
-        distance: distanceKm,
+        distance: parseFloat(distanceKm.toFixed(4)),
         duration: totalDurationSeconds,
-        elevationGain: formData.elevation ? parseInt(formData.elevation) : 0,
+        elevationGain: elevationM,
         calories: formData.calories ? parseInt(formData.calories) : 0,
         averageHeartRate: formData.avgHeartRate ? parseInt(formData.avgHeartRate) : null,
         averageSpeed: distanceKm && totalDurationSeconds
@@ -515,7 +525,7 @@ const RecordActivity = () => {
         <SectionTitle>{t('activities.record.activityStats')}</SectionTitle>
         <StatsGrid>
           <div>
-            <StatLabel>📍 {t('activities.record.distance')}</StatLabel>
+            <StatLabel>📍 {t('activities.stats.distance')} ({unitsCtx.distanceUnit})</StatLabel>
             <StatInput
               type="number"
               name="distance"
@@ -564,7 +574,7 @@ const RecordActivity = () => {
           </div>
 
           <div>
-            <StatLabel>⛰️ {t('activities.record.elevation')}</StatLabel>
+            <StatLabel>⛰️ {t('activities.stats.elevation')} ({unitsCtx.elevationUnit})</StatLabel>
             <StatInput
               type="number"
               name="elevation"

@@ -20,6 +20,7 @@ import CommentService from "../api/CommentService";
 import ActivityMap from "../components/ActivityMap/ActivityMap";
 import ShareModal from "../components/ShareModal/ShareModal";
 import { useAuth } from "../context/AuthContext";
+import { useUnits } from "../context/UnitsContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import { formatDuration, getTimeAgo, getInitials, isPaceActivity, formatPace } from "../utils/formatters";
 import i18n from "../i18n";
@@ -77,6 +78,7 @@ const ActivityDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const unitsCtx = useUnits();
   const [loading, setLoading] = useState(true);
   const [activity, setActivity] = useState(null);
   const [comments, setComments] = useState([]);
@@ -319,16 +321,16 @@ const ActivityDetails = () => {
 
         <StatsGrid>
           <StatItem>
-            <StatValue>{activity.distance?.toFixed(2) || 0}</StatValue>
-            <StatLabel>{t("activities.stats.distanceKm")}</StatLabel>
+            <StatValue>{unitsCtx.convertDistance(activity.distance)?.toFixed(2) || 0}</StatValue>
+            <StatLabel>{t("activities.stats.distance")} ({unitsCtx.distanceUnit})</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>{formatDuration(activity.duration)}</StatValue>
             <StatLabel>{t("activities.stats.duration")}</StatLabel>
           </StatItem>
           <StatItem>
-            <StatValue>{activity.elevationGain || 0}</StatValue>
-            <StatLabel>{t("activities.stats.elevationM")}</StatLabel>
+            <StatValue>{Math.round(unitsCtx.convertElevation(activity.elevationGain)) || 0}</StatValue>
+            <StatLabel>{t("activities.stats.elevation")} ({unitsCtx.elevationUnit})</StatLabel>
           </StatItem>
           <StatItem>
             <StatValue>{activity.calories || 0}</StatValue>
@@ -337,12 +339,12 @@ const ActivityDetails = () => {
           <StatItem>
             {isPaceActivity(activity.activityType) ? (
               <>
-                <StatValue>{formatPace(activity.distance, activity.duration)}</StatValue>
+                <StatValue>{formatPace(activity.distance, activity.duration, unitsCtx, activity.activityType)}</StatValue>
                 <StatLabel>{t("activities.stats.avgPace")}</StatLabel>
               </>
             ) : (
               <>
-                <StatValue>{activity.averageSpeed?.toFixed(1) || 0}</StatValue>
+                <StatValue>{unitsCtx.formatSpeed(activity.averageSpeed, activity.activityType)}</StatValue>
                 <StatLabel>{t("activities.stats.avgSpeed")}</StatLabel>
               </>
             )}

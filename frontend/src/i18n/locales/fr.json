@@ -218,7 +218,7 @@
       "calories": "Calories",
       "duration": "Durée",
       "avgPace": "Allure moy.",
-      "avgSpeed": "Vit. moy. (km/h)",
+      "avgSpeed": "Vit. moy.",
       "avgHr": "FC moy. (bpm)",
       "distanceKm": "Distance (km)",
       "elevationM": "Dénivelé (m)"
@@ -321,6 +321,7 @@
     },
     "allTimeStats": "Statistiques de tous les temps",
     "totalKm": "Total km",
+    "totalDistance": "Total",
     "hoursActive": "Heures actives",
     "mElevation": "m de dénivelé",
     "monthlyProgress": "Progression mensuelle",

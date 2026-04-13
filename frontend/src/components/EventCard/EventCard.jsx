@@ -1,6 +1,7 @@
 import React from "react";
 import { FiMapPin, FiUsers, FiClock } from "react-icons/fi";
 import i18n from "../../i18n";
+import { useUnits } from "../../context/UnitsContext";
 import {
   Card,
   DateBox,
@@ -26,6 +27,7 @@ const formatMonthAbbr = (date) => {
 };
 
 const EventCard = ({ event, compact = false }) => {
+  const unitsCtx = useUnits();
   const eventDate = new Date(event.eventDate);
   const month = formatMonthAbbr(eventDate);
   const day = eventDate.getDate();
@@ -40,7 +42,7 @@ const EventCard = ({ event, compact = false }) => {
         <EventName>{event.name}</EventName>
         {compact ? (
           <EventLocation>
-            {event.distance && `${event.distance} km • `}{event.city || event.location}
+            {event.distance && `${unitsCtx.convertDistance(event.distance).toFixed(1)} ${unitsCtx.distanceUnit} • `}{event.city || event.location}
           </EventLocation>
         ) : (
           <>

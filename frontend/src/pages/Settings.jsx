@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar/Navbar";
 import SettingsService from "../api/SettingsService";
 import { useToast } from "../context/ToastContext";
 import { useTheme } from "../context/ThemeContext";
+import { useUnits } from "../context/UnitsContext";
 import i18n, { SUPPORTED_LANGUAGES } from "../i18n";
 import {
   SettingsContainer,
@@ -64,6 +65,7 @@ const Settings = () => {
   const { t } = useTranslation();
   const toast = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
+  const { updateUnits } = useUnits();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
@@ -164,9 +166,17 @@ const Settings = () => {
   };
 
   const handlePreferenceChange = (key, value) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
+    setPreferences(prev => {
+      const updated = { ...prev, [key]: value };
+      // Persist to localStorage immediately so all components react
+      SettingsService.savePreferences(updated);
+      return updated;
+    });
     if (key === "language") {
       i18n.changeLanguage(value);
+    }
+    if (key === "units") {
+      updateUnits(value);
     }
   };
 

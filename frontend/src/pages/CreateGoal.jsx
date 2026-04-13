@@ -5,6 +5,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import { FaRunning, FaBicycle, FaSwimmer, FaHiking, FaWalking, FaDumbbell } from "react-icons/fa";
 import Layout from "../components/Layout/Layout";
 import GoalService from "../api/GoalService";
+import { useUnits } from "../context/UnitsContext";
 import {
   CreateGoalContainer,
   BackLink,
@@ -28,12 +29,13 @@ import {
 const CreateGoal = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const unitsCtx = useUnits();
 
   const goalTypes = [
-    { value: "DISTANCE", label: t("goals.types.DISTANCE"), unit: t("goals.units.km"), icon: "📏" },
+    { value: "DISTANCE", label: t("goals.types.DISTANCE"), unit: unitsCtx.distanceUnit, icon: "📏" },
     { value: "TIME", label: t("goals.types.TIME"), unit: t("goals.units.hours"), icon: "⏱️" },
     { value: "ACTIVITIES", label: t("goals.types.ACTIVITIES"), unit: t("goals.units.activities"), icon: "🔢" },
-    { value: "ELEVATION", label: t("goals.types.ELEVATION"), unit: t("goals.units.m"), icon: "⛰️" },
+    { value: "ELEVATION", label: t("goals.types.ELEVATION"), unit: unitsCtx.elevationUnit, icon: "⛰️" },
   ];
 
   const periods = [

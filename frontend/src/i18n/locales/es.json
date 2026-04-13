@@ -218,7 +218,7 @@
       "calories": "Calorías",
       "duration": "Duración",
       "avgPace": "Ritmo medio",
-      "avgSpeed": "Vel. media (km/h)",
+      "avgSpeed": "Vel. media",
       "avgHr": "FC media (ppm)",
       "distanceKm": "Distancia (km)",
       "elevationM": "Desnivel (m)"
@@ -321,6 +321,7 @@
     },
     "allTimeStats": "Estadísticas de todos los tiempos",
     "totalKm": "Total km",
+    "totalDistance": "Total",
     "hoursActive": "Horas activas",
     "mElevation": "m de desnivel",
     "monthlyProgress": "Progreso mensual",

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FiAward, FiRefreshCw } from "react-icons/fi";
 import PersonalRecordService from "../../api/PersonalRecordService";
+import { useUnits } from "../../context/UnitsContext";
 import i18n from "../../i18n";
 import {
   PRContainer,
@@ -53,6 +54,7 @@ const formatDate = (iso) => {
 
 const PersonalRecords = ({ userId, isOwnProfile = false }) => {
   const { t } = useTranslation();
+  const unitsCtx = useUnits();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
@@ -175,8 +177,11 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
                   <PRTableRow key={pr.id}>
                     <PRDistanceCell>
                       <PRDistanceBadge>
-                        {pr.distance >= 1 ? `${pr.distance.toFixed(pr.distance < 10 ? 1 : 0)}` : pr.distance}
-                        <small> km</small>
+                        {(() => {
+                          const dist = unitsCtx.convertDistance(pr.distance);
+                          return dist >= 1 ? dist.toFixed(dist < 10 ? 1 : 0) : dist.toFixed(2);
+                        })()}
+                        <small> {unitsCtx.distanceUnit}</small>
                       </PRDistanceBadge>
                       <PRDistanceLabel>{pr.distanceDisplayName}</PRDistanceLabel>
                     </PRDistanceCell>
@@ -184,7 +189,11 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
                       <PRTimeValue>{pr.formattedTime}</PRTimeValue>
                     </PRTableCell>
                     <PRTableCell>
-                      <PRPaceValue>{pr.formattedPace || "—"}</PRPaceValue>
+                      <PRPaceValue>
+                        {pr.durationSeconds && pr.distance
+                          ? unitsCtx.formatPaceFromActivity(pr.distance, pr.durationSeconds, sport)
+                          : pr.formattedPace || "\u2014"}
+                      </PRPaceValue>
                     </PRTableCell>
                     <PRTableCell>
                       {pr.improvementSeconds && pr.improvementSeconds > 0 ? (

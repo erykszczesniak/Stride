@@ -21,6 +21,7 @@ import ActivityService from "../api/ActivityService";
 import GoalService from "../api/GoalService";
 import EventService from "../api/EventService";
 import { useAuth } from "../context/AuthContext";
+import { useUnits } from "../context/UnitsContext";
 import { formatDurationValue, formatDurationUnit } from "../utils/formatters";
 import {
   DashboardContainer,
@@ -53,6 +54,7 @@ import {
 const Dashboard = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const unitsCtx = useUnits();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [monthlyStats, setMonthlyStats] = useState(null);
@@ -223,8 +225,8 @@ const Dashboard = () => {
         <StatsCard
           icon={<FiActivity />}
           label={t("dashboard.totalDistance")}
-          value={monthlyStats?.totalDistance?.toFixed(1) || "0"}
-          unit={t("common.kilometers")}
+          value={unitsCtx.convertDistance(monthlyStats?.totalDistance)?.toFixed(1) || "0"}
+          unit={unitsCtx.distanceUnit}
           trend={monthlyStats?.distanceTrendPercentage}
           bgColor="#fff7ed"
           iconColor="#fc4c02"

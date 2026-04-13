@@ -218,7 +218,7 @@
       "calories": "Calories",
       "duration": "Duration",
       "avgPace": "Avg Pace",
-      "avgSpeed": "Avg Speed (km/h)",
+      "avgSpeed": "Avg Speed",
       "avgHr": "Avg HR (bpm)",
       "distanceKm": "Distance (km)",
       "elevationM": "Elevation (m)"
@@ -321,6 +321,7 @@
     },
     "allTimeStats": "All-Time Stats",
     "totalKm": "Total km",
+    "totalDistance": "Total",
     "hoursActive": "Hours Active",
     "mElevation": "m Elevation",
     "monthlyProgress": "Monthly Progress",

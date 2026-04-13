@@ -7,6 +7,7 @@ import autoTable from "jspdf-autotable";
 import Navbar from "../components/Navbar/Navbar";
 import AdminService from "../api/AdminService";
 import { useToast } from "../context/ToastContext";
+import { useUnits } from "../context/UnitsContext";
 import { formatDuration, formatDate, getInitials } from "../utils/formatters";
 import {
   Container,
@@ -61,6 +62,7 @@ import {
 const Admin = () => {
   const { t } = useTranslation();
   const toast = useToast();
+  const unitsCtx = useUnits();
   const [activeTab, setActiveTab] = useState("activities");
   const [stats, setStats] = useState(null);
   const [activities, setActivities] = useState([]);
@@ -173,7 +175,7 @@ const Admin = () => {
         content += `-`.repeat(30) + "\n";
         content += `Title: ${item.title}\n`;
         content += `Type: ${item.activityType}\n`;
-        content += `Distance: ${item.distance?.toFixed(2)} km\n`;
+        content += `Distance: ${unitsCtx.convertDistance(item.distance)?.toFixed(2)} ${unitsCtx.distanceUnit}\n`;
         content += `Duration: ${formatDuration(item.duration)}\n`;
         content += `Calories: ${item.calories || "N/A"}\n`;
         content += `Date: ${formatDate(item.startTime)}\n`;
@@ -249,7 +251,7 @@ const Admin = () => {
       rows = data.map((item) => [
         item.title,
         item.activityType,
-        `${item.distance?.toFixed(2)} km`,
+        `${unitsCtx.convertDistance(item.distance)?.toFixed(2)} ${unitsCtx.distanceUnit}`,
         formatDuration(item.duration),
         formatDate(item.startTime),
         `${item.user?.firstName} ${item.user?.lastName}`,
@@ -333,8 +335,8 @@ const Admin = () => {
             <StatIcon color="#f59e0b">
               <FiMap size={24} />
             </StatIcon>
-            <StatValue>{stats?.totalDistanceKm?.toFixed(0) || 0}</StatValue>
-            <StatLabel>{t("admin.totalDistance")}</StatLabel>
+            <StatValue>{unitsCtx.convertDistance(stats?.totalDistanceKm)?.toFixed(0) || 0}</StatValue>
+            <StatLabel>{t("dashboard.totalDistance")} ({unitsCtx.distanceUnit})</StatLabel>
           </StatCard>
           <StatCard>
             <StatIcon color="#8b5cf6">
@@ -406,7 +408,7 @@ const Admin = () => {
                           <Td>
                             <Badge>{activity.activityType}</Badge>
                           </Td>
-                          <Td>{activity.distance?.toFixed(2)} km</Td>
+                          <Td>{unitsCtx.convertDistance(activity.distance)?.toFixed(2)} {unitsCtx.distanceUnit}</Td>
                           <Td>{formatDuration(activity.duration)}</Td>
                           <Td>{formatDate(activity.startTime)}</Td>
                           <Td>
