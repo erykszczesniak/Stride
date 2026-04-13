@@ -34,6 +34,14 @@ class SettingsService {
     localStorage.setItem("userPreferences", JSON.stringify(preferences));
     return { success: true };
   }
+
+  changePassword(currentPassword, newPassword) {
+    return apiClient.put(`/users/me/password`, { currentPassword, newPassword });
+  }
+
+  deleteAccount() {
+    return apiClient.delete(`/users/me`);
+  }
 }
 
 const settingsService = new SettingsService();

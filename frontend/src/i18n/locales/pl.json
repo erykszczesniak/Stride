@@ -636,7 +636,32 @@
     "account": {
       "title": "Konto",
       "description": "Zarządzaj ustawieniami konta",
-      "email": "E-mail"
+      "email": "E-mail",
+      "changePassword": "Zmień hasło",
+      "currentPassword": "Aktualne hasło",
+      "currentPasswordPlaceholder": "Wprowadź aktualne hasło",
+      "newPassword": "Nowe hasło",
+      "newPasswordPlaceholder": "Min. 8 znaków",
+      "confirmNewPassword": "Potwierdź nowe hasło",
+      "confirmNewPasswordPlaceholder": "Powtórz nowe hasło",
+      "changingPassword": "Zmienianie...",
+      "passwordChanged": "Hasło zostało zmienione!",
+      "passwordChangeFailed": "Nie udało się zmienić hasła. Spróbuj ponownie.",
+      "passwordRequired": "To pole jest wymagane",
+      "passwordMinLength": "Hasło musi mieć co najmniej 8 znaków",
+      "passwordsMismatch": "Hasła nie są zgodne",
+      "privacyTitle": "Ustawienia prywatności",
+      "privateProfile": "Profil prywatny",
+      "privateProfileDesc": "Tylko obserwujący mogą widzieć Twoje aktywności",
+      "hideFromSearch": "Ukryj z wyszukiwania",
+      "hideFromSearchDesc": "Twój profil nie będzie wyświetlany w wynikach wyszukiwania",
+      "dangerZone": "Strefa niebezpieczna",
+      "dangerZoneDesc": "Nieodwracalne i destrukcyjne działania",
+      "deleteAccount": "Usuń konto",
+      "deleteAccountTitle": "Usuń konto",
+      "deleteAccountConfirm": "Czy na pewno chcesz usunąć swoje konto? Tej operacji nie można cofnąć. Wszystkie Twoje aktywności, cele i dane zostaną trwale usunięte.",
+      "deleteMyAccount": "Usuń moje konto",
+      "deleteFailed": "Nie udało się usunąć konta. Spróbuj ponownie."
     }
   },
   "admin": {

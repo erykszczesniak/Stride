@@ -628,7 +628,32 @@
     "account": {
       "title": "Account",
       "description": "Manage your account settings",
-      "email": "Email"
+      "email": "Email",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Min. 8 characters",
+      "confirmNewPassword": "Confirm New Password",
+      "confirmNewPasswordPlaceholder": "Repeat new password",
+      "changingPassword": "Changing...",
+      "passwordChanged": "Password changed successfully!",
+      "passwordChangeFailed": "Failed to change password. Please try again.",
+      "passwordRequired": "This field is required",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordsMismatch": "Passwords do not match",
+      "privacyTitle": "Privacy Settings",
+      "privateProfile": "Private Profile",
+      "privateProfileDesc": "Only followers can see your activities",
+      "hideFromSearch": "Hide from Search",
+      "hideFromSearchDesc": "Your profile won't appear in user search results",
+      "dangerZone": "Danger Zone",
+      "dangerZoneDesc": "Irreversible and destructive actions",
+      "deleteAccount": "Delete Account",
+      "deleteAccountTitle": "Delete Account",
+      "deleteAccountConfirm": "Are you sure you want to delete your account? This action cannot be undone. All your activities, goals, and data will be permanently deleted.",
+      "deleteMyAccount": "Delete My Account",
+      "deleteFailed": "Failed to delete account. Please try again."
     }
   },
   "admin": {

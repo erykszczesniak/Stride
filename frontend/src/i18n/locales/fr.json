@@ -628,7 +628,32 @@
     "account": {
       "title": "Compte",
       "description": "Gérez les paramètres de votre compte",
-      "email": "E-mail"
+      "email": "E-mail",
+      "changePassword": "Changer le mot de passe",
+      "currentPassword": "Mot de passe actuel",
+      "currentPasswordPlaceholder": "Entrez le mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "Min. 8 caractères",
+      "confirmNewPassword": "Confirmer le nouveau mot de passe",
+      "confirmNewPasswordPlaceholder": "Répétez le nouveau mot de passe",
+      "changingPassword": "Modification...",
+      "passwordChanged": "Mot de passe modifié avec succès !",
+      "passwordChangeFailed": "Impossible de changer le mot de passe. Veuillez réessayer.",
+      "passwordRequired": "Ce champ est requis",
+      "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordsMismatch": "Les mots de passe ne correspondent pas",
+      "privacyTitle": "Paramètres de confidentialité",
+      "privateProfile": "Profil privé",
+      "privateProfileDesc": "Seuls les abonnés peuvent voir vos activités",
+      "hideFromSearch": "Masquer de la recherche",
+      "hideFromSearchDesc": "Votre profil n'apparaîtra pas dans les résultats de recherche",
+      "dangerZone": "Zone de danger",
+      "dangerZoneDesc": "Actions irréversibles et destructrices",
+      "deleteAccount": "Supprimer le compte",
+      "deleteAccountTitle": "Supprimer le compte",
+      "deleteAccountConfirm": "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible. Toutes vos activités, objectifs et données seront définitivement supprimés.",
+      "deleteMyAccount": "Supprimer mon compte",
+      "deleteFailed": "Impossible de supprimer le compte. Veuillez réessayer."
     }
   },
   "admin": {

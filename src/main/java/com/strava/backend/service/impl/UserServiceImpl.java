@@ -7,6 +7,7 @@ import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.dto.user.UpdateUserRequest;
 import com.strava.backend.dto.user.UserProfileResponse;
 import com.strava.backend.enums.NotificationType;
+import com.strava.backend.enums.AuthProvider;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.strava.backend.constants.ErrorMessage.USER_NOT_FOUND;
+import static com.strava.backend.constants.ErrorMessage.*;
 
 @Slf4j
 @Service
@@ -37,6 +39,7 @@ public class UserServiceImpl implements UserService {
     private final ActivityRepository activityRepository;
     private final CommonMapper commonMapper;
     private final NotificationService notificationService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -207,5 +210,32 @@ public class UserServiceImpl implements UserService {
                 .recentActivities(recentActivities)
                 .isFollowedByCurrentUser(isFollowed)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (user.getAuthProvider() != AuthProvider.LOCAL) {
+            throw new ApiRequestException(PASSWORD_CHANGE_NOT_ALLOWED, HttpStatus.BAD_REQUEST);
+        }
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new ApiRequestException(INCORRECT_PASSWORD, HttpStatus.BAD_REQUEST);
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        userRepository.delete(user);
     }
 }

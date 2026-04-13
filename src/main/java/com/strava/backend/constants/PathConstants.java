@@ -27,6 +27,7 @@ public final class PathConstants {
     public static final String FOLLOW = "/follow";
     public static final String UNFOLLOW = "/unfollow";
     public static final String SUGGESTED = "/suggested";
+    public static final String PASSWORD = "/password";
 
     // Activities
     public static final String ACTIVITIES = "/activities";

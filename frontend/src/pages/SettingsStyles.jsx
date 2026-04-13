@@ -363,6 +363,152 @@ export const SignOutButton = styled.button`
   }
 `;
 
+export const SectionDivider = styled.div`
+  border-top: 1px solid ${({ theme }) => theme.borderLight};
+  margin: 32px 0;
+`;
+
+export const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0 0 16px 0;
+`;
+
+export const DangerZone = styled.div`
+  border: 1px solid #ef4444;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+`;
+
+export const DangerZoneTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #ef4444;
+  margin: 0 0 8px 0;
+`;
+
+export const DangerZoneDescription = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.textSecondary};
+  margin: 0 0 16px 0;
+`;
+
+export const DangerButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #dc2626;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+export const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+export const ModalContent = styled.div`
+  background: ${({ theme }) => theme.bgCard};
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+`;
+
+export const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0 0 12px 0;
+`;
+
+export const ModalText = styled.p`
+  font-size: 14px;
+  color: ${({ theme }) => theme.textSecondary};
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+`;
+
+export const ModalActions = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+`;
+
+export const ModalCancelButton = styled.button`
+  padding: 10px 20px;
+  background: ${({ theme }) => theme.bgSecondary};
+  color: ${({ theme }) => theme.textPrimary};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.bgHover};
+  }
+`;
+
+export const PasswordFormButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #fc5200;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #e04800;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+export const FormError = styled.p`
+  font-size: 13px;
+  color: #ef4444;
+  margin: 4px 0 0 0;
+`;
+
 export const LoadingSpinner = styled.div`
   display: flex;
   justify-content: center;

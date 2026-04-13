@@ -636,7 +636,32 @@
     "account": {
       "title": "Аккаунт",
       "description": "Управляйте настройками аккаунта",
-      "email": "Электронная почта"
+      "email": "Электронная почта",
+      "changePassword": "Изменить пароль",
+      "currentPassword": "Текущий пароль",
+      "currentPasswordPlaceholder": "Введите текущий пароль",
+      "newPassword": "Новый пароль",
+      "newPasswordPlaceholder": "Мин. 8 символов",
+      "confirmNewPassword": "Подтвердите новый пароль",
+      "confirmNewPasswordPlaceholder": "Повторите новый пароль",
+      "changingPassword": "Изменение...",
+      "passwordChanged": "Пароль успешно изменён!",
+      "passwordChangeFailed": "Не удалось изменить пароль. Попробуйте ещё раз.",
+      "passwordRequired": "Это поле обязательно",
+      "passwordMinLength": "Пароль должен содержать не менее 8 символов",
+      "passwordsMismatch": "Пароли не совпадают",
+      "privacyTitle": "Настройки конфиденциальности",
+      "privateProfile": "Приватный профиль",
+      "privateProfileDesc": "Только подписчики могут видеть ваши активности",
+      "hideFromSearch": "Скрыть из поиска",
+      "hideFromSearchDesc": "Ваш профиль не будет отображаться в результатах поиска",
+      "dangerZone": "Опасная зона",
+      "dangerZoneDesc": "Необратимые и деструктивные действия",
+      "deleteAccount": "Удалить аккаунт",
+      "deleteAccountTitle": "Удалить аккаунт",
+      "deleteAccountConfirm": "Вы уверены, что хотите удалить свой аккаунт? Это действие невозможно отменить. Все ваши активности, цели и данные будут безвозвратно удалены.",
+      "deleteMyAccount": "Удалить мой аккаунт",
+      "deleteFailed": "Не удалось удалить аккаунт. Попробуйте ещё раз."
     }
   },
   "admin": {

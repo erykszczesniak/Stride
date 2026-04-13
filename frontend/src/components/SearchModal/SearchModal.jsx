@@ -52,6 +52,17 @@ const SearchModal = ({ isOpen, onClose }) => {
     const pages = t("search.categories.pages");
     const settings = t("search.categories.settings");
     return [
+      // Settings
+      { id: "dark-mode", label: t("search.items.darkMode"), category: settings, icon: FiSun, path: "/settings", settingsSection: "preferences" },
+      { id: "email-notifications", label: t("search.items.emailNotifications"), category: settings, icon: FiMail, path: "/settings", settingsSection: "notifications" },
+      { id: "push-notifications", label: t("search.items.pushNotifications"), category: settings, icon: FiBell, path: "/settings", settingsSection: "notifications" },
+      { id: "weekly-summary", label: t("search.items.weeklySummary"), category: settings, icon: FiFileText, path: "/settings", settingsSection: "notifications" },
+      { id: "change-password", label: t("search.items.changePassword"), category: settings, icon: FiLock, path: "/settings", settingsSection: "account" },
+      { id: "delete-account", label: t("search.items.deleteAccount"), category: settings, icon: FiTrash2, path: "/settings", settingsSection: "account" },
+      { id: "privacy-settings", label: t("search.items.privacySettings"), category: settings, icon: FiShield, path: "/settings", settingsSection: "preferences" },
+      { id: "language", label: t("search.items.language"), category: settings, icon: FiGlobe, path: "/settings", settingsSection: "preferences" },
+      { id: "units", label: t("search.items.units"), category: settings, icon: FiSliders, path: "/settings", settingsSection: "preferences" },
+
       // Pages
       { id: "dashboard", label: t("search.items.dashboard"), category: pages, icon: FiHome, path: "/" },
       { id: "activities", label: t("search.items.activities"), category: pages, icon: FiActivity, path: "/activities" },
@@ -63,17 +74,6 @@ const SearchModal = ({ isOpen, onClose }) => {
       { id: "events", label: t("search.items.events"), category: pages, icon: FiCalendar, path: "/events" },
       { id: "settings", label: t("search.items.settings"), category: pages, icon: FiSettings, path: "/settings" },
       { id: "record-activity", label: t("search.items.recordActivity"), category: pages, icon: FiPlus, path: "/activities/new" },
-
-      // Settings
-      { id: "dark-mode", label: t("search.items.darkMode"), category: settings, icon: FiSun, path: "/settings", settingsSection: "preferences" },
-      { id: "email-notifications", label: t("search.items.emailNotifications"), category: settings, icon: FiMail, path: "/settings", settingsSection: "notifications" },
-      { id: "push-notifications", label: t("search.items.pushNotifications"), category: settings, icon: FiBell, path: "/settings", settingsSection: "notifications" },
-      { id: "weekly-summary", label: t("search.items.weeklySummary"), category: settings, icon: FiFileText, path: "/settings", settingsSection: "notifications" },
-      { id: "change-password", label: t("search.items.changePassword"), category: settings, icon: FiLock, path: "/settings", settingsSection: "account" },
-      { id: "delete-account", label: t("search.items.deleteAccount"), category: settings, icon: FiTrash2, path: "/settings", settingsSection: "account" },
-      { id: "privacy-settings", label: t("search.items.privacySettings"), category: settings, icon: FiShield, path: "/settings", settingsSection: "preferences" },
-      { id: "language", label: t("search.items.language"), category: settings, icon: FiGlobe, path: "/settings", settingsSection: "preferences" },
-      { id: "units", label: t("search.items.units"), category: settings, icon: FiSliders, path: "/settings", settingsSection: "preferences" },
     ];
   }, [t]);
 

@@ -105,4 +105,21 @@ public class UserController extends BaseController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(suggested);
     }
+
+    @PutMapping(ME + PASSWORD)
+    public ResponseEntity<Map<String, String>> changePassword(
+            @RequestBody Map<String, String> request) {
+        Long currentUserId = getAuthenticatedUserId();
+        String currentPassword = request.get("currentPassword");
+        String newPassword = request.get("newPassword");
+        userService.changePassword(currentUserId, currentPassword, newPassword);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+    }
+
+    @DeleteMapping(ME)
+    public ResponseEntity<Map<String, String>> deleteAccount() {
+        Long currentUserId = getAuthenticatedUserId();
+        userService.deleteAccount(currentUserId);
+        return ResponseEntity.ok(Map.of("message", "Account deleted successfully"));
+    }
 }

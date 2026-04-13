@@ -10,6 +10,8 @@ public final class ErrorMessage {
     public static final String PASSWORDS_DO_NOT_MATCH = "Passwords do not match";
     public static final String INVALID_PASSWORD_CODE = "Invalid password reset code";
     public static final String PASSWORD_CODE_EXPIRED = "Password reset code has expired";
+    public static final String INCORRECT_PASSWORD = "Current password is incorrect";
+    public static final String PASSWORD_CHANGE_NOT_ALLOWED = "Password change is not available for accounts using Google sign-in";
 
     // Validation errors
     public static final String EMPTY_FIRST_NAME = "First name cannot be empty";

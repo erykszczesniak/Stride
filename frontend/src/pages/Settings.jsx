@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun } from "react-icons/fi";
+import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun, FiTrash2 } from "react-icons/fi";
 import Navbar from "../components/Navbar/Navbar";
 import SettingsService from "../api/SettingsService";
 import { useToast } from "../context/ToastContext";
@@ -42,6 +42,20 @@ import {
   AccountEmailValue,
   SignOutButton,
   LoadingSpinner,
+  SectionDivider,
+  SectionTitle,
+  DangerZone,
+  DangerZoneTitle,
+  DangerZoneDescription,
+  DangerButton,
+  ModalOverlay,
+  ModalContent,
+  ModalTitle,
+  ModalText,
+  ModalActions,
+  ModalCancelButton,
+  PasswordFormButton,
+  FormError,
 } from "./SettingsStyles";
 
 const VALID_SECTIONS = ["profile", "notifications", "preferences", "account"];
@@ -73,6 +87,19 @@ const Settings = () => {
     paceDisplay: "pace",
     language: i18n.language || "en",
     darkMode: false,
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [privacySettings, setPrivacySettings] = useState({
+    privateProfile: false,
+    hideFromSearch: false,
   });
 
   useEffect(() => {
@@ -124,6 +151,13 @@ const Settings = () => {
     setPreferences((prev) => ({ ...prev, ...prefs }));
   };
 
+  useEffect(() => {
+    const stored = localStorage.getItem("privacySettings");
+    if (stored) {
+      setPrivacySettings(JSON.parse(stored));
+    }
+  }, []);
+
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -166,6 +200,73 @@ const Settings = () => {
       toast.error(t("settings.saveFailed"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({ ...prev, [name]: value }));
+    setPasswordErrors(prev => ({ ...prev, [name]: "" }));
+  };
+
+  const validatePasswordForm = useCallback(() => {
+    const errors = {};
+    if (!passwordData.currentPassword) {
+      errors.currentPassword = t("settings.account.passwordRequired");
+    }
+    if (!passwordData.newPassword) {
+      errors.newPassword = t("settings.account.passwordRequired");
+    } else if (passwordData.newPassword.length < 8) {
+      errors.newPassword = t("settings.account.passwordMinLength");
+    }
+    if (!passwordData.confirmPassword) {
+      errors.confirmPassword = t("settings.account.passwordRequired");
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = t("settings.account.passwordsMismatch");
+    }
+    return errors;
+  }, [passwordData, t]);
+
+  const handleChangePassword = async () => {
+    const errors = validatePasswordForm();
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await SettingsService.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      toast.success(t("settings.account.passwordChanged"));
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordErrors({});
+    } catch (error) {
+      const message = error.response?.data?.message || t("settings.account.passwordChangeFailed");
+      toast.error(message);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handlePrivacyChange = (key, value) => {
+    const updated = { ...privacySettings, [key]: value };
+    setPrivacySettings(updated);
+    localStorage.setItem("privacySettings", JSON.stringify(updated));
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      await SettingsService.deleteAccount();
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userPreferences");
+      localStorage.removeItem("privacySettings");
+      window.location.href = "/login";
+    } catch (error) {
+      toast.error(t("settings.account.deleteFailed"));
+      setShowDeleteModal(false);
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -467,10 +568,112 @@ const Settings = () => {
                     <AccountEmailValue>{user?.email}</AccountEmailValue>
                   </AccountEmail>
 
+                  <SectionDivider />
+
+                  <SectionTitle>{t("settings.account.changePassword")}</SectionTitle>
+                  <FormGroup>
+                    <FormLabel>{t("settings.account.currentPassword")}</FormLabel>
+                    <FormInput
+                      type="password"
+                      name="currentPassword"
+                      placeholder={t("settings.account.currentPasswordPlaceholder")}
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                    />
+                    {passwordErrors.currentPassword && <FormError>{passwordErrors.currentPassword}</FormError>}
+                  </FormGroup>
+                  <FormGroup>
+                    <FormLabel>{t("settings.account.newPassword")}</FormLabel>
+                    <FormInput
+                      type="password"
+                      name="newPassword"
+                      placeholder={t("settings.account.newPasswordPlaceholder")}
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                    />
+                    {passwordErrors.newPassword && <FormError>{passwordErrors.newPassword}</FormError>}
+                  </FormGroup>
+                  <FormGroup>
+                    <FormLabel>{t("settings.account.confirmNewPassword")}</FormLabel>
+                    <FormInput
+                      type="password"
+                      name="confirmPassword"
+                      placeholder={t("settings.account.confirmNewPasswordPlaceholder")}
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                    />
+                    {passwordErrors.confirmPassword && <FormError>{passwordErrors.confirmPassword}</FormError>}
+                  </FormGroup>
+                  <PasswordFormButton onClick={handleChangePassword} disabled={changingPassword}>
+                    <FiLock size={16} />
+                    {changingPassword ? t("settings.account.changingPassword") : t("settings.account.changePassword")}
+                  </PasswordFormButton>
+
+                  <SectionDivider />
+
+                  <SectionTitle>{t("settings.account.privacyTitle")}</SectionTitle>
+                  <ToggleItem>
+                    <ToggleInfo>
+                      <ToggleTitle>{t("settings.account.privateProfile")}</ToggleTitle>
+                      <ToggleDescription>{t("settings.account.privateProfileDesc")}</ToggleDescription>
+                    </ToggleInfo>
+                    <Toggle>
+                      <input
+                        type="checkbox"
+                        checked={privacySettings.privateProfile}
+                        onChange={(e) => handlePrivacyChange("privateProfile", e.target.checked)}
+                      />
+                      <span></span>
+                    </Toggle>
+                  </ToggleItem>
+                  <ToggleItem>
+                    <ToggleInfo>
+                      <ToggleTitle>{t("settings.account.hideFromSearch")}</ToggleTitle>
+                      <ToggleDescription>{t("settings.account.hideFromSearchDesc")}</ToggleDescription>
+                    </ToggleInfo>
+                    <Toggle>
+                      <input
+                        type="checkbox"
+                        checked={privacySettings.hideFromSearch}
+                        onChange={(e) => handlePrivacyChange("hideFromSearch", e.target.checked)}
+                      />
+                      <span></span>
+                    </Toggle>
+                  </ToggleItem>
+
+                  <SectionDivider />
+
+                  <DangerZone>
+                    <DangerZoneTitle>{t("settings.account.dangerZone")}</DangerZoneTitle>
+                    <DangerZoneDescription>{t("settings.account.dangerZoneDesc")}</DangerZoneDescription>
+                    <DangerButton onClick={() => setShowDeleteModal(true)}>
+                      <FiTrash2 size={16} />
+                      {t("settings.account.deleteAccount")}
+                    </DangerButton>
+                  </DangerZone>
+
                   <SignOutButton onClick={handleSignOut}>
                     <FiLogOut size={18} />
                     {t("nav.signOut")}
                   </SignOutButton>
+
+                  {showDeleteModal && (
+                    <ModalOverlay onClick={() => setShowDeleteModal(false)}>
+                      <ModalContent onClick={(e) => e.stopPropagation()}>
+                        <ModalTitle>{t("settings.account.deleteAccountTitle")}</ModalTitle>
+                        <ModalText>{t("settings.account.deleteAccountConfirm")}</ModalText>
+                        <ModalActions>
+                          <ModalCancelButton onClick={() => setShowDeleteModal(false)}>
+                            {t("common.cancel")}
+                          </ModalCancelButton>
+                          <DangerButton onClick={handleDeleteAccount} disabled={deletingAccount}>
+                            <FiTrash2 size={16} />
+                            {deletingAccount ? t("common.deleting") : t("settings.account.deleteMyAccount")}
+                          </DangerButton>
+                        </ModalActions>
+                      </ModalContent>
+                    </ModalOverlay>
+                  )}
                 </>
               )}
             </SettingsPanel>

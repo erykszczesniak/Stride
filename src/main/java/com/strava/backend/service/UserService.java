@@ -33,4 +33,8 @@ public interface UserService {
     List<User> getSuggestedUsers(Long userId, int limit);
 
     UserProfileResponse getUserProfile(Long userId, Long currentUserId);
+
+    void changePassword(Long userId, String currentPassword, String newPassword);
+
+    void deleteAccount(Long userId);
 }

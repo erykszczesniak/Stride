@@ -628,7 +628,32 @@
     "account": {
       "title": "Cuenta",
       "description": "Administre la configuración de su cuenta",
-      "email": "Correo electrónico"
+      "email": "Correo electrónico",
+      "changePassword": "Cambiar contraseña",
+      "currentPassword": "Contraseña actual",
+      "currentPasswordPlaceholder": "Introduzca la contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "newPasswordPlaceholder": "Mín. 8 caracteres",
+      "confirmNewPassword": "Confirmar nueva contraseña",
+      "confirmNewPasswordPlaceholder": "Repita la nueva contraseña",
+      "changingPassword": "Cambiando...",
+      "passwordChanged": "¡Contraseña cambiada con éxito!",
+      "passwordChangeFailed": "No se pudo cambiar la contraseña. Inténtelo de nuevo.",
+      "passwordRequired": "Este campo es obligatorio",
+      "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+      "passwordsMismatch": "Las contraseñas no coinciden",
+      "privacyTitle": "Configuración de privacidad",
+      "privateProfile": "Perfil privado",
+      "privateProfileDesc": "Solo los seguidores pueden ver sus actividades",
+      "hideFromSearch": "Ocultar de la búsqueda",
+      "hideFromSearchDesc": "Su perfil no aparecerá en los resultados de búsqueda",
+      "dangerZone": "Zona de peligro",
+      "dangerZoneDesc": "Acciones irreversibles y destructivas",
+      "deleteAccount": "Eliminar cuenta",
+      "deleteAccountTitle": "Eliminar cuenta",
+      "deleteAccountConfirm": "¿Está seguro de que desea eliminar su cuenta? Esta acción no se puede deshacer. Todas sus actividades, objetivos y datos se eliminarán permanentemente.",
+      "deleteMyAccount": "Eliminar mi cuenta",
+      "deleteFailed": "No se pudo eliminar la cuenta. Inténtelo de nuevo."
     }
   },
   "admin": {
