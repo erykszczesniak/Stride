@@ -23,4 +23,6 @@ public class UserResponse extends BaseUserResponse {
     private boolean emailNotifications;
     private boolean pushNotifications;
     private boolean weeklySummary;
+    private Boolean isPrivate;
+    private Boolean hideFromSearch;
 }

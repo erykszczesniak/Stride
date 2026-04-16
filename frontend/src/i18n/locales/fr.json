@@ -644,6 +644,8 @@
       "privateProfileDesc": "Seuls les abonnés peuvent voir vos activités",
       "hideFromSearch": "Masquer de la recherche",
       "hideFromSearchDesc": "Votre profil n'apparaîtra pas dans les résultats de recherche",
+      "privacySaved": "Paramètres de confidentialité enregistrés",
+      "privacySaveFailed": "Impossible d'enregistrer les paramètres de confidentialité",
       "dangerZone": "Zone de danger",
       "dangerZoneDesc": "Actions irréversibles et destructrices",
       "deleteAccount": "Supprimer le compte",

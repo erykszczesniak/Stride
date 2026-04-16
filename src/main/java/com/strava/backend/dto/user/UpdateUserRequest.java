@@ -23,4 +23,6 @@ public class UpdateUserRequest {
     private Boolean emailNotifications;
     private Boolean pushNotifications;
     private Boolean weeklySummary;
+    private Boolean isPrivate;
+    private Boolean hideFromSearch;
 }

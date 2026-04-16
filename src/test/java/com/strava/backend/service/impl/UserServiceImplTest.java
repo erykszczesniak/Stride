@@ -2,7 +2,10 @@ package com.strava.backend.service.impl;
 
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.user.UpdateUserRequest;
+import com.strava.backend.dto.user.UserProfileResponse;
 import com.strava.backend.exception.ApiRequestException;
+import com.strava.backend.mapper.CommonMapper;
+import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.NotificationService;
 import com.strava.backend.util.TestDataFactory;
@@ -27,6 +30,7 @@ import static com.strava.backend.constants.ErrorMessage.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -37,6 +41,12 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ActivityRepository activityRepository;
+
+    @Mock
+    private CommonMapper commonMapper;
 
     @Mock
     private NotificationService notificationService;
@@ -399,6 +409,160 @@ class UserServiceImplTest {
             assertThat(result).hasSize(1);
             verify(userRepository).findSuggestedUsers(eq(1L), argThat(pageable ->
                     pageable.getPageSize() == 1 && pageable.getPageNumber() == 0));
+        }
+    }
+
+    @Nested
+    @DisplayName("searchUsers Privacy Tests")
+    class SearchUsersPrivacyTests {
+
+        @Test
+        @DisplayName("Should delegate to repository query that excludes hideFromSearch users")
+        void shouldDelegateToFilteredRepositoryQuery() {
+            // Simulate the repository already excluding hidden users.
+            User visible = TestDataFactory.createUser(10L, "visible@example.com", "Visible", "User");
+            User hidden = TestDataFactory.createUser(11L, "hidden@example.com", "Hidden", "User");
+            hidden.setHideFromSearch(true);
+            Pageable pageable = PageRequest.of(0, 10);
+            when(userRepository.searchUsersByText(eq("User"), eq(pageable)))
+                    .thenReturn(new PageImpl<>(List.of(visible)));
+
+            Page<User> result = userService.searchUsers("User", pageable);
+
+            assertThat(result.getContent()).containsExactly(visible);
+            assertThat(result.getContent()).doesNotContain(hidden);
+            verify(userRepository).searchUsersByText("User", pageable);
+        }
+    }
+
+    @Nested
+    @DisplayName("updateUser Privacy Tests")
+    class UpdateUserPrivacyTests {
+
+        @Test
+        @DisplayName("Should update privacy flags when present in request")
+        void shouldUpdatePrivacyFlags() {
+            UpdateUserRequest request = new UpdateUserRequest();
+            request.setFirstName("John");
+            request.setLastName("Doe");
+            request.setIsPrivate(true);
+            request.setHideFromSearch(true);
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = userService.updateUser(1L, request);
+
+            assertThat(result.getIsPrivate()).isTrue();
+            assertThat(result.getHideFromSearch()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should leave privacy flags unchanged when absent from request")
+        void shouldLeavePrivacyFlagsUnchangedWhenAbsent() {
+            testUser.setIsPrivate(true);
+            testUser.setHideFromSearch(true);
+
+            UpdateUserRequest request = new UpdateUserRequest();
+            request.setFirstName("John");
+            request.setLastName("Doe");
+            // isPrivate and hideFromSearch deliberately null
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = userService.updateUser(1L, request);
+
+            assertThat(result.getIsPrivate()).isTrue();
+            assertThat(result.getHideFromSearch()).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("getUserProfile Privacy Tests")
+    class GetUserProfilePrivacyTests {
+
+        @Test
+        @DisplayName("Should return sanitized profile for non-follower viewing private user")
+        void shouldReturnSanitizedProfileForNonFollower() {
+            anotherUser.setIsPrivate(true);
+            when(userRepository.findById(2L)).thenReturn(Optional.of(anotherUser));
+            when(userRepository.isFollowing(2L, 1L)).thenReturn(false);
+
+            UserProfileResponse result = userService.getUserProfile(2L, 1L);
+
+            assertThat(result.isPrivate()).isTrue();
+            assertThat(result.isCanViewActivities()).isFalse();
+            assertThat(result.getFirstName()).isEqualTo("Jane");
+            assertThat(result.getLastName()).isEqualTo("Smith");
+            assertThat(result.getBio()).isNull();
+            assertThat(result.getRecentActivities()).isEmpty();
+            verifyNoInteractions(activityRepository);
+        }
+
+        @Test
+        @DisplayName("Should return full profile for follower viewing private user")
+        void shouldReturnFullProfileForFollower() {
+            anotherUser.setIsPrivate(true);
+            when(userRepository.findById(2L)).thenReturn(Optional.of(anotherUser));
+            when(userRepository.isFollowing(2L, 1L)).thenReturn(true);
+            when(userRepository.countFollowers(2L)).thenReturn(3);
+            when(userRepository.countFollowing(2L)).thenReturn(5);
+            when(activityRepository.countByUserId(2L)).thenReturn(7);
+            when(activityRepository.sumDistanceByUserId(2L)).thenReturn(42.0);
+            when(activityRepository.findRecentPublicByUserId(eq(2L), any(Pageable.class)))
+                    .thenReturn(List.of());
+
+            UserProfileResponse result = userService.getUserProfile(2L, 1L);
+
+            assertThat(result.isPrivate()).isTrue();
+            assertThat(result.isCanViewActivities()).isTrue();
+            assertThat(result.isFollowedByCurrentUser()).isTrue();
+            assertThat(result.getBio()).isEqualTo("Test bio");
+            assertThat(result.getTotalActivities()).isEqualTo(7);
+            assertThat(result.getTotalDistance()).isEqualTo(42.0);
+        }
+
+        @Test
+        @DisplayName("Should return full profile for user viewing their own private profile")
+        void shouldReturnFullProfileForSelf() {
+            testUser.setIsPrivate(true);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(userRepository.countFollowers(1L)).thenReturn(0);
+            when(userRepository.countFollowing(1L)).thenReturn(0);
+            when(activityRepository.countByUserId(1L)).thenReturn(2);
+            when(activityRepository.sumDistanceByUserId(1L)).thenReturn(10.0);
+            when(activityRepository.findRecentPublicByUserId(eq(1L), any(Pageable.class)))
+                    .thenReturn(List.of());
+
+            UserProfileResponse result = userService.getUserProfile(1L, 1L);
+
+            assertThat(result.isPrivate()).isTrue();
+            assertThat(result.isCanViewActivities()).isTrue();
+            assertThat(result.isFollowedByCurrentUser()).isFalse();
+            assertThat(result.getBio()).isEqualTo("Test bio");
+            verify(userRepository, never()).isFollowing(anyLong(), anyLong());
+        }
+
+        @Test
+        @DisplayName("Should return full profile when target is not private")
+        void shouldReturnFullProfileWhenNotPrivate() {
+            anotherUser.setIsPrivate(false);
+            when(userRepository.findById(2L)).thenReturn(Optional.of(anotherUser));
+            when(userRepository.isFollowing(2L, 1L)).thenReturn(false);
+            when(userRepository.countFollowers(2L)).thenReturn(0);
+            when(userRepository.countFollowing(2L)).thenReturn(0);
+            when(activityRepository.countByUserId(2L)).thenReturn(0);
+            when(activityRepository.sumDistanceByUserId(2L)).thenReturn(null);
+            when(activityRepository.findRecentPublicByUserId(eq(2L), any(Pageable.class)))
+                    .thenReturn(List.of());
+
+            UserProfileResponse result = userService.getUserProfile(2L, 1L);
+
+            assertThat(result.isPrivate()).isFalse();
+            assertThat(result.isCanViewActivities()).isTrue();
+            assertThat(result.getBio()).isEqualTo("Test bio");
+            assertThat(result.getTotalDistance()).isEqualTo(0.0);
         }
     }
 }

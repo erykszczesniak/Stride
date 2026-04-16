@@ -102,6 +102,7 @@ const Settings = () => {
     privateProfile: false,
     hideFromSearch: false,
   });
+  const [savingPrivacy, setSavingPrivacy] = useState(false);
 
   useEffect(() => {
     const section = searchParams.get("section");
@@ -141,6 +142,11 @@ const Settings = () => {
         pushNotifications: response.data.pushNotifications !== undefined ? response.data.pushNotifications : prev.pushNotifications,
         weeklySummary: response.data.weeklySummary !== undefined ? response.data.weeklySummary : prev.weeklySummary,
       }));
+      // Load privacy settings from backend user data
+      setPrivacySettings({
+        privateProfile: response.data.isPrivate === true,
+        hideFromSearch: response.data.hideFromSearch === true,
+      });
     } catch (error) {
     } finally {
       setLoading(false);
@@ -151,13 +157,6 @@ const Settings = () => {
     const prefs = SettingsService.getPreferences();
     setPreferences((prev) => ({ ...prev, ...prefs }));
   };
-
-  useEffect(() => {
-    const stored = localStorage.getItem("privacySettings");
-    if (stored) {
-      setPrivacySettings(JSON.parse(stored));
-    }
-  }, []);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -194,6 +193,8 @@ const Settings = () => {
         emailNotifications: preferences.emailNotifications,
         pushNotifications: preferences.pushNotifications,
         weeklySummary: preferences.weeklySummary,
+        isPrivate: privacySettings.privateProfile,
+        hideFromSearch: privacySettings.hideFromSearch,
       });
 
       // Save all preferences (localStorage + backend notification prefs)
@@ -256,10 +257,34 @@ const Settings = () => {
     }
   };
 
-  const handlePrivacyChange = (key, value) => {
+  const handlePrivacyChange = async (key, value) => {
+    const previous = privacySettings;
     const updated = { ...privacySettings, [key]: value };
     setPrivacySettings(updated);
-    localStorage.setItem("privacySettings", JSON.stringify(updated));
+    setSavingPrivacy(true);
+    try {
+      await SettingsService.updateProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        bio: formData.bio || null,
+        city: formData.city || null,
+        country: formData.country || null,
+        weight: formData.weight ? parseFloat(formData.weight) : null,
+        height: formData.height ? parseFloat(formData.height) : null,
+        emailNotifications: preferences.emailNotifications,
+        pushNotifications: preferences.pushNotifications,
+        weeklySummary: preferences.weeklySummary,
+        isPrivate: updated.privateProfile,
+        hideFromSearch: updated.hideFromSearch,
+      });
+      toast.success(t("settings.account.privacySaved"));
+    } catch (error) {
+      // Revert on failure
+      setPrivacySettings(previous);
+      toast.error(t("settings.account.privacySaveFailed"));
+    } finally {
+      setSavingPrivacy(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -619,6 +644,7 @@ const Settings = () => {
                       <input
                         type="checkbox"
                         checked={privacySettings.privateProfile}
+                        disabled={savingPrivacy}
                         onChange={(e) => handlePrivacyChange("privateProfile", e.target.checked)}
                       />
                       <span></span>
@@ -633,6 +659,7 @@ const Settings = () => {
                       <input
                         type="checkbox"
                         checked={privacySettings.hideFromSearch}
+                        disabled={savingPrivacy}
                         onChange={(e) => handlePrivacyChange("hideFromSearch", e.target.checked)}
                       />
                       <span></span>

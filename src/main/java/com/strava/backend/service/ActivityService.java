@@ -24,6 +24,8 @@ public interface ActivityService {
 
     Page<Activity> getPublicActivities(Pageable pageable);
 
+    Page<Activity> getPublicActivitiesVisibleTo(Long viewerId, Pageable pageable);
+
     Activity createActivity(Long userId, ActivityRequest request);
 
     Activity updateActivity(Long activityId, Long userId, ActivityRequest request);

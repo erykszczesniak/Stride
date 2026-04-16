@@ -652,6 +652,8 @@
       "privateProfileDesc": "Tylko obserwujący mogą widzieć Twoje aktywności",
       "hideFromSearch": "Ukryj z wyszukiwania",
       "hideFromSearchDesc": "Twój profil nie będzie wyświetlany w wynikach wyszukiwania",
+      "privacySaved": "Ustawienia prywatności zapisane",
+      "privacySaveFailed": "Nie udało się zapisać ustawień prywatności",
       "dangerZone": "Strefa niebezpieczna",
       "dangerZoneDesc": "Nieodwracalne i destrukcyjne działania",
       "deleteAccount": "Usuń konto",

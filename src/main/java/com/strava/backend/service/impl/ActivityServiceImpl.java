@@ -98,6 +98,12 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<Activity> getPublicActivitiesVisibleTo(Long viewerId, Pageable pageable) {
+        return activityRepository.findPublicActivitiesVisibleTo(viewerId, pageable);
+    }
+
+    @Override
     @Transactional
     public Activity createActivity(Long userId, ActivityRequest request) {
         User user = userService.getUserById(userId);

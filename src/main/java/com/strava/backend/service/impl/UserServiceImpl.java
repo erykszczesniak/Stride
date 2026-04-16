@@ -91,6 +91,12 @@ public class UserServiceImpl implements UserService {
         if (request.getWeeklySummary() != null) {
             user.setWeeklySummary(request.getWeeklySummary());
         }
+        if (request.getIsPrivate() != null) {
+            user.setIsPrivate(request.getIsPrivate());
+        }
+        if (request.getHideFromSearch() != null) {
+            user.setHideFromSearch(request.getHideFromSearch());
+        }
         return userRepository.save(user);
     }
 
@@ -173,6 +179,27 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
+        boolean isPrivate = Boolean.TRUE.equals(user.getIsPrivate());
+        boolean isSelf = currentUserId != null && currentUserId.equals(userId);
+        boolean isFollower = currentUserId != null && !isSelf
+                && userRepository.isFollowing(userId, currentUserId);
+        boolean canViewActivities = !isPrivate || isSelf || isFollower;
+
+        // Privacy short-circuit: if the profile is private and the viewer isn't
+        // the owner or a follower, return a sanitized profile (name + avatar only).
+        if (!canViewActivities) {
+            return UserProfileResponse.builder()
+                    .id(user.getId())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .avatar(user.getAvatar())
+                    .recentActivities(List.of())
+                    .isFollowedByCurrentUser(false)
+                    .isPrivate(true)
+                    .canViewActivities(false)
+                    .build();
+        }
+
         int followersCount = userRepository.countFollowers(userId);
         int followingCount = userRepository.countFollowing(userId);
         int totalActivities = activityRepository.countByUserId(userId);
@@ -191,9 +218,6 @@ public class UserServiceImpl implements UserService {
                 })
                 .collect(Collectors.toList());
 
-        boolean isFollowed = currentUserId != null && !currentUserId.equals(userId)
-                && userRepository.isFollowing(userId, currentUserId);
-
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
@@ -208,7 +232,9 @@ public class UserServiceImpl implements UserService {
                 .followersCount(followersCount)
                 .followingCount(followingCount)
                 .recentActivities(recentActivities)
-                .isFollowedByCurrentUser(isFollowed)
+                .isFollowedByCurrentUser(isFollower)
+                .isPrivate(isPrivate)
+                .canViewActivities(true)
                 .build();
     }
 

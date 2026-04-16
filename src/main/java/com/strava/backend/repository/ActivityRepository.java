@@ -19,6 +19,15 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
     Page<Activity> findByIsPrivateFalse(Pageable pageable);
 
+    // Public activities excluding those from private-profile users the viewer doesn't follow.
+    @Query("SELECT a FROM Activity a WHERE a.isPrivate = false AND (" +
+           "a.user.id = :viewerId OR " +
+           "a.user.isPrivate = false OR a.user.isPrivate IS NULL OR " +
+           "EXISTS (SELECT 1 FROM User target JOIN target.followers f " +
+           "        WHERE target.id = a.user.id AND f.id = :viewerId)" +
+           ") ORDER BY a.createdAt DESC")
+    Page<Activity> findPublicActivitiesVisibleTo(@Param("viewerId") Long viewerId, Pageable pageable);
+
     @Query("SELECT a FROM Activity a WHERE a.user.id = :userId ORDER BY a.createdAt DESC")
     Page<ActivityProjection> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 

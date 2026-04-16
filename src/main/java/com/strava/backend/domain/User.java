@@ -73,6 +73,14 @@ public class User {
     @Builder.Default
     private boolean weeklySummary = true;
 
+    @Builder.Default
+    @Column(name = "is_private", nullable = false)
+    private Boolean isPrivate = false;
+
+    @Builder.Default
+    @Column(name = "hide_from_search", nullable = false)
+    private Boolean hideFromSearch = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -126,6 +134,12 @@ public class User {
         }
         if (authProvider == null) {
             authProvider = AuthProvider.LOCAL;
+        }
+        if (isPrivate == null) {
+            isPrivate = false;
+        }
+        if (hideFromSearch == null) {
+            hideFromSearch = false;
         }
         // active field defaults to false in Java, explicitly set to true only for new users
         // This allows tests and code to override the active status before persist

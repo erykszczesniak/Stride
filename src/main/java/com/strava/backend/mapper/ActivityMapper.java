@@ -1,13 +1,16 @@
 package com.strava.backend.mapper;
 
 import com.strava.backend.domain.Activity;
+import com.strava.backend.domain.User;
 import com.strava.backend.dto.HeaderResponse;
 import com.strava.backend.dto.activity.*;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.InputFieldException;
+import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.ActivityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -22,6 +25,7 @@ public class ActivityMapper {
 
     private final CommonMapper commonMapper;
     private final ActivityService activityService;
+    private final UserRepository userRepository;
 
     public FullActivityResponse getActivityById(Long activityId, Long currentUserId) {
         Activity activity = activityService.getActivityById(activityId);
@@ -29,6 +33,18 @@ public class ActivityMapper {
     }
 
     public HeaderResponse<ActivityResponse> getActivitiesByUserId(Long userId, Long currentUserId, Pageable pageable) {
+        // Respect private-profile flag: non-owner, non-follower viewers see nothing.
+        if (currentUserId == null || !currentUserId.equals(userId)) {
+            User target = userRepository.findById(userId).orElse(null);
+            if (target != null && Boolean.TRUE.equals(target.getIsPrivate())) {
+                boolean isFollower = currentUserId != null
+                        && userRepository.isFollowing(userId, currentUserId);
+                if (!isFollower) {
+                    Page<Activity> empty = new PageImpl<>(List.of(), pageable, 0);
+                    return HeaderResponse.of(List.of(), empty.getTotalPages(), empty.getTotalElements());
+                }
+            }
+        }
         Page<Activity> activities = activityService.getActivitiesByUserId(userId, pageable);
         List<ActivityResponse> responses = activities.getContent().stream()
                 .map(activity -> mapToActivityResponse(activity, currentUserId))
@@ -91,7 +107,7 @@ public class ActivityMapper {
     }
 
     public List<ActivityResponse> getPublicActivities(Long currentUserId, Pageable pageable) {
-        Page<Activity> activities = activityService.getPublicActivities(pageable);
+        Page<Activity> activities = activityService.getPublicActivitiesVisibleTo(currentUserId, pageable);
         return activities.getContent().stream()
                 .map(activity -> mapToActivityResponse(activity, currentUserId))
                 .collect(Collectors.toList());

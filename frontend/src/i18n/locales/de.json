@@ -644,6 +644,8 @@
       "privateProfileDesc": "Nur Follower können Ihre Aktivitäten sehen",
       "hideFromSearch": "Aus Suche ausblenden",
       "hideFromSearchDesc": "Ihr Profil erscheint nicht in den Suchergebnissen",
+      "privacySaved": "Datenschutzeinstellungen gespeichert",
+      "privacySaveFailed": "Datenschutzeinstellungen konnten nicht gespeichert werden",
       "dangerZone": "Gefahrenzone",
       "dangerZoneDesc": "Irreversible und destruktive Aktionen",
       "deleteAccount": "Konto löschen",

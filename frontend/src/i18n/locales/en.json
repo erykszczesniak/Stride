@@ -644,6 +644,8 @@
       "privateProfileDesc": "Only followers can see your activities",
       "hideFromSearch": "Hide from Search",
       "hideFromSearchDesc": "Your profile won't appear in user search results",
+      "privacySaved": "Privacy settings saved",
+      "privacySaveFailed": "Failed to save privacy settings",
       "dangerZone": "Danger Zone",
       "dangerZoneDesc": "Irreversible and destructive actions",
       "deleteAccount": "Delete Account",

@@ -26,4 +26,6 @@ public class UserProfileResponse {
 
     private List<ActivityResponse> recentActivities;
     private boolean isFollowedByCurrentUser;
+    private boolean isPrivate;
+    private boolean canViewActivities;
 }
