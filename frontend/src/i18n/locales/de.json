@@ -404,7 +404,29 @@
     "title": "Challenges",
     "subtitle": "Treten Sie an und verdienen Sie Belohnungen",
     "active": "Aktiv",
-    "create": "Erstellen",
+    "create": {
+      "challengeType": "Challenge-Typ",
+      "activityType": "Aktivitätstyp",
+      "detailsSection": "Details",
+      "name": "Challenge-Name *",
+      "namePlaceholder": "z. B. März-Lauf-Challenge",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Beschreiben Sie die Challenge und motivieren Sie Teilnehmer...",
+      "targetLabel": "Ziel ({{unit}}) *",
+      "duration": "Dauer",
+      "startDate": "Startdatum *",
+      "endDate": "Enddatum *",
+      "visibility": "Sichtbarkeit",
+      "publicLabel": "Öffentliche Challenge (für alle sichtbar)",
+      "createButton": "Challenge erstellen",
+      "errors": {
+        "nameRequired": "Bitte geben Sie einen Challenge-Namen ein",
+        "targetInvalid": "Bitte geben Sie einen gültigen Zielwert ein",
+        "datesRequired": "Bitte geben Sie Start- und Enddatum ein",
+        "endAfterStart": "Enddatum muss nach dem Startdatum liegen",
+        "createFailed": "Challenge konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+      }
+    },
     "createChallenge": "Challenge erstellen",
     "loading": "Challenges werden geladen...",
     "backToChallenges": "Zurück zu Challenges",
@@ -464,29 +486,6 @@
       "TIME": "Zeit",
       "ELEVATION": "Höhenmeter",
       "ACTIVITIES_COUNT": "Aktivitätsanzahl"
-    },
-    "create": {
-      "challengeType": "Challenge-Typ",
-      "activityType": "Aktivitätstyp",
-      "detailsSection": "Details",
-      "name": "Challenge-Name *",
-      "namePlaceholder": "z. B. März-Lauf-Challenge",
-      "description": "Beschreibung",
-      "descriptionPlaceholder": "Beschreiben Sie die Challenge und motivieren Sie Teilnehmer...",
-      "targetLabel": "Ziel ({{unit}}) *",
-      "duration": "Dauer",
-      "startDate": "Startdatum *",
-      "endDate": "Enddatum *",
-      "visibility": "Sichtbarkeit",
-      "publicLabel": "Öffentliche Challenge (für alle sichtbar)",
-      "createButton": "Challenge erstellen",
-      "errors": {
-        "nameRequired": "Bitte geben Sie einen Challenge-Namen ein",
-        "targetInvalid": "Bitte geben Sie einen gültigen Zielwert ein",
-        "datesRequired": "Bitte geben Sie Start- und Enddatum ein",
-        "endAfterStart": "Enddatum muss nach dem Startdatum liegen",
-        "createFailed": "Challenge konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
-      }
     }
   },
   "clubs": {
@@ -619,9 +618,6 @@
       "metric": "Metrisch (km, kg)",
       "imperial": "Imperial (mi, lb)",
       "defaultActivityType": "Standard-Aktivitätstyp",
-      "paceDisplay": "Pace/Geschwindigkeit-Anzeige",
-      "pace": "Pace (min/km oder min/mi)",
-      "speed": "Geschwindigkeit (km/h oder mph)",
       "language": "Sprache",
       "darkMode": "Dunkler Modus",
       "darkModeDesc": "Dunkles Design verwenden"

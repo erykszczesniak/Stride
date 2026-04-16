@@ -404,7 +404,29 @@
     "title": "Desafíos",
     "subtitle": "Compita y gane recompensas",
     "active": "Activos",
-    "create": "Crear",
+    "create": {
+      "challengeType": "Tipo de desafío",
+      "activityType": "Tipo de actividad",
+      "detailsSection": "Detalles",
+      "name": "Nombre del desafío *",
+      "namePlaceholder": "p. ej. Desafío de carrera de marzo",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Describa el desafío y motive a los participantes...",
+      "targetLabel": "Meta ({{unit}}) *",
+      "duration": "Duración",
+      "startDate": "Fecha de inicio *",
+      "endDate": "Fecha de fin *",
+      "visibility": "Visibilidad",
+      "publicLabel": "Desafío público (visible para todos)",
+      "createButton": "Crear desafío",
+      "errors": {
+        "nameRequired": "Introduzca un nombre de desafío",
+        "targetInvalid": "Introduzca un valor objetivo válido",
+        "datesRequired": "Introduzca las fechas de inicio y fin",
+        "endAfterStart": "La fecha de fin debe ser posterior a la de inicio",
+        "createFailed": "No se pudo crear el desafío. Inténtelo de nuevo."
+      }
+    },
     "createChallenge": "Crear desafío",
     "loading": "Cargando desafíos...",
     "backToChallenges": "Volver a los desafíos",
@@ -464,29 +486,6 @@
       "TIME": "Tiempo",
       "ELEVATION": "Desnivel",
       "ACTIVITIES_COUNT": "Número de actividades"
-    },
-    "create": {
-      "challengeType": "Tipo de desafío",
-      "activityType": "Tipo de actividad",
-      "detailsSection": "Detalles",
-      "name": "Nombre del desafío *",
-      "namePlaceholder": "p. ej. Desafío de carrera de marzo",
-      "description": "Descripción",
-      "descriptionPlaceholder": "Describa el desafío y motive a los participantes...",
-      "targetLabel": "Meta ({{unit}}) *",
-      "duration": "Duración",
-      "startDate": "Fecha de inicio *",
-      "endDate": "Fecha de fin *",
-      "visibility": "Visibilidad",
-      "publicLabel": "Desafío público (visible para todos)",
-      "createButton": "Crear desafío",
-      "errors": {
-        "nameRequired": "Introduzca un nombre de desafío",
-        "targetInvalid": "Introduzca un valor objetivo válido",
-        "datesRequired": "Introduzca las fechas de inicio y fin",
-        "endAfterStart": "La fecha de fin debe ser posterior a la de inicio",
-        "createFailed": "No se pudo crear el desafío. Inténtelo de nuevo."
-      }
     }
   },
   "clubs": {
@@ -619,9 +618,6 @@
       "metric": "Métricas (km, kg)",
       "imperial": "Imperiales (mi, lb)",
       "defaultActivityType": "Tipo de actividad predeterminada",
-      "paceDisplay": "Visualización de ritmo/velocidad",
-      "pace": "Ritmo (min/km o min/mi)",
-      "speed": "Velocidad (km/h o mph)",
       "language": "Idioma",
       "darkMode": "Modo oscuro",
       "darkModeDesc": "Usar tema oscuro"

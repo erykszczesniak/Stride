@@ -16,7 +16,6 @@ class SettingsService {
       weeklySummary: true,
       units: "metric",
       defaultActivityType: "RUN",
-      paceDisplay: "pace",
       language: "en",
       darkMode: false,
     };

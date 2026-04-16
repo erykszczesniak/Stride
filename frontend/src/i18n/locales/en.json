@@ -404,7 +404,29 @@
     "title": "Challenges",
     "subtitle": "Compete and earn rewards",
     "active": "Active",
-    "create": "Create",
+    "create": {
+      "challengeType": "Challenge Type",
+      "activityType": "Activity Type",
+      "detailsSection": "Details",
+      "name": "Challenge Name *",
+      "namePlaceholder": "e.g., March Running Challenge",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the challenge and motivate participants...",
+      "targetLabel": "Target ({{unit}}) *",
+      "duration": "Duration",
+      "startDate": "Start Date *",
+      "endDate": "End Date *",
+      "visibility": "Visibility",
+      "publicLabel": "Public challenge (visible to everyone)",
+      "createButton": "Create Challenge",
+      "errors": {
+        "nameRequired": "Please enter a challenge name",
+        "targetInvalid": "Please enter a valid target value",
+        "datesRequired": "Please enter start and end dates",
+        "endAfterStart": "End date must be after start date",
+        "createFailed": "Failed to create challenge. Please try again."
+      }
+    },
     "createChallenge": "Create Challenge",
     "loading": "Loading challenges...",
     "backToChallenges": "Back to Challenges",
@@ -464,29 +486,6 @@
       "TIME": "Time",
       "ELEVATION": "Elevation",
       "ACTIVITIES_COUNT": "Activity Count"
-    },
-    "create": {
-      "challengeType": "Challenge Type",
-      "activityType": "Activity Type",
-      "detailsSection": "Details",
-      "name": "Challenge Name *",
-      "namePlaceholder": "e.g., March Running Challenge",
-      "description": "Description",
-      "descriptionPlaceholder": "Describe the challenge and motivate participants...",
-      "targetLabel": "Target ({{unit}}) *",
-      "duration": "Duration",
-      "startDate": "Start Date *",
-      "endDate": "End Date *",
-      "visibility": "Visibility",
-      "publicLabel": "Public challenge (visible to everyone)",
-      "createButton": "Create Challenge",
-      "errors": {
-        "nameRequired": "Please enter a challenge name",
-        "targetInvalid": "Please enter a valid target value",
-        "datesRequired": "Please enter start and end dates",
-        "endAfterStart": "End date must be after start date",
-        "createFailed": "Failed to create challenge. Please try again."
-      }
     }
   },
   "clubs": {
@@ -619,9 +618,6 @@
       "metric": "Metric (km, kg)",
       "imperial": "Imperial (mi, lb)",
       "defaultActivityType": "Default Activity Type",
-      "paceDisplay": "Pace/Speed Display",
-      "pace": "Pace (min/km or min/mi)",
-      "speed": "Speed (km/h or mph)",
       "language": "Language",
       "darkMode": "Dark Mode",
       "darkModeDesc": "Use dark theme"

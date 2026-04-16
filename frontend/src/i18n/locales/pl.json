@@ -412,7 +412,29 @@
     "title": "Wyzwania",
     "subtitle": "Rywalizuj i zdobywaj nagrody",
     "active": "Aktywnych",
-    "create": "Utwórz",
+    "create": {
+      "challengeType": "Typ wyzwania",
+      "activityType": "Typ aktywności",
+      "detailsSection": "Szczegóły",
+      "name": "Nazwa wyzwania *",
+      "namePlaceholder": "np. Marcowe wyzwanie biegowe",
+      "description": "Opis",
+      "descriptionPlaceholder": "Opisz wyzwanie i zmotywuj uczestników...",
+      "targetLabel": "Cel ({{unit}}) *",
+      "duration": "Czas trwania",
+      "startDate": "Data rozpoczęcia *",
+      "endDate": "Data zakończenia *",
+      "visibility": "Widoczność",
+      "publicLabel": "Wyzwanie publiczne (widoczne dla wszystkich)",
+      "createButton": "Utwórz wyzwanie",
+      "errors": {
+        "nameRequired": "Wprowadź nazwę wyzwania",
+        "targetInvalid": "Wprowadź prawidłową wartość docelową",
+        "datesRequired": "Wprowadź daty rozpoczęcia i zakończenia",
+        "endAfterStart": "Data zakończenia musi być późniejsza niż data rozpoczęcia",
+        "createFailed": "Nie udało się utworzyć wyzwania. Spróbuj ponownie."
+      }
+    },
     "createChallenge": "Utwórz wyzwanie",
     "loading": "Wczytywanie wyzwań...",
     "backToChallenges": "Wróć do wyzwań",
@@ -472,29 +494,6 @@
       "TIME": "Czas",
       "ELEVATION": "Przewyższenie",
       "ACTIVITIES_COUNT": "Liczba aktywności"
-    },
-    "create": {
-      "challengeType": "Typ wyzwania",
-      "activityType": "Typ aktywności",
-      "detailsSection": "Szczegóły",
-      "name": "Nazwa wyzwania *",
-      "namePlaceholder": "np. Marcowe wyzwanie biegowe",
-      "description": "Opis",
-      "descriptionPlaceholder": "Opisz wyzwanie i zmotywuj uczestników...",
-      "targetLabel": "Cel ({{unit}}) *",
-      "duration": "Czas trwania",
-      "startDate": "Data rozpoczęcia *",
-      "endDate": "Data zakończenia *",
-      "visibility": "Widoczność",
-      "publicLabel": "Wyzwanie publiczne (widoczne dla wszystkich)",
-      "createButton": "Utwórz wyzwanie",
-      "errors": {
-        "nameRequired": "Wprowadź nazwę wyzwania",
-        "targetInvalid": "Wprowadź prawidłową wartość docelową",
-        "datesRequired": "Wprowadź daty rozpoczęcia i zakończenia",
-        "endAfterStart": "Data zakończenia musi być późniejsza niż data rozpoczęcia",
-        "createFailed": "Nie udało się utworzyć wyzwania. Spróbuj ponownie."
-      }
     }
   },
   "clubs": {
@@ -627,9 +626,6 @@
       "metric": "Metryczne (km, kg)",
       "imperial": "Imperialne (mi, lb)",
       "defaultActivityType": "Domyślny typ aktywności",
-      "paceDisplay": "Wyświetlanie tempa/prędkości",
-      "pace": "Tempo (min/km lub min/mi)",
-      "speed": "Prędkość (km/h lub mph)",
       "language": "Język",
       "darkMode": "Tryb ciemny",
       "darkModeDesc": "Używaj ciemnego motywu"

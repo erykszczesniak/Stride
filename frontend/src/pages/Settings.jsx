@@ -86,7 +86,6 @@ const Settings = () => {
     weeklySummary: true,
     units: "metric",
     defaultActivityType: "RUN",
-    paceDisplay: "pace",
     language: i18n.language || "en",
     darkMode: false,
   });
@@ -522,17 +521,6 @@ const Settings = () => {
                       <option value="SWIM">{t("activities.typesShort.SWIM")}</option>
                       <option value="HIKE">{t("activities.typesShort.HIKE")}</option>
                       <option value="WALK">{t("activities.typesShort.WALK")}</option>
-                    </FormSelect>
-                  </FormGroup>
-
-                  <FormGroup>
-                    <FormLabel>{t("settings.preferences.paceDisplay")}</FormLabel>
-                    <FormSelect
-                      value={preferences.paceDisplay}
-                      onChange={(e) => handlePreferenceChange("paceDisplay", e.target.value)}
-                    >
-                      <option value="pace">{t("settings.preferences.pace")}</option>
-                      <option value="speed">{t("settings.preferences.speed")}</option>
                     </FormSelect>
                   </FormGroup>
 
