@@ -30,10 +30,15 @@ i18n
       es: { translation: es },
       ru: { translation: ru },
     },
+    // English is the default for new users regardless of browser locale.
+    // Users can switch language from Settings → Preferences; the choice
+    // is persisted to localStorage. We intentionally don't auto-detect
+    // from the browser navigator — the product decision is that English
+    // is the onboarding language, not whatever the user's OS is set to.
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       lookupLocalStorage: 'i18nextLng',
       caches: ['localStorage'],
     },
