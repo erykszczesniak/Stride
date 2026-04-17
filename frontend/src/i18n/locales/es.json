@@ -346,7 +346,9 @@
       "risingStarDesc": "50 actividades completadas",
       "consistent": "Constante",
       "consistentDesc": "10 o más actividades completadas"
-    }
+    },
+    "privateProfile": "Perfil privado",
+    "privateProfileDescription": "Este perfil es privado. Sigue para ver las actividades y estadísticas."
   },
   "goals": {
     "myGoals": "Mis objetivos",

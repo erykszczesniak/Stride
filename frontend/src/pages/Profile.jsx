@@ -99,6 +99,7 @@ const Profile = () => {
     [t]
   );
   const [user, setUser] = useState(null);
+  const [isPrivateLocked, setIsPrivateLocked] = useState(false);
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
@@ -136,6 +137,12 @@ const Profile = () => {
           const profileData = await UserService.getUserProfile(id);
           const profile = profileData.data;
 
+          // When the profile is private and the viewer isn't a follower,
+          // the backend returns a sanitized response with only id/name/avatar.
+          // Surface that in the UI instead of rendering a half-empty profile.
+          const locked = profile.isPrivate === true && profile.canViewActivities === false;
+          setIsPrivateLocked(locked);
+
           setUser({
             id: profile.id,
             firstName: profile.firstName,
@@ -144,12 +151,12 @@ const Profile = () => {
             bio: profile.bio,
             city: profile.city,
             country: profile.country,
-            joinedDate: new Date(profile.createdAt).getFullYear(),
+            joinedDate: profile.createdAt ? new Date(profile.createdAt).getFullYear() : null,
           });
 
-          setFollowersCount(profile.followersCount);
-          setFollowingCount(profile.followingCount);
-          setIsFollowed(profile.followedByCurrentUser);
+          setFollowersCount(profile.followersCount || 0);
+          setFollowingCount(profile.followingCount || 0);
+          setIsFollowed(profile.followedByCurrentUser === true);
           setActivities(profile.recentActivities || []);
           setStats(null);
           setLoading(false);
@@ -220,6 +227,14 @@ const Profile = () => {
         await UserService.unfollowUser(user.id);
       } else {
         await UserService.followUser(user.id);
+      }
+
+      // Follow/unfollow on a private target flips access to their activities
+      // and PRs — re-fetch so the locked state (or the just-unlocked profile)
+      // updates immediately without a manual refresh. Also keeps the counts
+      // in sync with the server for public targets.
+      if (!isOwnProfile) {
+        await fetchProfileData();
       }
     } catch (error) {
       // Revert on error
@@ -298,6 +313,45 @@ const Profile = () => {
       <Layout>
         <Container>
           <EmptyState>{t("profile.userNotFound")}</EmptyState>
+        </Container>
+      </Layout>
+    );
+  }
+
+  // Private-profile UX: backend returned sanitized data (name + avatar only).
+  // Show a dedicated "this profile is private" screen with a Follow button
+  // instead of pretending it's a normal profile with empty stats.
+  if (isPrivateLocked) {
+    return (
+      <Layout>
+        <ProfileHeader>
+          <CoverImage />
+          <ProfileContent>
+            <Avatar>
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.firstName} />
+              ) : (
+                <span>
+                  {user.firstName?.[0]}
+                  {user.lastName?.[0]}
+                </span>
+              )}
+            </Avatar>
+            <ProfileInfo>
+              <ProfileName>{user.firstName} {user.lastName}</ProfileName>
+              <ProfileLocation>{"\u{1F512}"} {t("profile.privateProfile")}</ProfileLocation>
+            </ProfileInfo>
+            <ProfileActions>
+              <FollowButton $followed={isFollowed} onClick={handleFollowToggle} disabled={followLoading}>
+                {isFollowed ? t("profile.following") : t("profile.follow")}
+              </FollowButton>
+            </ProfileActions>
+          </ProfileContent>
+        </ProfileHeader>
+        <Container>
+          <EmptyState>
+            {"\u{1F512}"} {t("profile.privateProfileDescription")}
+          </EmptyState>
         </Container>
       </Layout>
     );

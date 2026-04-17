@@ -22,6 +22,12 @@ public class PersonalRecordMapper {
                 .collect(Collectors.toList());
     }
 
+    public List<PersonalRecordResponse> getUserPRsVisibleTo(Long targetUserId, Long viewerId) {
+        return personalRecordService.getUserPRsVisibleTo(targetUserId, viewerId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<PersonalRecordResponse> getUserPRsByActivityType(Long userId, ActivityType activityType) {
         return personalRecordService.getUserPRsByActivityType(userId, activityType).stream()
                 .map(this::mapToResponse)

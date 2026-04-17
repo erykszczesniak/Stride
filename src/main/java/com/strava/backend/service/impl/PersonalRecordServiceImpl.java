@@ -6,6 +6,7 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.enums.DistanceType;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.PersonalRecordRepository;
+import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.PersonalRecordService;
 import com.strava.backend.service.importer.GeoUtils;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
 
     private final PersonalRecordRepository personalRecordRepository;
     private final ActivityRepository activityRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -80,6 +82,29 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
     @Transactional(readOnly = true)
     public List<PersonalRecord> getUserPRs(Long userId) {
         return personalRecordRepository.findByUserId(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PersonalRecord> getUserPRsVisibleTo(Long targetUserId, Long viewerId) {
+        if (viewerId != null && viewerId.equals(targetUserId)) {
+            // Users always see their own PRs, regardless of privacy flag
+            return personalRecordRepository.findByUserId(targetUserId);
+        }
+
+        boolean targetIsPrivate = userRepository.findById(targetUserId)
+                .map(u -> Boolean.TRUE.equals(u.getIsPrivate()))
+                .orElse(false);
+
+        if (targetIsPrivate) {
+            boolean viewerIsFollower = viewerId != null
+                    && userRepository.isFollowing(targetUserId, viewerId);
+            if (!viewerIsFollower) {
+                return Collections.emptyList();
+            }
+        }
+
+        return personalRecordRepository.findByUserId(targetUserId);
     }
 
     @Override

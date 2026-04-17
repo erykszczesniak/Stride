@@ -27,7 +27,8 @@ public class PersonalRecordController extends BaseController {
 
     @GetMapping(USER + USER_ID)
     public ResponseEntity<List<PersonalRecordResponse>> getUserPRs(@PathVariable Long userId) {
-        return ResponseEntity.ok(personalRecordMapper.getUserPRs(userId));
+        Long viewerId = getAuthenticatedUserId();
+        return ResponseEntity.ok(personalRecordMapper.getUserPRsVisibleTo(userId, viewerId));
     }
 
     @GetMapping(ACTIVITY_TYPE + "/{activityType}")

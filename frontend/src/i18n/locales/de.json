@@ -346,7 +346,9 @@
       "risingStarDesc": "50 Aktivitäten absolviert",
       "consistent": "Beständig",
       "consistentDesc": "10+ Aktivitäten absolviert"
-    }
+    },
+    "privateProfile": "Privates Profil",
+    "privateProfileDescription": "Dieses Profil ist privat. Folgen Sie, um Aktivitäten und Statistiken zu sehen."
   },
   "goals": {
     "myGoals": "Meine Ziele",
