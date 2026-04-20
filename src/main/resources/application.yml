@@ -112,3 +112,12 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0   # 100% sampling in dev; lower in prod
+    propagation:
+      type: W3C
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}

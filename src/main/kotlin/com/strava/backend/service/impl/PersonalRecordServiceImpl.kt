@@ -8,6 +8,8 @@ import com.strava.backend.repository.ActivityRepository
 import com.strava.backend.repository.PersonalRecordRepository
 import com.strava.backend.repository.UserRepository
 import com.strava.backend.service.PersonalRecordService
+import io.micrometer.observation.Observation
+import io.micrometer.observation.ObservationRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +21,7 @@ class PersonalRecordServiceImpl(
     private val personalRecordRepository: PersonalRecordRepository,
     private val activityRepository: ActivityRepository,
     private val userRepository: UserRepository?,
+    private val observationRegistry: ObservationRegistry,
 ) : PersonalRecordService {
 
     private val log = LoggerFactory.getLogger(PersonalRecordServiceImpl::class.java)
@@ -115,13 +118,39 @@ class PersonalRecordServiceImpl(
     override fun getUserPRsByActivityType(userId: Long, activityType: ActivityType): List<PersonalRecord> =
         personalRecordRepository.findByUserIdAndActivityType(userId, activityType)
 
+    /**
+     * Wraps the recalculation in Micrometer Observations so the Jaeger trace
+     * shows the top-level call plus the two distinct phases (wipe existing
+     * PRs, then recompute from history). JDBC auto-instrumentation fills in
+     * per-query spans inside the loop.
+     *
+     * Using Observation (Micrometer) rather than OTel's @WithSpan because
+     * that annotation needs the OTel Java agent, which Stride doesn't run.
+     */
     @Transactional
     override fun recalculateAllPRs(userId: Long) {
-        personalRecordRepository.deleteByUserId(userId)
+        val outer = Observation.createNotStarted("personal-record.recalculateAllPRs", observationRegistry)
+            .lowCardinalityKeyValue("user.id", userId.toString())
+            .start()
+        try {
+            outer.openScope().use {
+                Observation.createNotStarted("personal-record.delete-existing", observationRegistry)
+                    .lowCardinalityKeyValue("user.id", userId.toString())
+                    .observe(Runnable { personalRecordRepository.deleteByUserId(userId) })
 
-        val activities = activityRepository.findAllByUserIdOrderByStartTimeAsc(userId)
-        for (activity in activities) {
-            checkAndUpdatePRs(activity)
+                val activities = activityRepository.findAllByUserIdOrderByStartTimeAsc(userId)
+
+                Observation.createNotStarted("personal-record.recompute-loop", observationRegistry)
+                    .lowCardinalityKeyValue("user.id", userId.toString())
+                    .lowCardinalityKeyValue("activity.count", activities.size.toString())
+                    .observe(Runnable {
+                        for (activity in activities) {
+                            checkAndUpdatePRs(activity)
+                        }
+                    })
+            }
+        } finally {
+            outer.stop()
         }
 
         log.info("Recalculated all PRs for user {}", userId)
