@@ -248,7 +248,17 @@
       "confirmDelete": "¿Eliminar \"{{title}}\"? Esta acción no se puede deshacer.",
       "confirmDeleteComment": "¿Está seguro de que desea eliminar este comentario?",
       "activityNotFound": "Actividad no encontrada",
-      "photoAlt": "Foto de la actividad {{index}}"
+      "photoAlt": "Foto de la actividad {{index}}",
+      "splits": {
+        "title": "Parciales",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distancia",
+        "time": "Tiempo",
+        "pace": "Ritmo",
+        "partial": "parcial",
+        "estimatedNote": "Parciales estimados a partir del ritmo medio; el tiempo por punto aún no se registra."
+      }
     },
     "record": {
       "titleNew": "Registrar actividad",
