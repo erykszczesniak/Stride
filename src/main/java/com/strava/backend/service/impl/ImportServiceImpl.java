@@ -1,5 +1,7 @@
 package com.strava.backend.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.importactivity.SampleFileInfo;
@@ -40,6 +42,7 @@ public class ImportServiceImpl implements ImportService {
     private final List<ActivityFileParser> parsers;
     private final ActivityRepository activityRepository;
     private final UserService userService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     @Transactional
@@ -90,6 +93,17 @@ public class ImportServiceImpl implements ImportService {
         // Encode GPS points to polyline
         if (parsed.getGpsPoints() != null && !parsed.getGpsPoints().isEmpty()) {
             activity.setRoutePolyline(GeoUtils.encodePolyline(parsed.getGpsPoints()));
+        }
+
+        // Persist per-point elevation series as JSON (or null if the source had no altitude data).
+        // We tolerate serialization failures — elevation profile is a nice-to-have, not a
+        // reason to reject an otherwise valid import.
+        if (parsed.getElevations() != null && !parsed.getElevations().isEmpty()) {
+            try {
+                activity.setElevationProfile(objectMapper.writeValueAsString(parsed.getElevations()));
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to serialize elevation profile for import; leaving null", e);
+            }
         }
 
         Activity saved = activityRepository.save(activity);

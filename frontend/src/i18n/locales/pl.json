@@ -259,6 +259,22 @@
       "photoAlt": "Zdjęcie aktywności {{index}}",
       "gear": {
         "label": "Sprzęt"
+      },
+      "elevationProfile": {
+        "title": "Profil wysokości",
+        "gain": "Podejście",
+        "loss": "Zejście",
+        "noData": "Brak danych o wysokości dla tej aktywności."
+      },
+      "splits": {
+        "title": "Okrążenia",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Dystans",
+        "time": "Czas",
+        "pace": "Tempo",
+        "partial": "częściowe",
+        "estimatedNote": "Okrążenia oszacowane na podstawie średniego tempa; dane z poszczególnych punktów nie są jeszcze zapisywane."
       }
     },
     "record": {

@@ -251,6 +251,22 @@
       "photoAlt": "Activity photo {{index}}",
       "gear": {
         "label": "Gear"
+      },
+      "elevationProfile": {
+        "title": "Elevation Profile",
+        "gain": "Gain",
+        "loss": "Loss",
+        "noData": "No elevation data available for this activity."
+      },
+      "splits": {
+        "title": "Splits",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distance",
+        "time": "Time",
+        "pace": "Pace",
+        "partial": "partial",
+        "estimatedNote": "Splits estimated from average pace; per-point timing not yet recorded."
       }
     },
     "record": {

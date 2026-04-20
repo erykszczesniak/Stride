@@ -29,6 +29,9 @@ public class FullActivityResponse {
     private String startLocation;
     private String endLocation;
     private String routePolyline;
+    // Per-point altitudes in meters, aligned with the polyline. Null when the
+    // activity has no stored elevation series (e.g. legacy rows or non-GPX sources).
+    private double[] elevationProfile;
     private String mapImageUrl;
     private boolean isPrivate;
     private int likesCount;

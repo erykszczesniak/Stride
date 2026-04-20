@@ -251,6 +251,22 @@
       "photoAlt": "Aktivitätsfoto {{index}}",
       "gear": {
         "label": "Ausrüstung"
+      },
+      "elevationProfile": {
+        "title": "Höhenprofil",
+        "gain": "Anstieg",
+        "loss": "Abstieg",
+        "noData": "Für diese Aktivität sind keine Höhendaten verfügbar."
+      },
+      "splits": {
+        "title": "Splits",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distanz",
+        "time": "Zeit",
+        "pace": "Pace",
+        "partial": "teilweise",
+        "estimatedNote": "Splits aus dem Durchschnittstempo geschätzt; Zeitangaben pro Punkt werden noch nicht aufgezeichnet."
       }
     },
     "record": {

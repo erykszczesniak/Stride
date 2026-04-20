@@ -68,6 +68,12 @@ public class Activity {
     @Column(columnDefinition = "TEXT")
     private String routePolyline;
 
+    // JSON-serialized array of doubles (meters), one per polyline point.
+    // Null when the imported file had no altitude data or for activities created
+    // before V12 — consumers should treat null as "no elevation profile available".
+    @Column(columnDefinition = "TEXT")
+    private String elevationProfile;
+
     private String mapImageUrl;
 
     private boolean isPrivate;
