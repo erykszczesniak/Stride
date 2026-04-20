@@ -8,16 +8,34 @@ export const SettingsContainer = styled.div`
 
 export const SettingsContent = styled.div`
   flex: 1;
+  min-width: 0;
   padding: 32px;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 export const SettingsHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   margin-bottom: 32px;
+
+  @media (max-width: 600px) {
+    flex-wrap: wrap;
+
+    /* On narrow viewports drop the Save Changes button to a full-width row
+       under the title so it doesn't get clipped or shove the title off-screen. */
+    & > button {
+      flex: 1 1 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 export const SettingsTitle = styled.h1`
@@ -112,10 +130,18 @@ export const SidebarArrow = styled.span`
 
 export const SettingsPanel = styled.div`
   flex: 1;
+  /* Without min-width:0 a flex child defaults to min-width:auto, which is the
+     content's intrinsic width. Wide form rows then refuse to shrink and push
+     the whole layout past the viewport. */
+  min-width: 0;
   background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
   padding: 32px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 export const PanelTitle = styled.h2`
