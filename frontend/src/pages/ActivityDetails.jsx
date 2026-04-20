@@ -13,6 +13,7 @@ import {
   FiX,
   FiCheck,
   FiImage,
+  FiActivity,
 } from "react-icons/fi";
 import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
@@ -71,7 +72,71 @@ import {
   PhotoGrid,
   PhotoGridItem,
   PhotoGridImage,
+  SplitsSection,
+  SplitsSectionTitle,
+  SplitsTableWrapper,
+  SplitsTable,
+  SplitsTableHead,
+  SplitRow,
+  PartialBadge,
+  SplitsNote,
 } from "./ActivityDetailsStyles";
+
+/**
+ * Format a duration in seconds to a compact time string (M:SS or H:MM:SS).
+ * Used for per-split times which are typically short.
+ */
+const formatSplitTime = (seconds) => {
+  if (seconds == null || !isFinite(seconds) || seconds < 0) return "\u2014";
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${m}:${s.toString().padStart(2, "0")}`;
+};
+
+/**
+ * Compute uniform splits from total distance and duration.
+ * Returns an array of { index, distanceKm, durationSeconds, partial } rows.
+ * Splits are uniform-pace because per-point timestamps are not stored yet.
+ */
+const computeSplits = (totalDistKm, totalDurationSec, splitUnitKm) => {
+  if (
+    !totalDistKm ||
+    !totalDurationSec ||
+    totalDistKm <= 0 ||
+    totalDurationSec <= 0 ||
+    !splitUnitKm ||
+    splitUnitKm <= 0
+  ) {
+    return [];
+  }
+  const numFullSplits = Math.floor(totalDistKm / splitUnitKm);
+  const remainderKm = totalDistKm - numFullSplits * splitUnitKm;
+  const fullSplitTime = (totalDurationSec * splitUnitKm) / totalDistKm;
+  const splits = [];
+  for (let i = 0; i < numFullSplits; i += 1) {
+    splits.push({
+      index: i + 1,
+      distanceKm: splitUnitKm,
+      durationSeconds: fullSplitTime,
+      partial: false,
+    });
+  }
+  // Only show remainder if it is meaningfully > 0 (guard against FP noise).
+  if (remainderKm > 0.01) {
+    splits.push({
+      index: numFullSplits + 1,
+      distanceKm: remainderKm,
+      durationSeconds: (totalDurationSec * remainderKm) / totalDistKm,
+      partial: true,
+    });
+  }
+  return splits;
+};
 
 const ActivityDetails = () => {
   const { t } = useTranslation();
@@ -397,6 +462,74 @@ const ActivityDetails = () => {
         </MapSectionTitle>
         <ActivityMap coordinates={activity.routePolyline} height="400px" />
       </MapSection>
+
+      {(() => {
+        const splitUnitKm = unitsCtx.isImperial ? 1.609344 : 1;
+        const splits = computeSplits(
+          activity.distance,
+          activity.duration,
+          splitUnitKm,
+        );
+        if (splits.length === 0) return null;
+        const splitUnitLabel = unitsCtx.isImperial
+          ? t("activities.details.splits.mi")
+          : t("activities.details.splits.km");
+        return (
+          <SplitsSection>
+            <SplitsSectionTitle>
+              <FiActivity size={20} />
+              {t("activities.details.splits.title")}
+            </SplitsSectionTitle>
+            <SplitsTableWrapper>
+              <SplitsTable>
+                <SplitsTableHead>
+                  <tr>
+                    <th>{splitUnitLabel}</th>
+                    <th className="hide-narrow numeric">
+                      {t("activities.details.splits.distance")}
+                    </th>
+                    <th className="numeric">
+                      {t("activities.details.splits.time")}
+                    </th>
+                    <th className="hide-narrow numeric">
+                      {t("activities.details.splits.pace")}
+                    </th>
+                  </tr>
+                </SplitsTableHead>
+                <tbody>
+                  {splits.map((s) => (
+                    <SplitRow key={s.index} partial={s.partial}>
+                      <td className="split-number">{s.index}</td>
+                      <td className="hide-narrow numeric">
+                        {unitsCtx.convertDistance(s.distanceKm).toFixed(2)}{" "}
+                        {unitsCtx.distanceUnit}
+                        {s.partial && (
+                          <PartialBadge>
+                            {t("activities.details.splits.partial")}
+                          </PartialBadge>
+                        )}
+                      </td>
+                      <td className="numeric">
+                        {formatSplitTime(s.durationSeconds)}
+                      </td>
+                      <td className="hide-narrow numeric">
+                        {unitsCtx.formatPaceFromActivity(
+                          s.distanceKm,
+                          s.durationSeconds,
+                          activity.activityType,
+                        )}
+                      </td>
+                    </SplitRow>
+                  ))}
+                </tbody>
+              </SplitsTable>
+            </SplitsTableWrapper>
+            <SplitsNote>
+              {t("activities.details.splits.estimatedNote")}
+            </SplitsNote>
+          </SplitsSection>
+        );
+      })()}
 
       {activity.photos && activity.photos.length > 0 && (
         <PhotoGallerySection>

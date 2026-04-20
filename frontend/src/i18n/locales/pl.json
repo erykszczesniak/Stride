@@ -256,7 +256,17 @@
       "confirmDelete": "Usunąć \"{{title}}\"? Tej operacji nie można cofnąć.",
       "confirmDeleteComment": "Czy na pewno chcesz usunąć ten komentarz?",
       "activityNotFound": "Nie znaleziono aktywności",
-      "photoAlt": "Zdjęcie aktywności {{index}}"
+      "photoAlt": "Zdjęcie aktywności {{index}}",
+      "splits": {
+        "title": "Okrążenia",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Dystans",
+        "time": "Czas",
+        "pace": "Tempo",
+        "partial": "częściowe",
+        "estimatedNote": "Okrążenia oszacowane na podstawie średniego tempa; dane z poszczególnych punktów nie są jeszcze zapisywane."
+      }
     },
     "record": {
       "titleNew": "Zarejestruj aktywność",

@@ -248,7 +248,17 @@
       "confirmDelete": "\"{{title}}\" löschen? Dies kann nicht rückgängig gemacht werden.",
       "confirmDeleteComment": "Sind Sie sicher, dass Sie diesen Kommentar löschen möchten?",
       "activityNotFound": "Aktivität nicht gefunden",
-      "photoAlt": "Aktivitätsfoto {{index}}"
+      "photoAlt": "Aktivitätsfoto {{index}}",
+      "splits": {
+        "title": "Splits",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distanz",
+        "time": "Zeit",
+        "pace": "Pace",
+        "partial": "teilweise",
+        "estimatedNote": "Splits aus dem Durchschnittstempo geschätzt; Zeitangaben pro Punkt werden noch nicht aufgezeichnet."
+      }
     },
     "record": {
       "titleNew": "Aktivität aufzeichnen",
