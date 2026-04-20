@@ -7,8 +7,12 @@ import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.search.UserDocument;
+import com.strava.backend.search.UserSearchRepository;
 import com.strava.backend.service.NotificationService;
 import com.strava.backend.util.TestDataFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,6 +54,15 @@ class UserServiceImplTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private UserSearchRepository userSearchRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -417,20 +430,34 @@ class UserServiceImplTest {
     class SearchUsersPrivacyTests {
 
         @Test
-        @DisplayName("Should delegate to repository query that excludes hideFromSearch users")
+        @DisplayName("Should delegate to Elasticsearch which filters hideFromSearch users")
         void shouldDelegateToFilteredRepositoryQuery() {
-            // Simulate the repository already excluding hidden users.
+            // The Elasticsearch query has a must_not clause on hideFromSearch, so only the
+            // visible user comes back from the ES hit list.
             User visible = TestDataFactory.createUser(10L, "visible@example.com", "Visible", "User");
-            User hidden = TestDataFactory.createUser(11L, "hidden@example.com", "Hidden", "User");
-            hidden.setHideFromSearch(true);
+            UserDocument visibleDoc = UserDocument.fromUser(visible);
             Pageable pageable = PageRequest.of(0, 10);
-            when(userRepository.searchUsersByText(eq("User"), eq(pageable)))
-                    .thenReturn(new PageImpl<>(List.of(visible)));
+            when(userSearchRepository.searchByQuery(eq("User"), eq(pageable)))
+                    .thenReturn(new PageImpl<>(List.of(visibleDoc)));
+            when(userRepository.findByIdIn(List.of(10L))).thenReturn(List.of(visible));
 
             Page<User> result = userService.searchUsers("User", pageable);
 
             assertThat(result.getContent()).containsExactly(visible);
-            assertThat(result.getContent()).doesNotContain(hidden);
+            verify(userSearchRepository).searchByQuery("User", pageable);
+        }
+
+        @Test
+        @DisplayName("searchUsersFallback should still use SQL ILIKE when called directly")
+        void fallbackShouldUseSql() {
+            User visible = TestDataFactory.createUser(10L, "visible@example.com", "Visible", "User");
+            Pageable pageable = PageRequest.of(0, 10);
+            when(userRepository.searchUsersByText(eq("User"), eq(pageable)))
+                    .thenReturn(new PageImpl<>(List.of(visible)));
+
+            Page<User> result = userService.searchUsersFallback("User", pageable);
+
+            assertThat(result.getContent()).containsExactly(visible);
             verify(userRepository).searchUsersByText("User", pageable);
         }
     }

@@ -18,6 +18,12 @@ public interface UserService {
 
     Page<User> searchUsers(String searchText, Pageable pageable);
 
+    /**
+     * SQL {@code ILIKE}-based search retained as a fallback for when Elasticsearch
+     * is unreachable. Callers should prefer {@link #searchUsers(String, Pageable)}.
+     */
+    Page<User> searchUsersFallback(String searchText, Pageable pageable);
+
     User updateUser(Long userId, UpdateUserRequest request);
 
     void followUser(Long userId, Long followUserId);

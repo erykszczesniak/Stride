@@ -243,6 +243,7 @@ Automatic detection and tracking of personal best times for standard distances a
 - **REST API** for all CRUD operations
 - **SSE** (Server-Sent Events) for real-time notifications
 - **Async event-driven** architecture (Spring ApplicationEventPublisher)
+- **Elasticsearch 8** for full-text user search (synced via async event listener)
 - **Flyway** for database migrations
 - **Hand-rolled GPX/TCX/FIT parsers** for activity file import (no external SDK dependencies)
 - **Thymeleaf** email templates
@@ -302,6 +303,7 @@ That's it! The application will be available at:
 - **GraphQL:** http://localhost:8081/graphql
 - **Grafana:** http://localhost:3003 (admin/admin)
 - **Prometheus:** http://localhost:9091
+- **Elasticsearch:** http://localhost:9200
 
 #### Sample Users
 
@@ -707,6 +709,40 @@ Go to **Dashboards → Strava Backend - JVM & Spring Boot** to see:
 - Thread counts (live, daemon, peak)
 - System & process CPU usage
 - HikariCP connection pool (active, idle, pending, total)
+
+### Elasticsearch (user search)
+
+Full-text user search (`GET /api/v1/users/search?query=...`) is backed by an
+Elasticsearch 8 index synced from PostgreSQL via an async event listener
+(`UserSearchIndexSyncListener`). If Elasticsearch is unreachable the controller
+falls back to the legacy SQL `ILIKE` implementation so search keeps working
+(possibly with lower quality) during an outage.
+
+The index is named `users` and is seeded on startup from the database (capped at
+1000 users) whenever it's missing or empty, so fresh clones / docker volumes
+don't need manual backfill.
+
+Manual queries:
+
+```bash
+# List everything in the index
+curl http://localhost:9200/users/_search?q=*
+
+# Match users by bio / city / name (multi_match with fullName boosted)
+curl 'http://localhost:9200/users/_search' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "query": {
+      "multi_match": {
+        "query": "marathon",
+        "fields": ["fullName^3", "firstName^2", "lastName^2", "bio", "city"]
+      }
+    }
+  }'
+
+# Check the mapping produced from UserDocument
+curl http://localhost:9200/users/_mapping
+```
 
 ### Structured Logging
 
