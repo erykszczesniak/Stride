@@ -4,6 +4,7 @@ import SettingsService from "../api/SettingsService";
 const KM_TO_MI = 0.621371;
 const M_TO_FT = 3.28084;
 const KG_TO_LBS = 2.20462;
+const CM_TO_IN = 0.393701;
 
 const PACE_ACTIVITY_TYPES = new Set([
   "RUN",
@@ -64,6 +65,21 @@ export const UnitsProvider = ({ children }) => {
     return isImperial ? kg * KG_TO_LBS : kg;
   }, [isImperial]);
 
+  const convertWeightToMetric = useCallback((value) => {
+    if (value == null) return 0;
+    return isImperial ? value / KG_TO_LBS : value;
+  }, [isImperial]);
+
+  const convertHeight = useCallback((cm) => {
+    if (cm == null) return 0;
+    return isImperial ? cm * CM_TO_IN : cm;
+  }, [isImperial]);
+
+  const convertHeightToMetric = useCallback((value) => {
+    if (value == null) return 0;
+    return isImperial ? value / CM_TO_IN : value;
+  }, [isImperial]);
+
   const convertSpeed = useCallback((kmh) => {
     if (kmh == null) return 0;
     return isImperial ? kmh * KM_TO_MI : kmh;
@@ -72,6 +88,7 @@ export const UnitsProvider = ({ children }) => {
   const distanceUnit = isImperial ? "mi" : "km";
   const elevationUnit = isImperial ? "ft" : "m";
   const weightUnit = isImperial ? "lbs" : "kg";
+  const heightUnit = isImperial ? "in" : "cm";
   const speedUnit = isImperial ? "mph" : "km/h";
 
   /**
@@ -181,10 +198,14 @@ export const UnitsProvider = ({ children }) => {
     convertElevation,
     convertElevationToMetric,
     convertWeight,
+    convertWeightToMetric,
+    convertHeight,
+    convertHeightToMetric,
     convertSpeed,
     distanceUnit,
     elevationUnit,
     weightUnit,
+    heightUnit,
     speedUnit,
     formatSpeed,
     formatPaceFromActivity,
@@ -197,10 +218,14 @@ export const UnitsProvider = ({ children }) => {
     convertElevation,
     convertElevationToMetric,
     convertWeight,
+    convertWeightToMetric,
+    convertHeight,
+    convertHeightToMetric,
     convertSpeed,
     distanceUnit,
     elevationUnit,
     weightUnit,
+    heightUnit,
     speedUnit,
     formatSpeed,
     formatPaceFromActivity,

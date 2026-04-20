@@ -606,9 +606,9 @@
       "cityPlaceholder": "Wprowadź miasto",
       "country": "Kraj",
       "countryPlaceholder": "Wprowadź kraj",
-      "weight": "Waga (kg)",
+      "weight": "Waga",
       "weightPlaceholder": "Wprowadź wagę",
-      "height": "Wzrost (cm)",
+      "height": "Wzrost",
       "heightPlaceholder": "Wprowadź wzrost"
     },
     "notifications": {

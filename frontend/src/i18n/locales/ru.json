@@ -606,9 +606,9 @@
       "cityPlaceholder": "Введите город",
       "country": "Страна",
       "countryPlaceholder": "Введите страну",
-      "weight": "Вес (кг)",
+      "weight": "Вес",
       "weightPlaceholder": "Введите вес",
-      "height": "Рост (см)",
+      "height": "Рост",
       "heightPlaceholder": "Введите рост"
     },
     "notifications": {

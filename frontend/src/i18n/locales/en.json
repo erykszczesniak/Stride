@@ -598,9 +598,9 @@
       "cityPlaceholder": "Enter city",
       "country": "Country",
       "countryPlaceholder": "Enter country",
-      "weight": "Weight (kg)",
+      "weight": "Weight",
       "weightPlaceholder": "Enter weight",
-      "height": "Height (cm)",
+      "height": "Height",
       "heightPlaceholder": "Enter height"
     },
     "notifications": {

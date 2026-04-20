@@ -598,9 +598,9 @@
       "cityPlaceholder": "Entrez une ville",
       "country": "Pays",
       "countryPlaceholder": "Entrez un pays",
-      "weight": "Poids (kg)",
+      "weight": "Poids",
       "weightPlaceholder": "Entrez votre poids",
-      "height": "Taille (cm)",
+      "height": "Taille",
       "heightPlaceholder": "Entrez votre taille"
     },
     "notifications": {

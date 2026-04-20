@@ -61,11 +61,33 @@ import {
 
 const VALID_SECTIONS = ["profile", "notifications", "preferences", "account"];
 
+const KG_TO_LBS = 2.20462;
+const CM_TO_IN = 0.393701;
+
+const formatDisplayWeight = (weightKg, isImperial) => {
+  if (weightKg == null || weightKg === "") return "";
+  const value = isImperial ? Number(weightKg) * KG_TO_LBS : Number(weightKg);
+  return isImperial ? value.toFixed(1) : String(value);
+};
+
+const formatDisplayHeight = (heightCm, isImperial) => {
+  if (heightCm == null || heightCm === "") return "";
+  const value = isImperial ? Number(heightCm) * CM_TO_IN : Number(heightCm);
+  return isImperial ? String(Math.round(value)) : String(value);
+};
+
 const Settings = () => {
   const { t } = useTranslation();
   const toast = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
-  const { updateUnits } = useUnits();
+  const {
+    updateUnits,
+    isImperial,
+    convertWeightToMetric,
+    convertHeightToMetric,
+    weightUnit,
+    heightUnit,
+  } = useUnits();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
@@ -121,6 +143,18 @@ const Settings = () => {
     setPreferences((prev) => ({ ...prev, darkMode: isDarkMode }));
   }, [isDarkMode]);
 
+  // Re-convert displayed weight/height when the unit preference flips.
+  // The `user` object holds the metric-stored values from the backend.
+  useEffect(() => {
+    if (!user) return;
+    setFormData((prev) => ({
+      ...prev,
+      weight: user.weight != null ? formatDisplayWeight(user.weight, isImperial) : prev.weight,
+      height: user.height != null ? formatDisplayHeight(user.height, isImperial) : prev.height,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isImperial, user]);
+
   const loadUserData = async () => {
     try {
       setLoading(true);
@@ -132,8 +166,12 @@ const Settings = () => {
         bio: response.data.bio || "",
         city: response.data.city || "",
         country: response.data.country || "",
-        weight: response.data.weight || "",
-        height: response.data.height || "",
+        weight: response.data.weight != null
+          ? formatDisplayWeight(response.data.weight, isImperial)
+          : "",
+        height: response.data.height != null
+          ? formatDisplayHeight(response.data.height, isImperial)
+          : "",
       });
       // Load notification preferences from backend user data
       setPreferences((prev) => ({
@@ -181,21 +219,37 @@ const Settings = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Convert displayed weight/height back to metric for backend storage
+      const weightKg = formData.weight
+        ? convertWeightToMetric(parseFloat(formData.weight))
+        : null;
+      const heightCm = formData.height
+        ? convertHeightToMetric(parseFloat(formData.height))
+        : null;
+
       // Save profile data and notification preferences to backend
-      await SettingsService.updateProfile({
+      const response = await SettingsService.updateProfile({
         firstName: formData.firstName,
         lastName: formData.lastName,
         bio: formData.bio || null,
         city: formData.city || null,
         country: formData.country || null,
-        weight: formData.weight ? parseFloat(formData.weight) : null,
-        height: formData.height ? parseFloat(formData.height) : null,
+        weight: weightKg,
+        height: heightCm,
         emailNotifications: preferences.emailNotifications,
         pushNotifications: preferences.pushNotifications,
         weeklySummary: preferences.weeklySummary,
         isPrivate: privacySettings.privateProfile,
         hideFromSearch: privacySettings.hideFromSearch,
       });
+
+      // Keep the metric-source-of-truth `user` state in sync with what we saved
+      // so that a later unit flip re-converts from the correct metric value.
+      setUser((prev) => ({
+        ...(response?.data ?? prev ?? {}),
+        weight: weightKg,
+        height: heightCm,
+      }));
 
       // Save all preferences (localStorage + backend notification prefs)
       await SettingsService.savePreferences(preferences);
@@ -269,8 +323,8 @@ const Settings = () => {
         bio: formData.bio || null,
         city: formData.city || null,
         country: formData.country || null,
-        weight: formData.weight ? parseFloat(formData.weight) : null,
-        height: formData.height ? parseFloat(formData.height) : null,
+        weight: formData.weight ? convertWeightToMetric(parseFloat(formData.weight)) : null,
+        height: formData.height ? convertHeightToMetric(parseFloat(formData.height)) : null,
         emailNotifications: preferences.emailNotifications,
         pushNotifications: preferences.pushNotifications,
         weeklySummary: preferences.weeklySummary,
@@ -444,7 +498,7 @@ const Settings = () => {
 
                   <FormRow>
                     <FormGroup>
-                      <FormLabel>{t("settings.profile.weight")}</FormLabel>
+                      <FormLabel>{`${t("settings.profile.weight")} (${weightUnit})`}</FormLabel>
                       <FormInput
                         type="number"
                         name="weight"
@@ -454,7 +508,7 @@ const Settings = () => {
                       />
                     </FormGroup>
                     <FormGroup>
-                      <FormLabel>{t("settings.profile.height")}</FormLabel>
+                      <FormLabel>{`${t("settings.profile.height")} (${heightUnit})`}</FormLabel>
                       <FormInput
                         type="number"
                         name="height"
