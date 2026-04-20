@@ -557,3 +557,89 @@ export const LoadingSpinner = styled.div`
     }
   }
 `;
+
+export const IntegrationRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  background: ${({ theme }) => theme.cardBg || theme.bg};
+  margin-bottom: 12px;
+`;
+
+export const IntegrationInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+`;
+
+export const IntegrationName = styled.p`
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: ${({ theme }) => theme.text};
+`;
+
+export const IntegrationDetail = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.textSecondary || theme.text};
+  margin: 0;
+`;
+
+export const IntegrationActions = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+`;
+
+export const StravaConnectButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fc5200;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #e04800;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+export const SecondaryButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: transparent;
+  color: ${({ theme }) => theme.text};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.hover || "rgba(0,0,0,0.04)"};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;

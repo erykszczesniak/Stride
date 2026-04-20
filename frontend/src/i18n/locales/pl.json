@@ -662,7 +662,27 @@
       "deleteAccountTitle": "Usuń konto",
       "deleteAccountConfirm": "Czy na pewno chcesz usunąć swoje konto? Tej operacji nie można cofnąć. Wszystkie Twoje aktywności, cele i dane zostaną trwale usunięte.",
       "deleteMyAccount": "Usuń moje konto",
-      "deleteFailed": "Nie udało się usunąć konta. Spróbuj ponownie."
+      "deleteFailed": "Nie udało się usunąć konta. Spróbuj ponownie.",
+      "integrations": {
+        "title": "Połączone usługi",
+        "description": "Połącz konta zewnętrzne, aby synchronizować aktywności ze Stride.",
+        "strava": {
+          "name": "Strava",
+          "notConnected": "Niepołączone",
+          "connect": "Połącz ze Stravą",
+          "disconnect": "Rozłącz",
+          "importNow": "Importuj teraz",
+          "athleteId": "ID sportowca",
+          "lastImported": "Ostatni import",
+          "neverImported": "nigdy",
+          "importedCount": "Zaimportowano {{count}} aktywności",
+          "connectedToast": "Strava połączona pomyślnie!",
+          "errorToast": "Coś poszło nie tak z Stravą. Spróbuj ponownie.",
+          "notConfigured": "Integracja ze Stravą nie jest skonfigurowana na serwerze.",
+          "importStarted": "Import ze Stravy rozpoczęty — może to potrwać kilka minut.",
+          "disconnected": "Konto Stravy zostało rozłączone."
+        }
+      }
     }
   },
   "admin": {

@@ -137,6 +137,15 @@ public final class PathConstants {
     public static final String TXT = "/txt";
     public static final String GPX = "/gpx";
 
+    // Integrations (Strava, etc.)
+    public static final String INTEGRATIONS = "/integrations";
+    public static final String STRAVA = "/strava";
+    public static final String API_V1_INTEGRATIONS_STRAVA = API_V1 + INTEGRATIONS + STRAVA;
+    public static final String AUTHORIZE = "/authorize";
+    public static final String CALLBACK = "/callback";
+    public static final String STATUS = "/status";
+    public static final String DISCONNECT = "/disconnect";
+
     private PathConstants() {
     }
 }

@@ -654,7 +654,27 @@
       "deleteAccountTitle": "Konto löschen",
       "deleteAccountConfirm": "Sind Sie sicher, dass Sie Ihr Konto löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Aktivitäten, Ziele und Daten werden dauerhaft gelöscht.",
       "deleteMyAccount": "Mein Konto löschen",
-      "deleteFailed": "Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."
+      "deleteFailed": "Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.",
+      "integrations": {
+        "title": "Verbundene Dienste",
+        "description": "Verknüpfe externe Konten, um Aktivitäten mit Stride zu synchronisieren.",
+        "strava": {
+          "name": "Strava",
+          "notConnected": "Nicht verbunden",
+          "connect": "Mit Strava verbinden",
+          "disconnect": "Trennen",
+          "importNow": "Jetzt importieren",
+          "athleteId": "Athleten-ID",
+          "lastImported": "Letzter Import",
+          "neverImported": "nie",
+          "importedCount": "{{count}} Aktivitäten importiert",
+          "connectedToast": "Strava erfolgreich verbunden!",
+          "errorToast": "Mit Strava ist etwas schiefgelaufen. Bitte versuche es erneut.",
+          "notConfigured": "Die Strava-Integration ist auf diesem Server nicht konfiguriert.",
+          "importStarted": "Strava-Import gestartet — dies kann einige Minuten dauern.",
+          "disconnected": "Strava-Konto getrennt."
+        }
+      }
     }
   },
   "admin": {
