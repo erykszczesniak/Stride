@@ -254,6 +254,16 @@
         "gain": "Ascenso",
         "loss": "Descenso",
         "noData": "No hay datos de elevación disponibles para esta actividad."
+      },
+      "splits": {
+        "title": "Parciales",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distancia",
+        "time": "Tiempo",
+        "pace": "Ritmo",
+        "partial": "parcial",
+        "estimatedNote": "Parciales estimados a partir del ritmo medio; el tiempo por punto aún no se registra."
       }
     },
     "record": {

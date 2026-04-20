@@ -465,6 +465,123 @@ export const NoComments = styled.p`
   transition: color 0.3s ease;
 `;
 
+export const SplitsSection = styled.div`
+  background: ${({ theme }) => theme.bgCard};
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
+  border: 1px solid ${({ theme }) => theme.border};
+  transition: all 0.3s ease;
+`;
+
+export const SplitsSectionTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s ease;
+`;
+
+export const SplitsTableWrapper = styled.div`
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+`;
+
+export const SplitsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 320px;
+`;
+
+export const SplitsTableHead = styled.thead`
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: ${({ theme }) => theme.textSecondary};
+    padding: 8px 12px;
+    border-bottom: 1px solid ${({ theme }) => theme.border};
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+
+  th.numeric {
+    text-align: right;
+  }
+
+  @media (max-width: 400px) {
+    th.hide-narrow {
+      display: none;
+    }
+  }
+`;
+
+export const SplitRow = styled.tr`
+  background: ${(props) =>
+    props.partial ? props.theme.bgHover : "transparent"};
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.bgHover};
+  }
+
+  td {
+    padding: 10px 12px;
+    color: ${({ theme }) => theme.textPrimary};
+    border-bottom: 1px solid ${({ theme }) => theme.border};
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+
+  td.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  td.split-number {
+    font-weight: 600;
+    color: ${({ theme }) => theme.textPrimary};
+    width: 48px;
+  }
+
+  @media (max-width: 400px) {
+    td.hide-narrow {
+      display: none;
+    }
+  }
+`;
+
+export const SplitCell = styled.td``;
+
+export const PartialBadge = styled.span`
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
+  background: ${({ theme }) => theme.bgSecondary};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 10px;
+  transition: all 0.3s ease;
+`;
+
+export const SplitsNote = styled.p`
+  margin-top: 12px;
+  font-size: 12px;
+  color: ${({ theme }) => theme.textMuted};
+  font-style: italic;
+  transition: color 0.3s ease;
+`;
+
 export const PhotoGallerySection = styled.div`
   background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
