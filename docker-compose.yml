@@ -25,6 +25,29 @@ services:
       - strava-network
 
   # ============================================
+  # Elasticsearch (full-text user search)
+  # ============================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+    container_name: strava-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - strava-network
+
+  # ============================================
   # Backend (Spring Boot)
   # ============================================
   backend:
@@ -47,9 +70,12 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       CORS_ORIGINS: http://localhost:3000,http://localhost:80,http://localhost
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      ELASTICSEARCH_URIS: http://elasticsearch:9200
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     depends_on:
       postgres:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
       jaeger:
         condition: service_started
@@ -151,6 +177,8 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  elasticsearch-data:
     driver: local
 
 # ============================================
