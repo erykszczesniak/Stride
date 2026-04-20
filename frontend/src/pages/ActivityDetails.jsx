@@ -18,6 +18,7 @@ import Layout from "../components/Layout/Layout";
 import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
 import ActivityMap from "../components/ActivityMap/ActivityMap";
+import ElevationProfile from "../components/ElevationProfile/ElevationProfile";
 import ShareModal from "../components/ShareModal/ShareModal";
 import { useAuth } from "../context/AuthContext";
 import { useUnits } from "../context/UnitsContext";
@@ -397,6 +398,14 @@ const ActivityDetails = () => {
         </MapSectionTitle>
         <ActivityMap coordinates={activity.routePolyline} height="400px" />
       </MapSection>
+
+      {/* Elevation profile renders nothing for activities without a stored
+          per-point altitude series — see ElevationProfile.jsx. Kept below the
+          map so users see the route first, then the altitude context. */}
+      <ElevationProfile
+        elevations={activity.elevationProfile}
+        totalDistanceKm={activity.distance}
+      />
 
       {activity.photos && activity.photos.length > 0 && (
         <PhotoGallerySection>

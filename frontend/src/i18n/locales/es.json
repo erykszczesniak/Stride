@@ -248,7 +248,13 @@
       "confirmDelete": "¿Eliminar \"{{title}}\"? Esta acción no se puede deshacer.",
       "confirmDeleteComment": "¿Está seguro de que desea eliminar este comentario?",
       "activityNotFound": "Actividad no encontrada",
-      "photoAlt": "Foto de la actividad {{index}}"
+      "photoAlt": "Foto de la actividad {{index}}",
+      "elevationProfile": {
+        "title": "Perfil de elevación",
+        "gain": "Ascenso",
+        "loss": "Descenso",
+        "noData": "No hay datos de elevación disponibles para esta actividad."
+      }
     },
     "record": {
       "titleNew": "Registrar actividad",

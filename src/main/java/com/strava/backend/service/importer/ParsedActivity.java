@@ -34,4 +34,11 @@ public class ParsedActivity {
 
     @Builder.Default
     private List<GpsPoint> gpsPoints = new ArrayList<>();
+
+    // Per-point elevation in meters. Parallels gpsPoints 1:1 so downstream code
+    // can align the elevation series with the encoded polyline. Entries may be
+    // null when a given trackpoint had no altitude; the whole list is empty
+    // when the source file carried no elevation data at all.
+    @Builder.Default
+    private List<Double> elevations = new ArrayList<>();
 }
