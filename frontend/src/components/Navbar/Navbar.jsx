@@ -40,6 +40,11 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  // On the Settings page the navbar strips down to just search + theme + avatar
+  // so the user isn't distracted by the add-activity / notifications shortcuts
+  // while they're configuring their account.
+  const isSettingsPage = location.pathname.startsWith("/settings");
+
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -116,11 +121,13 @@ const Navbar = () => {
               <FiSearch size={20} />
             </IconButton>
           </HideOnMobile>
-          <IconButton title={t("nav.addActivity")} onClick={() => navigate("/activities/new")}>
-            <FiPlus size={22} />
-          </IconButton>
+          {!isSettingsPage && (
+            <IconButton title={t("nav.addActivity")} onClick={() => navigate("/activities/new")}>
+              <FiPlus size={22} />
+            </IconButton>
+          )}
           <HideOnMobile>
-            <NotificationDropdown />
+            {!isSettingsPage && <NotificationDropdown />}
             <IconButton title={isDarkMode ? t("nav.lightMode") : t("nav.darkMode")} onClick={toggleTheme}>
               {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
             </IconButton>
