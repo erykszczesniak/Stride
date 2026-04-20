@@ -354,7 +354,8 @@ public class FitParser implements ActivityFileParser {
         // sport + start time so each imported activity gets a meaningful title rather
         // than every file ending up as "Imported FIT Activity".
         ParsedActivity.ParsedActivityBuilder builder = ParsedActivity.builder()
-                .gpsPoints(points);
+                .gpsPoints(points)
+                .elevations(extractElevations(points));
 
         // Use session data if available
         if (sessionData.containsKey("sport")) {
@@ -467,6 +468,18 @@ public class FitParser implements ActivityFileParser {
             case 37 -> ActivityType.ROCK_CLIMBING;
             default -> ActivityType.OTHER;
         };
+    }
+
+    /** Extract per-point elevations aligned with the supplied GPS points list. */
+    private List<Double> extractElevations(List<GpsPoint> points) {
+        List<Double> elevations = new ArrayList<>(points.size());
+        boolean anyPresent = false;
+        for (GpsPoint p : points) {
+            Double e = p.getElevation();
+            elevations.add(e);
+            if (e != null) anyPresent = true;
+        }
+        return anyPresent ? elevations : new ArrayList<>();
     }
 
     private double semicirclesToDegrees(long semicircles) {

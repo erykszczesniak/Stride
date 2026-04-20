@@ -248,7 +248,23 @@
       "confirmDelete": "Supprimer \"{{title}}\" ? Cette action est irréversible.",
       "confirmDeleteComment": "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
       "activityNotFound": "Activité introuvable",
-      "photoAlt": "Photo de l'activité {{index}}"
+      "photoAlt": "Photo de l'activité {{index}}",
+      "elevationProfile": {
+        "title": "Profil d'élévation",
+        "gain": "Dénivelé positif",
+        "loss": "Dénivelé négatif",
+        "noData": "Aucune donnée d'élévation disponible pour cette activité."
+      },
+      "splits": {
+        "title": "Intervalles",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distance",
+        "time": "Temps",
+        "pace": "Allure",
+        "partial": "partiel",
+        "estimatedNote": "Intervalles estimés à partir de l'allure moyenne ; le temps point par point n'est pas encore enregistré."
+      }
     },
     "record": {
       "titleNew": "Enregistrer une activité",
