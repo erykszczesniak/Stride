@@ -43,11 +43,15 @@ export const ModalContainer = styled.div`
   box-shadow: 0 16px 48px ${({ theme }) => theme.shadowMedium},
     0 0 0 1px ${({ theme }) => theme.border};
   width: 560px;
+  height: 480px;
+  min-width: 380px;
+  min-height: 300px;
   max-width: calc(100vw - 32px);
-  max-height: 480px;
+  max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  resize: both;
   animation: ${slideDown} 0.15s ease-out;
 `;
 
