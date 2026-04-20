@@ -243,6 +243,7 @@ Automatic detection and tracking of personal best times for standard distances a
 - **REST API** for all CRUD operations
 - **SSE** (Server-Sent Events) for real-time notifications
 - **Async event-driven** architecture (Spring ApplicationEventPublisher)
+- **Elasticsearch 8** for full-text user search (synced via async event listener)
 - **Flyway** for database migrations
 - **Hand-rolled GPX/TCX/FIT parsers** for activity file import (no external SDK dependencies)
 - **Thymeleaf** email templates
@@ -268,7 +269,8 @@ Automatic detection and tracking of personal best times for standard distances a
 - **PostgreSQL 16**
 - **Nginx** (production)
 - **Prometheus** + **Grafana** for metrics & dashboards
-- **Structured logging** (JSON in prod via Logstash encoder)
+- **OpenTelemetry** distributed tracing exported via OTLP to **Jaeger**
+- **Structured logging** (JSON in prod via Logstash encoder) with `traceId` correlation
 - **Rate limiting** on auth endpoints
 
 ## Getting Started
@@ -302,6 +304,8 @@ That's it! The application will be available at:
 - **GraphQL:** http://localhost:8081/graphql
 - **Grafana:** http://localhost:3003 (admin/admin)
 - **Prometheus:** http://localhost:9091
+- **Elasticsearch:** http://localhost:9200
+- **Jaeger (Tracing):** http://localhost:16686
 
 #### Sample Users
 
@@ -707,6 +711,75 @@ Go to **Dashboards → Strava Backend - JVM & Spring Boot** to see:
 - Thread counts (live, daemon, peak)
 - System & process CPU usage
 - HikariCP connection pool (active, idle, pending, total)
+
+### Elasticsearch (user search)
+
+Full-text user search (`GET /api/v1/users/search?query=...`) is backed by an
+Elasticsearch 8 index synced from PostgreSQL via an async event listener
+(`UserSearchIndexSyncListener`). If Elasticsearch is unreachable the controller
+falls back to the legacy SQL `ILIKE` implementation so search keeps working
+(possibly with lower quality) during an outage.
+
+The index is named `users` and is seeded on startup from the database (capped at
+1000 users) whenever it's missing or empty, so fresh clones / docker volumes
+don't need manual backfill.
+
+Manual queries:
+
+```bash
+# List everything in the index
+curl http://localhost:9200/users/_search?q=*
+
+# Match users by bio / city / name (multi_match with fullName boosted)
+curl 'http://localhost:9200/users/_search' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "query": {
+      "multi_match": {
+        "query": "marathon",
+        "fields": ["fullName^3", "firstName^2", "lastName^2", "bio", "city"]
+      }
+    }
+  }'
+
+# Check the mapping produced from UserDocument
+curl http://localhost:9200/users/_mapping
+```
+
+### Distributed Tracing (OpenTelemetry + Jaeger)
+
+The backend emits OpenTelemetry spans via the Micrometer tracing bridge and exports them with the OTLP HTTP protocol to a Jaeger all-in-one container. 100% sampling in dev, 10% in prod.
+
+Automatic instrumentation covers:
+- HTTP server spans (every REST/GraphQL controller call)
+- JDBC spans (via Spring Boot's DataSource auto-config)
+- Outgoing RestTemplate/WebClient calls
+- Async execution: `@Async` methods propagate the parent trace context via a Micrometer `ContextExecutorService` wired through `AsyncConfiguration` (otherwise the `NotificationEventListener` spans would start as new roots)
+
+Manual instrumentation via Micrometer `Observation` API:
+- `PersonalRecordServiceImpl.recalculateAllPRs` opens a parent observation and two child observations (`personal-record.delete-existing` and `personal-record.recompute-loop`), so a trace in Jaeger clearly shows which phase dominated the overall call. The per-activity `checkAndUpdatePRs` calls then emit JDBC child spans via auto-instrumentation.
+
+**Jaeger UI** — http://localhost:16686
+
+Quick walkthrough:
+
+```bash
+# Generate some traffic
+curl -s http://localhost:8081/actuator/health
+curl -s http://localhost:8081/api/v1/activities
+
+# Confirm Jaeger has registered the backend as a service
+curl -s http://localhost:16686/api/services | jq
+# => { "data": ["stride-backend", "jaeger-query"], ... }
+```
+
+Then open http://localhost:16686, pick `service=stride-backend`, find the span for `GET /api/v1/activities`, and inspect the nested JDBC children. For the PR recalculation, hit `POST /api/v1/personal-records/recalculate` and you'll see the `recalculateAllPRs → deleteExistingPRsForUser → recomputePRsForActivities → checkAndUpdatePRs → JDBC` nested trace.
+
+Log lines in the `dev` profile now carry `[service,traceId,spanId]` so Jaeger traces can be cross-referenced with application logs. Prod JSON logs include `traceId` / `spanId` as top-level fields for log-aggregation platforms.
+
+**Config override:** The OTLP endpoint is exposed via the `OTEL_EXPORTER_OTLP_ENDPOINT` env var (default `http://localhost:4318/v1/traces`) — set it to your collector if you prefer Tempo, Honeycomb, etc.
+
+Grafana also has Jaeger wired as a datasource, so traces can be queried from Grafana dashboards alongside Prometheus metrics.
 
 ### Structured Logging
 

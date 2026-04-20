@@ -8,15 +8,21 @@ import com.strava.backend.dto.user.UpdateUserRequest;
 import com.strava.backend.dto.user.UserProfileResponse;
 import com.strava.backend.enums.NotificationType;
 import com.strava.backend.enums.AuthProvider;
+import com.strava.backend.event.UserDeletedEvent;
+import com.strava.backend.event.UserUpsertedEvent;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.search.UserDocument;
+import com.strava.backend.search.UserSearchRepository;
 import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -40,6 +46,8 @@ public class UserServiceImpl implements UserService {
     private final CommonMapper commonMapper;
     private final NotificationService notificationService;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
+    private final UserSearchRepository userSearchRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -64,6 +72,30 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public Page<User> searchUsers(String searchText, Pageable pageable) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return userRepository.findAll(pageable);
+        }
+        Page<UserDocument> hits = userSearchRepository.searchByQuery(searchText.trim(), pageable);
+        List<Long> ids = hits.getContent().stream().map(UserDocument::getId).toList();
+        if (ids.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, hits.getTotalElements());
+        }
+        // Preserve the Elasticsearch-scored order when hydrating from JPA.
+        List<User> usersInDbOrder = userRepository.findByIdIn(ids);
+        java.util.Map<Long, User> byId = new java.util.HashMap<>();
+        for (User u : usersInDbOrder) {
+            byId.put(u.getId(), u);
+        }
+        List<User> ordered = ids.stream()
+                .map(byId::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        return new PageImpl<>(ordered, pageable, hits.getTotalElements());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<User> searchUsersFallback(String searchText, Pageable pageable) {
         if (searchText == null || searchText.trim().isEmpty()) {
             return userRepository.findAll(pageable);
         }
@@ -97,7 +129,9 @@ public class UserServiceImpl implements UserService {
         if (request.getHideFromSearch() != null) {
             user.setHideFromSearch(request.getHideFromSearch());
         }
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        eventPublisher.publishEvent(new UserUpsertedEvent(saved));
+        return saved;
     }
 
     @Override
@@ -263,5 +297,6 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         userRepository.delete(user);
+        eventPublisher.publishEvent(new UserDeletedEvent(userId));
     }
 }

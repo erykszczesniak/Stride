@@ -248,7 +248,26 @@
       "confirmDelete": "¿Eliminar \"{{title}}\"? Esta acción no se puede deshacer.",
       "confirmDeleteComment": "¿Está seguro de que desea eliminar este comentario?",
       "activityNotFound": "Actividad no encontrada",
-      "photoAlt": "Foto de la actividad {{index}}"
+      "photoAlt": "Foto de la actividad {{index}}",
+      "gear": {
+        "label": "Equipamiento"
+      },
+      "elevationProfile": {
+        "title": "Perfil de elevación",
+        "gain": "Ascenso",
+        "loss": "Descenso",
+        "noData": "No hay datos de elevación disponibles para esta actividad."
+      },
+      "splits": {
+        "title": "Parciales",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distancia",
+        "time": "Tiempo",
+        "pace": "Ritmo",
+        "partial": "parcial",
+        "estimatedNote": "Parciales estimados a partir del ritmo medio; el tiempo por punto aún no se registra."
+      }
     },
     "record": {
       "titleNew": "Registrar actividad",
@@ -283,6 +302,8 @@
       "samplesTitle": "¿No tiene un archivo? Pruebe una muestra",
       "samplesSubtitle": "Descargue una de estas actividades de ejemplo para probar la función de importación.",
       "importSuccess": "\"{{title}}\" importado con éxito",
+      "gear": "Equipamiento",
+      "noGear": "Sin equipamiento",
       "errors": {
         "loadFailed": "No se pudo cargar la actividad",
         "invalidImageFormat": "Solo se permiten imágenes JPG, PNG y WebP",
@@ -584,7 +605,49 @@
       "profile": "Perfil",
       "notifications": "Notificaciones",
       "preferences": "Preferencias",
+      "gear": "Equipamiento",
       "account": "Cuenta"
+    },
+    "gear": {
+      "title": "Equipamiento",
+      "description": "Registre sus zapatillas, bicicletas y otros equipos",
+      "addGear": "Añadir equipamiento",
+      "addTitle": "Añadir equipamiento",
+      "editTitle": "Editar equipamiento",
+      "activeHeading": "Equipamiento activo",
+      "retiredHeading": "Equipamiento retirado",
+      "emptyActive": "Aún no tiene equipamiento. Añada zapatillas o una bicicleta para empezar a seguir el kilometraje.",
+      "name": "Nombre",
+      "namePlaceholder": "p. ej. Saucony Endorphin Pro 3",
+      "brand": "Marca",
+      "brandPlaceholder": "p. ej. Saucony",
+      "model": "Modelo",
+      "modelPlaceholder": "p. ej. Endorphin Pro 3",
+      "type": "Tipo",
+      "activityTypes": "Tipos de actividad compatibles",
+      "notes": "Notas",
+      "notesPlaceholder": "Fecha de compra, talla, etc.",
+      "distance": "total",
+      "activities": "actividades",
+      "retire": "Retirar",
+      "types": {
+        "SHOES": "Zapatillas",
+        "BIKE": "Bicicleta",
+        "OTHER": "Otro"
+      },
+      "created": "Equipamiento añadido",
+      "updated": "Equipamiento actualizado",
+      "retired": "Equipamiento retirado",
+      "deleted": "Equipamiento eliminado",
+      "confirmRetire": "¿Retirar \"{{name}}\"? Podrá seguir viéndolo en el historial.",
+      "confirmDelete": "¿Eliminar \"{{name}}\" permanentemente? Esta acción no se puede deshacer.",
+      "loadFailed": "No se pudo cargar el equipamiento",
+      "saveFailed": "No se pudo guardar el equipamiento",
+      "retireFailed": "No se pudo retirar el equipamiento",
+      "deleteFailed": "No se pudo eliminar el equipamiento",
+      "errors": {
+        "nameRequired": "El nombre del equipamiento es obligatorio"
+      }
     },
     "profile": {
       "title": "Perfil",

@@ -1,5 +1,6 @@
 package com.strava.backend.controller;
 
+import com.strava.backend.domain.User;
 import com.strava.backend.dto.HeaderResponse;
 import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.dto.user.UpdateUserRequest;
@@ -10,6 +11,8 @@ import com.strava.backend.mapper.UserMapper;
 import com.strava.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 
 import static com.strava.backend.constants.PathConstants.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_USERS)
@@ -56,6 +60,30 @@ public class UserController extends BaseController {
         return ResponseEntity.ok()
                 .headers(response.getHeaders())
                 .body(response.getItems());
+    }
+
+    /**
+     * Full-text user search backed by Elasticsearch. Falls back to the SQL
+     * {@code ILIKE} implementation when ES is unavailable so that search still
+     * works (possibly with lower quality) during an outage. Response shape is
+     * identical to other user endpoints so the frontend is agnostic to the
+     * search backend.
+     */
+    @GetMapping(SEARCH)
+    public ResponseEntity<List<UserResponse>> searchUsers(
+            @RequestParam String query,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<User> users;
+        try {
+            users = userService.searchUsers(query, pageable);
+        } catch (Exception e) {
+            log.warn("Elasticsearch user search failed, falling back to SQL ILIKE: {}", e.getMessage());
+            users = userService.searchUsersFallback(query, pageable);
+        }
+        List<UserResponse> body = users.getContent().stream()
+                .map(u -> commonMapper.convertToResponse(u, UserResponse.class))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(body);
     }
 
     @PutMapping(ME)

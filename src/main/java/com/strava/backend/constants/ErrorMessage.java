@@ -77,6 +77,12 @@ public final class ErrorMessage {
     public static final String INVALID_SAMPLE_FILENAME = "Invalid sample filename";
     public static final String SAMPLE_FILE_NOT_FOUND = "Sample file not found";
 
+    // Gear errors
+    public static final String GEAR_NOT_FOUND = "Gear not found";
+    public static final String GEAR_ACCESS_DENIED = "You don't have permission to access this gear";
+    public static final String GEAR_ACTIVITY_TYPE_MISMATCH = "This gear cannot be used for the selected activity type";
+    public static final String GEAR_ALREADY_RETIRED = "This gear is already retired";
+
     // General errors
     public static final String ACCESS_DENIED = "Access denied";
     public static final String INTERNAL_SERVER_ERROR = "Internal server error";

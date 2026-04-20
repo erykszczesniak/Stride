@@ -248,7 +248,26 @@
       "confirmDelete": "Delete \"{{title}}\"? This cannot be undone.",
       "confirmDeleteComment": "Are you sure you want to delete this comment?",
       "activityNotFound": "Activity not found",
-      "photoAlt": "Activity photo {{index}}"
+      "photoAlt": "Activity photo {{index}}",
+      "gear": {
+        "label": "Gear"
+      },
+      "elevationProfile": {
+        "title": "Elevation Profile",
+        "gain": "Gain",
+        "loss": "Loss",
+        "noData": "No elevation data available for this activity."
+      },
+      "splits": {
+        "title": "Splits",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distance",
+        "time": "Time",
+        "pace": "Pace",
+        "partial": "partial",
+        "estimatedNote": "Splits estimated from average pace; per-point timing not yet recorded."
+      }
     },
     "record": {
       "titleNew": "Record Activity",
@@ -283,6 +302,8 @@
       "samplesTitle": "Don't have a file? Try a sample",
       "samplesSubtitle": "Download one of these example activities to test the import feature.",
       "importSuccess": "Successfully imported \"{{title}}\"",
+      "gear": "Gear",
+      "noGear": "No gear",
       "errors": {
         "loadFailed": "Failed to load activity",
         "invalidImageFormat": "Only JPG, PNG, and WebP images are allowed",
@@ -584,7 +605,49 @@
       "profile": "Profile",
       "notifications": "Notifications",
       "preferences": "Preferences",
+      "gear": "Gear",
       "account": "Account"
+    },
+    "gear": {
+      "title": "Gear",
+      "description": "Track your shoes, bikes, and other equipment",
+      "addGear": "Add Gear",
+      "addTitle": "Add Gear",
+      "editTitle": "Edit Gear",
+      "activeHeading": "Active Gear",
+      "retiredHeading": "Retired Gear",
+      "emptyActive": "No gear yet. Add your shoes or bike to start tracking mileage.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Saucony Endorphin Pro 3",
+      "brand": "Brand",
+      "brandPlaceholder": "e.g. Saucony",
+      "model": "Model",
+      "modelPlaceholder": "e.g. Endorphin Pro 3",
+      "type": "Type",
+      "activityTypes": "Compatible Activity Types",
+      "notes": "Notes",
+      "notesPlaceholder": "Purchase date, size, etc.",
+      "distance": "total",
+      "activities": "activities",
+      "retire": "Retire",
+      "types": {
+        "SHOES": "Shoes",
+        "BIKE": "Bike",
+        "OTHER": "Other"
+      },
+      "created": "Gear added",
+      "updated": "Gear updated",
+      "retired": "Gear retired",
+      "deleted": "Gear deleted",
+      "confirmRetire": "Retire \"{{name}}\"? You can still see it in your history.",
+      "confirmDelete": "Delete \"{{name}}\" permanently? This cannot be undone.",
+      "loadFailed": "Failed to load gear",
+      "saveFailed": "Failed to save gear",
+      "retireFailed": "Failed to retire gear",
+      "deleteFailed": "Failed to delete gear",
+      "errors": {
+        "nameRequired": "Gear name is required"
+      }
     },
     "profile": {
       "title": "Profile",

@@ -1,5 +1,6 @@
 package com.strava.backend.dto.activity;
 
+import com.strava.backend.dto.gear.ActivityGearSummary;
 import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.enums.ActivityType;
 import lombok.Data;
@@ -28,6 +29,9 @@ public class FullActivityResponse {
     private String startLocation;
     private String endLocation;
     private String routePolyline;
+    // Per-point altitudes in meters, aligned with the polyline. Null when the
+    // activity has no stored elevation series (e.g. legacy rows or non-GPX sources).
+    private double[] elevationProfile;
     private String mapImageUrl;
     private boolean isPrivate;
     private int likesCount;
@@ -38,4 +42,5 @@ public class FullActivityResponse {
     private BaseUserResponse user;
     private List<CommentResponse> comments;
     private List<String> photos;
+    private ActivityGearSummary gear;
 }

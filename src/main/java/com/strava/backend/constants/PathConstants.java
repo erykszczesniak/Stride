@@ -129,6 +129,12 @@ public final class PathConstants {
     public static final String ACTIVITY_TYPE = "/activity-type";
     public static final String RECALCULATE = "/recalculate";
 
+    // Gear
+    public static final String GEAR = "/gear";
+    public static final String API_V1_GEAR = API_V1 + GEAR;
+    public static final String GEAR_ID = "/{gearId}";
+    public static final String RETIRE = "/retire";
+
     // Export
     public static final String EXPORT = "/export";
     public static final String API_V1_EXPORT = API_V1 + EXPORT;

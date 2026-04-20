@@ -1,5 +1,7 @@
 package com.strava.backend.mapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.HeaderResponse;
@@ -9,6 +11,7 @@ import com.strava.backend.exception.InputFieldException;
 import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.ActivityService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ActivityMapper {
@@ -26,6 +30,8 @@ public class ActivityMapper {
     private final CommonMapper commonMapper;
     private final ActivityService activityService;
     private final UserRepository userRepository;
+    private final GearMapper gearMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public FullActivityResponse getActivityById(Long activityId, Long currentUserId) {
         Activity activity = activityService.getActivityById(activityId);
@@ -118,6 +124,8 @@ public class ActivityMapper {
         response.setLikesCount(activity.getLikesCount());
         response.setCommentsCount(activity.getCommentsCount());
         response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
+        response.setGear(gearMapper.toSummary(activity.getGear()));
+        response.setElevationProfile(parseElevationProfile(activity.getElevationProfile()));
         return response;
     }
 
@@ -126,6 +134,8 @@ public class ActivityMapper {
         response.setLikesCount(activity.getLikesCount());
         response.setCommentsCount(activity.getCommentsCount());
         response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
+        response.setGear(gearMapper.toSummary(activity.getGear()));
+        response.setElevationProfile(parseElevationProfile(activity.getElevationProfile()));
 
         List<CommentResponse> comments = activity.getComments().stream()
                 .map(comment -> commonMapper.convertToResponse(comment, CommentResponse.class))
@@ -133,5 +143,26 @@ public class ActivityMapper {
         response.setComments(comments);
 
         return response;
+    }
+
+    /**
+     * Deserialize the JSON-stringified elevation array from the DB column.
+     * Returns null when the column is null/blank or malformed — the frontend
+     * renders nothing for a null profile, so a parse failure degrades gracefully.
+     * Null entries in the JSON (unknown altitude at that point) are coerced to 0.
+     */
+    private double[] parseElevationProfile(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            Double[] boxed = objectMapper.readValue(json, Double[].class);
+            double[] result = new double[boxed.length];
+            for (int i = 0; i < boxed.length; i++) {
+                result[i] = boxed[i] != null ? boxed[i] : 0.0;
+            }
+            return result;
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse elevation profile JSON: {}", e.getMessage());
+            return null;
+        }
     }
 }

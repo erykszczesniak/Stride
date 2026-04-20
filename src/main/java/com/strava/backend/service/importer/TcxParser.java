@@ -87,6 +87,7 @@ public class TcxParser implements ActivityFileParser {
         ParsedActivity.ParsedActivityBuilder activityBuilder = ParsedActivity.builder()
                 .activityType(activityType)
                 .gpsPoints(allPoints)
+                .elevations(extractElevations(allPoints))
                 .duration((int) totalTimeSeconds)
                 .calories(totalCalories > 0 ? totalCalories : null);
 
@@ -160,6 +161,18 @@ public class TcxParser implements ActivityFileParser {
     @Override
     public boolean supports(String fileExtension) {
         return "tcx".equalsIgnoreCase(fileExtension);
+    }
+
+    /** Extract per-point elevations aligned with the supplied GPS points list. */
+    private List<Double> extractElevations(List<GpsPoint> points) {
+        List<Double> elevations = new ArrayList<>(points.size());
+        boolean anyPresent = false;
+        for (GpsPoint p : points) {
+            Double e = p.getElevation();
+            elevations.add(e);
+            if (e != null) anyPresent = true;
+        }
+        return anyPresent ? elevations : new ArrayList<>();
     }
 
     private GpsPoint parseTrackpoint(Element trackpoint) {
