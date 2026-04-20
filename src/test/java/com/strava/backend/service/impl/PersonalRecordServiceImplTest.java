@@ -120,7 +120,7 @@ class PersonalRecordServiceImplTest {
         }
 
         @Test
-        @DisplayName("Should create new PRs when none exist (first 10km activity)")
+        @DisplayName("Should create one PR for the largest distance fit (first 10km activity → 10K)")
         void shouldCreateNewPRsWhenNoneExist() {
             Activity activity = runActivity(1L, 10.0, 3600); // 10km in 60 min
 
@@ -132,17 +132,15 @@ class PersonalRecordServiceImplTest {
 
             List<PersonalRecord> result = personalRecordService.checkAndUpdatePRs(activity);
 
-            // 10km activity should create PRs for 1K, 5K, and 10K
-            assertThat(result).hasSize(3);
-            assertThat(result).extracting(PersonalRecord::getDistanceType)
-                    .containsExactlyInAnyOrder(DistanceType.ONE_KM, DistanceType.FIVE_KM, DistanceType.TEN_KM);
-            assertThat(result).allSatisfy(pr -> {
-                assertThat(pr.getUser()).isEqualTo(testUser);
-                assertThat(pr.getActivity()).isEqualTo(activity);
-                assertThat(pr.getActivityType()).isEqualTo(ActivityType.RUN);
-                assertThat(pr.getTimeInSeconds()).isPositive();
-            });
-            verify(personalRecordRepository, times(3)).save(any(PersonalRecord.class));
+            // 10km activity → only TEN_KM PR (not 1K/5K — no per-segment timing to prove those)
+            assertThat(result).hasSize(1);
+            PersonalRecord pr = result.get(0);
+            assertThat(pr.getDistanceType()).isEqualTo(DistanceType.TEN_KM);
+            assertThat(pr.getUser()).isEqualTo(testUser);
+            assertThat(pr.getActivity()).isEqualTo(activity);
+            assertThat(pr.getActivityType()).isEqualTo(ActivityType.RUN);
+            assertThat(pr.getTimeInSeconds()).isEqualTo(3600);
+            verify(personalRecordRepository, times(1)).save(any(PersonalRecord.class));
         }
 
         @Test
@@ -163,24 +161,16 @@ class PersonalRecordServiceImplTest {
             when(personalRecordRepository.findByUserIdAndActivityTypeAndDistanceType(
                     1L, ActivityType.RUN, DistanceType.TEN_KM))
                     .thenReturn(Optional.of(existing10K));
-            when(personalRecordRepository.findByUserIdAndActivityTypeAndDistanceType(
-                    eq(1L), eq(ActivityType.RUN), eq(DistanceType.ONE_KM)))
-                    .thenReturn(Optional.empty());
-            when(personalRecordRepository.findByUserIdAndActivityTypeAndDistanceType(
-                    eq(1L), eq(ActivityType.RUN), eq(DistanceType.FIVE_KM)))
-                    .thenReturn(Optional.empty());
             when(personalRecordRepository.save(any(PersonalRecord.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             List<PersonalRecord> result = personalRecordService.checkAndUpdatePRs(activity);
 
-            // All three PRs should be saved (two new, one updated)
-            assertThat(result).hasSize(3);
-            // The 10km PR should now be 1800 (faster), with previousTime = 3000
-            PersonalRecord updated10K = result.stream()
-                    .filter(pr -> pr.getDistanceType() == DistanceType.TEN_KM)
-                    .findFirst()
-                    .orElseThrow();
+            // Only the TEN_KM PR — no 1K/5K PRs any more (no per-segment timing
+            // means we can't honestly claim a sub-distance PR from this activity).
+            assertThat(result).hasSize(1);
+            PersonalRecord updated10K = result.get(0);
+            assertThat(updated10K.getDistanceType()).isEqualTo(DistanceType.TEN_KM);
             assertThat(updated10K.getTimeInSeconds()).isEqualTo(1800);
             assertThat(updated10K.getPreviousTimeInSeconds()).isEqualTo(3000);
         }
@@ -199,34 +189,9 @@ class PersonalRecordServiceImplTest {
                     .distance(10.0)
                     .achievedAt(testUser.getCreatedAt())
                     .build();
-            PersonalRecord existing5K = PersonalRecord.builder()
-                    .user(testUser)
-                    .activity(activity)
-                    .activityType(ActivityType.RUN)
-                    .distanceType(DistanceType.FIVE_KM)
-                    .timeInSeconds(1400)
-                    .distance(5.0)
-                    .achievedAt(testUser.getCreatedAt())
-                    .build();
-            PersonalRecord existing1K = PersonalRecord.builder()
-                    .user(testUser)
-                    .activity(activity)
-                    .activityType(ActivityType.RUN)
-                    .distanceType(DistanceType.ONE_KM)
-                    .timeInSeconds(250)
-                    .distance(1.0)
-                    .achievedAt(testUser.getCreatedAt())
-                    .build();
-
             when(personalRecordRepository.findByUserIdAndActivityTypeAndDistanceType(
                     1L, ActivityType.RUN, DistanceType.TEN_KM))
                     .thenReturn(Optional.of(existing10K));
-            when(personalRecordRepository.findByUserIdAndActivityTypeAndDistanceType(
-                    1L, ActivityType.RUN, DistanceType.FIVE_KM))
-                    .thenReturn(Optional.of(existing5K));
-            when(personalRecordRepository.findByUserIdAndActivityTypeAndDistanceType(
-                    1L, ActivityType.RUN, DistanceType.ONE_KM))
-                    .thenReturn(Optional.of(existing1K));
 
             List<PersonalRecord> result = personalRecordService.checkAndUpdatePRs(activity);
 
@@ -235,7 +200,7 @@ class PersonalRecordServiceImplTest {
         }
 
         @Test
-        @DisplayName("Should create PRs for ONE_KM, FIVE_KM and TEN_KM for a 10km activity")
+        @DisplayName("Should create a TEN_KM PR for a 10km activity (no shorter duplicates)")
         void shouldCreateMultiplePRsForLongerRun() {
             Activity activity = runActivity(1L, 10.0, 3000); // 10km in 50 min
 
@@ -247,12 +212,11 @@ class PersonalRecordServiceImplTest {
 
             List<PersonalRecord> result = personalRecordService.checkAndUpdatePRs(activity);
 
-            assertThat(result).hasSize(3);
-            assertThat(result).extracting(PersonalRecord::getDistanceType)
-                    .containsExactlyInAnyOrder(DistanceType.ONE_KM, DistanceType.FIVE_KM, DistanceType.TEN_KM);
-            // NO half marathon or marathon PRs since distance is only 10km
-            assertThat(result).extracting(PersonalRecord::getDistanceType)
-                    .doesNotContain(DistanceType.HALF_MARATHON, DistanceType.MARATHON);
+            // Only TEN_KM — largest fit within the 10 km activity. No 1K/5K
+            // from the same activity (can't prove a sub-distance PR without
+            // per-segment timing) and no HM/Marathon (distance too short).
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getDistanceType()).isEqualTo(DistanceType.TEN_KM);
         }
 
         @Test

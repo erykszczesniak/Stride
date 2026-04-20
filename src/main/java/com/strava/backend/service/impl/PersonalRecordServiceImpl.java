@@ -21,28 +21,57 @@ import java.util.*;
 public class PersonalRecordServiceImpl implements PersonalRecordService {
 
     /**
-     * Activity types that track "race" distances meaningfully.
-     * Gym / indoor / climbing-style activities are excluded — a 1 km PR
-     * for a WORKOUT makes no sense.
+     * Per-sport PR distance matrix. Each sport tracks the distances that
+     * are meaningful milestones for it:
+     *
+     *   - Running / walking / hiking: 1, 5, 10, Half Marathon, Marathon
+     *   - Cycling: 1, 5, 10 km (longer cycling thresholds like 40k or
+     *     century would be a separate feature)
+     *   - Swimming: 50, 100, 200, 400 m (pool sprints) + 1 km, 3 km
+     *     (long-distance open-water)
+     *   - Other distance-tracked sports (rowing, kayak, skiing, skating):
+     *     keep the generic 1/5/10 km until someone needs something
+     *     sport-specific
+     *
+     * Sports not in this map — WORKOUT, YOGA, WEIGHT_TRAINING, CROSSFIT,
+     * ROCK_CLIMBING, ELLIPTICAL, STAIR_STEPPER, etc. — get no PRs at all,
+     * because distance is meaningless (or misleading) there.
      */
-    private static final Set<ActivityType> DISTANCE_TRACKED = EnumSet.of(
-            ActivityType.RUN, ActivityType.VIRTUAL_RUN, ActivityType.WALK, ActivityType.HIKE,
-            ActivityType.RIDE, ActivityType.VIRTUAL_RIDE,
-            ActivityType.SWIM,
-            ActivityType.ROWING, ActivityType.KAYAKING, ActivityType.STAND_UP_PADDLING, ActivityType.SURFING,
-            ActivityType.NORDIC_SKI, ActivityType.ALPINE_SKI, ActivityType.BACKCOUNTRY_SKI, ActivityType.ROLLER_SKI,
-            ActivityType.ICE_SKATE, ActivityType.INLINE_SKATE, ActivityType.SNOWBOARD, ActivityType.SNOWSHOE
-    );
+    private static final Map<ActivityType, Set<DistanceType>> DISTANCES_BY_SPORT;
+    static {
+        Set<DistanceType> runningSet = EnumSet.of(
+                DistanceType.ONE_KM, DistanceType.FIVE_KM, DistanceType.TEN_KM,
+                DistanceType.HALF_MARATHON, DistanceType.MARATHON);
+        Set<DistanceType> cyclingSet = EnumSet.of(
+                DistanceType.ONE_KM, DistanceType.FIVE_KM, DistanceType.TEN_KM);
+        Set<DistanceType> swimmingSet = EnumSet.of(
+                DistanceType.FIFTY_M, DistanceType.HUNDRED_M, DistanceType.TWO_HUNDRED_M,
+                DistanceType.FOUR_HUNDRED_M, DistanceType.ONE_KM, DistanceType.THREE_KM);
+        Set<DistanceType> genericSet = EnumSet.of(
+                DistanceType.ONE_KM, DistanceType.FIVE_KM, DistanceType.TEN_KM);
 
-    /**
-     * Activity types eligible for Half Marathon / Marathon PRs.
-     * 21 km / 42 km are running milestones — a cyclist doing 21 km isn't a
-     * "half marathon" in any meaningful sense, so restrict those distances
-     * to on-foot sports only.
-     */
-    private static final Set<ActivityType> LONG_RACE_ELIGIBLE = EnumSet.of(
-            ActivityType.RUN, ActivityType.VIRTUAL_RUN, ActivityType.WALK, ActivityType.HIKE
-    );
+        Map<ActivityType, Set<DistanceType>> map = new EnumMap<>(ActivityType.class);
+        map.put(ActivityType.RUN, runningSet);
+        map.put(ActivityType.VIRTUAL_RUN, runningSet);
+        map.put(ActivityType.WALK, runningSet);
+        map.put(ActivityType.HIKE, runningSet);
+        map.put(ActivityType.RIDE, cyclingSet);
+        map.put(ActivityType.VIRTUAL_RIDE, cyclingSet);
+        map.put(ActivityType.SWIM, swimmingSet);
+        map.put(ActivityType.ROWING, genericSet);
+        map.put(ActivityType.KAYAKING, genericSet);
+        map.put(ActivityType.STAND_UP_PADDLING, genericSet);
+        map.put(ActivityType.SURFING, genericSet);
+        map.put(ActivityType.NORDIC_SKI, genericSet);
+        map.put(ActivityType.ALPINE_SKI, genericSet);
+        map.put(ActivityType.BACKCOUNTRY_SKI, genericSet);
+        map.put(ActivityType.ROLLER_SKI, genericSet);
+        map.put(ActivityType.ICE_SKATE, genericSet);
+        map.put(ActivityType.INLINE_SKATE, genericSet);
+        map.put(ActivityType.SNOWBOARD, genericSet);
+        map.put(ActivityType.SNOWSHOE, genericSet);
+        DISTANCES_BY_SPORT = Collections.unmodifiableMap(map);
+    }
 
     private final PersonalRecordRepository personalRecordRepository;
     private final ActivityRepository activityRepository;
@@ -56,7 +85,7 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
             return Collections.emptyList();
         }
 
-        if (!DISTANCE_TRACKED.contains(activity.getActivityType())) {
+        if (!DISTANCES_BY_SPORT.containsKey(activity.getActivityType())) {
             return Collections.emptyList();
         }
 
@@ -154,52 +183,59 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
     }
 
     /**
-     * Find the best times for all qualifying standard distances within an activity.
+     * Find the PR for a single activity. Returns at most ONE distance type —
+     * the largest applicable milestone that fits within the activity's total
+     * distance.
      *
-     * Historically this tried a GPS "sliding window" algorithm first to find the
-     * fastest sub-segment of each standard distance. That path was broken: the
-     * polyline format we store is lat/lon only with NO per-point timestamps, so
-     * any sub-segment time derived from it was a proportional scaling of the
-     * total duration — i.e. it collapsed to pace estimation anyway when the
-     * polyline was dense and uniform, and gave nonsense (e.g. a 2:50 /km pace
-     * from a 5:27 /km activity) when the polyline was sparse or when the
-     * decoded GPS distance diverged from the activity's stored distance.
+     * Rationale: we don't have per-segment timestamps on the polyline, so we
+     * can only compute average pace across the whole activity. Claiming a
+     * 50 m PR off a 1 km swim done at 1:47 /100m cruise pace would say
+     * "you swam 50 m in 54 s" — but you didn't, you just averaged that over
+     * a long swim. The same argument applies to running: a 10 km steady run
+     * doesn't prove you can run a 1 km PR at that pace (you likely could,
+     * but you didn't do a 1 km time trial).
      *
-     * Until we persist per-point timestamps alongside the polyline, this just
-     * does uniform-pace scaling from the activity's stored distance+duration.
-     * The dense-polyline case produces identical numbers to the old algorithm;
-     * the sparse/broken case now produces realistic numbers instead of
-     * impossible PRs.
+     * Honest behaviour: only register the PR for the largest distance the
+     * activity actually covered. A 1 km swim sets a 1 km PR. A 3.3 km swim
+     * sets a 3 km PR. A 100 m sprint sets a 100 m PR. Users who want a
+     * short-distance PR need to do a short-distance activity.
+     *
+     * This also kills the old bug where every swim PR showed exactly the
+     * same /100m pace because all rows were scaled from the same activity.
      */
     private Map<DistanceType, Integer> findBestTimesForActivity(Activity activity) {
         Map<DistanceType, Integer> bestTimes = new EnumMap<>(DistanceType.class);
         double activityDistanceKm = activity.getDistance();
 
+        DistanceType largestFit = null;
         for (DistanceType distanceType : DistanceType.values()) {
             if (!isDistanceApplicable(distanceType, activity.getActivityType())) continue;
             if (activityDistanceKm < distanceType.getDistanceKm()) continue;
+            if (largestFit == null
+                    || distanceType.getDistanceKm() > largestFit.getDistanceKm()) {
+                largestFit = distanceType;
+            }
+        }
 
+        if (largestFit != null) {
             int estimatedTime = (int) Math.round(
-                    (distanceType.getDistanceKm() / activityDistanceKm) * activity.getDuration());
+                    (largestFit.getDistanceKm() / activityDistanceKm) * activity.getDuration());
             if (estimatedTime > 0) {
-                bestTimes.put(distanceType, estimatedTime);
+                bestTimes.put(largestFit, estimatedTime);
             }
         }
 
         return bestTimes;
     }
 
-    /**
-     * Half Marathon (21.0975 km) and Marathon (42.195 km) are running-only
-     * milestones. Allowing them for cycling / swimming / skiing renders as
-     * "Half Marathon" under a Cycling section, which is nonsensical, and
-     * uses thresholds that don't line up with those sports' real benchmarks.
+/**
+     * Whether a given distance type should be tracked for the given sport.
+     * Reads the per-sport DISTANCES_BY_SPORT map — e.g. Swimming gets
+     * 50m/100m/200m/400m/1km/3km, Cycling gets 1/5/10 km only, etc.
      */
     private boolean isDistanceApplicable(DistanceType distanceType, ActivityType activityType) {
-        if (distanceType == DistanceType.HALF_MARATHON || distanceType == DistanceType.MARATHON) {
-            return LONG_RACE_ELIGIBLE.contains(activityType);
-        }
-        return true;
+        Set<DistanceType> allowed = DISTANCES_BY_SPORT.get(activityType);
+        return allowed != null && allowed.contains(distanceType);
     }
 
 }

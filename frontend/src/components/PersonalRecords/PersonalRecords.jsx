@@ -44,7 +44,18 @@ const SPORT_ICONS = {
   WORKOUT: "💪",
 };
 
-const DISTANCE_ORDER = ["ONE_KM", "FIVE_KM", "TEN_KM", "HALF_MARATHON", "MARATHON"];
+const DISTANCE_ORDER = [
+  "FIFTY_M",
+  "HUNDRED_M",
+  "TWO_HUNDRED_M",
+  "FOUR_HUNDRED_M",
+  "ONE_KM",
+  "THREE_KM",
+  "FIVE_KM",
+  "TEN_KM",
+  "HALF_MARATHON",
+  "MARATHON",
+];
 
 const formatDate = (iso) => {
   if (!iso) return "";
@@ -177,11 +188,26 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
                   <PRTableRow key={pr.id}>
                     <PRDistanceCell>
                       <PRDistanceBadge>
-                        {(() => {
-                          const dist = unitsCtx.convertDistance(pr.distance);
-                          return dist >= 1 ? dist.toFixed(dist < 10 ? 1 : 0) : dist.toFixed(2);
-                        })()}
-                        <small> {unitsCtx.distanceUnit}</small>
+                        {pr.distance < 1 ? (
+                          // Sub-km pool distances: show as "50" / "100" / "200" / "400"
+                          // with a literal "m" suffix. Don't convert to imperial here —
+                          // swimming is metric worldwide, and "55 yd" for a 50 m PR
+                          // would just be confusing.
+                          <>
+                            {Math.round(pr.distance * 1000)}
+                            <small> m</small>
+                          </>
+                        ) : (
+                          (() => {
+                            const dist = unitsCtx.convertDistance(pr.distance);
+                            return (
+                              <>
+                                {dist >= 1 ? dist.toFixed(dist < 10 ? 1 : 0) : dist.toFixed(2)}
+                                <small> {unitsCtx.distanceUnit}</small>
+                              </>
+                            );
+                          })()
+                        )}
                       </PRDistanceBadge>
                       <PRDistanceLabel>{pr.distanceDisplayName}</PRDistanceLabel>
                     </PRDistanceCell>
