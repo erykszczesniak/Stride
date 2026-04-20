@@ -8,7 +8,6 @@ import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.PersonalRecordRepository;
 import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.PersonalRecordService;
-import com.strava.backend.service.importer.GeoUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -156,31 +155,34 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
 
     /**
      * Find the best times for all qualifying standard distances within an activity.
-     * Uses GPS segment analysis when polyline data is available, otherwise estimates from pace.
+     *
+     * Historically this tried a GPS "sliding window" algorithm first to find the
+     * fastest sub-segment of each standard distance. That path was broken: the
+     * polyline format we store is lat/lon only with NO per-point timestamps, so
+     * any sub-segment time derived from it was a proportional scaling of the
+     * total duration — i.e. it collapsed to pace estimation anyway when the
+     * polyline was dense and uniform, and gave nonsense (e.g. a 2:50 /km pace
+     * from a 5:27 /km activity) when the polyline was sparse or when the
+     * decoded GPS distance diverged from the activity's stored distance.
+     *
+     * Until we persist per-point timestamps alongside the polyline, this just
+     * does uniform-pace scaling from the activity's stored distance+duration.
+     * The dense-polyline case produces identical numbers to the old algorithm;
+     * the sparse/broken case now produces realistic numbers instead of
+     * impossible PRs.
      */
     private Map<DistanceType, Integer> findBestTimesForActivity(Activity activity) {
         Map<DistanceType, Integer> bestTimes = new EnumMap<>(DistanceType.class);
         double activityDistanceKm = activity.getDistance();
 
-        // Try GPS-based segment analysis first
-        if (activity.getRoutePolyline() != null && !activity.getRoutePolyline().isEmpty()) {
-            Map<DistanceType, Integer> gpsTimes = findBestTimesFromPolyline(activity);
-            if (!gpsTimes.isEmpty()) {
-                bestTimes.putAll(gpsTimes);
-            }
-        }
-
-        // Fallback: estimate from overall pace for distances not found via GPS
         for (DistanceType distanceType : DistanceType.values()) {
-            if (bestTimes.containsKey(distanceType)) continue;
             if (!isDistanceApplicable(distanceType, activity.getActivityType())) continue;
+            if (activityDistanceKm < distanceType.getDistanceKm()) continue;
 
-            if (activityDistanceKm >= distanceType.getDistanceKm()) {
-                int estimatedTime = (int) Math.round(
-                        (distanceType.getDistanceKm() / activityDistanceKm) * activity.getDuration());
-                if (estimatedTime > 0) {
-                    bestTimes.put(distanceType, estimatedTime);
-                }
+            int estimatedTime = (int) Math.round(
+                    (distanceType.getDistanceKm() / activityDistanceKm) * activity.getDuration());
+            if (estimatedTime > 0) {
+                bestTimes.put(distanceType, estimatedTime);
             }
         }
 
@@ -200,71 +202,4 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
         return true;
     }
 
-    /**
-     * Sliding window algorithm on decoded polyline to find fastest segments.
-     * For each standard distance, finds the minimum time window covering that distance.
-     * Complexity: O(n * d) where n = GPS points, d = number of distance types.
-     */
-    private Map<DistanceType, Integer> findBestTimesFromPolyline(Activity activity) {
-        Map<DistanceType, Integer> bestTimes = new EnumMap<>(DistanceType.class);
-
-        List<double[]> decodedPoints = GeoUtils.decodePolyline(activity.getRoutePolyline());
-        if (decodedPoints.size() < 2) return bestTimes;
-
-        // Calculate cumulative distances between points (in km)
-        int n = decodedPoints.size();
-        double[] cumulativeDistKm = new double[n];
-        cumulativeDistKm[0] = 0;
-        for (int i = 1; i < n; i++) {
-            double[] prev = decodedPoints.get(i - 1);
-            double[] curr = decodedPoints.get(i);
-            double segmentKm = GeoUtils.haversineMeters(prev[0], prev[1], curr[0], curr[1]) / 1000.0;
-            cumulativeDistKm[i] = cumulativeDistKm[i - 1] + segmentKm;
-        }
-
-        double totalGpsDistKm = cumulativeDistKm[n - 1];
-        if (totalGpsDistKm <= 0) return bestTimes;
-
-        // Estimate time per point by distributing total duration evenly across distance
-        int totalDuration = activity.getDuration();
-
-        for (DistanceType distanceType : DistanceType.values()) {
-            if (!isDistanceApplicable(distanceType, activity.getActivityType())) continue;
-            double targetKm = distanceType.getDistanceKm();
-            if (totalGpsDistKm < targetKm) continue;
-
-            // Sliding window: two pointers
-            int bestTimeForDistance = Integer.MAX_VALUE;
-            int right = 0;
-
-            for (int left = 0; left < n; left++) {
-                // Advance right pointer until segment distance >= target
-                while (right < n - 1 && (cumulativeDistKm[right] - cumulativeDistKm[left]) < targetKm) {
-                    right++;
-                }
-
-                double segmentDistKm = cumulativeDistKm[right] - cumulativeDistKm[left];
-                if (segmentDistKm >= targetKm) {
-                    // Estimate time for this segment based on distance proportion
-                    double startFraction = cumulativeDistKm[left] / totalGpsDistKm;
-                    double endFraction = cumulativeDistKm[right] / totalGpsDistKm;
-                    int segmentTime = (int) Math.round((endFraction - startFraction) * totalDuration);
-
-                    // Adjust for the overshoot (segment may be slightly longer than target)
-                    double ratio = targetKm / segmentDistKm;
-                    int adjustedTime = (int) Math.round(segmentTime * ratio);
-
-                    if (adjustedTime > 0 && adjustedTime < bestTimeForDistance) {
-                        bestTimeForDistance = adjustedTime;
-                    }
-                }
-            }
-
-            if (bestTimeForDistance < Integer.MAX_VALUE) {
-                bestTimes.put(distanceType, bestTimeForDistance);
-            }
-        }
-
-        return bestTimes;
-    }
 }
