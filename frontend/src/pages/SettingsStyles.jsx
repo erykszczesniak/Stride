@@ -557,3 +557,175 @@ export const LoadingSpinner = styled.div`
     }
   }
 `;
+
+/* ------------------------------ Gear styles ------------------------------ */
+
+export const GearHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+export const AddGearButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fc5200;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #e54600;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+export const GearSectionLabel = styled.h3`
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
+  margin: 24px 0 12px 0;
+`;
+
+export const GearList = styled.div`
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 720px) {
+    grid-template-columns: 1fr 1fr;
+  }
+`;
+
+export const GearCard = styled.div`
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 12px;
+  background: ${({ theme }) => theme.surface};
+  opacity: ${({ $retired }) => ($retired ? 0.6 : 1)};
+`;
+
+export const GearIcon = styled.div`
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: ${({ theme }) => theme.backgroundElevated || theme.border};
+`;
+
+export const GearBody = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+export const GearName = styled.p`
+  font-size: 15px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0 0 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+export const GearMeta = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.textSecondary};
+  margin: 0 0 8px 0;
+`;
+
+export const GearStats = styled.div`
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: ${({ theme }) => theme.textSecondary};
+  margin-bottom: 10px;
+`;
+
+export const GearStatValue = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin-right: 4px;
+`;
+
+export const GearActions = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+export const GearActionButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  color: ${({ theme }) => theme.textSecondary};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: ${({ theme }) => theme.textPrimary};
+    border-color: ${({ theme }) => theme.textSecondary};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+export const GearEmptyState = styled.div`
+  text-align: center;
+  padding: 48px 20px;
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 14px;
+`;
+
+export const GearTypeChips = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+`;
+
+export const GearTypeChip = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid ${({ theme, $selected }) => ($selected ? "#fc5200" : theme.border)};
+  border-radius: 6px;
+  background: ${({ $selected }) => ($selected ? "rgba(252, 82, 0, 0.08)" : "transparent")};
+  color: ${({ theme, $selected }) => ($selected ? "#fc5200" : theme.textSecondary)};
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    display: none;
+  }
+`;

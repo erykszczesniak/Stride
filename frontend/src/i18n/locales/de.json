@@ -248,7 +248,10 @@
       "confirmDelete": "\"{{title}}\" löschen? Dies kann nicht rückgängig gemacht werden.",
       "confirmDeleteComment": "Sind Sie sicher, dass Sie diesen Kommentar löschen möchten?",
       "activityNotFound": "Aktivität nicht gefunden",
-      "photoAlt": "Aktivitätsfoto {{index}}"
+      "photoAlt": "Aktivitätsfoto {{index}}",
+      "gear": {
+        "label": "Ausrüstung"
+      }
     },
     "record": {
       "titleNew": "Aktivität aufzeichnen",
@@ -283,6 +286,8 @@
       "samplesTitle": "Keine Datei? Probieren Sie ein Beispiel",
       "samplesSubtitle": "Laden Sie eine dieser Beispielaktivitäten herunter, um die Importfunktion zu testen.",
       "importSuccess": "\"{{title}}\" erfolgreich importiert",
+      "gear": "Ausrüstung",
+      "noGear": "Keine Ausrüstung",
       "errors": {
         "loadFailed": "Aktivität konnte nicht geladen werden",
         "invalidImageFormat": "Nur JPG-, PNG- und WebP-Bilder sind erlaubt",
@@ -584,7 +589,49 @@
       "profile": "Profil",
       "notifications": "Benachrichtigungen",
       "preferences": "Einstellungen",
+      "gear": "Ausrüstung",
       "account": "Konto"
+    },
+    "gear": {
+      "title": "Ausrüstung",
+      "description": "Verfolgen Sie Ihre Schuhe, Fahrräder und andere Ausrüstung",
+      "addGear": "Ausrüstung hinzufügen",
+      "addTitle": "Ausrüstung hinzufügen",
+      "editTitle": "Ausrüstung bearbeiten",
+      "activeHeading": "Aktive Ausrüstung",
+      "retiredHeading": "Eingelagerte Ausrüstung",
+      "emptyActive": "Noch keine Ausrüstung. Fügen Sie Schuhe oder ein Fahrrad hinzu, um die Laufleistung zu verfolgen.",
+      "name": "Name",
+      "namePlaceholder": "z.B. Saucony Endorphin Pro 3",
+      "brand": "Marke",
+      "brandPlaceholder": "z.B. Saucony",
+      "model": "Modell",
+      "modelPlaceholder": "z.B. Endorphin Pro 3",
+      "type": "Typ",
+      "activityTypes": "Kompatible Aktivitätstypen",
+      "notes": "Notizen",
+      "notesPlaceholder": "Kaufdatum, Größe usw.",
+      "distance": "insgesamt",
+      "activities": "Aktivitäten",
+      "retire": "Einlagern",
+      "types": {
+        "SHOES": "Schuhe",
+        "BIKE": "Fahrrad",
+        "OTHER": "Andere"
+      },
+      "created": "Ausrüstung hinzugefügt",
+      "updated": "Ausrüstung aktualisiert",
+      "retired": "Ausrüstung eingelagert",
+      "deleted": "Ausrüstung gelöscht",
+      "confirmRetire": "\"{{name}}\" einlagern? Sie sehen sie weiterhin im Verlauf.",
+      "confirmDelete": "\"{{name}}\" endgültig löschen? Dies kann nicht rückgängig gemacht werden.",
+      "loadFailed": "Ausrüstung konnte nicht geladen werden",
+      "saveFailed": "Ausrüstung konnte nicht gespeichert werden",
+      "retireFailed": "Ausrüstung konnte nicht eingelagert werden",
+      "deleteFailed": "Ausrüstung konnte nicht gelöscht werden",
+      "errors": {
+        "nameRequired": "Name der Ausrüstung ist erforderlich"
+      }
     },
     "profile": {
       "title": "Profil",

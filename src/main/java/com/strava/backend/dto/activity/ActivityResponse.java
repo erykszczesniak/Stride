@@ -1,5 +1,6 @@
 package com.strava.backend.dto.activity;
 
+import com.strava.backend.dto.gear.ActivityGearSummary;
 import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.enums.ActivityType;
 import lombok.Data;
@@ -30,4 +31,5 @@ public class ActivityResponse {
     private Integer averageHeartRate;
     private Integer maxHeartRate;
     private List<String> photos;
+    private ActivityGearSummary gear;
 }

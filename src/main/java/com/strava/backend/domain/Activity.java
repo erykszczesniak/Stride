@@ -84,6 +84,10 @@ public class Activity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gear_id")
+    private Gear gear;
+
     @JsonIgnore
     @ManyToMany
     @JoinTable(

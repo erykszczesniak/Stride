@@ -248,7 +248,10 @@
       "confirmDelete": "Supprimer \"{{title}}\" ? Cette action est irréversible.",
       "confirmDeleteComment": "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
       "activityNotFound": "Activité introuvable",
-      "photoAlt": "Photo de l'activité {{index}}"
+      "photoAlt": "Photo de l'activité {{index}}",
+      "gear": {
+        "label": "Équipement"
+      }
     },
     "record": {
       "titleNew": "Enregistrer une activité",
@@ -283,6 +286,8 @@
       "samplesTitle": "Pas de fichier ? Essayez un exemple",
       "samplesSubtitle": "Téléchargez l'une de ces activités d'exemple pour tester la fonction d'importation.",
       "importSuccess": "\"{{title}}\" importé avec succès",
+      "gear": "Équipement",
+      "noGear": "Aucun équipement",
       "errors": {
         "loadFailed": "Impossible de charger l'activité",
         "invalidImageFormat": "Seules les images JPG, PNG et WebP sont autorisées",
@@ -584,7 +589,49 @@
       "profile": "Profil",
       "notifications": "Notifications",
       "preferences": "Préférences",
+      "gear": "Équipement",
       "account": "Compte"
+    },
+    "gear": {
+      "title": "Équipement",
+      "description": "Suivez vos chaussures, vélos et autres équipements",
+      "addGear": "Ajouter un équipement",
+      "addTitle": "Ajouter un équipement",
+      "editTitle": "Modifier l'équipement",
+      "activeHeading": "Équipement actif",
+      "retiredHeading": "Équipement retiré",
+      "emptyActive": "Pas encore d'équipement. Ajoutez vos chaussures ou votre vélo pour suivre le kilométrage.",
+      "name": "Nom",
+      "namePlaceholder": "ex. Saucony Endorphin Pro 3",
+      "brand": "Marque",
+      "brandPlaceholder": "ex. Saucony",
+      "model": "Modèle",
+      "modelPlaceholder": "ex. Endorphin Pro 3",
+      "type": "Type",
+      "activityTypes": "Types d'activité compatibles",
+      "notes": "Notes",
+      "notesPlaceholder": "Date d'achat, taille, etc.",
+      "distance": "total",
+      "activities": "activités",
+      "retire": "Retirer",
+      "types": {
+        "SHOES": "Chaussures",
+        "BIKE": "Vélo",
+        "OTHER": "Autre"
+      },
+      "created": "Équipement ajouté",
+      "updated": "Équipement mis à jour",
+      "retired": "Équipement retiré",
+      "deleted": "Équipement supprimé",
+      "confirmRetire": "Retirer \"{{name}}\" ? Vous le verrez toujours dans l'historique.",
+      "confirmDelete": "Supprimer \"{{name}}\" définitivement ? Cette action est irréversible.",
+      "loadFailed": "Impossible de charger l'équipement",
+      "saveFailed": "Impossible d'enregistrer l'équipement",
+      "retireFailed": "Impossible de retirer l'équipement",
+      "deleteFailed": "Impossible de supprimer l'équipement",
+      "errors": {
+        "nameRequired": "Le nom de l'équipement est requis"
+      }
     },
     "profile": {
       "title": "Profil",

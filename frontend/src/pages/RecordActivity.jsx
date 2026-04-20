@@ -5,6 +5,7 @@ import { FiCamera, FiX, FiEdit3, FiUploadCloud, FiFileText } from 'react-icons/f
 import Layout from '../components/Layout/Layout';
 import ActivityService from '../api/ActivityService';
 import ImportService from '../api/ImportService';
+import GearService from '../api/GearService';
 import { useUnits } from '../context/UnitsContext';
 import {
   Container,
@@ -19,6 +20,7 @@ import {
   FormGroup,
   Label,
   Input,
+  Select,
   TextArea,
   StatsGrid,
   StatInput,
@@ -104,6 +106,8 @@ const RecordActivity = () => {
     calories: '',
     avgHeartRate: '',
   });
+  const [gearList, setGearList] = useState([]);
+  const [selectedGearId, setSelectedGearId] = useState('');
 
   const activityTypes = [
     { type: 'RUN', label: t('activities.typesShort.RUN'), icon: '🏃', color: '#fc5200' },
@@ -113,6 +117,33 @@ const RecordActivity = () => {
     { type: 'WALK', label: t('activities.typesShort.WALK'), icon: '🚶', color: '#9c27b0' },
     { type: 'WORKOUT', label: t('activities.typesShort.WORKOUT'), icon: '💪', color: '#37474f' }
   ];
+
+  useEffect(() => {
+    // Fetch the user's active gear once on mount. Retired gear is excluded
+    // from the dropdown — users who really want to tag retired gear can
+    // un-retire it first.
+    let cancelled = false;
+    GearService.getMyGear(false)
+      .then((res) => {
+        if (!cancelled) setGearList(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        // Silent — gear is optional, no need to block activity creation
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    // When the activity type changes, drop the gear selection if the currently
+    // selected gear can't be used for the new type. Saves the user from a 400
+    // at submit time.
+    if (!selectedGearId) return;
+    const selected = gearList.find((g) => String(g.id) === String(selectedGearId));
+    if (!selected) return;
+    const compatible = !selected.activityTypes || selected.activityTypes.length === 0
+      || selected.activityTypes.includes(selectedType);
+    if (!compatible) setSelectedGearId('');
+  }, [selectedType, gearList, selectedGearId]);
 
   useEffect(() => {
     if (isEditMode || mode !== 'import') return;
@@ -152,6 +183,9 @@ const RecordActivity = () => {
         });
         if (a.photos && a.photos.length > 0) {
           setExistingPhotos(a.photos);
+        }
+        if (a.gear?.id) {
+          setSelectedGearId(String(a.gear.id));
         }
       } catch (err) {
         setError(t('activities.record.errors.loadFailed'));
@@ -350,7 +384,8 @@ const RecordActivity = () => {
           ? parseFloat((distanceKm / (totalDurationSeconds / 3600)).toFixed(2))
           : null,
         startTime: isEditMode && originalStartTime ? originalStartTime : new Date().toISOString(),
-        isPrivate: false
+        isPrivate: false,
+        gearId: selectedGearId ? Number(selectedGearId) : null,
       };
 
       if (isEditMode) {
@@ -495,6 +530,34 @@ const RecordActivity = () => {
             </ActivityTypeButton>
           ))}
         </ActivityTypeGrid>
+
+        {(() => {
+          // Only surface gear that supports the currently-selected activity type.
+          // Gear with an empty allow-list (OTHER category) is treated as usable
+          // with anything so we don't hide it from users who left it permissive.
+          const compatibleGear = gearList.filter((g) => {
+            if (!g.activityTypes || g.activityTypes.length === 0) return true;
+            return g.activityTypes.includes(selectedType);
+          });
+          if (compatibleGear.length === 0) return null;
+          return (
+            <FormGroup style={{ marginTop: 16 }}>
+              <Label>{t('activities.record.gear')}</Label>
+              <Select
+                value={selectedGearId}
+                onChange={(e) => setSelectedGearId(e.target.value)}
+              >
+                <option value="">{t('activities.record.noGear')}</option>
+                {compatibleGear.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                    {g.brand || g.model ? ` (${[g.brand, g.model].filter(Boolean).join(' ')})` : ''}
+                  </option>
+                ))}
+              </Select>
+            </FormGroup>
+          );
+        })()}
       </Section>
 
       <Section>

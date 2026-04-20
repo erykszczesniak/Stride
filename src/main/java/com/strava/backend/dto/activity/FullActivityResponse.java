@@ -1,5 +1,6 @@
 package com.strava.backend.dto.activity;
 
+import com.strava.backend.dto.gear.ActivityGearSummary;
 import com.strava.backend.dto.user.BaseUserResponse;
 import com.strava.backend.enums.ActivityType;
 import lombok.Data;
@@ -38,4 +39,5 @@ public class FullActivityResponse {
     private BaseUserResponse user;
     private List<CommentResponse> comments;
     private List<String> photos;
+    private ActivityGearSummary gear;
 }

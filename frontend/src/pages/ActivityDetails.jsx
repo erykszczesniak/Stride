@@ -353,6 +353,12 @@ const ActivityDetails = () => {
             <StatValue>{activity.averageHeartRate || "-"}</StatValue>
             <StatLabel>{t("activities.stats.avgHr")}</StatLabel>
           </StatItem>
+          {activity.gear?.name && (
+            <StatItem>
+              <StatValue style={{ fontSize: "16px" }}>{activity.gear.name}</StatValue>
+              <StatLabel>{t("activities.details.gear.label")}</StatLabel>
+            </StatItem>
+          )}
         </StatsGrid>
 
         <ActionsBar>
