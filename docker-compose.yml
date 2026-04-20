@@ -47,15 +47,34 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       CORS_ORIGINS: http://localhost:3000,http://localhost:80,http://localhost
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     depends_on:
       postgres:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       start_period: 60s
       retries: 3
+    networks:
+      - strava-network
+
+  # ============================================
+  # Jaeger (Distributed Tracing — OTLP receiver + UI)
+  # ============================================
+  jaeger:
+    image: jaegertracing/all-in-one:1.56
+    container_name: strava-jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
     networks:
       - strava-network
 
@@ -95,6 +114,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+      - jaeger
     networks:
       - strava-network
 
