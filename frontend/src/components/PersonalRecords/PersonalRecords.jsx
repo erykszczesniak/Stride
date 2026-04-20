@@ -190,8 +190,8 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
                     </PRTableCell>
                     <PRTableCell>
                       <PRPaceValue>
-                        {pr.durationSeconds && pr.distance
-                          ? unitsCtx.formatPaceFromActivity(pr.distance, pr.durationSeconds, sport)
+                        {pr.timeInSeconds && pr.distance
+                          ? unitsCtx.formatPaceFromActivity(pr.distance, pr.timeInSeconds, sport)
                           : pr.formattedPace || "\u2014"}
                       </PRPaceValue>
                     </PRTableCell>

@@ -21,6 +21,30 @@ import java.util.*;
 @RequiredArgsConstructor
 public class PersonalRecordServiceImpl implements PersonalRecordService {
 
+    /**
+     * Activity types that track "race" distances meaningfully.
+     * Gym / indoor / climbing-style activities are excluded — a 1 km PR
+     * for a WORKOUT makes no sense.
+     */
+    private static final Set<ActivityType> DISTANCE_TRACKED = EnumSet.of(
+            ActivityType.RUN, ActivityType.VIRTUAL_RUN, ActivityType.WALK, ActivityType.HIKE,
+            ActivityType.RIDE, ActivityType.VIRTUAL_RIDE,
+            ActivityType.SWIM,
+            ActivityType.ROWING, ActivityType.KAYAKING, ActivityType.STAND_UP_PADDLING, ActivityType.SURFING,
+            ActivityType.NORDIC_SKI, ActivityType.ALPINE_SKI, ActivityType.BACKCOUNTRY_SKI, ActivityType.ROLLER_SKI,
+            ActivityType.ICE_SKATE, ActivityType.INLINE_SKATE, ActivityType.SNOWBOARD, ActivityType.SNOWSHOE
+    );
+
+    /**
+     * Activity types eligible for Half Marathon / Marathon PRs.
+     * 21 km / 42 km are running milestones — a cyclist doing 21 km isn't a
+     * "half marathon" in any meaningful sense, so restrict those distances
+     * to on-foot sports only.
+     */
+    private static final Set<ActivityType> LONG_RACE_ELIGIBLE = EnumSet.of(
+            ActivityType.RUN, ActivityType.VIRTUAL_RUN, ActivityType.WALK, ActivityType.HIKE
+    );
+
     private final PersonalRecordRepository personalRecordRepository;
     private final ActivityRepository activityRepository;
     private final UserRepository userRepository;
@@ -30,6 +54,10 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
     public List<PersonalRecord> checkAndUpdatePRs(Activity activity) {
         if (activity.getDistance() == null || activity.getDuration() == null
                 || activity.getDistance() <= 0 || activity.getDuration() <= 0) {
+            return Collections.emptyList();
+        }
+
+        if (!DISTANCE_TRACKED.contains(activity.getActivityType())) {
             return Collections.emptyList();
         }
 
@@ -145,6 +173,7 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
         // Fallback: estimate from overall pace for distances not found via GPS
         for (DistanceType distanceType : DistanceType.values()) {
             if (bestTimes.containsKey(distanceType)) continue;
+            if (!isDistanceApplicable(distanceType, activity.getActivityType())) continue;
 
             if (activityDistanceKm >= distanceType.getDistanceKm()) {
                 int estimatedTime = (int) Math.round(
@@ -156,6 +185,19 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
         }
 
         return bestTimes;
+    }
+
+    /**
+     * Half Marathon (21.0975 km) and Marathon (42.195 km) are running-only
+     * milestones. Allowing them for cycling / swimming / skiing renders as
+     * "Half Marathon" under a Cycling section, which is nonsensical, and
+     * uses thresholds that don't line up with those sports' real benchmarks.
+     */
+    private boolean isDistanceApplicable(DistanceType distanceType, ActivityType activityType) {
+        if (distanceType == DistanceType.HALF_MARATHON || distanceType == DistanceType.MARATHON) {
+            return LONG_RACE_ELIGIBLE.contains(activityType);
+        }
+        return true;
     }
 
     /**
@@ -187,6 +229,7 @@ public class PersonalRecordServiceImpl implements PersonalRecordService {
         int totalDuration = activity.getDuration();
 
         for (DistanceType distanceType : DistanceType.values()) {
+            if (!isDistanceApplicable(distanceType, activity.getActivityType())) continue;
             double targetKm = distanceType.getDistanceKm();
             if (totalGpsDistKm < targetKm) continue;
 

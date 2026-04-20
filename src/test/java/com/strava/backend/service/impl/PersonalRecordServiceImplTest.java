@@ -96,6 +96,19 @@ class PersonalRecordServiceImplTest {
         }
 
         @Test
+        @DisplayName("Should return empty list for non-distance activity types (e.g. WORKOUT)")
+        void shouldReturnEmptyForWorkout() {
+            Activity activity = runActivity(1L, 10.0, 3600);
+            activity.setActivityType(ActivityType.WORKOUT);
+
+            List<PersonalRecord> result = personalRecordService.checkAndUpdatePRs(activity);
+
+            assertThat(result).isEmpty();
+            verifyNoInteractions(personalRecordRepository);
+        }
+
+
+        @Test
         @DisplayName("Should return empty list when duration is zero")
         void shouldReturnEmptyWhenDurationZero() {
             Activity activity = runActivity(1L, 10.0, 0);
