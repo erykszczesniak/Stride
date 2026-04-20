@@ -249,6 +249,12 @@
       "confirmDeleteComment": "¿Está seguro de que desea eliminar este comentario?",
       "activityNotFound": "Actividad no encontrada",
       "photoAlt": "Foto de la actividad {{index}}",
+      "elevationProfile": {
+        "title": "Perfil de elevación",
+        "gain": "Ascenso",
+        "loss": "Descenso",
+        "noData": "No hay datos de elevación disponibles para esta actividad."
+      },
       "splits": {
         "title": "Parciales",
         "km": "KM",

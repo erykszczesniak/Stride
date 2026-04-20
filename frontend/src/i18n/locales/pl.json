@@ -257,6 +257,12 @@
       "confirmDeleteComment": "Czy na pewno chcesz usunąć ten komentarz?",
       "activityNotFound": "Nie znaleziono aktywności",
       "photoAlt": "Zdjęcie aktywności {{index}}",
+      "elevationProfile": {
+        "title": "Profil wysokości",
+        "gain": "Podejście",
+        "loss": "Zejście",
+        "noData": "Brak danych o wysokości dla tej aktywności."
+      },
       "splits": {
         "title": "Okrążenia",
         "km": "KM",

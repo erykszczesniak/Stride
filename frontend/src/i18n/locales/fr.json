@@ -249,6 +249,12 @@
       "confirmDeleteComment": "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
       "activityNotFound": "Activité introuvable",
       "photoAlt": "Photo de l'activité {{index}}",
+      "elevationProfile": {
+        "title": "Profil d'élévation",
+        "gain": "Dénivelé positif",
+        "loss": "Dénivelé négatif",
+        "noData": "Aucune donnée d'élévation disponible pour cette activité."
+      },
       "splits": {
         "title": "Intervalles",
         "km": "KM",

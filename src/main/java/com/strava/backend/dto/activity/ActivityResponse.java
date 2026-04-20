@@ -27,6 +27,9 @@ public class ActivityResponse {
     private LocalDateTime createdAt;
     private BaseUserResponse user;
     private String routePolyline;
+    // Per-point altitudes in meters, aligned with the polyline. Null when the
+    // activity has no stored elevation series (e.g. legacy rows or non-GPX sources).
+    private double[] elevationProfile;
     private Integer averageHeartRate;
     private Integer maxHeartRate;
     private List<String> photos;
