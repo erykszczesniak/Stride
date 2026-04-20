@@ -38,6 +38,9 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Strava OAuth2 callback is hit by the Strava redirect without our JWT.
+                        // Identity is recovered via the HMAC-signed state parameter.
+                        .requestMatchers("/api/v1/integrations/strava/callback").permitAll()
                         // Swagger endpoints are disabled entirely in prod profile (springdoc.enabled=false)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
                         .requestMatchers("/h2-console/**").authenticated()

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun, FiTrash2, FiPackage } from "react-icons/fi";
+import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun, FiTrash2, FiLink, FiDownloadCloud, FiZap, FiPackage } from "react-icons/fi";
 import Navbar from "../components/Navbar/Navbar";
 import GearManager from "../components/GearManager/GearManager";
 import SettingsService from "../api/SettingsService";
+import IntegrationService from "../api/IntegrationService";
 import { useToast } from "../context/ToastContext";
 import { useTheme } from "../context/ThemeContext";
 import { useUnits } from "../context/UnitsContext";
@@ -58,6 +59,13 @@ import {
   ModalCancelButton,
   PasswordFormButton,
   FormError,
+  IntegrationRow,
+  IntegrationInfo,
+  IntegrationName,
+  IntegrationDetail,
+  IntegrationActions,
+  StravaConnectButton,
+  SecondaryButton,
 } from "./SettingsStyles";
 
 const VALID_SECTIONS = ["profile", "notifications", "preferences", "gear", "account"];
@@ -126,6 +134,14 @@ const Settings = () => {
     hideFromSearch: false,
   });
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [stravaStatus, setStravaStatus] = useState({
+    connected: false,
+    athleteId: null,
+    connectedAt: null,
+    lastImportedAt: null,
+    activityCount: 0,
+  });
+  const [stravaBusy, setStravaBusy] = useState(false);
 
   useEffect(() => {
     const section = searchParams.get("section");
@@ -134,9 +150,24 @@ const Settings = () => {
     }
   }, [searchParams]);
 
+  // Handle post-OAuth redirect flags and one-shot toast messages.
+  useEffect(() => {
+    const connected = searchParams.get("stravaConnected");
+    const error = searchParams.get("stravaError");
+    if (connected === "true") {
+      toast.success(t("settings.account.integrations.strava.connectedToast"));
+      setActiveTab("account");
+    } else if (error) {
+      toast.error(t("settings.account.integrations.strava.errorToast"));
+      setActiveTab("account");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   useEffect(() => {
     loadUserData();
     loadPreferences();
+    loadStravaStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -195,6 +226,82 @@ const Settings = () => {
   const loadPreferences = () => {
     const prefs = SettingsService.getPreferences();
     setPreferences((prev) => ({ ...prev, ...prefs }));
+  };
+
+  const loadStravaStatus = async () => {
+    try {
+      const res = await IntegrationService.getStravaStatus();
+      setStravaStatus({
+        connected: Boolean(res.data?.connected),
+        athleteId: res.data?.athleteId ?? null,
+        connectedAt: res.data?.connectedAt ?? null,
+        lastImportedAt: res.data?.lastImportedAt ?? null,
+        activityCount: res.data?.activityCount ?? 0,
+      });
+    } catch (e) {
+      // Endpoint may 503 when credentials aren't configured — ignore silently.
+    }
+  };
+
+  const handleStravaConnect = async () => {
+    setStravaBusy(true);
+    try {
+      const res = await IntegrationService.getStravaAuthorizeUrl();
+      if (res?.data?.url) {
+        window.location.href = res.data.url;
+      } else {
+        toast.error(t("settings.account.integrations.strava.errorToast"));
+      }
+    } catch (e) {
+      const status = e?.response?.status;
+      if (status === 503) {
+        toast.error(t("settings.account.integrations.strava.notConfigured"));
+      } else {
+        toast.error(t("settings.account.integrations.strava.errorToast"));
+      }
+    } finally {
+      setStravaBusy(false);
+    }
+  };
+
+  const handleStravaImport = async () => {
+    setStravaBusy(true);
+    try {
+      await IntegrationService.importFromStrava();
+      toast.success(t("settings.account.integrations.strava.importStarted"));
+    } catch (e) {
+      toast.error(t("settings.account.integrations.strava.errorToast"));
+    } finally {
+      setStravaBusy(false);
+    }
+  };
+
+  const handleStravaDisconnect = async () => {
+    setStravaBusy(true);
+    try {
+      await IntegrationService.disconnectStrava();
+      setStravaStatus({
+        connected: false,
+        athleteId: null,
+        connectedAt: null,
+        lastImportedAt: null,
+        activityCount: 0,
+      });
+      toast.success(t("settings.account.integrations.strava.disconnected"));
+    } catch (e) {
+      toast.error(t("settings.account.integrations.strava.errorToast"));
+    } finally {
+      setStravaBusy(false);
+    }
+  };
+
+  const formatLastImported = (iso) => {
+    if (!iso) return t("settings.account.integrations.strava.neverImported");
+    try {
+      return new Date(iso).toLocaleString();
+    } catch (e) {
+      return iso;
+    }
   };
 
   const handleFormChange = (e) => {
@@ -725,6 +832,54 @@ const Settings = () => {
                       <span></span>
                     </Toggle>
                   </ToggleItem>
+
+                  <SectionDivider />
+
+                  <SectionTitle>{t("settings.account.integrations.title")}</SectionTitle>
+                  <PanelDescription>{t("settings.account.integrations.description")}</PanelDescription>
+                  <IntegrationRow>
+                    <IntegrationInfo>
+                      <IntegrationName>
+                        {t("settings.account.integrations.strava.name")}
+                      </IntegrationName>
+                      {stravaStatus.connected ? (
+                        <>
+                          <IntegrationDetail>
+                            {t("settings.account.integrations.strava.athleteId")}: {stravaStatus.athleteId ?? "-"}
+                          </IntegrationDetail>
+                          <IntegrationDetail>
+                            {t("settings.account.integrations.strava.lastImported")}: {formatLastImported(stravaStatus.lastImportedAt)}
+                          </IntegrationDetail>
+                          <IntegrationDetail>
+                            {t("settings.account.integrations.strava.importedCount", { count: stravaStatus.activityCount })}
+                          </IntegrationDetail>
+                        </>
+                      ) : (
+                        <IntegrationDetail>
+                          {t("settings.account.integrations.strava.notConnected")}
+                        </IntegrationDetail>
+                      )}
+                    </IntegrationInfo>
+                    <IntegrationActions>
+                      {stravaStatus.connected ? (
+                        <>
+                          <StravaConnectButton onClick={handleStravaImport} disabled={stravaBusy}>
+                            <FiDownloadCloud size={16} />
+                            {t("settings.account.integrations.strava.importNow")}
+                          </StravaConnectButton>
+                          <SecondaryButton onClick={handleStravaDisconnect} disabled={stravaBusy}>
+                            <FiZap size={14} />
+                            {t("settings.account.integrations.strava.disconnect")}
+                          </SecondaryButton>
+                        </>
+                      ) : (
+                        <StravaConnectButton onClick={handleStravaConnect} disabled={stravaBusy}>
+                          <FiLink size={16} />
+                          {t("settings.account.integrations.strava.connect")}
+                        </StravaConnectButton>
+                      )}
+                    </IntegrationActions>
+                  </IntegrationRow>
 
                   <SectionDivider />
 
