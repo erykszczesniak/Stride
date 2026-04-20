@@ -6,10 +6,20 @@ export const Container = styled.div`
   padding: 32px 24px;
   background: ${({ theme }) => theme.bgPrimary};
   min-height: 100vh;
+
+  /* On narrow viewports the 32px/24px paddings eat too much horizontal space
+     (~48px gone on a 400px screen) and inner flex children can't shrink. */
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 export const Header = styled.div`
   margin-bottom: 40px;
+
+  @media (max-width: 768px) {
+    margin-bottom: 24px;
+  }
 `;
 
 export const Title = styled.h1`
@@ -17,6 +27,10 @@ export const Title = styled.h1`
   font-weight: 700;
   color: ${({ theme }) => theme.textPrimary};
   margin: 0;
+
+  @media (max-width: 600px) {
+    font-size: 26px;
+  }
 `;
 
 export const Section = styled.div`
@@ -25,6 +39,15 @@ export const Section = styled.div`
   padding: 32px;
   margin-bottom: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  /* Without min-width:0 a flex/grid child defaults to the intrinsic width of
+     its contents, so inner rows (duration inputs, stats grid) can push the
+     section past the viewport. */
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
 `;
 
 export const SectionTitle = styled.h2`
@@ -32,6 +55,10 @@ export const SectionTitle = styled.h2`
   font-weight: 600;
   color: ${({ theme }) => theme.textPrimary};
   margin: 0 0 24px 0;
+
+  @media (max-width: 768px) {
+    margin: 0 0 16px 0;
+  }
 `;
 
 export const ActivityTypeGrid = styled.div`
@@ -39,6 +66,17 @@ export const ActivityTypeGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 16px;
   margin-top: 16px;
+
+  /* On very narrow screens drop the min column width so we get 3 readable
+     tiles across instead of 2 awkwardly-wide ones. */
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 400px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 `;
 
 export const ActivityTypeButton = styled.button`
@@ -53,6 +91,7 @@ export const ActivityTypeButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 140px;
+  min-width: 0;
 
   &:hover {
     transform: translateY(-2px);
@@ -63,17 +102,32 @@ export const ActivityTypeButton = styled.button`
   &:active {
     transform: translateY(0);
   }
+
+  @media (max-width: 600px) {
+    padding: 14px 8px;
+    min-height: 96px;
+    border-radius: 10px;
+  }
 `;
 
 export const ActivityIcon = styled.div`
   font-size: 48px;
   margin-bottom: 12px;
+
+  @media (max-width: 600px) {
+    font-size: 32px;
+    margin-bottom: 6px;
+  }
 `;
 
 export const ActivityLabel = styled.span`
   font-size: 16px;
   font-weight: 600;
   color: ${({ theme }) => theme.textPrimary};
+
+  @media (max-width: 600px) {
+    font-size: 13px;
+  }
 `;
 
 export const FormGroup = styled.div`
@@ -141,6 +195,18 @@ export const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 24px;
+
+  /* Force one column on narrow viewports; auto-fit otherwise wants >=200px
+     which pushes the row past the edge on a 400px screen. */
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Let grid children shrink below their intrinsic content width. */
+  & > div {
+    min-width: 0;
+  }
 `;
 
 export const StatLabel = styled.label`
@@ -153,6 +219,7 @@ export const StatLabel = styled.label`
 
 export const StatInput = styled.input`
   width: 100%;
+  min-width: 0;
   padding: 14px 16px;
   font-size: 18px;
   font-weight: 500;
@@ -184,12 +251,29 @@ export const StatInput = styled.input`
   &[type=number] {
     -moz-appearance: textfield;
   }
+
+  @media (max-width: 600px) {
+    padding: 12px 10px;
+    font-size: 16px;
+  }
 `;
 
 export const DurationInputGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+
+  /* Let the three number inputs shrink evenly instead of their intrinsic
+     number-spinner width pushing the row off-screen. */
+  & > input {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  @media (max-width: 600px) {
+    gap: 4px;
+  }
 `;
 
 export const DurationSeparator = styled.span`
@@ -197,6 +281,11 @@ export const DurationSeparator = styled.span`
   font-weight: 700;
   color: ${({ theme }) => theme.textSecondary};
   user-select: none;
+  flex-shrink: 0;
+
+  @media (max-width: 600px) {
+    font-size: 18px;
+  }
 `;
 
 export const SaveButton = styled.button`
@@ -226,6 +315,12 @@ export const SaveButton = styled.button`
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    font-size: 16px;
+    margin-top: 20px;
   }
 `;
 
@@ -272,6 +367,11 @@ export const PhotoPreviewGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 12px;
+
+  @media (max-width: 400px) {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
 `;
 
 export const PhotoPreviewItem = styled.div`
@@ -323,10 +423,15 @@ export const ModeTabs = styled.div`
   padding: 6px;
   margin-bottom: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  @media (max-width: 600px) {
+    margin-bottom: 16px;
+  }
 `;
 
 export const ModeTab = styled.button`
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -349,6 +454,12 @@ export const ModeTab = styled.button`
       ? 'linear-gradient(135deg, #fc5200 0%, #ff7746 100%)'
       : props.theme.bgHover};
   }
+
+  @media (max-width: 600px) {
+    padding: 12px 8px;
+    font-size: 14px;
+    gap: 6px;
+  }
 `;
 
 export const ImportDropzone = styled.label`
@@ -369,18 +480,31 @@ export const ImportDropzone = styled.label`
     border-color: #fc5200;
     background: rgba(252, 82, 0, 0.04);
   }
+
+  @media (max-width: 600px) {
+    padding: 32px 16px;
+    gap: 8px;
+  }
 `;
 
 export const DropzoneIcon = styled.div`
   font-size: 56px;
   line-height: 1;
   opacity: 0.7;
+
+  @media (max-width: 600px) {
+    font-size: 40px;
+  }
 `;
 
 export const DropzoneText = styled.div`
   font-size: 17px;
   font-weight: 600;
   color: ${({ theme }) => theme.textPrimary};
+
+  @media (max-width: 600px) {
+    font-size: 15px;
+  }
 `;
 
 export const DropzoneSubtext = styled.div`
@@ -388,6 +512,10 @@ export const DropzoneSubtext = styled.div`
   color: ${({ theme }) => theme.textSecondary};
   max-width: 420px;
   line-height: 1.5;
+
+  @media (max-width: 600px) {
+    font-size: 13px;
+  }
 `;
 
 export const SelectedFileBox = styled.div`
@@ -400,6 +528,12 @@ export const SelectedFileBox = styled.div`
   border: 2px solid #fc5200;
   border-radius: 12px;
   margin-top: 16px;
+  min-width: 0;
+
+  @media (max-width: 600px) {
+    padding: 14px;
+    gap: 10px;
+  }
 `;
 
 export const SelectedFileInfo = styled.div`
@@ -487,6 +621,12 @@ export const SamplesGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
+
+  /* minmax(220px, ...) overflows on a ~400px screen once you factor in
+     section padding. Collapse to a single column on narrow viewports. */
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const SampleCard = styled.button`
