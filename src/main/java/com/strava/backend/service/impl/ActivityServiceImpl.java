@@ -1,6 +1,7 @@
 package com.strava.backend.service.impl;
 
 import com.strava.backend.domain.Activity;
+import com.strava.backend.domain.Gear;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.activity.ActivityRequest;
 import com.strava.backend.dto.activity.ActivityStatsResponse;
@@ -10,6 +11,7 @@ import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.enums.NotificationType;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.service.ActivityService;
+import com.strava.backend.service.GearService;
 import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.PersonalRecordService;
 import com.strava.backend.service.UserService;
@@ -56,6 +58,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final PersonalRecordService personalRecordService;
+    private final GearService gearService;
 
     @Value("${app.upload.dir:uploads/photos}")
     private String uploadDir;
@@ -108,6 +111,8 @@ public class ActivityServiceImpl implements ActivityService {
     public Activity createActivity(Long userId, ActivityRequest request) {
         User user = userService.getUserById(userId);
 
+        Gear gear = resolveGear(request.getGearId(), userId, request.getActivityType());
+
         Activity activity = Activity.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -128,9 +133,13 @@ public class ActivityServiceImpl implements ActivityService {
                 .routePolyline(request.getRoutePolyline())
                 .isPrivate(request.isPrivate())
                 .user(user)
+                .gear(gear)
                 .build();
 
         Activity saved = activityRepository.save(activity);
+        if (gear != null && saved.getDistance() != null) {
+            gearService.incrementGearMileage(gear.getId(), saved.getDistance());
+        }
         personalRecordService.checkAndUpdatePRs(saved);
         return saved;
     }
@@ -145,6 +154,11 @@ public class ActivityServiceImpl implements ActivityService {
             throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
         }
 
+        // Snapshot old gear/distance before mutating the activity — we need
+        // both to reverse the old mileage entry before applying the new one.
+        Gear oldGear = activity.getGear();
+        Double oldDistance = activity.getDistance();
+
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
         activity.setActivityType(request.getActivityType());
@@ -154,6 +168,9 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setCalories(request.getCalories());
         activity.setAverageSpeed(request.getAverageSpeed());
         activity.setPrivate(request.isPrivate());
+
+        Gear newGear = resolveGear(request.getGearId(), userId, request.getActivityType());
+        activity.setGear(newGear);
 
         // Only update optional fields if provided (preserve existing GPS/route data)
         if (request.getMaxSpeed() != null) activity.setMaxSpeed(request.getMaxSpeed());
@@ -167,6 +184,11 @@ public class ActivityServiceImpl implements ActivityService {
         if (request.getRoutePolyline() != null) activity.setRoutePolyline(request.getRoutePolyline());
 
         Activity saved = activityRepository.save(activity);
+
+        // Adjust gear mileage after the save so we don't leave gear counters
+        // in an inconsistent state if the save itself fails.
+        adjustGearMileageOnUpdate(oldGear, oldDistance, newGear, saved.getDistance());
+
         personalRecordService.checkAndUpdatePRs(saved);
         return saved;
     }
@@ -181,7 +203,14 @@ public class ActivityServiceImpl implements ActivityService {
             throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
         }
 
+        Gear gear = activity.getGear();
+        Double distance = activity.getDistance();
+
         activityRepository.delete(activity);
+
+        if (gear != null && distance != null) {
+            gearService.decrementGearMileage(gear.getId(), distance);
+        }
     }
 
     @Override
@@ -464,6 +493,61 @@ public class ActivityServiceImpl implements ActivityService {
         }
         double percentage = ((current - previous) / previous) * 100;
         return Math.round(percentage * 10.0) / 10.0;
+    }
+
+    /**
+     * Look up the gear by id, confirm it belongs to the caller, and confirm
+     * it's allowed for this activity type. Returns null if gearId is null.
+     *
+     * We use GearService.getGearById so the ownership check lives in one
+     * place (throws 403 if foreign, 404 if missing) and stays consistent
+     * with direct gear CRUD.
+     */
+    private Gear resolveGear(Long gearId, Long userId, ActivityType activityType) {
+        if (gearId == null) return null;
+        Gear gear = gearService.getGearById(gearId, userId);
+        if (gear.getActivityTypes() != null && !gear.getActivityTypes().isEmpty()
+                && !gear.getActivityTypes().contains(activityType)) {
+            throw new ApiRequestException(GEAR_ACTIVITY_TYPE_MISMATCH, HttpStatus.BAD_REQUEST);
+        }
+        return gear;
+    }
+
+    /**
+     * Bookkeeping for the four possible gear transitions on update:
+     *   1. no gear before or after   → no-op
+     *   2. gear added                → +distance on new gear
+     *   3. gear removed              → -oldDistance on old gear
+     *   4. gear changed or distance changed → full reverse + re-apply
+     */
+    private void adjustGearMileageOnUpdate(Gear oldGear, Double oldDistance, Gear newGear, Double newDistance) {
+        Long oldId = oldGear == null ? null : oldGear.getId();
+        Long newId = newGear == null ? null : newGear.getId();
+        boolean sameGear = oldId != null && oldId.equals(newId);
+
+        if (sameGear) {
+            // Same gear on both sides — only adjust if distance changed.
+            double diff = (newDistance == null ? 0.0 : newDistance) - (oldDistance == null ? 0.0 : oldDistance);
+            if (diff > 0) {
+                // Direct positive adjustment without bumping activity count
+                // would require a new service method; simplest correct approach
+                // is to reverse then re-apply, keeping activity_count stable
+                // net-net.
+                gearService.decrementGearMileage(oldId, oldDistance == null ? 0.0 : oldDistance);
+                gearService.incrementGearMileage(newId, newDistance == null ? 0.0 : newDistance);
+            } else if (diff < 0) {
+                gearService.decrementGearMileage(oldId, oldDistance == null ? 0.0 : oldDistance);
+                gearService.incrementGearMileage(newId, newDistance == null ? 0.0 : newDistance);
+            }
+            return;
+        }
+
+        if (oldId != null && oldDistance != null) {
+            gearService.decrementGearMileage(oldId, oldDistance);
+        }
+        if (newId != null && newDistance != null) {
+            gearService.incrementGearMileage(newId, newDistance);
+        }
     }
 
     private String calculateTrend(Double current, Double previous) {

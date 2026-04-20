@@ -45,4 +45,10 @@ public class ActivityRequest {
     private String endLocation;
     private String routePolyline;
     private boolean isPrivate;
+
+    /**
+     * Optional gear to tag this activity with. Must belong to the user and
+     * support the activity's type — service layer enforces both.
+     */
+    private Long gearId;
 }

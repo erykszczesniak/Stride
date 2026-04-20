@@ -257,6 +257,9 @@
       "confirmDeleteComment": "Czy na pewno chcesz usunąć ten komentarz?",
       "activityNotFound": "Nie znaleziono aktywności",
       "photoAlt": "Zdjęcie aktywności {{index}}",
+      "gear": {
+        "label": "Sprzęt"
+      },
       "elevationProfile": {
         "title": "Profil wysokości",
         "gain": "Podejście",
@@ -307,6 +310,8 @@
       "samplesTitle": "Nie masz pliku? Wypróbuj próbkę",
       "samplesSubtitle": "Pobierz jedną z przykładowych aktywności, aby przetestować funkcję importu.",
       "importSuccess": "Pomyślnie zaimportowano \"{{title}}\"",
+      "gear": "Sprzęt",
+      "noGear": "Brak sprzętu",
       "errors": {
         "loadFailed": "Nie udało się wczytać aktywności",
         "invalidImageFormat": "Dozwolone są tylko obrazy JPG, PNG i WebP",
@@ -608,7 +613,49 @@
       "profile": "Profil",
       "notifications": "Powiadomienia",
       "preferences": "Preferencje",
+      "gear": "Sprzęt",
       "account": "Konto"
+    },
+    "gear": {
+      "title": "Sprzęt",
+      "description": "Śledź przebieg swoich butów, rowerów i innego sprzętu",
+      "addGear": "Dodaj sprzęt",
+      "addTitle": "Dodaj sprzęt",
+      "editTitle": "Edytuj sprzęt",
+      "activeHeading": "Aktywny sprzęt",
+      "retiredHeading": "Wycofany sprzęt",
+      "emptyActive": "Brak sprzętu. Dodaj buty lub rower, aby zacząć śledzić przebieg.",
+      "name": "Nazwa",
+      "namePlaceholder": "np. Saucony Endorphin Pro 3",
+      "brand": "Marka",
+      "brandPlaceholder": "np. Saucony",
+      "model": "Model",
+      "modelPlaceholder": "np. Endorphin Pro 3",
+      "type": "Typ",
+      "activityTypes": "Kompatybilne typy aktywności",
+      "notes": "Notatki",
+      "notesPlaceholder": "Data zakupu, rozmiar itp.",
+      "distance": "łącznie",
+      "activities": "aktywności",
+      "retire": "Wycofaj",
+      "types": {
+        "SHOES": "Buty",
+        "BIKE": "Rower",
+        "OTHER": "Inne"
+      },
+      "created": "Sprzęt dodany",
+      "updated": "Sprzęt zaktualizowany",
+      "retired": "Sprzęt wycofany",
+      "deleted": "Sprzęt usunięty",
+      "confirmRetire": "Wycofać \"{{name}}\"? Nadal będzie widoczny w historii.",
+      "confirmDelete": "Usunąć \"{{name}}\" na stałe? Tej operacji nie można cofnąć.",
+      "loadFailed": "Nie udało się wczytać sprzętu",
+      "saveFailed": "Nie udało się zapisać sprzętu",
+      "retireFailed": "Nie udało się wycofać sprzętu",
+      "deleteFailed": "Nie udało się usunąć sprzętu",
+      "errors": {
+        "nameRequired": "Nazwa sprzętu jest wymagana"
+      }
     },
     "profile": {
       "title": "Profil",

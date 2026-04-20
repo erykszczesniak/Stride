@@ -30,6 +30,7 @@ public class ActivityMapper {
     private final CommonMapper commonMapper;
     private final ActivityService activityService;
     private final UserRepository userRepository;
+    private final GearMapper gearMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public FullActivityResponse getActivityById(Long activityId, Long currentUserId) {
@@ -123,6 +124,7 @@ public class ActivityMapper {
         response.setLikesCount(activity.getLikesCount());
         response.setCommentsCount(activity.getCommentsCount());
         response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
+        response.setGear(gearMapper.toSummary(activity.getGear()));
         response.setElevationProfile(parseElevationProfile(activity.getElevationProfile()));
         return response;
     }
@@ -132,6 +134,7 @@ public class ActivityMapper {
         response.setLikesCount(activity.getLikesCount());
         response.setCommentsCount(activity.getCommentsCount());
         response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
+        response.setGear(gearMapper.toSummary(activity.getGear()));
         response.setElevationProfile(parseElevationProfile(activity.getElevationProfile()));
 
         List<CommentResponse> comments = activity.getComments().stream()

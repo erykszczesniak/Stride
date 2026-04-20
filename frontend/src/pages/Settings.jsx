@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun, FiTrash2 } from "react-icons/fi";
+import { FiUser, FiBell, FiSliders, FiLock, FiChevronRight, FiSave, FiLogOut, FiSun, FiTrash2, FiPackage } from "react-icons/fi";
 import Navbar from "../components/Navbar/Navbar";
+import GearManager from "../components/GearManager/GearManager";
 import SettingsService from "../api/SettingsService";
 import { useToast } from "../context/ToastContext";
 import { useTheme } from "../context/ThemeContext";
@@ -59,7 +60,7 @@ import {
   FormError,
 } from "./SettingsStyles";
 
-const VALID_SECTIONS = ["profile", "notifications", "preferences", "account"];
+const VALID_SECTIONS = ["profile", "notifications", "preferences", "gear", "account"];
 
 const KG_TO_LBS = 2.20462;
 const CM_TO_IN = 0.393701;
@@ -376,6 +377,7 @@ const Settings = () => {
     { id: "profile", label: t("settings.tabs.profile"), icon: <FiUser size={18} /> },
     { id: "notifications", label: t("settings.tabs.notifications"), icon: <FiBell size={18} /> },
     { id: "preferences", label: t("settings.tabs.preferences"), icon: <FiSliders size={18} /> },
+    { id: "gear", label: t("settings.tabs.gear"), icon: <FiPackage size={18} /> },
     { id: "account", label: t("settings.tabs.account"), icon: <FiLock size={18} /> },
   ];
 
@@ -633,6 +635,10 @@ const Settings = () => {
                     </Toggle>
                   </DarkModeToggle>
                 </>
+              )}
+
+              {activeTab === "gear" && (
+                <GearManager />
               )}
 
               {activeTab === "account" && (

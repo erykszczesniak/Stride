@@ -191,6 +191,25 @@ export const TextArea = styled.textarea`
   }
 `;
 
+export const Select = styled.select`
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  border: 2px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+  color: ${({ theme }) => theme.textPrimary};
+  background: ${({ theme }) => theme.bgInput};
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #fc5200;
+  }
+`;
+
 export const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
