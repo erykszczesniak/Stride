@@ -97,8 +97,15 @@ export const NavRight = styled.div`
   align-items: center;
   gap: 16px;
 
+  /* Once NavLinks hides at <=1024px, there's no centred element stretching
+     the row, so NavRight would otherwise sit right next to the logo.
+     margin-left: auto pushes it back to the right edge. */
+  ${media.lg} {
+    margin-left: auto;
+  }
+
   ${media.md} {
-    gap: 8px;
+    gap: 10px;
   }
 `;
 

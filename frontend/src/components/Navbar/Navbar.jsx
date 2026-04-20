@@ -116,11 +116,12 @@ const Navbar = () => {
         </NavLinks>
 
         <NavRight>
-          <HideOnMobile>
-            <IconButton title={t("nav.searchShortcut")} onClick={() => setShowSearch(true)}>
-              <FiSearch size={20} />
-            </IconButton>
-          </HideOnMobile>
+          {/* Search is visible at every breakpoint — there's no way to trigger the
+              Cmd/Ctrl+K shortcut on mobile, so the magnifier icon is the only way
+              to open the command palette on a phone. */}
+          <IconButton title={t("nav.searchShortcut")} onClick={() => setShowSearch(true)}>
+            <FiSearch size={20} />
+          </IconButton>
           {!isSettingsPage && (
             <IconButton title={t("nav.addActivity")} onClick={() => navigate("/activities/new")}>
               <FiPlus size={22} />
