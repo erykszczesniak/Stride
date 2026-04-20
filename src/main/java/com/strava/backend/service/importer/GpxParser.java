@@ -49,6 +49,18 @@ public class GpxParser implements ActivityFileParser {
         return buildParsedActivity(title, description, points);
     }
 
+    /** Extract per-point elevations aligned with the supplied GPS points list. */
+    private List<Double> extractElevations(List<GpsPoint> points) {
+        List<Double> elevations = new ArrayList<>(points.size());
+        boolean anyPresent = false;
+        for (GpsPoint p : points) {
+            Double e = p.getElevation();
+            elevations.add(e);
+            if (e != null) anyPresent = true;
+        }
+        return anyPresent ? elevations : new ArrayList<>();
+    }
+
     @Override
     public boolean supports(String fileExtension) {
         return "gpx".equalsIgnoreCase(fileExtension);
@@ -102,7 +114,8 @@ public class GpxParser implements ActivityFileParser {
         ParsedActivity.ParsedActivityBuilder activityBuilder = ParsedActivity.builder()
                 .title(title != null ? title : "Imported GPX Activity")
                 .description(description)
-                .gpsPoints(points);
+                .gpsPoints(points)
+                .elevations(extractElevations(points));
 
         if (!points.isEmpty()) {
             GpsPoint first = points.getFirst();

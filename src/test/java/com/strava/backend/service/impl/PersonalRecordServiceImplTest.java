@@ -8,13 +8,13 @@ import com.strava.backend.enums.DistanceType;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.PersonalRecordRepository;
 import com.strava.backend.util.TestDataFactory;
+import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,7 +37,6 @@ class PersonalRecordServiceImplTest {
     @Mock
     private ActivityRepository activityRepository;
 
-    @InjectMocks
     private PersonalRecordServiceImpl personalRecordService;
 
     private User testUser;
@@ -45,6 +44,15 @@ class PersonalRecordServiceImplTest {
     @BeforeEach
     void setUp() {
         testUser = TestDataFactory.createUser(1L, "john@example.com", "John", "Doe");
+        // Construct manually so we can pass ObservationRegistry.NOOP — the service
+        // emits Micrometer Observations for distributed tracing, and a NOOP
+        // registry keeps unit tests free of trace/span side effects.
+        personalRecordService = new PersonalRecordServiceImpl(
+                personalRecordRepository,
+                activityRepository,
+                null,
+                ObservationRegistry.NOOP
+        );
     }
 
     private Activity runActivity(Long id, double distanceKm, int durationSeconds) {

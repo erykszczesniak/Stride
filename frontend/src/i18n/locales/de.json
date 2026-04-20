@@ -248,7 +248,23 @@
       "confirmDelete": "\"{{title}}\" löschen? Dies kann nicht rückgängig gemacht werden.",
       "confirmDeleteComment": "Sind Sie sicher, dass Sie diesen Kommentar löschen möchten?",
       "activityNotFound": "Aktivität nicht gefunden",
-      "photoAlt": "Aktivitätsfoto {{index}}"
+      "photoAlt": "Aktivitätsfoto {{index}}",
+      "elevationProfile": {
+        "title": "Höhenprofil",
+        "gain": "Anstieg",
+        "loss": "Abstieg",
+        "noData": "Für diese Aktivität sind keine Höhendaten verfügbar."
+      },
+      "splits": {
+        "title": "Splits",
+        "km": "KM",
+        "mi": "MI",
+        "distance": "Distanz",
+        "time": "Zeit",
+        "pace": "Pace",
+        "partial": "teilweise",
+        "estimatedNote": "Splits aus dem Durchschnittstempo geschätzt; Zeitangaben pro Punkt werden noch nicht aufgezeichnet."
+      }
     },
     "record": {
       "titleNew": "Aktivität aufzeichnen",

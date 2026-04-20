@@ -1,11 +1,6 @@
-package com.strava.backend.enums;
+package com.strava.backend.enums
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-@Getter
-@RequiredArgsConstructor
-public enum DistanceType {
+enum class DistanceType(val distanceKm: Double, val displayName: String) {
     // Swimming pool distances
     FIFTY_M(0.05, "50 m"),
     HUNDRED_M(0.1, "100 m"),
@@ -21,7 +16,4 @@ public enum DistanceType {
     // Running-only
     HALF_MARATHON(21.0975, "Half Marathon"),
     MARATHON(42.195, "Marathon");
-
-    private final double distanceKm;
-    private final String displayName;
 }

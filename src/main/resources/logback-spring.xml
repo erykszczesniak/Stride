@@ -3,7 +3,12 @@
 
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <!-- Dev & default: colored console output -->
+    <!-- Log pattern extended with traceId/spanId so log lines can be cross-referenced
+         with Jaeger (OpenTelemetry). Empty strings when tracing is off. -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([${spring.application.name:-},%X{traceId:-},%X{spanId:-}]){yellow} %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+
+    <!-- Dev & default: colored console output with traceId -->
     <springProfile name="default | dev | test | testcontainers">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
@@ -22,6 +27,8 @@
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <includeMdcKeyName>requestId</includeMdcKeyName>
                 <includeMdcKeyName>userId</includeMdcKeyName>
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
                 <timeZone>UTC</timeZone>
                 <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
             </encoder>
