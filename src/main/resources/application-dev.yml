@@ -40,3 +40,17 @@ logging:
     com.strava: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+    # Silence OTel export retries when Jaeger isn't running locally.
+    # Traces are still generated (sampling=1.0) — just not shipped anywhere
+    # unless you also spin up `docker compose up -d jaeger`.
+    io.opentelemetry.exporter.internal.http: ERROR
+
+# Traces are generated and observable via the /actuator endpoint even
+# without a Jaeger container — override OTEL_EXPORTER_OTLP_ENDPOINT to
+# your own collector if you need them shipped. The OkHttp exporter will
+# still attempt the default localhost:4318 call and fail quietly thanks
+# to the logging override above.
+management:
+  tracing:
+    sampling:
+      probability: 1.0
