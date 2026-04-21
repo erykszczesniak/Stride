@@ -1,6 +1,7 @@
 package com.strava.backend.repository;
 
 import com.strava.backend.domain.User;
+import com.strava.backend.enums.AuthProvider;
 import com.strava.backend.repository.projection.UserProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    /**
+     * Look up a user by their external OAuth provider identity. Used by the Strava login
+     * flow where no email is available — Strava's default scope only exposes the athlete id.
+     */
+    Optional<User> findByProviderIdAndAuthProvider(String providerId, AuthProvider authProvider);
 
     Optional<User> findByPasswordResetCode(String code);
 

@@ -140,6 +140,8 @@
     "signInLink": "Zaloguj się",
     "orDivider": "lub",
     "continueWithGoogle": "Kontynuuj z Google",
+    "continueWithStrava": "Kontynuuj ze Stravą",
+    "stravaSigningIn": "Logowanie przez Stravę...",
     "signingUp": "Rejestracja...",
     "showPassword": "Pokaż hasło",
     "hidePassword": "Ukryj hasło",
@@ -159,6 +161,8 @@
       "loginFailed": "Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.",
       "googleLoginFailed": "Logowanie przez Google nie powiodło się. Spróbuj ponownie.",
       "googleSignupFailed": "Rejestracja przez Google nie powiodła się. Spróbuj ponownie.",
+      "stravaDenied": "Logowanie przez Stravę zostało anulowane.",
+      "stravaFailed": "Logowanie przez Stravę nie powiodło się. Spróbuj ponownie.",
       "registrationFailed": "Rejestracja nie powiodła się. Spróbuj ponownie."
     }
   },

@@ -132,6 +132,8 @@
     "signInLink": "Se connecter",
     "orDivider": "ou",
     "continueWithGoogle": "Continuer avec Google",
+    "continueWithStrava": "Continuer avec Strava",
+    "stravaSigningIn": "Connexion avec Strava en cours...",
     "signingUp": "Inscription...",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
@@ -151,6 +153,8 @@
       "loginFailed": "E-mail ou mot de passe invalide. Veuillez réessayer.",
       "googleLoginFailed": "Échec de la connexion Google. Veuillez réessayer.",
       "googleSignupFailed": "Échec de l'inscription Google. Veuillez réessayer.",
+      "stravaDenied": "La connexion Strava a été annulée.",
+      "stravaFailed": "Échec de la connexion avec Strava. Veuillez réessayer.",
       "registrationFailed": "Échec de l'inscription. Veuillez réessayer."
     }
   },

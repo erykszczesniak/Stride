@@ -314,6 +314,42 @@ export const GoogleButton = styled.button`
   }
 `;
 
+// Strava brand orange — matches the gradient on SubmitButton but flat, so it reads
+// as a separate OAuth option rather than a primary-action mimic.
+export const StravaButton = styled.button`
+  width: 100%;
+  padding: 14px;
+  background: #fc4c02;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+
+  &:hover {
+    background: #e04402;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(252, 76, 2, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+`;
+
 export const ErrorMessage = styled.div`
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.3);

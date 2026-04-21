@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FiMail, FiLock, FiActivity, FiEye, FiEyeOff, FiSun, FiMoon } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
+import AuthService from "../api/AuthService";
 import {
   Container,
   LeftPanel,
@@ -32,6 +34,7 @@ import {
   RegisterLink,
   ErrorMessage,
   GoogleButton,
+  StravaButton,
 } from "./LoginStyles";
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -45,9 +48,17 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const StravaIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7 13.828h4.169"/>
+  </svg>
+);
+
 const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const toast = useToast();
   const { login, googleLogin } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
@@ -57,6 +68,28 @@ const Login = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const googleInitialized = useRef(false);
+  const stravaErrorShown = useRef(false);
+
+  // Show a toast when the user was bounced back from a failed Strava OAuth flow.
+  // useRef guard + setSearchParams cleanup keeps this effect firing exactly once.
+  useEffect(() => {
+    if (stravaErrorShown.current) return;
+    const stravaError = searchParams.get("stravaError");
+    if (!stravaError) return;
+    stravaErrorShown.current = true;
+    const message = stravaError === "denied"
+      ? t("auth.errors.stravaDenied")
+      : t("auth.errors.stravaFailed");
+    toast.error(message);
+    // Strip the query param so refreshes don't re-toast.
+    const next = new URLSearchParams(searchParams);
+    next.delete("stravaError");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, toast, t]);
+
+  const handleStravaClick = () => {
+    window.location.href = AuthService.stravaAuthorizeUrl();
+  };
 
   const handleGoogleResponse = useCallback(async (response) => {
     setError("");
@@ -218,28 +251,25 @@ const Login = () => {
             </SubmitButton>
           </Form>
 
+          <Divider>
+            <span>{t("auth.orDivider")}</span>
+          </Divider>
+
           {GOOGLE_CLIENT_ID && (
-            <>
-              <Divider>
-                <span>{t("auth.orDivider")}</span>
-              </Divider>
-
-              <GoogleButton
-                type="button"
-                onClick={handleGoogleClick}
-                disabled={googleLoading}
-              >
-                <GoogleIcon />
-                {googleLoading ? t("auth.signingIn") : t("auth.continueWithGoogle")}
-              </GoogleButton>
-            </>
+            <GoogleButton
+              type="button"
+              onClick={handleGoogleClick}
+              disabled={googleLoading}
+            >
+              <GoogleIcon />
+              {googleLoading ? t("auth.signingIn") : t("auth.continueWithGoogle")}
+            </GoogleButton>
           )}
 
-          {!GOOGLE_CLIENT_ID && (
-            <Divider>
-              <span>{t("auth.orDivider")}</span>
-            </Divider>
-          )}
+          <StravaButton type="button" onClick={handleStravaClick}>
+            <StravaIcon />
+            {t("auth.continueWithStrava")}
+          </StravaButton>
 
           <RegisterLink>
             {t("auth.dontHaveAccount")} <Link to="/register">{t("auth.createOne")}</Link>

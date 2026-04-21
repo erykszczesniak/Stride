@@ -132,6 +132,8 @@
     "signInLink": "Sign in",
     "orDivider": "or",
     "continueWithGoogle": "Continue with Google",
+    "continueWithStrava": "Continue with Strava",
+    "stravaSigningIn": "Signing you in with Strava...",
     "signingUp": "Signing up...",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
@@ -151,6 +153,8 @@
       "loginFailed": "Invalid email or password. Please try again.",
       "googleLoginFailed": "Google login failed. Please try again.",
       "googleSignupFailed": "Google sign-up failed. Please try again.",
+      "stravaDenied": "Strava sign-in was cancelled.",
+      "stravaFailed": "Sign in with Strava failed. Please try again.",
       "registrationFailed": "Registration failed. Please try again."
     }
   },

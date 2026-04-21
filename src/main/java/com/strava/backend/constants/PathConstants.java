@@ -14,6 +14,9 @@ public final class PathConstants {
     public static final String FORGOT_PASSWORD = "/forgot-password";
     public static final String RESET_PASSWORD = "/reset-password";
     public static final String GOOGLE = "/google";
+    // Strava login flow — kept separate from the integration flow under /integrations/strava
+    // so the callback can be permitAll without opening the import endpoints up.
+    public static final String API_V1_AUTH_STRAVA = API_V1_AUTH + "/strava";
 
     // Users
     public static final String USERS = "/users";
