@@ -875,7 +875,19 @@
     "prCount_one": "{{count}} PR",
     "prCount_few": "{{count}} PR",
     "prCount_many": "{{count}} PR",
-    "prCount_other": "{{count}} PR"
+    "prCount_other": "{{count}} PR",
+    "distances": {
+      "FIFTY_M": "50 m",
+      "HUNDRED_M": "100 m",
+      "TWO_HUNDRED_M": "200 m",
+      "FOUR_HUNDRED_M": "400 m",
+      "ONE_KM": "1 km",
+      "THREE_KM": "3 km",
+      "FIVE_KM": "5 km",
+      "TEN_KM": "10 km",
+      "HALF_MARATHON": "Półmaraton",
+      "MARATHON": "Maraton"
+    }
   },
   "training": {
     "title": "Plany treningowe",

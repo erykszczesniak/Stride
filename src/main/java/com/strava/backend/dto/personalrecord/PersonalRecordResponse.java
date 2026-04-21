@@ -17,7 +17,6 @@ public class PersonalRecordResponse {
     private Long id;
     private ActivityType activityType;
     private DistanceType distanceType;
-    private String distanceDisplayName;
     private Double distance;
     private Integer timeInSeconds;
     private String formattedTime;

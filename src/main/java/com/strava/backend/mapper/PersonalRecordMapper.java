@@ -43,7 +43,6 @@ public class PersonalRecordMapper {
                 .id(pr.getId())
                 .activityType(pr.getActivityType())
                 .distanceType(pr.getDistanceType())
-                .distanceDisplayName(pr.getDistanceType().getDisplayName())
                 .distance(pr.getDistance())
                 .timeInSeconds(pr.getTimeInSeconds())
                 .formattedTime(formatTime(pr.getTimeInSeconds()))

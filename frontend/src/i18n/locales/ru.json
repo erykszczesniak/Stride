@@ -875,7 +875,19 @@
     "prCount_one": "{{count}} рекорд",
     "prCount_few": "{{count}} рекорда",
     "prCount_many": "{{count}} рекордов",
-    "prCount_other": "{{count}} рекордов"
+    "prCount_other": "{{count}} рекордов",
+    "distances": {
+      "FIFTY_M": "50 м",
+      "HUNDRED_M": "100 м",
+      "TWO_HUNDRED_M": "200 м",
+      "FOUR_HUNDRED_M": "400 м",
+      "ONE_KM": "1 км",
+      "THREE_KM": "3 км",
+      "FIVE_KM": "5 км",
+      "TEN_KM": "10 км",
+      "HALF_MARATHON": "Полумарафон",
+      "MARATHON": "Марафон"
+    }
   },
   "training": {
     "title": "Планы тренировок",

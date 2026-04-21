@@ -209,7 +209,9 @@ const PersonalRecords = ({ userId, isOwnProfile = false }) => {
                           })()
                         )}
                       </PRDistanceBadge>
-                      <PRDistanceLabel>{pr.distanceDisplayName}</PRDistanceLabel>
+                      <PRDistanceLabel>
+                        {t(`personalRecords.distances.${pr.distanceType}`, { defaultValue: pr.distanceType })}
+                      </PRDistanceLabel>
                     </PRDistanceCell>
                     <PRTableCell>
                       <PRTimeValue>{pr.formattedTime}</PRTimeValue>

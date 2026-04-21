@@ -23,7 +23,6 @@ const samplePR = (overrides = {}) => ({
   activityType: "RUN",
   distanceType: "FIVE_KM",
   distance: 5,
-  distanceDisplayName: "5 km",
   formattedTime: "25:00",
   formattedPace: "5:00 /km",
   improvementSeconds: null,
