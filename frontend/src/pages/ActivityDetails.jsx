@@ -24,7 +24,7 @@ import ShareModal from "../components/ShareModal/ShareModal";
 import { useAuth } from "../context/AuthContext";
 import { useUnits } from "../context/UnitsContext";
 import { LoadingSpinner } from "./DashboardStyles";
-import { formatDuration, getTimeAgo, getInitials, isPaceActivity, formatPace } from "../utils/formatters";
+import { formatDuration, getTimeAgo, getInitials, isPaceActivity, formatPace, isDistanceSport } from "../utils/formatters";
 import i18n from "../i18n";
 import {
   BackLink,
@@ -478,7 +478,10 @@ const ActivityDetails = () => {
         totalDistanceKm={activity.distance}
       />
 
-      {(() => {
+      {/* Splits only make sense for distance-based sports (runs, rides,
+          swims, ...). Gym sessions, yoga, weight training etc. don't cover
+          ground, so a table of "per-km splits" is meaningless there. */}
+      {isDistanceSport(activity.activityType) && (() => {
         const splitUnitKm = unitsCtx.isImperial ? 1.609344 : 1;
         const splits = computeSplits(
           activity.distance,

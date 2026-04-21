@@ -80,6 +80,28 @@ export const isPaceActivity = (activityType) =>
 export const isSwimActivity = (activityType) => SWIM_ACTIVITY_TYPES.has(activityType);
 
 /**
+ * Activity types where covering distance is the whole point — runs, rides,
+ * swims, rowing, skis, etc. Gym / indoor / static-position sports (WORKOUT,
+ * YOGA, WEIGHT_TRAINING, CROSSFIT, ROCK_CLIMBING) don't track distance
+ * meaningfully, so features like the per-km splits table are hidden for them.
+ */
+const DISTANCE_SPORT_TYPES = new Set([
+  "RUN", "VIRTUAL_RUN", "TRAIL_RUN", "WALK", "HIKE",
+  "RIDE", "VIRTUAL_RIDE",
+  "SWIM",
+  "ROWING", "KAYAKING", "STAND_UP_PADDLING", "SURFING",
+  "NORDIC_SKI", "ALPINE_SKI", "BACKCOUNTRY_SKI", "ROLLER_SKI",
+  "ICE_SKATE", "INLINE_SKATE", "SNOWBOARD", "SNOWSHOE",
+]);
+
+/**
+ * True for sports where distance-over-time is a core metric (running, cycling,
+ * swimming, skiing, ...). False for gym / yoga / climbing / anything where
+ * kilometers on the clock don't really mean anything.
+ */
+export const isDistanceSport = (activityType) => DISTANCE_SPORT_TYPES.has(activityType);
+
+/**
  * Format pace as min:sec /km from distance and duration.
  * When called with a units context, uses sport-aware formatting.
  * @param {number} distanceKm
