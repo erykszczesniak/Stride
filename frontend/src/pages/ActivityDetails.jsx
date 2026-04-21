@@ -25,6 +25,7 @@ import { useAuth } from "../context/AuthContext";
 import { useUnits } from "../context/UnitsContext";
 import { LoadingSpinner } from "./DashboardStyles";
 import { formatDuration, getTimeAgo, getInitials, isPaceActivity, formatPace, isDistanceSport } from "../utils/formatters";
+import { parseRouteCoordinates } from "../utils/polyline";
 import i18n from "../i18n";
 import {
   BackLink,
@@ -100,18 +101,112 @@ const formatSplitTime = (seconds) => {
 };
 
 /**
- * Compute uniform splits from total distance and duration.
- * Returns an array of { index, distanceKm, durationSeconds, partial } rows.
- * Splits are uniform-pace because per-point timestamps are not stored yet.
+ * Haversine distance between two [lat, lng] pairs in kilometers.
+ * Used locally by the accurate-splits path to accumulate per-segment distance
+ * between consecutive GPS points.
  */
-const computeSplits = (totalDistKm, totalDurationSec, splitUnitKm) => {
+const haversineKm = (a, b) => {
+  const R = 6371.0088; // mean earth radius, km
+  const toRad = (d) => (d * Math.PI) / 180;
+  const lat1 = a[0];
+  const lng1 = a[1];
+  const lat2 = b[0];
+  const lng2 = b[1];
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLng / 2);
+  const h =
+    s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+};
+
+/**
+ * Compute per-split rows of { index, distanceKm, durationSeconds, partial, accurate }.
+ *
+ * When a per-point `timestamps` array is supplied and its length matches the decoded
+ * polyline `coordinates`, we walk the points, accumulate Haversine distance between
+ * consecutive samples, and close a split each time the running distance crosses
+ * `splitUnitKm`. The split's duration is the real delta between the timestamp at the
+ * split-start index and the timestamp at the split-end index, so the resulting pace
+ * reflects actual variations along the route (hills, stops, intervals).
+ *
+ * When the timestamps are missing, empty, or their length doesn't align with the
+ * polyline, we fall back to the pre-existing uniform-pace algorithm driven by
+ * total distance / total duration. That path is flagged accurate:false so the UI
+ * can show the "estimated" note instead of "accurate".
+ *
+ * Final partial split (remainder distance < splitUnitKm at the end of the track)
+ * carries the leftover carry-forward distance and the tail duration.
+ */
+const computeSplits = (
+  totalDistKm,
+  totalDurationSec,
+  splitUnitKm,
+  timestamps,
+  coordinates,
+) => {
+  if (!splitUnitKm || splitUnitKm <= 0) return [];
+
+  // --- Accurate path: per-point timestamps aligned with the polyline ---
+  const coords = Array.isArray(coordinates) ? coordinates : [];
+  const hasTimestamps =
+    Array.isArray(timestamps) &&
+    timestamps.length > 1 &&
+    coords.length === timestamps.length;
+
+  if (hasTimestamps) {
+    const splits = [];
+    let splitStartIdx = 0;
+    let runningKm = 0; // distance accumulated within the current split
+    let splitIndex = 1;
+
+    for (let i = 1; i < coords.length; i += 1) {
+      const segKm = haversineKm(coords[i - 1], coords[i]);
+      runningKm += segKm;
+
+      // Close as many full splits as this segment spans — matters for sparse
+      // tracks where a single long segment could cover more than one split unit.
+      while (runningKm >= splitUnitKm) {
+        const durationSeconds = timestamps[i] - timestamps[splitStartIdx];
+        splits.push({
+          index: splitIndex,
+          distanceKm: splitUnitKm,
+          durationSeconds: durationSeconds > 0 ? durationSeconds : 0,
+          partial: false,
+          accurate: true,
+        });
+        splitIndex += 1;
+        splitStartIdx = i;
+        runningKm -= splitUnitKm;
+      }
+    }
+
+    // Final partial split = remainder distance carried forward + tail duration.
+    // Skip if remainder is FP noise or if the track ended exactly on a split.
+    if (runningKm > 0.01 && splitStartIdx < coords.length - 1) {
+      const lastIdx = coords.length - 1;
+      const durationSeconds = timestamps[lastIdx] - timestamps[splitStartIdx];
+      splits.push({
+        index: splitIndex,
+        distanceKm: runningKm,
+        durationSeconds: durationSeconds > 0 ? durationSeconds : 0,
+        partial: true,
+        accurate: true,
+      });
+    }
+
+    if (splits.length > 0) return splits;
+    // If no split could be formed (e.g. a tiny track shorter than splitUnitKm),
+    // fall through to the uniform path so the UI still shows something useful.
+  }
+
+  // --- Fallback: uniform-pace estimation from totals ---
   if (
     !totalDistKm ||
     !totalDurationSec ||
     totalDistKm <= 0 ||
-    totalDurationSec <= 0 ||
-    !splitUnitKm ||
-    splitUnitKm <= 0
+    totalDurationSec <= 0
   ) {
     return [];
   }
@@ -125,6 +220,7 @@ const computeSplits = (totalDistKm, totalDurationSec, splitUnitKm) => {
       distanceKm: splitUnitKm,
       durationSeconds: fullSplitTime,
       partial: false,
+      accurate: false,
     });
   }
   // Only show remainder if it is meaningfully > 0 (guard against FP noise).
@@ -134,6 +230,7 @@ const computeSplits = (totalDistKm, totalDurationSec, splitUnitKm) => {
       distanceKm: remainderKm,
       durationSeconds: (totalDurationSec * remainderKm) / totalDistKm,
       partial: true,
+      accurate: false,
     });
   }
   return splits;
@@ -483,15 +580,21 @@ const ActivityDetails = () => {
           ground, so a table of "per-km splits" is meaningless there. */}
       {isDistanceSport(activity.activityType) && (() => {
         const splitUnitKm = unitsCtx.isImperial ? 1.609344 : 1;
+        const coords = parseRouteCoordinates(activity.routePolyline);
         const splits = computeSplits(
           activity.distance,
           activity.duration,
           splitUnitKm,
+          activity.pointTimestamps,
+          coords,
         );
         if (splits.length === 0) return null;
         const splitUnitLabel = unitsCtx.isImperial
           ? t("activities.details.splits.mi")
           : t("activities.details.splits.km");
+        // All splits carry the same accurate flag, so just peek at the first one
+        // to decide which note to show.
+        const isAccurate = splits[0].accurate === true;
         return (
           <SplitsSection>
             <SplitsSectionTitle>
@@ -543,7 +646,9 @@ const ActivityDetails = () => {
               </SplitsTable>
             </SplitsTableWrapper>
             <SplitsNote>
-              {t("activities.details.splits.estimatedNote")}
+              {isAccurate
+                ? t("activities.details.splits.accurateNote")
+                : t("activities.details.splits.estimatedNote")}
             </SplitsNote>
           </SplitsSection>
         );

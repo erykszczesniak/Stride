@@ -32,6 +32,10 @@ public class FullActivityResponse {
     // Per-point altitudes in meters, aligned with the polyline. Null when the
     // activity has no stored elevation series (e.g. legacy rows or non-GPX sources).
     private double[] elevationProfile;
+    // Per-point epoch-seconds timestamps, aligned 1:1 with the polyline points.
+    // Null for legacy activities and imports whose source carried no per-point time
+    // data — the frontend falls back to uniform-pace splits when this is null.
+    private long[] pointTimestamps;
     private String mapImageUrl;
     private boolean isPrivate;
     private int likesCount;

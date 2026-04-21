@@ -266,7 +266,8 @@
         "time": "Temps",
         "pace": "Allure",
         "partial": "partiel",
-        "estimatedNote": "Intervalles estimés à partir de l'allure moyenne ; le temps point par point n'est pas encore enregistré."
+        "estimatedNote": "Intervalles estimés à partir de l'allure moyenne ; le temps point par point n'est pas encore enregistré.",
+        "accurateNote": "Intervalles calculés à partir des horodatages GPS."
       }
     },
     "record": {

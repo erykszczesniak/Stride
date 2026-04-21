@@ -126,6 +126,7 @@ public class ActivityMapper {
         response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
         response.setGear(gearMapper.toSummary(activity.getGear()));
         response.setElevationProfile(parseElevationProfile(activity.getElevationProfile()));
+        response.setPointTimestamps(parsePointTimestamps(activity.getPointTimestamps()));
         return response;
     }
 
@@ -136,6 +137,7 @@ public class ActivityMapper {
         response.setLikedByCurrentUser(activityService.isLikedByUser(activity.getId(), currentUserId));
         response.setGear(gearMapper.toSummary(activity.getGear()));
         response.setElevationProfile(parseElevationProfile(activity.getElevationProfile()));
+        response.setPointTimestamps(parsePointTimestamps(activity.getPointTimestamps()));
 
         List<CommentResponse> comments = activity.getComments().stream()
                 .map(comment -> commonMapper.convertToResponse(comment, CommentResponse.class))
@@ -162,6 +164,27 @@ public class ActivityMapper {
             return result;
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse elevation profile JSON: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Deserialize the JSON-stringified epoch-seconds timestamps array from the DB.
+     * Returns null when the column is null/blank or malformed — the frontend falls
+     * back to uniform-pace splits for a null timestamps series, so a parse failure
+     * degrades gracefully (same path as legacy activities).
+     */
+    private long[] parsePointTimestamps(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            Long[] boxed = objectMapper.readValue(json, Long[].class);
+            long[] result = new long[boxed.length];
+            for (int i = 0; i < boxed.length; i++) {
+                result[i] = boxed[i] != null ? boxed[i] : 0L;
+            }
+            return result;
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse point timestamps JSON: {}", e.getMessage());
             return null;
         }
     }

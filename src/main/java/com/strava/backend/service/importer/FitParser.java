@@ -355,7 +355,8 @@ public class FitParser implements ActivityFileParser {
         // than every file ending up as "Imported FIT Activity".
         ParsedActivity.ParsedActivityBuilder builder = ParsedActivity.builder()
                 .gpsPoints(points)
-                .elevations(extractElevations(points));
+                .elevations(extractElevations(points))
+                .pointTimestampsEpochSec(extractTimestamps(points));
 
         // Use session data if available
         if (sessionData.containsKey("sport")) {
@@ -480,6 +481,28 @@ public class FitParser implements ActivityFileParser {
             if (e != null) anyPresent = true;
         }
         return anyPresent ? elevations : new ArrayList<>();
+    }
+
+    /**
+     * Extract per-point epoch-seconds timestamps aligned with the supplied GPS points.
+     * Returns an empty list if ANY point is missing a time — a partial series would
+     * produce misleading splits, so we treat it as absent and let the frontend fall
+     * back to uniform-pace computation.
+     *
+     * FIT timestamps are initially decoded via ZoneId.systemDefault() in
+     * fitTimestampToLocalDateTime, so we round-trip through the same zone here to
+     * recover the original epoch second regardless of the server's TZ.
+     */
+    private List<Long> extractTimestamps(List<GpsPoint> points) {
+        List<Long> timestamps = new ArrayList<>(points.size());
+        for (GpsPoint p : points) {
+            LocalDateTime t = p.getTime();
+            if (t == null) {
+                return new ArrayList<>();
+            }
+            timestamps.add(t.atZone(ZoneId.systemDefault()).toEpochSecond());
+        }
+        return timestamps;
     }
 
     private double semicirclesToDegrees(long semicircles) {
