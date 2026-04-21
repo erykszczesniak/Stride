@@ -266,7 +266,8 @@
         "time": "Tiempo",
         "pace": "Ritmo",
         "partial": "parcial",
-        "estimatedNote": "Parciales estimados a partir del ritmo medio; el tiempo por punto aún no se registra."
+        "estimatedNote": "Parciales estimados a partir del ritmo medio; el tiempo por punto aún no se registra.",
+        "accurateNote": "Parciales calculados a partir de marcas de tiempo GPS."
       }
     },
     "record": {

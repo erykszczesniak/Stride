@@ -41,4 +41,12 @@ public class ParsedActivity {
     // when the source file carried no elevation data at all.
     @Builder.Default
     private List<Double> elevations = new ArrayList<>();
+
+    // Per-point epoch-seconds timestamps. Parallels gpsPoints 1:1 when present so
+    // the frontend can compute real per-km splits from the delta between
+    // consecutive points. Empty when ANY source trackpoint lacked a timestamp —
+    // we treat partial coverage as absent because interpolating gaps would be
+    // more misleading than falling back to uniform-pace splits.
+    @Builder.Default
+    private List<Long> pointTimestampsEpochSec = new ArrayList<>();
 }

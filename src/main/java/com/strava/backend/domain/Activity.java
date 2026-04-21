@@ -74,6 +74,13 @@ public class Activity {
     @Column(columnDefinition = "TEXT")
     private String elevationProfile;
 
+    // JSON-serialized array of longs (epoch seconds), one per polyline point.
+    // Null when the imported file had no per-trackpoint time data or for activities
+    // created before V15 — consumers fall back to uniform-pace split computation
+    // when this is null, so "no timestamps" degrades gracefully.
+    @Column(columnDefinition = "TEXT")
+    private String pointTimestamps;
+
     private String mapImageUrl;
 
     private boolean isPrivate;

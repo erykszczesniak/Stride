@@ -266,7 +266,8 @@
         "time": "Zeit",
         "pace": "Pace",
         "partial": "teilweise",
-        "estimatedNote": "Splits aus dem Durchschnittstempo geschätzt; Zeitangaben pro Punkt werden noch nicht aufgezeichnet."
+        "estimatedNote": "Splits aus dem Durchschnittstempo geschätzt; Zeitangaben pro Punkt werden noch nicht aufgezeichnet.",
+        "accurateNote": "Splits aus GPS-Zeitstempeln berechnet."
       }
     },
     "record": {

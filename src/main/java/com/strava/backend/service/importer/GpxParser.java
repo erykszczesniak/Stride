@@ -10,6 +10,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -59,6 +60,24 @@ public class GpxParser implements ActivityFileParser {
             if (e != null) anyPresent = true;
         }
         return anyPresent ? elevations : new ArrayList<>();
+    }
+
+    /**
+     * Extract per-point epoch-seconds timestamps aligned with the supplied GPS points.
+     * Returns an empty list if ANY point is missing a time — a partial series would
+     * produce misleading splits, so we treat it as absent and let the frontend fall
+     * back to uniform-pace computation.
+     */
+    private List<Long> extractTimestamps(List<GpsPoint> points) {
+        List<Long> timestamps = new ArrayList<>(points.size());
+        for (GpsPoint p : points) {
+            LocalDateTime t = p.getTime();
+            if (t == null) {
+                return new ArrayList<>();
+            }
+            timestamps.add(t.toEpochSecond(ZoneOffset.UTC));
+        }
+        return timestamps;
     }
 
     @Override
@@ -115,7 +134,8 @@ public class GpxParser implements ActivityFileParser {
                 .title(title != null ? title : "Imported GPX Activity")
                 .description(description)
                 .gpsPoints(points)
-                .elevations(extractElevations(points));
+                .elevations(extractElevations(points))
+                .pointTimestampsEpochSec(extractTimestamps(points));
 
         if (!points.isEmpty()) {
             GpsPoint first = points.getFirst();

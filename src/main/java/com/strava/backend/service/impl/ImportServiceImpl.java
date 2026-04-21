@@ -106,6 +106,18 @@ public class ImportServiceImpl implements ImportService {
             }
         }
 
+        // Persist per-point epoch-seconds timestamps so the frontend can compute real
+        // variable-pace per-km splits instead of dividing duration uniformly. Absent
+        // for sources that don't carry per-trackpoint time; in that case the frontend
+        // falls back to uniform-pace splits with the "estimated" note.
+        if (parsed.getPointTimestampsEpochSec() != null && !parsed.getPointTimestampsEpochSec().isEmpty()) {
+            try {
+                activity.setPointTimestamps(objectMapper.writeValueAsString(parsed.getPointTimestampsEpochSec()));
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to serialize point timestamps for import; leaving null", e);
+            }
+        }
+
         Activity saved = activityRepository.save(activity);
         log.info("Imported {} activity from {} file for user {}: distance={}km, duration={}s, gpsPoints={}",
                 saved.getActivityType(), extension, userId, saved.getDistance(), saved.getDuration(),
