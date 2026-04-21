@@ -132,6 +132,8 @@
     "signInLink": "Iniciar sesión",
     "orDivider": "o",
     "continueWithGoogle": "Continuar con Google",
+    "continueWithStrava": "Continuar con Strava",
+    "stravaSigningIn": "Iniciando sesión con Strava...",
     "signingUp": "Registrando...",
     "showPassword": "Mostrar contraseña",
     "hidePassword": "Ocultar contraseña",
@@ -151,6 +153,8 @@
       "loginFailed": "Correo electrónico o contraseña no válidos. Inténtelo de nuevo.",
       "googleLoginFailed": "El inicio de sesión con Google falló. Inténtelo de nuevo.",
       "googleSignupFailed": "El registro con Google falló. Inténtelo de nuevo.",
+      "stravaDenied": "Se canceló el inicio de sesión con Strava.",
+      "stravaFailed": "El inicio de sesión con Strava falló. Inténtelo de nuevo.",
       "registrationFailed": "El registro falló. Inténtelo de nuevo."
     }
   },

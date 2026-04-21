@@ -49,6 +49,7 @@ public class StravaIntegrationServiceImpl implements StravaIntegrationService {
 
     private final StravaProperties stravaProperties;
     private final StravaStateSigner stateSigner;
+    private final StravaTokenExchanger tokenExchanger;
     private final StravaConnectionRepository connectionRepository;
     private final StravaImportedActivityRepository importedRepository;
     private final UserService userService;
@@ -92,17 +93,10 @@ public class StravaIntegrationServiceImpl implements StravaIntegrationService {
     @Override
     @Transactional
     public StravaConnection exchangeCodeAndStoreConnection(Long userId, String code) {
-        requireConfigured();
-        if (code == null || code.isBlank()) {
-            throw new ApiRequestException("Missing Strava authorization code", HttpStatus.BAD_REQUEST);
-        }
-
-        String body = "client_id=" + urlEncode(stravaProperties.getClientId())
-                + "&client_secret=" + urlEncode(stravaProperties.getClientSecret())
-                + "&code=" + urlEncode(code)
-                + "&grant_type=authorization_code";
-
-        JsonNode tokenJson = postForm(TOKEN_URL, body, "exchange code");
+        // Delegate the HTTP call to the shared exchanger so the login flow can reuse the
+        // same logic. Pass the integration redirect URI — not the login one — so Strava
+        // sees the same value it was given at /authorize time.
+        JsonNode tokenJson = tokenExchanger.exchange(code, stravaProperties.getRedirectUri());
 
         User user = userService.getUserById(userId);
         StravaConnection connection = connectionRepository.findByUserId(userId)

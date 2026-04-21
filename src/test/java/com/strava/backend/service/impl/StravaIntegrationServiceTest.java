@@ -62,6 +62,7 @@ class StravaIntegrationServiceTest {
     @Mock private ActivityService activityService;
     @Mock private ApplicationContext applicationContext;
     @Mock private RestTemplate restTemplate;
+    private StravaTokenExchanger tokenExchanger;
 
     private StravaProperties stravaProperties;
     private StravaIntegrationServiceImpl service;
@@ -74,9 +75,13 @@ class StravaIntegrationServiceTest {
         stravaProperties.setClientSecret("client-secret");
         stravaProperties.setRedirectUri("http://localhost/cb");
 
+        tokenExchanger = new StravaTokenExchanger(stravaProperties, new ObjectMapper());
+        ReflectionTestUtils.setField(tokenExchanger, "restTemplate", restTemplate);
+
         service = new StravaIntegrationServiceImpl(
                 stravaProperties,
                 stateSigner,
+                tokenExchanger,
                 connectionRepository,
                 importedRepository,
                 userService,

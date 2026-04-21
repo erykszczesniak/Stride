@@ -63,6 +63,8 @@ public final class ErrorMessage {
     public static final String INVALID_GOOGLE_TOKEN = "Invalid Google ID token";
     public static final String GOOGLE_AUTH_ERROR = "Google authentication failed";
     public static final String GOOGLE_AUTH_EMAIL_MISMATCH = "Email from Google account is already registered with a different auth provider";
+    public static final String STRAVA_AUTH_ERROR = "Strava authentication failed";
+    public static final String STRAVA_PLACEHOLDER_EMAIL_CONFLICT = "Could not sign in with Strava — the account placeholder already exists for a different user";
 
     // JWT errors
     public static final String INVALID_JWT_TOKEN = "Invalid JWT token";

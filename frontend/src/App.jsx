@@ -9,6 +9,7 @@ import AdminRoute from "./components/AdminRoute";
 import PublicRoute from "./components/PublicRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import StravaCallback from "./pages/StravaCallback";
 import Dashboard from "./pages/Dashboard";
 import Activities from "./pages/Activities";
 import ActivityDetails from "./pages/ActivityDetails";
@@ -55,6 +56,12 @@ const App = () => {
               </PublicRoute>
             }
           />
+          {/*
+            Strava OAuth2 landing page. Not wrapped in PublicRoute because the whole
+            point is to complete the sign-in — PublicRoute would bounce authenticated
+            users to /dashboard before the tokens have been stored.
+          */}
+          <Route path="/auth/strava/callback" element={<StravaCallback />} />
 
           {/* Protected routes */}
           <Route

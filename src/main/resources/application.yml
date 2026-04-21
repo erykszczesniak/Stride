@@ -75,6 +75,9 @@ app:
     client-id: ${STRAVA_CLIENT_ID:}
     client-secret: ${STRAVA_CLIENT_SECRET:}
     redirect-uri: ${STRAVA_REDIRECT_URI:http://localhost:8080/api/v1/integrations/strava/callback}
+    login-redirect-uri: ${STRAVA_LOGIN_REDIRECT_URI:http://localhost:8080/api/v1/auth/strava/callback}
+    login-frontend-redirect: ${STRAVA_LOGIN_FRONTEND_REDIRECT:http://localhost:3000/auth/strava/callback}
+    login-frontend-error-redirect: ${STRAVA_LOGIN_FRONTEND_ERROR_REDIRECT:http://localhost:3000/login}
     state-secret: ${STRAVA_STATE_SECRET:}
     frontend-redirect: ${STRAVA_FRONTEND_REDIRECT:http://localhost:3000/settings?section=account}
 

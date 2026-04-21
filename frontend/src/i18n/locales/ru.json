@@ -140,6 +140,8 @@
     "signInLink": "Войти",
     "orDivider": "или",
     "continueWithGoogle": "Продолжить с Google",
+    "continueWithStrava": "Продолжить со Strava",
+    "stravaSigningIn": "Вход через Strava...",
     "signingUp": "Регистрация...",
     "showPassword": "Показать пароль",
     "hidePassword": "Скрыть пароль",
@@ -159,6 +161,8 @@
       "loginFailed": "Неверная почта или пароль. Попробуйте ещё раз.",
       "googleLoginFailed": "Не удалось войти через Google. Попробуйте ещё раз.",
       "googleSignupFailed": "Не удалось зарегистрироваться через Google. Попробуйте ещё раз.",
+      "stravaDenied": "Вход через Strava был отменён.",
+      "stravaFailed": "Не удалось войти через Strava. Попробуйте ещё раз.",
       "registrationFailed": "Не удалось зарегистрироваться. Попробуйте ещё раз."
     }
   },

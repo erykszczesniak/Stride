@@ -1,5 +1,8 @@
 package com.strava.backend.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.strava.backend.configuration.StravaProperties;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.auth.AuthenticationRequest;
 import com.strava.backend.dto.auth.AuthenticationResponse;
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -60,6 +64,12 @@ class AuthenticationServiceImplTest {
 
     @Mock
     private CommonMapper commonMapper;
+
+    @Mock
+    private StravaTokenExchanger stravaTokenExchanger;
+
+    @Mock
+    private StravaProperties stravaProperties;
 
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
@@ -376,6 +386,124 @@ class AuthenticationServiceImplTest {
                     .hasMessage(PASSWORD_CODE_EXPIRED);
 
             then(userRepository).should(never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("stravaLogin Tests")
+    class StravaLoginTests {
+
+        /** Strava token-exchange payload — only the fields the service actually reads. */
+        private JsonNode stravaTokenJson(long athleteId, String firstName, String lastName) throws Exception {
+            String json = """
+                    {
+                      "access_token": "strava-access",
+                      "refresh_token": "strava-refresh",
+                      "expires_at": 1234567890,
+                      "athlete": {
+                        "id": %d,
+                        "firstname": "%s",
+                        "lastname": "%s",
+                        "profile": "https://cdn.strava.com/a.png",
+                        "city": "Warsaw",
+                        "country": "Poland"
+                      }
+                    }
+                    """.formatted(athleteId, firstName, lastName);
+            return new ObjectMapper().readTree(json);
+        }
+
+        @Test
+        @DisplayName("Should return existing user when Strava athlete id is already linked")
+        void shouldReturnExistingUserWhenAthleteAlreadyLinked() throws Exception {
+            // Given
+            JsonNode tokenJson = stravaTokenJson(999L, "John", "Runner");
+            User stravaUser = User.builder()
+                    .id(5L)
+                    .firstName("John")
+                    .lastName("Runner")
+                    .email("strava_999@stride.local")
+                    .authProvider(AuthProvider.STRAVA)
+                    .providerId("999")
+                    .role(Role.USER)
+                    .active(true)
+                    .build();
+
+            given(stravaProperties.getLoginRedirectUri()).willReturn("http://localhost/cb");
+            given(stravaTokenExchanger.exchange("auth-code", "http://localhost/cb")).willReturn(tokenJson);
+            given(userRepository.findByProviderIdAndAuthProvider("999", AuthProvider.STRAVA))
+                    .willReturn(Optional.of(stravaUser));
+            given(jwtProvider.generateToken(5L, "strava_999@stride.local")).willReturn("access-token");
+            given(jwtProvider.generateRefreshToken(5L, "strava_999@stride.local")).willReturn("refresh-token");
+            given(commonMapper.convertToResponse(stravaUser, UserResponse.class)).willReturn(userResponse);
+
+            // When
+            AuthenticationResponse response = authenticationService.stravaLogin("auth-code");
+
+            // Then
+            assertThat(response).isNotNull();
+            assertThat(response.getAccessToken()).isEqualTo("access-token");
+            assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
+            // Existing user must NOT be re-saved on login.
+            then(userRepository).should(never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should create a new user with placeholder email when athlete is unknown")
+        void shouldCreateNewUserWhenAthleteUnknown() throws Exception {
+            // Given
+            JsonNode tokenJson = stravaTokenJson(777L, "Alice", "Wheeler");
+
+            given(stravaProperties.getLoginRedirectUri()).willReturn("http://localhost/cb");
+            given(stravaTokenExchanger.exchange("auth-code", "http://localhost/cb")).willReturn(tokenJson);
+            given(userRepository.findByProviderIdAndAuthProvider("777", AuthProvider.STRAVA))
+                    .willReturn(Optional.empty());
+            given(userRepository.existsByEmail("strava_777@stride.local")).willReturn(false);
+            given(userRepository.save(any(User.class))).willAnswer(inv -> {
+                User u = inv.getArgument(0);
+                u.setId(42L);
+                return u;
+            });
+            given(jwtProvider.generateToken(anyLong(), anyString())).willReturn("access-token");
+            given(jwtProvider.generateRefreshToken(anyLong(), anyString())).willReturn("refresh-token");
+            given(commonMapper.convertToResponse(any(User.class), eq(UserResponse.class))).willReturn(userResponse);
+
+            // When
+            AuthenticationResponse response = authenticationService.stravaLogin("auth-code");
+
+            // Then
+            assertThat(response).isNotNull();
+            assertThat(response.getAccessToken()).isEqualTo("access-token");
+
+            ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+            then(userRepository).should().save(savedUser.capture());
+            User created = savedUser.getValue();
+            assertThat(created.getEmail()).isEqualTo("strava_777@stride.local");
+            assertThat(created.getAuthProvider()).isEqualTo(AuthProvider.STRAVA);
+            assertThat(created.getProviderId()).isEqualTo("777");
+            assertThat(created.getFirstName()).isEqualTo("Alice");
+            assertThat(created.getLastName()).isEqualTo("Wheeler");
+            assertThat(created.getCity()).isEqualTo("Warsaw");
+            assertThat(created.getCountry()).isEqualTo("Poland");
+            assertThat(created.getRole()).isEqualTo(Role.USER);
+            assertThat(created.isActive()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should propagate ApiRequestException when Strava token exchange fails")
+        void shouldThrowWhenStravaExchangeFails() {
+            // Given
+            given(stravaProperties.getLoginRedirectUri()).willReturn("http://localhost/cb");
+            given(stravaTokenExchanger.exchange(anyString(), anyString()))
+                    .willThrow(new ApiRequestException("Strava exchange code failed", HttpStatus.BAD_GATEWAY));
+
+            // When/Then
+            assertThatThrownBy(() -> authenticationService.stravaLogin("bad-code"))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessageContaining("Strava");
+
+            then(userRepository).should(never()).save(any());
+            then(jwtProvider).should(never()).generateToken(anyLong(), anyString());
         }
     }
 }

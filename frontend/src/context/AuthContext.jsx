@@ -65,6 +65,25 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   }, []);
 
+  /**
+   * Finalize a sign-in when the tokens have already been issued by the backend and
+   * arrived via a redirect (e.g. Strava OAuth2 callback). Stores both tokens, hydrates
+   * the user via /users/me (the tokens don't include the full user payload), and lets
+   * the caller decide where to navigate next.
+   */
+  const loginWithTokens = useCallback(async (accessToken, refreshToken) => {
+    if (!accessToken) {
+      throw new Error("Missing access token");
+    }
+    localStorage.setItem("token", accessToken);
+    if (refreshToken) {
+      localStorage.setItem("refreshToken", refreshToken);
+    }
+    const response = await AuthService.getCurrentUser();
+    setUser(response.data);
+    return response.data;
+  }, []);
+
   const register = useCallback(async (firstName, lastName, email, password, confirmPassword) => {
     const response = await AuthService.register(
       firstName,
@@ -89,10 +108,11 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     googleLogin,
+    loginWithTokens,
     register,
     logout,
     checkAuth,
-  }), [user, loading, isAuthenticated, login, googleLogin, register, logout, checkAuth]);
+  }), [user, loading, isAuthenticated, login, googleLogin, loginWithTokens, register, logout, checkAuth]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

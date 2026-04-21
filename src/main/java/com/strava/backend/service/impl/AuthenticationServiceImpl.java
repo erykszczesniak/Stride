@@ -1,5 +1,7 @@
 package com.strava.backend.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.strava.backend.configuration.StravaProperties;
 import com.strava.backend.domain.User;
 import com.strava.backend.dto.auth.AuthenticationRequest;
 import com.strava.backend.dto.auth.AuthenticationResponse;
@@ -47,6 +49,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final JwtProvider jwtProvider;
     private final AuthenticationManager authenticationManager;
     private final CommonMapper commonMapper;
+    private final StravaTokenExchanger stravaTokenExchanger;
+    private final StravaProperties stravaProperties;
 
     @Value("${google.client-id:}")
     private String googleClientId;
@@ -150,6 +154,64 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String refreshToken = jwtProvider.generateRefreshToken(user.getId(), user.getEmail());
 
         return buildAuthenticationResponse(user, accessToken, refreshToken);
+    }
+
+    @Override
+    @Transactional
+    public AuthenticationResponse stravaLogin(String code) {
+        // Exchange the authorization code for tokens + athlete summary. The exchanger wraps
+        // network/parse failures in ApiRequestException so callers only need to handle that.
+        JsonNode tokenJson = stravaTokenExchanger.exchange(code, stravaProperties.getLoginRedirectUri());
+
+        JsonNode athlete = tokenJson.path("athlete");
+        if (!athlete.hasNonNull("id")) {
+            log.warn("Strava token response missing athlete.id: {}", tokenJson);
+            throw new ApiRequestException(STRAVA_AUTH_ERROR, HttpStatus.BAD_GATEWAY);
+        }
+
+        String athleteId = athlete.get("id").asText();
+        String firstName = athlete.hasNonNull("firstname") ? athlete.get("firstname").asText() : "";
+        String lastName = athlete.hasNonNull("lastname") ? athlete.get("lastname").asText() : "";
+        String avatar = athlete.hasNonNull("profile") ? athlete.get("profile").asText() : null;
+        String city = athlete.hasNonNull("city") ? athlete.get("city").asText() : null;
+        String country = athlete.hasNonNull("country") ? athlete.get("country").asText() : null;
+
+        User user = userRepository
+                .findByProviderIdAndAuthProvider(athleteId, AuthProvider.STRAVA)
+                .orElseGet(() -> createStravaUser(athleteId, firstName, lastName, avatar, city, country));
+
+        String accessToken = jwtProvider.generateToken(user.getId(), user.getEmail());
+        String refreshToken = jwtProvider.generateRefreshToken(user.getId(), user.getEmail());
+
+        return buildAuthenticationResponse(user, accessToken, refreshToken);
+    }
+
+    /**
+     * Create a new user from a Strava athlete. Strava's standard scope doesn't return an
+     * email, so we synthesise a placeholder of {@code strava_<athleteId>@stride.local}. The
+     * {@code @unique} constraint on {@code email} is our guard — we still check up-front for
+     * a clear error message if somehow that placeholder is already taken.
+     */
+    private User createStravaUser(String athleteId, String firstName, String lastName,
+                                  String avatar, String city, String country) {
+        String placeholderEmail = "strava_" + athleteId + "@stride.local";
+        if (userRepository.existsByEmail(placeholderEmail)) {
+            throw new ApiRequestException(
+                    STRAVA_PLACEHOLDER_EMAIL_CONFLICT, HttpStatus.CONFLICT);
+        }
+        User user = User.builder()
+                .firstName(firstName != null ? firstName : "")
+                .lastName(lastName != null ? lastName : "")
+                .email(placeholderEmail)
+                .authProvider(AuthProvider.STRAVA)
+                .providerId(athleteId)
+                .avatar(avatar)
+                .city(city)
+                .country(country)
+                .role(Role.USER)
+                .active(true)
+                .build();
+        return userRepository.save(user);
     }
 
     @Override

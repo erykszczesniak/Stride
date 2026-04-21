@@ -132,6 +132,8 @@
     "signInLink": "Anmelden",
     "orDivider": "oder",
     "continueWithGoogle": "Mit Google fortfahren",
+    "continueWithStrava": "Mit Strava fortfahren",
+    "stravaSigningIn": "Anmeldung mit Strava...",
     "signingUp": "Registrierung...",
     "showPassword": "Passwort anzeigen",
     "hidePassword": "Passwort verbergen",
@@ -151,6 +153,8 @@
       "loginFailed": "Ungültige E-Mail oder Passwort. Bitte versuchen Sie es erneut.",
       "googleLoginFailed": "Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
       "googleSignupFailed": "Google-Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "stravaDenied": "Strava-Anmeldung wurde abgebrochen.",
+      "stravaFailed": "Anmeldung mit Strava fehlgeschlagen. Bitte versuchen Sie es erneut.",
       "registrationFailed": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
     }
   },
