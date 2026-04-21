@@ -847,6 +847,169 @@ Request 12: 429
 
 ---
 
+## Recent Features — Configuration & Testing
+
+Seven features landed together in PRs #97–#103. Four of them work out of the box; three need either external services (Jaeger, Elasticsearch) or third-party credentials (Strava).
+
+### Flyway migration order
+
+Added in this batch:
+
+| Version | File | Feature |
+|---|---|---|
+| `V12` | `add_activity_elevation_profile.sql` | Elevation profile (#99) |
+| `V13` | `add_gear.sql` | Gear tracking (#100) |
+| `V14` | `add_strava_integration.sql` | Strava import (#102) |
+
+All three originally claimed V12 during parallel development; commit `6931e5e` renumbered them. If your local DB was boot-tested between the partial merges and its `flyway_schema_history` disagrees with this order, either `flyway repair` or drop/recreate the dev database.
+
+### Per-km splits table (#97)
+Pure frontend, no configuration. Open any activity detail page with both a distance and duration — the **Splits** section appears below the Route Map. Uniform pace per km/mi (respects the `UnitsContext` imperial toggle).
+
+### Kotlin migration — `PersonalRecordService` (#98)
+No configuration. Kotlin `1.9.25` pinned in `pom.xml`. Verify with:
+
+```bash
+./mvnw test -Dtest=PersonalRecordServiceImplTest   # 14/14 green
+```
+
+Or just boot the app and hit any PR endpoint — interop with the Java mapper/controller/repository is transparent.
+
+### Elevation profile chart (#99)
+No configuration. Existing activities without a stored altitude series render nothing (graceful fallback). To see it:
+
+- Open sample activity `id=2` — the V12 migration seeds a 20-point hill profile, so `/activities/2` shows the chart.
+- Or import a GPX/TCX file that contains `<ele>` tags — all three parsers (GPX, TCX, FIT) now capture the per-point altitude list.
+
+### Gear tracking (#100)
+No configuration. End-to-end flow:
+
+1. **Settings → Gear** (new tab) → **Add gear** → create e.g. "Saucony Endorphin Pro 3" / SHOES / `activityTypes=RUN`.
+2. **Record Activity** → select RUN → pick the gear in the new dropdown → save.
+3. Open the activity detail — the gear name is shown next to Avg HR.
+4. Back on the Gear tab — `distance_km_total` has bumped by the activity's distance, `activityCount` incremented.
+5. Delete the activity — the totals decrement (clamped at zero).
+
+### OpenTelemetry + Jaeger distributed tracing (#101)
+
+**Default behaviour:** tracing is enabled with sampling 1.0, exporting OTLP HTTP to `localhost:4318/v1/traces`. When no Jaeger is running, the app still boots cleanly but the BatchSpanProcessor retries the export every 30 s. The `dev` profile silences that retry log to ERROR-only.
+
+**To see traces end-to-end:**
+
+```bash
+docker compose up -d jaeger
+```
+
+Then:
+
+- Hit any endpoint, e.g. `curl http://localhost:8080/actuator/health`.
+- Open **Jaeger UI → http://localhost:16686**, pick `service = stride-backend`, find your span.
+
+**Showing off nested spans:** `POST /api/v1/personal-records/recalculate` emits three nested Observations — `personal-record.recalculateAllPRs → delete-existing → recompute-loop`. The Jaeger timeline view makes it obvious which phase dominated.
+
+**Pointing at a different collector (Tempo, Honeycomb, …):**
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=https://your-collector/v1/traces
+```
+
+### Strava OAuth import (#102)
+
+This feature **requires real Strava API credentials.** Without them the backend logs a WARN at startup and every `/api/v1/integrations/strava/*` endpoint returns 503; the Settings UI shows the "Connect to Strava" row as disabled.
+
+**Getting credentials (~2 minutes):**
+
+1. Go to https://www.strava.com/settings/api, create an application.
+2. Note the `Client ID` and `Client Secret`.
+3. Set the Authorization Callback Domain to `localhost` (or your real domain in production).
+
+**Configure (in `application-local.yml`, which is gitignored — safe for secrets):**
+
+```yaml
+app:
+  strava:
+    client-id: "1234567"
+    client-secret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    redirect-uri: "http://localhost:8080/api/v1/integrations/strava/callback"
+```
+
+The `redirect-uri` must match exactly what's registered on developer.strava.com.
+
+**End-to-end test:**
+
+1. Restart the backend so the new env vars are picked up.
+2. Open **Settings → Account → Connected services**, click **Connect to Strava**.
+3. Strava's OAuth consent page appears → approve → browser redirects back to `/settings?stravaConnected=true`.
+4. Hit **Import from Strava**. An async job runs; rate-limited to 100 req / 15 min (sliding window).
+5. Your real Strava activities appear in the feed with titles, GPS tracks, HR, etc.
+
+Token refresh is handled automatically — the next import after expiry hits `POST /oauth/token` transparently.
+
+### Elasticsearch user search (#103)
+
+**Default behaviour:** the app boots without Elasticsearch — you'll see one WARN at startup and user search falls back to SQL `ILIKE`. Search still works, just without fuzzy matching or field boosts.
+
+**Enable full ES-backed search:**
+
+```bash
+docker compose up -d elasticsearch
+```
+
+On the next app start, `UserSearchIndexInitializer` seeds the index from the DB (capped at 1000 users). After that, every user save / update / delete fires an async event that upserts/removes the ES document.
+
+**Verify the index directly:**
+
+```bash
+# List everything
+curl 'http://localhost:9200/users/_search?q=*'
+
+# Multi-match query: fullName^3, firstName^2, lastName^2, bio, city
+curl 'http://localhost:9200/users/_search' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "query": {
+      "multi_match": {
+        "query": "marathon",
+        "fields": ["fullName^3", "firstName^2", "lastName^2", "bio", "city"]
+      }
+    }
+  }'
+
+# Confirm the mapping
+curl 'http://localhost:9200/users/_mapping'
+```
+
+Or use the UI search bar — results come from the ES-backed endpoint first; on any exception the controller swallows it and retries via SQL, so a flaky cluster never breaks search for end users.
+
+### Full local stack in one command
+
+```bash
+# Postgres + Elasticsearch + Jaeger + Grafana + Prometheus
+docker compose up -d
+
+# Backend with dev + local profiles
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local
+
+# Frontend
+cd frontend && npm install && npm start
+```
+
+### URLs cheat-sheet
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| GraphQL | http://localhost:8080/graphql |
+| Actuator | http://localhost:8080/actuator |
+| Jaeger UI | http://localhost:16686 |
+| Elasticsearch | http://localhost:9200 |
+| Prometheus | http://localhost:9091 |
+| Grafana | http://localhost:3003 (admin/admin) |
+
+---
+
 ## Running Tests
 
 The project has a three-layer test pyramid covering backend, frontend unit/component, and frontend end-to-end.
