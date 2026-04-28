@@ -1,5 +1,6 @@
 package com.strava.backend.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.strava.backend.configuration.StravaProperties;
@@ -13,6 +14,8 @@ import com.strava.backend.repository.StravaConnectionRepository;
 import com.strava.backend.repository.StravaImportedActivityRepository;
 import com.strava.backend.service.StravaIntegrationService;
 import com.strava.backend.service.UserService;
+import com.strava.backend.service.importer.GeoUtils;
+import com.strava.backend.service.importer.GpsPoint;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -36,6 +39,8 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -45,6 +50,10 @@ public class StravaIntegrationServiceImpl implements StravaIntegrationService {
     static final String AUTH_URL = "https://www.strava.com/oauth/authorize";
     static final String TOKEN_URL = "https://www.strava.com/api/v3/oauth/token";
     static final String ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities";
+    /** Per-activity streams endpoint. {@code {id}} is replaced at call time. */
+    static final String STREAMS_URL_TEMPLATE =
+            "https://www.strava.com/api/v3/activities/%d/streams"
+                    + "?keys=latlng,time,altitude,heartrate&key_by_type=true";
     static final String SCOPES = "read,activity:read_all";
 
     private final StravaProperties stravaProperties;
@@ -297,6 +306,80 @@ public class StravaIntegrationServiceImpl implements StravaIntegrationService {
         }
         req.setPrivate(node.path("private").asBoolean(false));
         return req;
+    }
+
+    /**
+     * Translate the JSON returned by {@code /activities/{id}/streams?key_by_type=true} into
+     * the persistence-layer fields {@code routePolyline}, {@code pointTimestamps}, and
+     * {@code elevationProfile}, and apply them to the given {@link ActivityRequest}.
+     * <p>
+     * - {@code latlng.data} (array of [lat,lng] pairs) → Google Encoded Polyline via
+     *   {@link GeoUtils#encodePolyline(java.util.List)}.<br>
+     * - {@code time.data} (seconds elapsed since activity start) → JSON array of absolute
+     *   epoch seconds, computed as {@code startTime(UTC) + offset}. Aligned index-for-index
+     *   with {@code latlng.data}; skipped if sizes don't match to avoid shearing the series.<br>
+     * - {@code altitude.data} (meters) → JSON array of doubles. Again skipped if size mismatches.
+     * <p>
+     * Heart-rate data is summarised on the activity node already (avg/max) — we don't persist
+     * the per-point series today, so this method ignores the {@code heartrate} stream even
+     * when present.
+     * <p>
+     * Any serialization failure is swallowed with a WARN — callers must not let a bad stream
+     * payload kill the whole import. Package-private for test visibility.
+     */
+    void applyStreamsToRequest(ActivityRequest req, JsonNode streams, LocalDateTime startTimeUtc) {
+        if (streams == null || streams.isNull() || !streams.isObject()) return;
+
+        JsonNode latlng = streams.path("latlng").path("data");
+        JsonNode time = streams.path("time").path("data");
+        JsonNode altitude = streams.path("altitude").path("data");
+
+        List<GpsPoint> points = null;
+        if (latlng.isArray() && !latlng.isEmpty()) {
+            points = new ArrayList<>(latlng.size());
+            for (JsonNode pair : latlng) {
+                if (pair.isArray() && pair.size() >= 2) {
+                    points.add(GpsPoint.builder()
+                            .latitude(pair.get(0).asDouble())
+                            .longitude(pair.get(1).asDouble())
+                            .build());
+                }
+            }
+            if (!points.isEmpty()) {
+                req.setRoutePolyline(GeoUtils.encodePolyline(points));
+            }
+        }
+
+        // Strava's time.data values are seconds since activity start; convert each to an
+        // absolute epoch second by adding the activity's UTC start instant. We treat
+        // startTimeUtc as already-UTC (that's how toActivityRequest normalises it), so
+        // toEpochSecond(UTC) matches what the file-import path writes.
+        if (time.isArray() && !time.isEmpty() && points != null && time.size() == points.size()
+                && startTimeUtc != null) {
+            long baseEpoch = startTimeUtc.toEpochSecond(ZoneOffset.UTC);
+            long[] epochs = new long[time.size()];
+            for (int i = 0; i < time.size(); i++) {
+                epochs[i] = baseEpoch + time.get(i).asLong();
+            }
+            try {
+                req.setPointTimestamps(objectMapper.writeValueAsString(epochs));
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to serialize Strava point timestamps; leaving null", e);
+            }
+        }
+
+        if (altitude.isArray() && !altitude.isEmpty() && points != null
+                && altitude.size() == points.size()) {
+            double[] alts = new double[altitude.size()];
+            for (int i = 0; i < altitude.size(); i++) {
+                alts[i] = altitude.get(i).asDouble();
+            }
+            try {
+                req.setElevationProfile(objectMapper.writeValueAsString(alts));
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to serialize Strava elevation profile; leaving null", e);
+            }
+        }
     }
 
     private static String text(JsonNode node, String field, String fallback) {

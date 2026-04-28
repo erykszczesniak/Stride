@@ -44,6 +44,21 @@ public class ActivityRequest {
     private String startLocation;
     private String endLocation;
     private String routePolyline;
+
+    /**
+     * JSON-serialized array of epoch-seconds longs, one per polyline point.
+     * Populated by importers that have per-trackpoint time data (GPX/TCX/FIT, Strava streams).
+     * Null for manually-logged activities; consumers fall back to uniform-pace splits.
+     */
+    private String pointTimestamps;
+
+    /**
+     * JSON-serialized array of doubles (meters), one per polyline point.
+     * Populated by importers that have per-trackpoint altitude (GPX/TCX/FIT, Strava streams).
+     * Null when no altitude data is available.
+     */
+    private String elevationProfile;
+
     private boolean isPrivate;
 
     /**

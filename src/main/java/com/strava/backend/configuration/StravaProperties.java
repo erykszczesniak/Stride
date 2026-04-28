@@ -39,6 +39,15 @@ public class StravaProperties {
     private String frontendRedirect = "http://localhost:3000/settings?section=account";
     /** Where the frontend login page lives — used for error redirects on the login flow. */
     private String loginFrontendErrorRedirect = "http://localhost:3000/login";
+    /**
+     * When true (default), the importer fetches the Strava activity streams endpoint for
+     * each imported activity to pull GPS coordinates, timestamps, altitude, and heart rate.
+     * That gives us real per-km splits, the map route, and the elevation profile on
+     * Strava-imported activities. Disable when importing very large backfills (1000+
+     * activities) to conserve the shared 100 req/15 min rate-limit budget — activities
+     * are still imported, just without per-point data.
+     */
+    private boolean importStreams = true;
 
     /** Returns true only when both client id and secret are populated. */
     public boolean isConfigured() {

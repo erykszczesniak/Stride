@@ -131,6 +131,8 @@ public class ActivityServiceImpl implements ActivityService {
                 .startLocation(request.getStartLocation())
                 .endLocation(request.getEndLocation())
                 .routePolyline(request.getRoutePolyline())
+                .pointTimestamps(request.getPointTimestamps())
+                .elevationProfile(request.getElevationProfile())
                 .isPrivate(request.isPrivate())
                 .user(user)
                 .gear(gear)

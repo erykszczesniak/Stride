@@ -2,6 +2,7 @@ package com.strava.backend.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.strava.backend.configuration.StravaProperties;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.StravaConnection;
 import com.strava.backend.domain.StravaImportedActivity;
@@ -46,6 +47,7 @@ public class StravaImportRunner {
     private final ActivityService activityService;
     private final StravaRateLimiter rateLimiter;
     private final ObjectMapper objectMapper;
+    private final StravaProperties stravaProperties;
 
     /** Instantiated here rather than injected, matching the style in StravaIntegrationServiceImpl. */
     private RestTemplate restTemplate = new RestTemplate();
@@ -72,8 +74,22 @@ public class StravaImportRunner {
                         continue;
                     }
                     try {
-                        ActivityRequest req =
-                                ((StravaIntegrationServiceImpl) integrationService).toActivityRequest(node);
+                        StravaIntegrationServiceImpl impl =
+                                (StravaIntegrationServiceImpl) integrationService;
+                        ActivityRequest req = impl.toActivityRequest(node);
+
+                        // Fetch the streams endpoint for this activity to pull real GPS
+                        // coordinates, per-point timestamps, and elevation. Without this the
+                        // Splits/map/elevation charts fall back to uniform fills. A failure
+                        // here (404 for manual activities, 429 rate limit, network blip) is
+                        // non-fatal: we warn and persist the summary row without GPS.
+                        if (stravaProperties.isImportStreams()) {
+                            JsonNode streams = fetchStreams(accessToken, stravaId);
+                            if (streams != null) {
+                                impl.applyStreamsToRequest(req, streams, req.getStartTime());
+                            }
+                        }
+
                         Activity created = activityService.createActivity(userId, req);
                         importedRepository.save(StravaImportedActivity.builder()
                                 .stravaActivityId(stravaId)
@@ -98,6 +114,62 @@ public class StravaImportRunner {
             log.info("Strava import done for user {}: imported={}, skipped={}", userId, imported, skipped);
         } catch (Exception e) {
             log.error("Strava import failed for user {}: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Fetch the latlng+time+altitude+heartrate streams for a single Strava activity.
+     * Counts against the same 100 req / 15 min rate-limit budget as the activity-list
+     * call, so we run every request through {@link StravaRateLimiter}.
+     * <p>
+     * Returns {@code null} (and logs a warn) on any non-2xx — the caller persists the
+     * summary row without GPS rather than aborting the whole import. This includes:
+     * <ul>
+     *   <li>404 — manual activities without GPS, or activities made private by the athlete</li>
+     *   <li>429 — rate limited (we also notify the limiter so subsequent calls back off)</li>
+     *   <li>401 — expired token mid-import (rare; token is refreshed at import start)</li>
+     *   <li>5xx / timeouts — transient Strava-side failures</li>
+     * </ul>
+     */
+    JsonNode fetchStreams(String accessToken, long activityId) {
+        String url = String.format(StravaIntegrationServiceImpl.STREAMS_URL_TEMPLATE, activityId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        try {
+            rateLimiter.acquire();
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+
+        try {
+            ResponseEntity<String> response =
+                    restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            return objectMapper.readTree(response.getBody());
+        } catch (HttpClientErrorException.TooManyRequests e429) {
+            String h = e429.getResponseHeaders() == null
+                    ? null : e429.getResponseHeaders().getFirst("Retry-After");
+            long retryAfter;
+            try {
+                retryAfter = h == null ? 60 : Long.parseLong(h);
+            } catch (NumberFormatException nfe) {
+                retryAfter = 60;
+            }
+            rateLimiter.notify429(retryAfter);
+            log.warn("Strava 429 on streams for activity {} — skipping streams, keeping summary",
+                    activityId);
+            return null;
+        } catch (HttpClientErrorException e) {
+            // 404 is the common case (manual activities without GPS); don't spam at ERROR.
+            log.warn("Strava streams {} for activity {} — importing without GPS",
+                    e.getStatusCode(), activityId);
+            return null;
+        } catch (Exception e) {
+            log.warn("Strava streams fetch failed for activity {}: {} — importing without GPS",
+                    activityId, e.getMessage());
+            return null;
         }
     }
 

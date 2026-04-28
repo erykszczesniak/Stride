@@ -80,6 +80,10 @@ app:
     login-frontend-error-redirect: ${STRAVA_LOGIN_FRONTEND_ERROR_REDIRECT:http://localhost:3000/login}
     state-secret: ${STRAVA_STATE_SECRET:}
     frontend-redirect: ${STRAVA_FRONTEND_REDIRECT:http://localhost:3000/settings?section=account}
+    # Pull the per-activity streams endpoint to populate GPS polyline, per-point timestamps,
+    # and elevation on imported activities. Set STRAVA_IMPORT_STREAMS=false when bulk-importing
+    # 1000+ activities to conserve the 100 req / 15 min rate-limit budget.
+    import-streams: ${STRAVA_IMPORT_STREAMS:true}
 
 google:
   client-id: ${GOOGLE_CLIENT_ID:}
