@@ -88,8 +88,8 @@ const ActivityCard = ({ activity, onLike }) => {
       <Card to={`/activities/${activity.id}`}>
         <CardHeader>
           <UserAvatar onClick={handleUserClick} style={{ cursor: "pointer" }}>
-            {activity.user?.avatarUrl ? (
-              <img src={activity.user.avatarUrl} alt={activity.user.firstName} />
+            {activity.user?.avatar ? (
+              <img src={activity.user.avatar} alt={activity.user.firstName} />
             ) : (
               activity.user?.firstName?.charAt(0) || "U"
             )}

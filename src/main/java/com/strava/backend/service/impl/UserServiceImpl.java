@@ -238,6 +238,9 @@ public class UserServiceImpl implements UserService {
         int followingCount = userRepository.countFollowing(userId);
         int totalActivities = activityRepository.countByUserId(userId);
         Double totalDistance = activityRepository.sumDistanceByUserId(userId);
+        Long totalDuration = activityRepository.sumDurationByUserId(userId);
+        Long totalElevation = activityRepository.sumElevationByUserId(userId);
+        Long totalCalories = activityRepository.sumCaloriesByUserId(userId);
 
         List<Activity> recentPublic = activityRepository.findRecentPublicByUserId(userId, PageRequest.of(0, 5));
         List<ActivityResponse> recentActivities = recentPublic.stream()
@@ -263,6 +266,9 @@ public class UserServiceImpl implements UserService {
                 .createdAt(user.getCreatedAt())
                 .totalActivities(totalActivities)
                 .totalDistance(totalDistance != null ? totalDistance : 0.0)
+                .totalDurationSeconds(totalDuration != null ? totalDuration : 0L)
+                .totalElevationMeters(totalElevation != null ? totalElevation : 0L)
+                .totalCalories(totalCalories != null ? totalCalories : 0L)
                 .followersCount(followersCount)
                 .followingCount(followingCount)
                 .recentActivities(recentActivities)

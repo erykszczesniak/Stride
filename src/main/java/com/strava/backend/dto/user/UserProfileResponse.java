@@ -21,6 +21,9 @@ public class UserProfileResponse {
 
     private int totalActivities;
     private double totalDistance;
+    private long totalDurationSeconds;
+    private long totalElevationMeters;
+    private long totalCalories;
     private int followersCount;
     private int followingCount;
 

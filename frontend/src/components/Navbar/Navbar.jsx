@@ -135,8 +135,8 @@ const Navbar = () => {
           </HideOnMobile>
           <AvatarWrapper>
             <Avatar onClick={() => setShowDropdown(!showDropdown)}>
-              {user?.profileImageUrl ? (
-                <img src={user.profileImageUrl} alt={t("nav.profile")} />
+              {user?.avatar ? (
+                <img src={user.avatar} alt={t("nav.profile")} />
               ) : (
                 getInitials()
               )}

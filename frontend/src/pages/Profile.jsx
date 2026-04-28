@@ -102,6 +102,11 @@ const Profile = () => {
   const [isPrivateLocked, setIsPrivateLocked] = useState(false);
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState(null);
+  // Lifetime totals from UserProfileResponse — count of ALL activities, sum
+  // of distance/duration/elevation/calories across the whole history. Not to
+  // be confused with `stats` (monthly chart source) or `activities` (only
+  // the 10 most recent, used for display).
+  const [lifetimeStats, setLifetimeStats] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -158,6 +163,13 @@ const Profile = () => {
           setFollowingCount(profile.followingCount || 0);
           setIsFollowed(profile.followedByCurrentUser === true);
           setActivities(profile.recentActivities || []);
+          setLifetimeStats({
+            totalActivities: profile.totalActivities || 0,
+            totalDistance: profile.totalDistance || 0,
+            totalDurationSeconds: profile.totalDurationSeconds || 0,
+            totalElevationMeters: profile.totalElevationMeters || 0,
+            totalCalories: profile.totalCalories || 0,
+          });
           setStats(null);
           setLoading(false);
           return;
@@ -190,7 +202,25 @@ const Profile = () => {
       const activitiesData = await ActivityService.getUserActivities(userId, 0, 10);
       setActivities(activitiesData.data || []);
 
-      // Fetch monthly stats
+      // Lifetime totals (count + distance + duration + elevation + calories)
+      // — same endpoint the public profile uses, so own-profile and public
+      // profile both render consistent lifetime numbers across the whole
+      // activity history instead of just aggregating the 10 loaded rows.
+      try {
+        const profileForStats = await UserService.getUserProfile(userId);
+        const p = profileForStats.data || {};
+        setLifetimeStats({
+          totalActivities: p.totalActivities || 0,
+          totalDistance: p.totalDistance || 0,
+          totalDurationSeconds: p.totalDurationSeconds || 0,
+          totalElevationMeters: p.totalElevationMeters || 0,
+          totalCalories: p.totalCalories || 0,
+        });
+      } catch (err) {
+        setLifetimeStats(null);
+      }
+
+      // Fetch monthly stats (separate — used by the weekly chart widget)
       const monthlyData = await ActivityService.getMonthlyStats();
       setStats(monthlyData.data);
 
@@ -254,6 +284,23 @@ const Profile = () => {
   };
 
   const totals = useMemo(() => {
+    // Prefer lifetime aggregates from the backend — they cover the full
+    // activity history rather than just the 10 recent rows we loaded into
+    // `activities`. Avg speed can only be approximated from loaded rows
+    // (backend doesn't ship an aggregated avg), so fall back there.
+    if (lifetimeStats) {
+      const avgSpeed = activities.length > 0
+        ? activities.reduce((sum, a) => sum + (a.averageSpeed || 0), 0) / activities.length
+        : 0;
+      return {
+        distance: lifetimeStats.totalDistance,
+        time: lifetimeStats.totalDurationSeconds,
+        elevation: lifetimeStats.totalElevationMeters,
+        count: lifetimeStats.totalActivities,
+        calories: lifetimeStats.totalCalories,
+        avgSpeed,
+      };
+    }
     if (!activities.length)
       return { distance: 0, time: 0, elevation: 0, count: 0, calories: 0, avgSpeed: 0 };
 
@@ -271,7 +318,7 @@ const Profile = () => {
       calories,
       avgSpeed: activities.length > 0 ? totalSpeed / activities.length : 0,
     };
-  }, [activities]);
+  }, [activities, lifetimeStats]);
 
   const earnedAchievements = useMemo(() => {
     return allAchievements.filter((a) => a.check(totals));
@@ -406,7 +453,7 @@ const Profile = () => {
 
         <ProfileStats>
           <StatItem>
-            <StatValue>{activities.length}</StatValue>
+            <StatValue>{totals.count}</StatValue>
             <StatLabel>{t("profile.stats.activities")}</StatLabel>
           </StatItem>
           <StatItem>

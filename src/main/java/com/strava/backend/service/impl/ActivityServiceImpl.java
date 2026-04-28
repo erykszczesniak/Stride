@@ -396,11 +396,15 @@ public class ActivityServiceImpl implements ActivityService {
         int totalActivities = activityRepository.countByUserId(userId);
         Double totalDistance = activityRepository.sumDistanceByUserId(userId);
         Long totalDuration = activityRepository.sumDurationByUserId(userId);
+        Long totalElevation = activityRepository.sumElevationByUserId(userId);
+        Long totalCalories = activityRepository.sumCaloriesByUserId(userId);
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalActivities", totalActivities);
         stats.put("totalDistanceKm", totalDistance != null ? totalDistance : 0.0);
         stats.put("totalDurationSeconds", totalDuration != null ? totalDuration : 0L);
+        stats.put("totalElevationMeters", totalElevation != null ? totalElevation : 0L);
+        stats.put("totalCalories", totalCalories != null ? totalCalories : 0L);
         return stats;
     }
 

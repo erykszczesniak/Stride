@@ -1058,7 +1058,9 @@ Suites in `frontend/e2e/`:
 
 ## License
 
-This project is for educational purposes.
+Copyright © 2026 Eryk Szczęśniak. Licensed under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
+
+The source is published for portfolio review and personal / educational use only. Commercial use, redistribution, sublicensing, or use as part of any product or service offered for compensation is prohibited without prior written permission from the copyright holder.
 
 ## Acknowledgments
 
