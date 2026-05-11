@@ -1,189 +1,325 @@
-version: '3.8'
+name: strava-microservices
+
+# Full microservices stack for local development.
+# Start: docker compose up -d
+# Logs:  docker compose logs -f <service>
+# Stop:  docker compose down (-v to wipe volumes)
 
 services:
-  # ============================================
-  # PostgreSQL Database
-  # ============================================
-  postgres:
-    image: postgres:16-alpine
-    container_name: strava-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-strava}
-      POSTGRES_USER: ${POSTGRES_USER:-strava}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
-    ports:
-      - "127.0.0.1:5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-strava} -d ${POSTGRES_DB:-strava}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - strava-network
 
   # ============================================
-  # Elasticsearch (full-text user search)
+  # Messaging — Kafka in KRaft mode (no Zookeeper)
   # ============================================
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
-    container_name: strava-elasticsearch
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: stride-kafka
     restart: unless-stopped
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "9200:9200"
+      - "9092:9092"
+    environment:
+      KAFKA_CFG_NODE_ID: "0"
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
     volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
+      - kafka_data:/bitnami/kafka
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q status"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - strava-network
-
-  # ============================================
-  # Backend (Spring Boot)
-  # ============================================
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: strava-backend
-    restart: unless-stopped
-    ports:
-      - "8081:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-strava}
-      DATABASE_USERNAME: ${POSTGRES_USER:-strava}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
-      DATABASE_DRIVER: org.postgresql.Driver
-      HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      HIBERNATE_DDL_AUTO: validate
-      FLYWAY_ENABLED: "true"
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
-      CORS_ORIGINS: http://localhost:3000,http://localhost:80,http://localhost
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      ELASTICSEARCH_URIS: http://elasticsearch:9200
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
-    depends_on:
-      postgres:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      jaeger:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
       timeout: 10s
-      start_period: 60s
-      retries: 3
-    networks:
-      - strava-network
+      retries: 10
+      start_period: 30s
+    networks: [stride-net]
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: stride-kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks: [stride-net]
 
   # ============================================
-  # Jaeger (Distributed Tracing — OTLP receiver + UI)
+  # Cache + rate limit
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: stride-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [stride-net]
+
+  # ============================================
+  # Distributed tracing
   # ============================================
   jaeger:
-    image: jaegertracing/all-in-one:1.56
-    container_name: strava-jaeger
+    image: jaegertracing/all-in-one:1.62
+    container_name: stride-jaeger
     restart: unless-stopped
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
     ports:
-      - "16686:16686"   # Jaeger UI
+      - "16686:16686"   # UI
       - "4317:4317"     # OTLP gRPC
       - "4318:4318"     # OTLP HTTP
-    networks:
-      - strava-network
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks: [stride-net]
 
   # ============================================
-  # Prometheus (Metrics)
+  # Metrics + dashboards
   # ============================================
   prometheus:
-    image: prom/prometheus:latest
-    container_name: strava-prometheus
+    image: prom/prometheus:v2.55.0
+    container_name: stride-prometheus
     restart: unless-stopped
     ports:
-      - "9091:9090"
+      - "9090:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - strava-network
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    networks: [stride-net]
 
-  # ============================================
-  # Grafana (Dashboards)
-  # ============================================
   grafana:
-    image: grafana/grafana:latest
-    container_name: strava-grafana
+    image: grafana/grafana:11.3.0
+    container_name: stride-grafana
     restart: unless-stopped
     ports:
-      - "3003:3000"
+      - "3001:3000"
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    depends_on:
-      - prometheus
-      - jaeger
-    networks:
-      - strava-network
+    networks: [stride-net]
 
   # ============================================
-  # Frontend (React + Nginx)
+  # Postgres — one DB per service (database-per-service pattern)
   # ============================================
-  frontend:
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: stride-postgres-user
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_user
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
+  postgres-activity:
+    image: postgres:16-alpine
+    container_name: stride-postgres-activity
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_activity
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_activity_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_activity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
+  postgres-social:
+    image: postgres:16-alpine
+    container_name: stride-postgres-social
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_social
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_social_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_social"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
+  postgres-notification:
+    image: postgres:16-alpine
+    container_name: stride-postgres-notification
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_notification
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_notification"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
+  postgres-club-event:
+    image: postgres:16-alpine
+    container_name: stride-postgres-club-event
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_club_event
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_club_event_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_club_event"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
+  postgres-challenge-goal:
+    image: postgres:16-alpine
+    container_name: stride-postgres-challenge-goal
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_challenge_goal
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_challenge_goal_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_challenge_goal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
+  # ============================================
+  # Spring Cloud infrastructure
+  # ============================================
+  config-server:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        REACT_APP_API_URL: /api/v1
-    container_name: strava-frontend
+      context: .
+      dockerfile: infrastructure/config-server/Dockerfile
+    image: stride/config-server:dev
+    container_name: stride-config-server
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [stride-net]
+
+  discovery-server:
+    build:
+      context: .
+      dockerfile: infrastructure/discovery-server/Dockerfile
+    image: stride/discovery-server:dev
+    container_name: stride-discovery-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
     depends_on:
-      backend:
+      config-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - strava-network
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks: [stride-net]
 
-# ============================================
-# Volumes
-# ============================================
-volumes:
-  postgres_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local
-  elasticsearch-data:
-    driver: local
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/api-gateway/Dockerfile
+    image: stride/api-gateway:dev
+    container_name: stride-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_DATA_REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [stride-net]
 
-# ============================================
-# Networks
-# ============================================
 networks:
-  strava-network:
+  stride-net:
     driver: bridge
+    name: stride-net
+
+volumes:
+  kafka_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  postgres_user_data:
+  postgres_activity_data:
+  postgres_social_data:
+  postgres_notification_data:
+  postgres_club_event_data:
+  postgres_challenge_goal_data:
