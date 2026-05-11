@@ -1,0 +1,78 @@
+# Gateway-specific routing + JWT config.
+# Routes will be filled in as each service comes online (Phase 2+).
+
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+          lower-case-service-id: true
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 100
+            redis-rate-limiter.burstCapacity: 200
+            key-resolver: "#{@principalKeyResolver}"
+      routes:
+        # === Phase 2: user-service ===
+        - id: user-service-auth
+          uri: lb://user-service
+          predicates:
+            - Path=/api/auth/**
+        - id: user-service-users
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+
+        # === Phase 3: activity-service ===
+        - id: activity-service
+          uri: lb://activity-service
+          predicates:
+            - Path=/api/activities/**,/api/personal-records/**,/api/imports/**
+
+        # === Phase 4: notification-service ===
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**,/api/sse/notifications/**
+
+        # === Phase 5: social-service ===
+        - id: social-service
+          uri: lb://social-service
+          predicates:
+            - Path=/api/comments/**,/api/dashboard/**,/api/feed/**
+
+        # === Phase 6: club-event-service ===
+        - id: club-event-service
+          uri: lb://club-event-service
+          predicates:
+            - Path=/api/clubs/**,/api/events/**
+
+        # === Phase 7: challenge-goal-service ===
+        - id: challenge-goal-service
+          uri: lb://challenge-goal-service
+          predicates:
+            - Path=/api/challenges/**,/api/goals/**
+
+        # === Phase 8: ai-service ===
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/api/ai/**
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
+  public-paths:
+    - /api/auth/login
+    - /api/auth/register
+    - /api/auth/refresh
+    - /api/auth/oauth2/**
+    - /actuator/**

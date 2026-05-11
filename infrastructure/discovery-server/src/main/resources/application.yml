@@ -1,0 +1,37 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: discovery-server
+  config:
+    import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
+  cloud:
+    config:
+      fail-fast: false
+      retry:
+        max-attempts: 6
+        initial-interval: 2000
+
+# Eureka server runs standalone — does not register with itself, does not fetch its own registry.
+eureka:
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:discovery-server}
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 15000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
