@@ -29,6 +29,7 @@
         <module>infrastructure/config-server</module>
         <module>infrastructure/discovery-server</module>
         <module>infrastructure/api-gateway</module>
+        <module>services/user-service</module>
     </modules>
 
     <dependencyManagement>
@@ -105,6 +106,7 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <parameters>true</parameters>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>
