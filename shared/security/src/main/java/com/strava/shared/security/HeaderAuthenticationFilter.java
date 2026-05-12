@@ -1,6 +1,5 @@
-package com.strava.userservice.config;
+package com.strava.shared.security;
 
-import com.strava.shared.security.UserContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,15 +16,21 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Trusts identity headers (X-User-Id / X-User-Email / X-User-Roles) propagated
- * by the API Gateway after it validated the JWT. Translates them into a
- * Spring Security Authentication so downstream code can use
- * `@AuthenticationPrincipal Long userId` and `@PreAuthorize`.
+ * Trusts identity headers (X-User-Id / X-User-Email / X-User-Roles) propagated by
+ * the API Gateway after it validated the JWT. Translates them into a Spring
+ * Security Authentication so downstream code can use
+ * {@code @AuthenticationPrincipal Long userId} and {@code @PreAuthorize} as usual.
  *
- * NOTE: this is safe ONLY because the gateway strips spoofed copies of these
- * headers from inbound external requests (see JwtAuthenticationFilter in
- * the api-gateway module). In K8s, additionally restrict ingress so the
- * service is only reachable from the gateway pod.
+ * Safe ONLY because the gateway strips spoofed copies of these headers from
+ * inbound external requests (see JwtAuthenticationFilter in the api-gateway
+ * module). In Kubernetes the service should additionally be reachable only
+ * from the gateway pod via a NetworkPolicy.
+ *
+ * Register in a SecurityConfig with:
+ * <pre>
+ *   http.addFilterBefore(new HeaderAuthenticationFilter(),
+ *                        UsernamePasswordAuthenticationFilter.class);
+ * </pre>
  */
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
@@ -59,12 +64,12 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
                 .toList();
     }
 
-    static class HeaderAuthenticationToken extends AbstractAuthenticationToken {
+    public static class HeaderAuthenticationToken extends AbstractAuthenticationToken {
         private final Long userId;
         private final String email;
 
-        HeaderAuthenticationToken(Long userId, String email,
-                                  Collection<? extends GrantedAuthority> authorities) {
+        public HeaderAuthenticationToken(Long userId, String email,
+                                         Collection<? extends GrantedAuthority> authorities) {
             super(authorities);
             this.userId = userId;
             this.email = email;

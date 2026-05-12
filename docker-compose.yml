@@ -345,6 +345,40 @@ services:
       start_period: 60s
     networks: [stride-net]
 
+  activity-service:
+    build:
+      context: .
+      dockerfile: services/activity-service/Dockerfile
+    image: stride/activity-service:dev
+    container_name: stride-activity-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      POSTGRES_HOST: postgres-activity
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: stride_activity
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres-activity:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks: [stride-net]
+
 networks:
   stride-net:
     driver: bridge

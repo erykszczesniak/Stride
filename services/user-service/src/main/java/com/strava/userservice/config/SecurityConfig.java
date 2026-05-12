@@ -1,5 +1,6 @@
 package com.strava.userservice.config;
 
+import com.strava.shared.security.HeaderAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
