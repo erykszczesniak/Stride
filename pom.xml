@@ -32,6 +32,7 @@
         <module>services/user-service</module>
         <module>services/activity-service</module>
         <module>services/notification-service</module>
+        <module>services/social-service</module>
     </modules>
 
     <dependencyManagement>
