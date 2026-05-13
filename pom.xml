@@ -33,6 +33,7 @@
         <module>services/activity-service</module>
         <module>services/notification-service</module>
         <module>services/social-service</module>
+        <module>services/club-event-service</module>
     </modules>
 
     <dependencyManagement>

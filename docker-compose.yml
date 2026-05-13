@@ -447,6 +447,37 @@ services:
       start_period: 60s
     networks: [stride-net]
 
+  club-event-service:
+    build:
+      context: .
+      dockerfile: services/club-event-service/Dockerfile
+    image: stride/club-event-service:dev
+    container_name: stride-club-event-service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      POSTGRES_HOST: postgres-club-event
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: stride_club_event
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres-club-event:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks: [stride-net]
+
 networks:
   stride-net:
     driver: bridge

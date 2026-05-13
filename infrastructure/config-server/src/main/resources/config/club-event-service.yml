@@ -1,0 +1,19 @@
+server:
+  port: 8085
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres-club-event}:${POSTGRES_PORT:5432}/${POSTGRES_DB:stride_club_event}
+    username: ${POSTGRES_USER:stride}
+    password: ${POSTGRES_PASSWORD:stride}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/common
