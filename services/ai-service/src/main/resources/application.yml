@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: ai-service
+  config:
+    import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
+  cloud:
+    config:
+      fail-fast: false
+      retry:
+        max-attempts: 6
+        initial-interval: 2000
+
+# Groq + Resilience4j configuration — defaults apply in every profile.
+groq:
+  api:
+    url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
+    key: ${GROQ_API_KEY:}
+  model: ${GROQ_MODEL:openai/gpt-oss-120b}
+
+resilience4j:
+  timelimiter:
+    instances:
+      groq:
+        timeoutDuration: 8s
+        cancelRunningFuture: true
+  circuitbreaker:
+    instances:
+      groq:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+  retry:
+    instances:
+      groq:
+        maxAttempts: 2
+        waitDuration: 300ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,circuitbreakers,retries
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: standalone
+server:
+  port: 8087
+eureka:
+  client:
+    enabled: false
