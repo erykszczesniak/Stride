@@ -478,6 +478,43 @@ services:
       start_period: 60s
     networks: [stride-net]
 
+  challenge-goal-service:
+    build:
+      context: .
+      dockerfile: services/challenge-goal-service/Dockerfile
+    image: stride/challenge-goal-service:dev
+    container_name: stride-challenge-goal-service
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      POSTGRES_HOST: postgres-challenge-goal
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: stride_challenge_goal
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+      SPRING_DATA_REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres-challenge-goal:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8086/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks: [stride-net]
+
 networks:
   stride-net:
     driver: bridge

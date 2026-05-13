@@ -34,6 +34,7 @@
         <module>services/notification-service</module>
         <module>services/social-service</module>
         <module>services/club-event-service</module>
+        <module>services/challenge-goal-service</module>
     </modules>
 
     <dependencyManagement>

@@ -1,0 +1,39 @@
+server:
+  port: 8086
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres-challenge-goal}:${POSTGRES_PORT:5432}/${POSTGRES_DB:stride_challenge_goal}
+    username: ${POSTGRES_USER:stride}
+    password: ${POSTGRES_PASSWORD:stride}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/common
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+# Tighter Resilience4j thresholds for prod — break the circuit faster, recover faster.
+resilience4j:
+  circuitbreaker:
+    instances:
+      activity-service:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
+  retry:
+    instances:
+      activity-service:
+        maxAttempts: 3
+        waitDuration: 250ms
+        exponentialBackoffMultiplier: 2
