@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: club-event-service
+  namespace: stride
+  labels: { app: club-event-service, role: domain }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: club-event-service }
+  template:
+    metadata:
+      labels: { app: club-event-service, role: domain }
+    spec:
+      containers:
+        - name: club-event-service
+          image: stride/club-event-service:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-server:8888
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+            - name: POSTGRES_HOST
+              value: postgres-club-event
+            - name: POSTGRES_DB
+              value: stride_club_event
+            - name: POSTGRES_USER
+              value: stride
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: stride-secrets, key: POSTGRES_PASSWORD }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8085 }
+            initialDelaySeconds: 40
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8085 }
+            initialDelaySeconds: 75
+          resources:
+            requests: { memory: 512Mi, cpu: 100m }
+            limits:   { memory: 768Mi, cpu: 500m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: club-event-service
+  namespace: stride
+spec:
+  selector: { app: club-event-service }
+  ports:
+    - port: 8085
+      targetPort: 8085

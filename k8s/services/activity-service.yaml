@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activity-service
+  namespace: stride
+  labels: { app: activity-service, role: domain }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: activity-service }
+  template:
+    metadata:
+      labels: { app: activity-service, role: domain }
+    spec:
+      containers:
+        - name: activity-service
+          image: stride/activity-service:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-server:8888
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+            - name: POSTGRES_HOST
+              value: postgres-activity
+            - name: POSTGRES_DB
+              value: stride_activity
+            - name: POSTGRES_USER
+              value: stride
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: stride-secrets, key: POSTGRES_PASSWORD }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8082 }
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8082 }
+            initialDelaySeconds: 75
+            periodSeconds: 30
+          resources:
+            requests: { memory: 512Mi, cpu: 100m }
+            limits:   { memory: 768Mi, cpu: 500m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: activity-service
+  namespace: stride
+spec:
+  selector: { app: activity-service }
+  ports:
+    - port: 8082
+      targetPort: 8082
+---
+# Demo HPA on activity-service — the busiest write-heavy domain service.
+# Scales out on CPU when the dashboard refresh load spikes.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: activity-service-hpa
+  namespace: stride
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: activity-service
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

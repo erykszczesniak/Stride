@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: social-service
+  namespace: stride
+  labels: { app: social-service, role: domain }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: social-service }
+  template:
+    metadata:
+      labels: { app: social-service, role: domain }
+    spec:
+      containers:
+        - name: social-service
+          image: stride/social-service:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-server:8888
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+            - name: POSTGRES_HOST
+              value: postgres-social
+            - name: POSTGRES_DB
+              value: stride_social
+            - name: POSTGRES_USER
+              value: stride
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: stride-secrets, key: POSTGRES_PASSWORD }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8084 }
+            initialDelaySeconds: 40
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8084 }
+            initialDelaySeconds: 75
+          resources:
+            requests: { memory: 512Mi, cpu: 100m }
+            limits:   { memory: 768Mi, cpu: 500m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: social-service
+  namespace: stride
+spec:
+  selector: { app: social-service }
+  ports:
+    - port: 8084
+      targetPort: 8084

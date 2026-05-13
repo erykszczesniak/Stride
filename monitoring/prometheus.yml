@@ -6,31 +6,41 @@ global:
 
 scrape_configs:
 
-  - job_name: 'config-server'
+  # ============================================
+  # Eureka service discovery — auto-scrapes every Spring Boot service
+  # that registers with the discovery-server, so new services light up
+  # in Prometheus without ever editing this file.
+  # ============================================
+  - job_name: stride-services
     metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ['config-server:8888']
+    eureka_sd_configs:
+      - server: http://discovery-server:8761/eureka
+        refresh_interval: 30s
+    relabel_configs:
+      # Use the Eureka app name as the Prometheus 'app' label.
+      - source_labels: [__meta_eureka_app_name]
+        target_label: app
+      # Compose the scrape address from Eureka's IP + port metadata.
+      - source_labels: [__meta_eureka_app_instance_ip_addr,
+                        __meta_eureka_app_instance_port]
+        separator: ':'
+        target_label: __address__
+      # Tag with instance ID so we can split metrics per replica.
+      - source_labels: [__meta_eureka_app_instance_id]
+        target_label: instance
 
-  - job_name: 'discovery-server'
+  # ============================================
+  # Static scrape for the infra services that don't register with Eureka
+  # (Eureka itself, Config Server).
+  # ============================================
+  - job_name: discovery-server
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ['discovery-server:8761']
+        labels: { app: discovery-server }
 
-  - job_name: 'api-gateway'
+  - job_name: config-server
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ['api-gateway:8080']
-
-  # Domain services — added per phase as services come online.
-  # Spring Cloud Gateway discovers services via Eureka; Prometheus can either
-  # use eureka_sd_configs or be updated statically as we extract each service.
-  # For now: static targets, will switch to eureka_sd_configs in Phase 9.
-  - job_name: 'user-service'
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ['user-service:8081']
-
-  - job_name: 'activity-service'
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ['activity-service:8082']
+      - targets: ['config-server:8888']
+        labels: { app: config-server }

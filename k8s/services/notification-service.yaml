@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: stride
+  labels: { app: notification-service, role: domain }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: notification-service }
+  template:
+    metadata:
+      labels: { app: notification-service, role: domain }
+    spec:
+      containers:
+        - name: notification-service
+          image: stride/notification-service:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-server:8888
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+            - name: POSTGRES_HOST
+              value: postgres-notification
+            - name: POSTGRES_DB
+              value: stride_notification
+            - name: POSTGRES_USER
+              value: stride
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: stride-secrets, key: POSTGRES_PASSWORD }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8083 }
+            initialDelaySeconds: 40
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8083 }
+            initialDelaySeconds: 75
+            periodSeconds: 30
+          resources:
+            requests: { memory: 512Mi, cpu: 100m }
+            limits:   { memory: 768Mi, cpu: 500m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: stride
+spec:
+  selector: { app: notification-service }
+  ports:
+    - port: 8083
+      targetPort: 8083

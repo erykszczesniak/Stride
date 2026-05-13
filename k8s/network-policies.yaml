@@ -1,0 +1,71 @@
+# Defense-in-depth: domain services should only be reachable from inside
+# the cluster (the gateway pods routing through Eureka). External traffic
+# can only enter through the Ingress, which lands on api-gateway.
+#
+# The gateway-trust JWT model assumes nothing else can hit the services
+# directly with spoofed X-User-* headers — these policies enforce that
+# at the network layer regardless of whether application-layer trust
+# is correctly configured.
+
+# 1. Default deny inside the namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: stride
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+# 2. Allow gateway and infra-role pods to reach domain services.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: domain-services-from-gateway-and-infra
+  namespace: stride
+spec:
+  podSelector:
+    matchLabels:
+      role: domain
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: api-gateway }
+        - podSelector:
+            matchLabels: { role: infra }
+    # Prometheus needs to scrape /actuator/prometheus.
+    - from:
+        - namespaceSelector:
+            matchLabels: { name: monitoring }
+        - podSelector:
+            matchLabels: { app: prometheus }
+---
+# 3. Allow anything into the gateway (it's the public entry point).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateway-from-anywhere
+  namespace: stride
+spec:
+  podSelector:
+    matchLabels: { app: api-gateway }
+  policyTypes: [Ingress]
+  ingress:
+    - {}    # all sources allowed (ingress controller etc.)
+---
+# 4. Allow services to reach each other for service-to-service calls
+#    (challenge-goal-service → activity-service via lb://, Kafka, Redis, etc).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: services-talk-to-services
+  namespace: stride
+spec:
+  podSelector:
+    matchLabels: { role: domain }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { role: domain }

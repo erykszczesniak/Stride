@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery-server
+  namespace: stride
+  labels: { app: discovery-server, role: infra }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: discovery-server }
+  template:
+    metadata:
+      labels: { app: discovery-server, role: infra }
+    spec:
+      containers:
+        - name: discovery-server
+          image: stride/discovery-server:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8761
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-server:8888
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: discovery-server
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8761 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8761 }
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests: { memory: 512Mi, cpu: 100m }
+            limits:   { memory: 768Mi, cpu: 500m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discovery-server
+  namespace: stride
+spec:
+  selector: { app: discovery-server }
+  ports:
+    - port: 8761
+      targetPort: 8761

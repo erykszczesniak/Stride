@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: challenge-goal-service
+  namespace: stride
+  labels: { app: challenge-goal-service, role: domain }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: challenge-goal-service }
+  template:
+    metadata:
+      labels: { app: challenge-goal-service, role: domain }
+    spec:
+      containers:
+        - name: challenge-goal-service
+          image: stride/challenge-goal-service:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-server:8888
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+            - name: POSTGRES_HOST
+              value: postgres-challenge-goal
+            - name: POSTGRES_DB
+              value: stride_challenge_goal
+            - name: POSTGRES_USER
+              value: stride
+            - name: SPRING_DATA_REDIS_HOST
+              value: redis
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: stride-secrets, key: POSTGRES_PASSWORD }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8086 }
+            initialDelaySeconds: 40
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8086 }
+            initialDelaySeconds: 75
+          resources:
+            requests: { memory: 512Mi, cpu: 100m }
+            limits:   { memory: 768Mi, cpu: 500m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: challenge-goal-service
+  namespace: stride
+spec:
+  selector: { app: challenge-goal-service }
+  ports:
+    - port: 8086
+      targetPort: 8086
