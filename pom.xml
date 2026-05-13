@@ -31,6 +31,7 @@
         <module>infrastructure/api-gateway</module>
         <module>services/user-service</module>
         <module>services/activity-service</module>
+        <module>services/notification-service</module>
     </modules>
 
     <dependencyManagement>
