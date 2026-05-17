@@ -981,6 +981,23 @@ curl 'http://localhost:9200/users/_mapping'
 
 Or use the UI search bar — results come from the ES-backed endpoint first; on any exception the controller swallows it and retries via SQL, so a flaky cluster never breaks search for end users.
 
+**Test through the app's own endpoint** (`GET /api/v1/users/search`) — this is the path the UI uses, ES-backed with the SQL fallback:
+
+```bash
+# Needs a JWT — grab one from the login response first
+TOKEN=...
+
+# Normal query
+curl -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8080/api/v1/users/search?query=marathon'
+
+# Fuzzy match — ES tolerates the typo, plain SQL ILIKE would not
+curl -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8080/api/v1/users/search?query=marathn'
+```
+
+**Prove the fallback works:** with the app running, stop Elasticsearch (`docker compose stop elasticsearch`) and hit the endpoint again. It still returns results, and the log shows `Elasticsearch user search failed, falling back to SQL ILIKE` — the fuzzy match just stops working until ES is back.
+
 ### Full local stack in one command
 
 ```bash
