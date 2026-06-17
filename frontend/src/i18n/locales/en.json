@@ -324,6 +324,20 @@
       }
     }
   },
+  "aiChat": {
+    "title": "AI Coach",
+    "empty": "Ask the AI coach to analyze this activity, or pick a suggestion below.",
+    "placeholder": "Ask anything about this activity...",
+    "send": "Send",
+    "clear": "Clear",
+    "thinking": "Thinking...",
+    "error": "Could not reach the AI coach. Please try again.",
+    "suggestions": {
+      "analyze": "Analyze this activity",
+      "pacing": "How was my pacing?",
+      "recovery": "Should I rest or train tomorrow?"
+    }
+  },
   "profile": {
     "loading": "Loading profile...",
     "userNotFound": "User not found",

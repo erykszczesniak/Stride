@@ -84,6 +84,11 @@ app:
     # and elevation on imported activities. Set STRAVA_IMPORT_STREAMS=false when bulk-importing
     # 1000+ activities to conserve the 100 req / 15 min rate-limit budget.
     import-streams: ${STRAVA_IMPORT_STREAMS:true}
+  # Anthropic Claude — powers the conversational AI activity-analysis chat.
+  claude:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-opus-4-8}
+    max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}
 
 google:
   client-id: ${GOOGLE_CLIENT_ID:}

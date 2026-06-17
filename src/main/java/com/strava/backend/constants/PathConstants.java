@@ -105,6 +105,7 @@ public final class PathConstants {
     public static final String API_V1_AI = API_V1 + AI;
     public static final String GENERATE_GOAL = "/generate-goal";
     public static final String GENERATE_PLAN = "/generate-plan";
+    public static final String CHAT = "/chat";
 
     // Training Plans
     public static final String TRAINING_PLANS = "/training-plans";

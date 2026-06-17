@@ -332,6 +332,20 @@
       }
     }
   },
+  "aiChat": {
+    "title": "Trener AI",
+    "empty": "Poproś trenera AI o analizę tej aktywności lub wybierz jedną z podpowiedzi poniżej.",
+    "placeholder": "Zapytaj o cokolwiek dotyczące tej aktywności...",
+    "send": "Wyślij",
+    "clear": "Wyczyść",
+    "thinking": "Myślę...",
+    "error": "Nie udało się połączyć z trenerem AI. Spróbuj ponownie.",
+    "suggestions": {
+      "analyze": "Przeanalizuj tę aktywność",
+      "pacing": "Jak wyglądało moje tempo?",
+      "recovery": "Powinienem odpocząć czy trenować jutro?"
+    }
+  },
   "profile": {
     "loading": "Wczytywanie profilu...",
     "userNotFound": "Nie znaleziono użytkownika",
