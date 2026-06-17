@@ -59,6 +59,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "WHERE u.id = :userId AND f.id = :followerId")
     boolean isFollowing(@Param("userId") Long userId, @Param("followerId") Long followerId);
 
+    /**
+     * IDs of users who follow {@code userId} — the recipients for fan-out when
+     * {@code userId} publishes a new activity.
+     */
+    @Query("SELECT f.id FROM User u JOIN u.followers f WHERE u.id = :userId")
+    List<Long> findFollowerIds(@Param("userId") Long userId);
+
     long countByActive(boolean active);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= :since")

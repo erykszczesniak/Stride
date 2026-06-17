@@ -9,6 +9,8 @@ import com.strava.backend.dto.user.UserProfileResponse;
 import com.strava.backend.enums.NotificationType;
 import com.strava.backend.enums.AuthProvider;
 import com.strava.backend.event.UserDeletedEvent;
+import com.strava.backend.event.UserFollowedEvent;
+import com.strava.backend.event.UserUnfollowedEvent;
 import com.strava.backend.event.UserUpsertedEvent;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
@@ -153,6 +155,8 @@ public class UserServiceImpl implements UserService {
         followUser.getFollowers().add(user);
         userRepository.save(followUser);
 
+        eventPublisher.publishEvent(new UserFollowedEvent(userId, followUserId));
+
         notificationService.createNotification(
                 followUser,
                 user,
@@ -177,6 +181,8 @@ public class UserServiceImpl implements UserService {
 
         unfollowUser.getFollowers().remove(user);
         userRepository.save(unfollowUser);
+
+        eventPublisher.publishEvent(new UserUnfollowedEvent(userId, unfollowUserId));
     }
 
     @Override

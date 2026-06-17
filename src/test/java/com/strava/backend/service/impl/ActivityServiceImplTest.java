@@ -8,9 +8,11 @@ import com.strava.backend.dto.activity.WeeklyStatsResponse;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.ActivityRepository;
+import com.strava.backend.service.ActivityFeedQueryService;
 import com.strava.backend.service.NotificationService;
 import com.strava.backend.service.PersonalRecordService;
 import com.strava.backend.service.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import com.strava.backend.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,6 +55,12 @@ class ActivityServiceImplTest {
 
     @Mock
     private PersonalRecordService personalRecordService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private ActivityFeedQueryService feedQueryService;
 
     @InjectMocks
     private ActivityServiceImpl activityService;
