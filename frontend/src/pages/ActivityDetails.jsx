@@ -21,6 +21,7 @@ import CommentService from "../api/CommentService";
 import ActivityMap from "../components/ActivityMap/ActivityMap";
 import ElevationProfile from "../components/ElevationProfile/ElevationProfile";
 import ShareModal from "../components/ShareModal/ShareModal";
+import ActivityAiChat from "../components/ActivityAiChat/ActivityAiChat";
 import { useAuth } from "../context/AuthContext";
 import { useUnits } from "../context/UnitsContext";
 import { LoadingSpinner } from "./DashboardStyles";
@@ -674,6 +675,8 @@ const ActivityDetails = () => {
           </PhotoGrid>
         </PhotoGallerySection>
       )}
+
+      {isOwner && <ActivityAiChat activityId={id} />}
 
       <CommentsSection ref={commentsSectionRef}>
         <CommentsSectionTitle>

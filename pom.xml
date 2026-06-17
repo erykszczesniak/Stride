@@ -158,6 +158,13 @@
             <version>${modelmapper.version}</version>
         </dependency>
 
+        <!-- Anthropic Claude SDK (AI activity analysis chat) -->
+        <dependency>
+            <groupId>com.anthropic</groupId>
+            <artifactId>anthropic-java</artifactId>
+            <version>2.34.0</version>
+        </dependency>
+
         <!-- Structured Logging (JSON) -->
         <dependency>
             <groupId>net.logstash.logback</groupId>
