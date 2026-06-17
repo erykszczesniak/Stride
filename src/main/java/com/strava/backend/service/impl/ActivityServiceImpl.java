@@ -7,9 +7,13 @@ import com.strava.backend.dto.activity.ActivityRequest;
 import com.strava.backend.dto.activity.ActivityStatsResponse;
 import com.strava.backend.dto.activity.WeeklyStatsResponse;
 import com.strava.backend.enums.ActivityType;
+import com.strava.backend.event.ActivityCreatedEvent;
+import com.strava.backend.event.ActivityDeletedEvent;
+import com.strava.backend.event.ActivityVisibilityChangedEvent;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.enums.NotificationType;
 import com.strava.backend.repository.ActivityRepository;
+import com.strava.backend.service.ActivityFeedQueryService;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.GearService;
 import com.strava.backend.service.NotificationService;
@@ -18,6 +22,7 @@ import com.strava.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -59,6 +64,8 @@ public class ActivityServiceImpl implements ActivityService {
     private final NotificationService notificationService;
     private final PersonalRecordService personalRecordService;
     private final GearService gearService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final ActivityFeedQueryService feedQueryService;
 
     @Value("${app.upload.dir:uploads/photos}")
     private String uploadDir;
@@ -86,12 +93,11 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional(readOnly = true)
     public Page<Activity> getFeedActivities(Long userId, Pageable pageable) {
-        User user = userService.getUserById(userId);
-        List<Long> followingIds = user.getFollowing().stream()
-                .map(User::getId)
-                .collect(Collectors.toList());
-        followingIds.add(userId);
-        return activityRepository.findByUserIdIn(followingIds, pageable);
+        // CQRS read side: served from the user_feed_entries projection maintained
+        // by UserFeedProjector. The old fan-out-on-read path (IN-list of
+        // followings + JOIN + ORDER BY against `activities`) is gone — replaced
+        // by a single index scan over the read model.
+        return feedQueryService.getFeedForUser(userId, pageable);
     }
 
     @Override
@@ -143,6 +149,10 @@ public class ActivityServiceImpl implements ActivityService {
             gearService.incrementGearMileage(gear.getId(), saved.getDistance());
         }
         personalRecordService.checkAndUpdatePRs(saved);
+
+        eventPublisher.publishEvent(new ActivityCreatedEvent(
+                saved.getId(), userId, saved.isPrivate(), saved.getCreatedAt()));
+
         return saved;
     }
 
@@ -160,6 +170,8 @@ public class ActivityServiceImpl implements ActivityService {
         // both to reverse the old mileage entry before applying the new one.
         Gear oldGear = activity.getGear();
         Double oldDistance = activity.getDistance();
+        // Snapshot privacy too so we can detect a flip and refresh the feed projection.
+        boolean wasPrivate = activity.isPrivate();
 
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
@@ -192,6 +204,12 @@ public class ActivityServiceImpl implements ActivityService {
         adjustGearMileageOnUpdate(oldGear, oldDistance, newGear, saved.getDistance());
 
         personalRecordService.checkAndUpdatePRs(saved);
+
+        if (wasPrivate != saved.isPrivate()) {
+            eventPublisher.publishEvent(new ActivityVisibilityChangedEvent(
+                    saved.getId(), userId, saved.isPrivate(), saved.getCreatedAt()));
+        }
+
         return saved;
     }
 
@@ -213,6 +231,8 @@ public class ActivityServiceImpl implements ActivityService {
         if (gear != null && distance != null) {
             gearService.decrementGearMileage(gear.getId(), distance);
         }
+
+        eventPublisher.publishEvent(new ActivityDeletedEvent(activityId));
     }
 
     @Override
