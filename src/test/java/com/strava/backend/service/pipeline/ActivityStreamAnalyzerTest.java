@@ -165,6 +165,69 @@ class ActivityStreamAnalyzerTest {
     }
 
     @Nested
+    @DisplayName("route and elevation payloads")
+    class RouteAndElevation {
+
+        @Test
+        @DisplayName("legacy JSON polylines are re-encoded so clients need one decoder")
+        void legacyJsonPolylineIsReencoded() {
+            Activity activity = activity(ActivityType.RUN, 2.0, 660, syntheticPolyline(21), null);
+
+            String encoded = analyzer.encodedRoutePolyline(activity);
+
+            assertThat(encoded).isNotNull().doesNotStartWith("[");
+            var decoded = com.strava.backend.service.importer.GeoUtils.decodePolyline(encoded);
+            assertThat(decoded).hasSize(21);
+            assertThat(decoded.get(0)[0]).isCloseTo(52.0, org.assertj.core.data.Offset.offset(0.0001));
+        }
+
+        @Test
+        @DisplayName("already-encoded polylines pass through untouched")
+        void encodedPolylinePassesThrough() {
+            Activity activity = activity(ActivityType.RUN, 2.0, 660, "_p~iF~ps|U_ulLnnqC_mqNvxq`@", null);
+
+            assertThat(analyzer.encodedRoutePolyline(activity)).isEqualTo("_p~iF~ps|U_ulLnnqC_mqNvxq`@");
+        }
+
+        @Test
+        @DisplayName("single-point or missing routes yield null")
+        void degenerateRoutesYieldNull() {
+            assertThat(analyzer.encodedRoutePolyline(
+                    activity(ActivityType.SWIM, 1.5, 2100, "[[52.2297,21.0017]]", null))).isNull();
+            assertThat(analyzer.encodedRoutePolyline(
+                    activity(ActivityType.RUN, 5.0, 1500, null, null))).isNull();
+        }
+
+        @Test
+        @DisplayName("short elevation profiles pass through, long ones downsample to the cap")
+        void elevationSeriesDownsamples() {
+            Activity shortProfile = activity(ActivityType.RUN, 2.0, 660, null, null);
+            shortProfile.setElevationProfile("[100.0,101.5,103.0,102.0,100.5]");
+            assertThat(analyzer.elevationSeries(shortProfile)).containsExactly(100.0, 101.5, 103.0, 102.0, 100.5);
+
+            StringBuilder longJson = new StringBuilder("[");
+            for (int i = 0; i < 200; i++) {
+                if (i > 0) longJson.append(",");
+                longJson.append(100 + i);
+            }
+            longJson.append("]");
+            Activity longProfile = activity(ActivityType.RUN, 2.0, 660, null, null);
+            longProfile.setElevationProfile(longJson.toString());
+
+            var series = analyzer.elevationSeries(longProfile);
+            assertThat(series).hasSize(ActivityStreamAnalyzer.ELEVATION_MAX_SAMPLES);
+            assertThat(series.get(0)).isEqualTo(100.0);
+            assertThat(series.get(series.size() - 1)).isEqualTo(299.0);
+        }
+
+        @Test
+        @DisplayName("missing elevation yields an empty series")
+        void missingElevationYieldsEmpty() {
+            assertThat(analyzer.elevationSeries(activity(ActivityType.RUN, 5.0, 1500, null, null))).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("heart rate")
     class HeartRate {
 

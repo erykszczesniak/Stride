@@ -138,6 +138,9 @@ class PipelineQueryServiceTest {
         assertThat(detail.splits()).hasSize(5);
         assertThat(detail.splits().get(4).distanceMeters()).isEqualTo(5000);
         assertThat(detail.splits().get(0).avgHeartRate()).isBetween(128, 165);
+        // No stored route/elevation → explicit null/empty, never absent fields.
+        assertThat(detail.routePolyline()).isNull();
+        assertThat(detail.elevationSeries()).isEmpty();
     }
 
     @Test

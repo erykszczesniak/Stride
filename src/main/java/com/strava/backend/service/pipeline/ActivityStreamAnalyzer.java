@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.service.importer.GeoUtils;
+import com.strava.backend.service.importer.GpsPoint;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +33,7 @@ import java.util.List;
 public class ActivityStreamAnalyzer {
 
     public static final int SERIES_SAMPLES = 17;
+    public static final int ELEVATION_MAX_SAMPLES = 60;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -214,6 +216,51 @@ public class ActivityStreamAnalyzer {
         return parseStreams(activity).aligned();
     }
 
+    /**
+     * The activity's track as a Google Encoded Polyline, or null when there is
+     * no usable multi-point route. Legacy rows store the route as a JSON
+     * [[lat,lng]] string — those are re-encoded so native clients only ever
+     * need one decoder.
+     */
+    public String encodedRoutePolyline(Activity activity) {
+        List<double[]> coords = GeoUtils.decodePolyline(activity.getRoutePolyline());
+        if (coords.size() < 2) {
+            return null;
+        }
+        String raw = activity.getRoutePolyline().trim();
+        if (!raw.startsWith("[")) {
+            return raw;
+        }
+        List<GpsPoint> points = coords.stream()
+                .map(pair -> GpsPoint.builder().latitude(pair[0]).longitude(pair[1]).build())
+                .toList();
+        return GeoUtils.encodePolyline(points);
+    }
+
+    /**
+     * Altitude profile downsampled to at most {@value ELEVATION_MAX_SAMPLES}
+     * evenly indexed points (charting payload). Empty when none is stored.
+     */
+    public List<Double> elevationSeries(Activity activity) {
+        double[] profile = parseElevationProfile(activity.getElevationProfile());
+        if (profile == null || profile.length == 0) {
+            return List.of();
+        }
+        if (profile.length <= ELEVATION_MAX_SAMPLES) {
+            List<Double> series = new ArrayList<>(profile.length);
+            for (double value : profile) {
+                series.add(round1(value));
+            }
+            return series;
+        }
+        List<Double> series = new ArrayList<>(ELEVATION_MAX_SAMPLES);
+        for (int k = 0; k < ELEVATION_MAX_SAMPLES; k++) {
+            int index = (int) Math.round((double) k * (profile.length - 1) / (ELEVATION_MAX_SAMPLES - 1));
+            series.add(round1(profile[index]));
+        }
+        return series;
+    }
+
     // --- internals -------------------------------------------------------
 
     private record Streams(List<double[]> coords, long[] timestamps) {
@@ -241,6 +288,23 @@ public class ActivityStreamAnalyzer {
             return result;
         } catch (Exception e) {
             log.warn("Failed to parse point timestamps JSON: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private double[] parseElevationProfile(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            Double[] boxed = objectMapper.readValue(json, Double[].class);
+            double[] result = new double[boxed.length];
+            for (int i = 0; i < boxed.length; i++) {
+                result[i] = boxed[i] != null ? boxed[i] : 0.0;
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("Failed to parse elevation profile JSON: {}", e.getMessage());
             return null;
         }
     }

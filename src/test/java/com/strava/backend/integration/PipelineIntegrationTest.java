@@ -189,6 +189,11 @@ class PipelineIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(body.get("paceSeries")).hasSize(17);
         assertThat(body.get("heartRateSeries")).hasSize(17);
+
+        // The legacy JSON route is served re-encoded for the map card.
+        assertThat(body.get("routePolyline").isNull()).isFalse();
+        assertThat(body.get("routePolyline").asText()).doesNotStartWith("[");
+        assertThat(body.get("elevationSeries").isArray()).isTrue();
     }
 
     @Test

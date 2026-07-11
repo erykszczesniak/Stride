@@ -86,7 +86,9 @@ public class PipelineQueryService {
                 toActivityDto(activity),
                 streamAnalyzer.paceSeries(activity),
                 streamAnalyzer.heartRateSeries(activity),
-                splits);
+                splits,
+                streamAnalyzer.encodedRoutePolyline(activity),
+                streamAnalyzer.elevationSeries(activity));
     }
 
     // --- dashboard -------------------------------------------------------
