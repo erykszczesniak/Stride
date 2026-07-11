@@ -633,9 +633,10 @@ dates **with offset**, disciplines `swim|bike|run`, and server-computed
 analytics (per-split times from GPS point timestamps, 17-sample pace/HR
 series, hrTSS-based CTL/ATL/TSB training load).
 
-Auth is a long-lived **personal API token** (`tri_...`, SHA-256-hashed at
-rest) issued by a logged-in user and carried as a `Bearer` header — the JWT
-chain and the pipeline chain are fully separate.
+Auth is a `Bearer` header carrying either a long-lived **personal API token**
+(`tri_...`, SHA-256-hashed at rest, issued by a logged-in user) or a regular
+**Stride JWT** — so an authenticated app session needs no extra credential.
+The `/api/v1` chain still accepts JWTs only.
 
 | Endpoint | Description |
 |----------|-------------|

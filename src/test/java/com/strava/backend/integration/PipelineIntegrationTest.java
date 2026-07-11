@@ -10,6 +10,7 @@ import com.strava.backend.enums.Role;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.PipelineTokenRepository;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.service.pipeline.PipelineTokenService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +52,9 @@ class PipelineIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private PipelineTokenService pipelineTokenService;
+
+    @Autowired
+    private JwtProvider jwtProvider;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -137,6 +141,15 @@ class PipelineIntegrationTest extends AbstractIntegrationTest {
     void pipelineTokenDoesNotWorkOnApiChain() {
         assertThat(getWithToken("/api/v1/users/me", token).getStatusCode())
                 .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    @DisplayName("a regular Stride JWT is accepted on the pipeline chain")
+    void jwtWorksOnPipelineChain() {
+        String jwt = jwtProvider.generateToken(user.getId(), user.getEmail());
+
+        assertThat(getWithToken("/pipeline/v1/dashboard", jwt).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
     }
 
     @Test

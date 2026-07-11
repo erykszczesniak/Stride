@@ -8,6 +8,9 @@ import java.util.Optional;
 
 public interface PipelineTokenService {
 
+    /** Plaintext prefix of every personal pipeline token. */
+    String TOKEN_PREFIX = "tri_";
+
     /**
      * Issue a new token for the user. The returned {@link IssuedToken#plaintext()}
      * is the only time the raw token is ever exposed.

@@ -1,7 +1,9 @@
 package com.strava.backend.configuration;
 
+import com.strava.backend.security.CustomUserDetailsService;
 import com.strava.backend.security.RateLimitingFilter;
 import com.strava.backend.security.jwt.JwtAuthenticationFilter;
+import com.strava.backend.security.jwt.JwtProvider;
 import com.strava.backend.security.pipeline.PipelineTokenFilter;
 import com.strava.backend.service.pipeline.PipelineTokenService;
 import lombok.RequiredArgsConstructor;
@@ -33,11 +35,13 @@ public class SecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitingFilter rateLimitingFilter;
     private final PipelineTokenService pipelineTokenService;
+    private final JwtProvider jwtProvider;
+    private final CustomUserDetailsService customUserDetailsService;
 
     /**
-     * Dedicated chain for the pipeline facade: personal-token auth only, no
-     * JWT, no CORS (consumed by native clients). Ordered before the default
-     * chain so the securityMatcher wins for /pipeline/v1/**.
+     * Dedicated chain for the pipeline facade: personal-token or JWT bearer,
+     * no CORS (consumed by native clients). Ordered before the default chain
+     * so the securityMatcher wins for /pipeline/v1/**.
      */
     @Bean
     @Order(1)
@@ -49,7 +53,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .addFilterBefore(new PipelineTokenFilter(pipelineTokenService),
+                .addFilterBefore(new PipelineTokenFilter(pipelineTokenService, jwtProvider, customUserDetailsService),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

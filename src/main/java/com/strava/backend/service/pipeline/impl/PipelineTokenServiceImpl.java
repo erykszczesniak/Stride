@@ -27,7 +27,6 @@ import java.util.Optional;
 @Slf4j
 public class PipelineTokenServiceImpl implements PipelineTokenService {
 
-    static final String TOKEN_PREFIX = "tri_";
     private static final int TOKEN_RANDOM_BYTES = 32;
     /** Skip the last_used_at write unless the previous one is older than this. */
     private static final int LAST_USED_WRITE_INTERVAL_SECONDS = 60;
