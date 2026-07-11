@@ -85,6 +85,11 @@ public final class ErrorMessage {
     public static final String GEAR_ACTIVITY_TYPE_MISMATCH = "This gear cannot be used for the selected activity type";
     public static final String GEAR_ALREADY_RETIRED = "This gear is already retired";
 
+    // GPS stream errors
+    public static final String STREAMS_WITHOUT_ROUTE = "Point timestamps and elevation profiles require a route polyline with at least two points";
+    public static final String MISALIGNED_POINT_TIMESTAMPS = "pointTimestamps must be a JSON array with exactly one non-decreasing epoch value per route point";
+    public static final String MISALIGNED_ELEVATION_PROFILE = "elevationProfile must be a JSON array with exactly one value per route point";
+
     // General errors
     public static final String ACCESS_DENIED = "Access denied";
     public static final String INTERNAL_SERVER_ERROR = "Internal server error";

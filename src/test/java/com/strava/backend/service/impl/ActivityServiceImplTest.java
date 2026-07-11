@@ -427,4 +427,86 @@ class ActivityServiceImplTest {
             assertThat(result).isFalse();
         }
     }
+    @Nested
+    @DisplayName("GPS stream alignment validation")
+    class StreamAlignmentValidation {
+
+        /// Straight-line JSON polyline with 3 points.
+        private static final String ROUTE = "[[52.0,21.0],[52.001,21.0],[52.002,21.0]]";
+
+        private ActivityRequest requestWithStreams(String route, String timestamps, String elevation) {
+            ActivityRequest request = TestDataFactory.createActivityRequest();
+            request.setRoutePolyline(route);
+            request.setPointTimestamps(timestamps);
+            request.setElevationProfile(elevation);
+            return request;
+        }
+
+        @Test
+        @DisplayName("aligned streams pass and are persisted")
+        void alignedStreamsPersist() {
+            when(userService.getUserById(1L)).thenReturn(testUser);
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Activity saved = activityService.createActivity(
+                    1L, requestWithStreams(ROUTE, "[100,160,220]", "[10.0,12.5,11.0]"));
+
+            assertThat(saved.getPointTimestamps()).isEqualTo("[100,160,220]");
+            assertThat(saved.getElevationProfile()).isEqualTo("[10.0,12.5,11.0]");
+        }
+
+        @Test
+        @DisplayName("timestamps whose length does not match the route are rejected")
+        void misalignedTimestampsRejected() {
+            assertThatThrownBy(() -> activityService.createActivity(
+                    1L, requestWithStreams(ROUTE, "[100,160]", null)))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessageContaining("pointTimestamps");
+        }
+
+        @Test
+        @DisplayName("decreasing timestamps are rejected")
+        void decreasingTimestampsRejected() {
+            assertThatThrownBy(() -> activityService.createActivity(
+                    1L, requestWithStreams(ROUTE, "[220,160,100]", null)))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessageContaining("pointTimestamps");
+        }
+
+        @Test
+        @DisplayName("misaligned elevation profiles are rejected")
+        void misalignedElevationRejected() {
+            assertThatThrownBy(() -> activityService.createActivity(
+                    1L, requestWithStreams(ROUTE, null, "[10.0]")))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessageContaining("elevationProfile");
+        }
+
+        @Test
+        @DisplayName("streams without a usable route are rejected")
+        void streamsWithoutRouteRejected() {
+            assertThatThrownBy(() -> activityService.createActivity(
+                    1L, requestWithStreams(null, "[100,160,220]", null)))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessageContaining("route polyline");
+        }
+
+        @Test
+        @DisplayName("updating the route replaces its streams instead of keeping stale ones")
+        void updateReplacesStreamsWithTheRoute() {
+            testActivity.setRoutePolyline("[[50.0,20.0],[50.001,20.0]]");
+            testActivity.setPointTimestamps("[1,2]");
+            testActivity.setElevationProfile("[5.0,6.0]");
+            when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ActivityRequest request = requestWithStreams(ROUTE, "[100,160,220]", null);
+            Activity saved = activityService.updateActivity(1L, 1L, request);
+
+            assertThat(saved.getRoutePolyline()).isEqualTo(ROUTE);
+            assertThat(saved.getPointTimestamps()).isEqualTo("[100,160,220]");
+            assertThat(saved.getElevationProfile()).isNull();
+        }
+    }
+
 }

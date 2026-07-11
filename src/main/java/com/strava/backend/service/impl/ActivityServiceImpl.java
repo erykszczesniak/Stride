@@ -10,9 +10,12 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.event.ActivityCreatedEvent;
 import com.strava.backend.event.ActivityDeletedEvent;
 import com.strava.backend.event.ActivityVisibilityChangedEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.enums.NotificationType;
 import com.strava.backend.repository.ActivityRepository;
+import com.strava.backend.service.importer.GeoUtils;
 import com.strava.backend.service.ActivityFeedQueryService;
 import com.strava.backend.service.ActivityService;
 import com.strava.backend.service.GearService;
@@ -29,6 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -55,6 +59,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     private static final long MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
     private static final int MAX_PHOTOS_PER_ACTIVITY = 5;
+    private static final ObjectMapper STREAM_PARSER = new ObjectMapper();
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             "image/jpeg", "image/png", "image/webp"
     );
@@ -115,6 +120,7 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public Activity createActivity(Long userId, ActivityRequest request) {
+        validateStreamAlignment(request);
         User user = userService.getUserById(userId);
 
         Gear gear = resolveGear(request.getGearId(), userId, request.getActivityType());
@@ -159,6 +165,7 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public Activity updateActivity(Long activityId, Long userId, ActivityRequest request) {
+        validateStreamAlignment(request);
         Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND));
 
@@ -195,7 +202,14 @@ public class ActivityServiceImpl implements ActivityService {
         if (request.getStartTime() != null) activity.setStartTime(request.getStartTime());
         if (request.getStartLocation() != null) activity.setStartLocation(request.getStartLocation());
         if (request.getEndLocation() != null) activity.setEndLocation(request.getEndLocation());
-        if (request.getRoutePolyline() != null) activity.setRoutePolyline(request.getRoutePolyline());
+        if (request.getRoutePolyline() != null) {
+            // A new route replaces its aligned streams too: keeping the old
+            // pointTimestamps/elevationProfile against a different polyline
+            // would silently misalign every consumer (splits, elevation card).
+            activity.setRoutePolyline(request.getRoutePolyline());
+            activity.setPointTimestamps(request.getPointTimestamps());
+            activity.setElevationProfile(request.getElevationProfile());
+        }
 
         Activity saved = activityRepository.save(activity);
 
@@ -211,6 +225,68 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         return saved;
+    }
+
+    /**
+     * GPS streams are only meaningful when aligned 1:1 with the decoded route
+     * polyline — every consumer (accurate splits, elevation charts, the
+     * pipeline facade) indexes them positionally. Reject writes that would
+     * break that invariant instead of storing silently-misaligned data.
+     */
+    private void validateStreamAlignment(ActivityRequest request) {
+        boolean hasTimestamps = StringUtils.hasText(request.getPointTimestamps());
+        boolean hasElevation = StringUtils.hasText(request.getElevationProfile());
+        if (!hasTimestamps && !hasElevation) {
+            return;
+        }
+
+        List<double[]> coords = GeoUtils.decodePolyline(request.getRoutePolyline());
+        if (coords.size() < 2) {
+            throw new ApiRequestException(STREAMS_WITHOUT_ROUTE, HttpStatus.BAD_REQUEST);
+        }
+
+        if (hasTimestamps) {
+            long[] timestamps = parseLongArray(request.getPointTimestamps());
+            if (timestamps == null || timestamps.length != coords.size() || !isNonDecreasing(timestamps)) {
+                throw new ApiRequestException(MISALIGNED_POINT_TIMESTAMPS, HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        if (hasElevation) {
+            Double[] elevation = parseDoubleArray(request.getElevationProfile());
+            if (elevation == null || elevation.length != coords.size()) {
+                throw new ApiRequestException(MISALIGNED_ELEVATION_PROFILE, HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
+
+    private long[] parseLongArray(String json) {
+        try {
+            Long[] boxed = STREAM_PARSER.readValue(json, Long[].class);
+            long[] result = new long[boxed.length];
+            for (int i = 0; i < boxed.length; i++) {
+                if (boxed[i] == null) return null;
+                result[i] = boxed[i];
+            }
+            return result;
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    private Double[] parseDoubleArray(String json) {
+        try {
+            return STREAM_PARSER.readValue(json, Double[].class);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    private static boolean isNonDecreasing(long[] values) {
+        for (int i = 1; i < values.length; i++) {
+            if (values[i] < values[i - 1]) return false;
+        }
+        return true;
     }
 
     @Override
