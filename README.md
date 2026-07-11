@@ -12,6 +12,18 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 
 ## Features
 
+### Native iOS client
+Stride has a full native iOS app — **[Triathlon Tracker](https://github.com/erykszczesniak/triathlon-tracker-ios)**
+(programmatic UIKit + The Composable Architecture). It consumes both API surfaces:
+the read-only `/pipeline/v1` analytics facade (form dial, training load, splits,
+records) and the stateful `/api/v1` REST API (JWT auth, social feed with live SSE
+notification badge, GPS recording with backend-computed splits, photos, AI coach,
+goals, training plans + Groq generators, events/challenges/clubs, gear, Strava
+OAuth), with offline fallback, a Face ID app lock, and English + Polish
+localization. The iOS repository documents the local-run recipe (Caddy TLS proxy +
+seeded JWT session) against this backend.
+
+
 ### Activity Tracking
 - Record and track various activity types (Running, Cycling, Swimming, Hiking, Workouts)
 - View detailed activity statistics (distance, duration, pace, calories, elevation)
