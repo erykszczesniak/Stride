@@ -624,6 +624,57 @@ Once the backend is running, API documentation is available at:
 | `likeActivity(id)` / `unlikeActivity(id)` | Like/unlike |
 | `followUser(userId)` / `unfollowUser(userId)` | Follow/unfollow |
 
+### Pipeline API (read-only facade for native clients)
+
+A second, self-contained API surface under `/pipeline/v1/**` serves the
+[triathlon-tracker iOS app](https://github.com/erykszczesniak/triathlon_tracker_tca)'s
+contract without touching the main `/api/v1` shapes: camelCase JSON, ISO-8601
+dates **with offset**, disciplines `swim|bike|run`, and server-computed
+analytics (per-split times from GPS point timestamps, 17-sample pace/HR
+series, hrTSS-based CTL/ATL/TSB training load).
+
+Auth is a long-lived **personal API token** (`tri_...`, SHA-256-hashed at
+rest) issued by a logged-in user and carried as a `Bearer` header — the JWT
+chain and the pipeline chain are fully separate.
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/v1/pipeline/tokens` | Issue a personal token (plaintext shown once) |
+| `GET /api/v1/pipeline/tokens` | List tokens (masked) |
+| `DELETE /api/v1/pipeline/tokens/{id}` | Revoke a token |
+| `GET /pipeline/v1/dashboard` | Form (CTL/ATL/TSB), weekly snapshots, recent activities |
+| `GET /pipeline/v1/activities` | Activity history (run/bike/swim) |
+| `GET /pipeline/v1/activities/{id}` | Detail + real splits + pace/HR series |
+| `GET /pipeline/v1/metrics/load?range=4w\|3m\|1y` | CTL/ATL series, weekly volumes, week summary |
+| `GET /pipeline/v1/records` | Personal records (tagged-union values) |
+| `GET /pipeline/v1/athlete/profile` | Athlete, season stats, goal, threshold zones |
+
+Quick start:
+
+```bash
+JWT=$(curl -s -X POST localhost:8080/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"pan@example.com","password":"password123"}' | jq -r .accessToken)
+TOKEN=$(curl -s -X POST localhost:8080/api/v1/pipeline/tokens \
+  -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' \
+  -d '{"name":"my client"}' | jq -r .token)
+curl -s localhost:8080/pipeline/v1/dashboard -H "Authorization: Bearer $TOKEN" | jq
+```
+
+The iOS client hardcodes `https://<host>/v1/...`, so for a local simulator
+run put a TLS rewrite proxy in front (Caddy):
+
+```caddyfile
+localhost {
+    tls internal
+    rewrite /v1/* /pipeline{uri}
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+then trust Caddy's local root in the simulator
+(`xcrun simctl keychain booted add-root-cert "~/Library/Application Support/Caddy/pki/authorities/local/root.crt"`).
+
 ## Project Structure
 
 ```

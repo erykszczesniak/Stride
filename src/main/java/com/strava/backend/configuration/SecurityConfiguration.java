@@ -2,9 +2,12 @@ package com.strava.backend.configuration;
 
 import com.strava.backend.security.RateLimitingFilter;
 import com.strava.backend.security.jwt.JwtAuthenticationFilter;
+import com.strava.backend.security.pipeline.PipelineTokenFilter;
+import com.strava.backend.service.pipeline.PipelineTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,8 +32,31 @@ public class SecurityConfiguration {
     private final CorsConfigurationSource corsConfigurationSource;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitingFilter rateLimitingFilter;
+    private final PipelineTokenService pipelineTokenService;
+
+    /**
+     * Dedicated chain for the pipeline facade: personal-token auth only, no
+     * JWT, no CORS (consumed by native clients). Ordered before the default
+     * chain so the securityMatcher wins for /pipeline/v1/**.
+     */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain pipelineFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/pipeline/v1/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .addFilterBefore(new PipelineTokenFilter(pipelineTokenService),
+                        UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
 
     @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)

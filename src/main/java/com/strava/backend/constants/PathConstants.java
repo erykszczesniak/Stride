@@ -156,6 +156,10 @@ public final class PathConstants {
     public static final String STATUS = "/status";
     public static final String DISCONNECT = "/disconnect";
 
+    // Pipeline facade (read-only, personal-token auth)
+    public static final String PIPELINE_V1 = "/pipeline/v1";
+    public static final String API_V1_PIPELINE_TOKENS = API_V1 + "/pipeline/tokens";
+
     private PathConstants() {
     }
 }
