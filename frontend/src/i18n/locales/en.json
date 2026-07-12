@@ -272,6 +272,11 @@
         "partial": "partial",
         "estimatedNote": "Splits estimated from average pace; per-point timing not yet recorded.",
         "accurateNote": "Splits computed from GPS timestamps."
+      },
+      "photoViewer": {
+        "close": "Close photo",
+        "prev": "Previous photo",
+        "next": "Next photo"
       }
     },
     "record": {

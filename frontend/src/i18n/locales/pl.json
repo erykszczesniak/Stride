@@ -280,6 +280,11 @@
         "partial": "częściowe",
         "estimatedNote": "Okrążenia oszacowane na podstawie średniego tempa; dane z poszczególnych punktów nie są jeszcze zapisywane.",
         "accurateNote": "Okrążenia obliczone na podstawie znaczników czasu GPS."
+      },
+      "photoViewer": {
+        "close": "Zamknij zdjęcie",
+        "prev": "Poprzednie zdjęcie",
+        "next": "Następne zdjęcie"
       }
     },
     "record": {
