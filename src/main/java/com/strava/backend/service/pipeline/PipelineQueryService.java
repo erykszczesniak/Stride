@@ -18,6 +18,7 @@ import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.PersonalRecordRepository;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.service.ActivityVisibility;
 import com.strava.backend.service.EventService;
 import com.strava.backend.service.GoalService;
 import com.strava.backend.service.importer.GeoUtils;
@@ -54,6 +55,7 @@ public class PipelineQueryService {
     private static final int WEEKLY_VOLUME_WEEKS = 12;
 
     private final ActivityRepository activityRepository;
+    private final ActivityVisibility activityVisibility;
     private final PersonalRecordRepository personalRecordRepository;
     private final UserRepository userRepository;
     private final EventService eventService;
@@ -338,27 +340,9 @@ public class PipelineQueryService {
     private Activity resolveViewableActivity(Long viewerId, String pipelineId) {
         Long activityId = parsePipelineActivityId(pipelineId);
         return activityRepository.findById(activityId)
-                .filter(a -> a.getUser() != null && isViewableBy(viewerId, a))
+                .filter(a -> activityVisibility.isViewableBy(viewerId, a))
                 .filter(a -> discipline(a.getActivityType()) != null)
                 .orElseThrow(() -> new ApiRequestException("Activity not found", HttpStatus.NOT_FOUND));
-    }
-
-    /**
-     * Mirrors the feed/profile visibility rules: owners see everything of
-     * their own; others need a public activity and either a public owner
-     * profile or a follow relationship. Violations surface as 404 rather
-     * than 403 so ids cannot be probed.
-     */
-    private boolean isViewableBy(Long viewerId, Activity activity) {
-        Long ownerId = activity.getUser().getId();
-        if (viewerId.equals(ownerId)) {
-            return true;
-        }
-        if (activity.isPrivate()) {
-            return false;
-        }
-        boolean privateProfile = Boolean.TRUE.equals(activity.getUser().getIsPrivate());
-        return !privateProfile || userRepository.isFollowing(ownerId, viewerId);
     }
 
     private Long parsePipelineActivityId(String pipelineId) {

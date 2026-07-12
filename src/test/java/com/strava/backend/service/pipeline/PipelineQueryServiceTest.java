@@ -13,6 +13,7 @@ import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.repository.PersonalRecordRepository;
 import com.strava.backend.repository.UserRepository;
+import com.strava.backend.service.ActivityVisibility;
 import com.strava.backend.service.EventService;
 import com.strava.backend.service.GoalService;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,6 +63,7 @@ class PipelineQueryServiceTest {
         // Real math components on purpose — only data access is mocked.
         service = new PipelineQueryService(
                 activityRepository,
+                new ActivityVisibility(userRepository),
                 personalRecordRepository,
                 userRepository,
                 eventService,

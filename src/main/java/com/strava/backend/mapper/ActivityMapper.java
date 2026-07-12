@@ -7,16 +7,21 @@ import com.strava.backend.domain.User;
 import com.strava.backend.dto.HeaderResponse;
 import com.strava.backend.dto.activity.*;
 import com.strava.backend.enums.ActivityType;
+import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.exception.InputFieldException;
 import com.strava.backend.repository.UserRepository;
 import com.strava.backend.service.ActivityService;
+import com.strava.backend.service.ActivityVisibility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
+
+import static com.strava.backend.constants.ErrorMessage.ACTIVITY_NOT_FOUND;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +33,7 @@ import java.util.stream.Collectors;
 public class ActivityMapper {
 
     private final CommonMapper commonMapper;
+    private final ActivityVisibility activityVisibility;
     private final ActivityService activityService;
     private final UserRepository userRepository;
     private final GearMapper gearMapper;
@@ -35,6 +41,10 @@ public class ActivityMapper {
 
     public FullActivityResponse getActivityById(Long activityId, Long currentUserId) {
         Activity activity = activityService.getActivityById(activityId);
+        // Same 404-on-deny the pipeline uses, so ids cannot be probed.
+        if (!activityVisibility.isViewableBy(currentUserId, activity)) {
+            throw new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
         return mapToFullActivityResponse(activity, currentUserId);
     }
 
