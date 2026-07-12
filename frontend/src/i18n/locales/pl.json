@@ -180,7 +180,17 @@
     "upcoming": "Nadchodzące",
     "noActivitiesYet": "Jeszcze brak aktywności. Zacznij śledzić swoje treningi!",
     "weeklyActivity": "Aktywność tygodniowa",
-    "distanceLabel": "Dystans (km)"
+    "distanceLabel": "Dystans (km)",
+    "form": {
+      "title": "Forma",
+      "fresh": "Wypoczęty",
+      "neutral": "Neutralnie",
+      "fatigued": "Zmęczony",
+      "ctl": "CTL · Kondycja",
+      "atl": "ATL · Zmęczenie",
+      "tsb": "TSB · Forma",
+      "gaugeAlt": "Wskaźnik formy, TSB {{tsb}}"
+    }
   },
   "activities": {
     "title": "Aktywności",

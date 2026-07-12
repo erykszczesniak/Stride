@@ -172,7 +172,17 @@
     "upcoming": "Upcoming",
     "noActivitiesYet": "No activities yet. Start tracking your workouts!",
     "weeklyActivity": "Weekly Activity",
-    "distanceLabel": "Distance (km)"
+    "distanceLabel": "Distance (km)",
+    "form": {
+      "title": "Form",
+      "fresh": "Fresh",
+      "neutral": "Neutral",
+      "fatigued": "Fatigued",
+      "ctl": "CTL · Fitness",
+      "atl": "ATL · Fatigue",
+      "tsb": "TSB · Form",
+      "gaugeAlt": "Training form gauge, TSB {{tsb}}"
+    }
   },
   "activities": {
     "title": "Activities",

@@ -20,6 +20,8 @@ import {
 import ActivityService from "../api/ActivityService";
 import GoalService from "../api/GoalService";
 import EventService from "../api/EventService";
+import PipelineService from "../api/PipelineService";
+import FormGauge from "../components/FormGauge/FormGauge";
 import { useAuth } from "../context/AuthContext";
 import { useUnits } from "../context/UnitsContext";
 import { formatDurationValue, formatDurationUnit } from "../utils/formatters";
@@ -58,6 +60,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [monthlyStats, setMonthlyStats] = useState(null);
+  const [trainingForm, setTrainingForm] = useState(null);
   const [weeklyStats, setWeeklyStats] = useState(null);
   const [activities, setActivities] = useState([]);
   const [goals, setGoals] = useState([]);
@@ -87,15 +90,18 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        const [monthlyRes, weeklyRes, activitiesRes, goalsRes, eventsRes] = await Promise.all([
+        const [monthlyRes, weeklyRes, activitiesRes, goalsRes, eventsRes, pipelineRes] = await Promise.all([
           ActivityService.getMonthlyStats().catch(() => ({ data: null })),
           ActivityService.getWeeklyStats().catch(() => ({ data: null })),
           ActivityService.getFeedActivities(0, 5).catch(() => ({ data: [] })),
           GoalService.getUserGoals().catch(() => ({ data: [] })),
           EventService.getUpcomingEvents(0, 3).catch(() => ({ data: [] })),
+          // Optional: the training-form numbers come from the pipeline facade.
+          PipelineService.getDashboard().catch(() => null),
         ]);
 
         setMonthlyStats(monthlyRes.data);
+        setTrainingForm(pipelineRes?.form ?? null);
         setWeeklyStats(weeklyRes.data);
         setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
         setGoals(Array.isArray(goalsRes.data) ? goalsRes.data : []);
@@ -292,6 +298,8 @@ const Dashboard = () => {
         </MainColumn>
 
         <SideColumn>
+          <FormGauge form={trainingForm} />
+
           <WeeklyChart
             data={weeklyStats?.dailyStats}
             trendPercentage={weeklyStats?.trendPercentage}
