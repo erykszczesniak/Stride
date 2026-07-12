@@ -105,14 +105,52 @@ class PipelineQueryServiceTest {
     }
 
     @Test
-    @DisplayName("activity detail refuses ids the token owner does not own")
-    void detailChecksOwnership() {
+    @DisplayName("activity detail serves another user's public activity (feed tap-through)")
+    void detailAllowsForeignPublicActivity() {
         Activity foreign = activity(9, ActivityType.RUN, 5.0, 1500, LocalDateTime.now());
-        foreign.setUser(User.builder().id(999L).build());
+        foreign.setUser(User.builder().id(999L).isPrivate(false).build());
+        given(activityRepository.findById(9L)).willReturn(Optional.of(foreign));
+
+        PipelineActivityDetailDto detail = service.activityDetail(USER_ID, "act-9");
+
+        assertThat(detail.activity().id()).isEqualTo("act-9");
+    }
+
+    @Test
+    @DisplayName("activity detail refuses another user's private activity")
+    void detailRefusesForeignPrivateActivity() {
+        Activity foreign = activity(9, ActivityType.RUN, 5.0, 1500, LocalDateTime.now());
+        foreign.setUser(User.builder().id(999L).isPrivate(false).build());
+        foreign.setPrivate(true);
         given(activityRepository.findById(9L)).willReturn(Optional.of(foreign));
 
         assertThatThrownBy(() -> service.activityDetail(USER_ID, "act-9"))
                 .isInstanceOf(ApiRequestException.class);
+    }
+
+    @Test
+    @DisplayName("activity detail hides private-profile owners from strangers but not followers")
+    void detailRespectsPrivateProfiles() {
+        Activity foreign = activity(9, ActivityType.RUN, 5.0, 1500, LocalDateTime.now());
+        foreign.setUser(User.builder().id(999L).isPrivate(true).build());
+        given(activityRepository.findById(9L)).willReturn(Optional.of(foreign));
+
+        given(userRepository.isFollowing(999L, USER_ID)).willReturn(false);
+        assertThatThrownBy(() -> service.activityDetail(USER_ID, "act-9"))
+                .isInstanceOf(ApiRequestException.class);
+
+        given(userRepository.isFollowing(999L, USER_ID)).willReturn(true);
+        assertThat(service.activityDetail(USER_ID, "act-9").activity().id()).isEqualTo("act-9");
+    }
+
+    @Test
+    @DisplayName("activity detail still serves the owner's own private activity")
+    void detailAllowsOwnPrivateActivity() {
+        Activity own = activity(1, ActivityType.RUN, 5.0, 1500, LocalDateTime.now());
+        own.setPrivate(true);
+        given(activityRepository.findById(1L)).willReturn(Optional.of(own));
+
+        assertThat(service.activityDetail(USER_ID, "act-1").activity().id()).isEqualTo("act-1");
     }
 
     @Test

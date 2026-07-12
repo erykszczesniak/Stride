@@ -25,7 +25,8 @@ import static com.strava.backend.constants.PathConstants.PIPELINE_V1;
 /**
  * Read-only facade serving the triathlon-tracker client's contract. Auth is a
  * personal pipeline token (see PipelineTokenFilter); every endpoint returns
- * data of the token owner only. Errors use the contract's
+ * data of the token owner only, except activity detail, which also serves
+ * activities the owner may view (feed tap-through). Errors use the contract's
  * {@code {"code","message"}} body, handled locally so the global handler's
  * /api/v1 error shape stays untouched.
  */

@@ -40,8 +40,10 @@ import java.util.Optional;
 /**
  * Read-only facade assembling the pipeline contract (the triathlon-tracker
  * client's API, see docs/pipeline-api notes in the PR) from Stride's domain
- * services. All queries are scoped to the token owner — the facade never
- * exposes other users' data.
+ * services. All queries are scoped to the token owner, with one exception:
+ * activity detail also serves activities the owner is allowed to view
+ * (public activity of a public or followed profile), so feed tap-throughs
+ * open. Private data of other users is never exposed.
  */
 @Service
 @RequiredArgsConstructor
@@ -70,7 +72,7 @@ public class PipelineQueryService {
 
     @Transactional(readOnly = true)
     public PipelineActivityDetailDto activityDetail(Long userId, String pipelineId) {
-        Activity activity = resolveOwnedActivity(userId, pipelineId);
+        Activity activity = resolveViewableActivity(userId, pipelineId);
 
         List<ActivityStreamAnalyzer.SplitSegment> segments = streamAnalyzer.computeSplits(activity);
         List<PipelineActivityDetailDto.Split> splits = new ArrayList<>(segments.size());
@@ -333,12 +335,30 @@ public class PipelineQueryService {
                 .toList();
     }
 
-    private Activity resolveOwnedActivity(Long userId, String pipelineId) {
+    private Activity resolveViewableActivity(Long viewerId, String pipelineId) {
         Long activityId = parsePipelineActivityId(pipelineId);
         return activityRepository.findById(activityId)
-                .filter(a -> a.getUser() != null && userId.equals(a.getUser().getId()))
+                .filter(a -> a.getUser() != null && isViewableBy(viewerId, a))
                 .filter(a -> discipline(a.getActivityType()) != null)
                 .orElseThrow(() -> new ApiRequestException("Activity not found", HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * Mirrors the feed/profile visibility rules: owners see everything of
+     * their own; others need a public activity and either a public owner
+     * profile or a follow relationship. Violations surface as 404 rather
+     * than 403 so ids cannot be probed.
+     */
+    private boolean isViewableBy(Long viewerId, Activity activity) {
+        Long ownerId = activity.getUser().getId();
+        if (viewerId.equals(ownerId)) {
+            return true;
+        }
+        if (activity.isPrivate()) {
+            return false;
+        }
+        boolean privateProfile = Boolean.TRUE.equals(activity.getUser().getIsPrivate());
+        return !privateProfile || userRepository.isFollowing(ownerId, viewerId);
     }
 
     private Long parsePipelineActivityId(String pipelineId) {
