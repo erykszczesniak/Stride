@@ -294,7 +294,9 @@
       "photoViewer": {
         "close": "Zamknij zdjęcie",
         "prev": "Poprzednie zdjęcie",
-        "next": "Następne zdjęcie"
+        "next": "Następne zdjęcie",
+        "delete": "Usuń zdjęcie",
+        "confirmDelete": "Usunąć to zdjęcie?"
       }
     },
     "record": {

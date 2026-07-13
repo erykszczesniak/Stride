@@ -286,7 +286,9 @@
       "photoViewer": {
         "close": "Close photo",
         "prev": "Previous photo",
-        "next": "Next photo"
+        "next": "Next photo",
+        "delete": "Delete photo",
+        "confirmDelete": "Delete this photo?"
       }
     },
     "record": {

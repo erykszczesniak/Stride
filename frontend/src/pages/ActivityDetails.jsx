@@ -440,6 +440,18 @@ const ActivityDetails = () => {
 
   const isOwner = user && activity?.user?.id === user.id;
 
+  const handleDeletePhoto = async (index) => {
+    if (!window.confirm(t("activities.details.photoViewer.confirmDelete"))) return;
+    try {
+      await ActivityService.deletePhoto(id, index);
+      const remaining = activity.photos.filter((_, i) => i !== index);
+      setActivity((prev) => ({ ...prev, photos: remaining }));
+      setLightboxIndex(remaining.length === 0 ? null : Math.min(index, remaining.length - 1));
+    } catch (error) {
+      console.error("Failed to delete photo", error);
+    }
+  };
+
   const handleDeleteActivity = async () => {
     if (!window.confirm(t("activities.details.confirmDelete", { title: activity.title }))) return;
     try {
@@ -684,6 +696,7 @@ const ActivityDetails = () => {
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onNavigate={setLightboxIndex}
+          onDelete={isOwner ? handleDeletePhoto : undefined}
         />
       )}
 

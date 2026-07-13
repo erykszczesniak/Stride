@@ -44,6 +44,21 @@ export const CloseButton = styled.button`
   height: 40px;
 `;
 
+export const DeleteButton = styled.button`
+  ${roundButton}
+  position: absolute;
+  top: 20px;
+  right: 76px;
+  width: 40px;
+  height: 40px;
+  color: #fca5a5;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.35);
+    color: #fff;
+  }
+`;
+
 export const NavButton = styled.button`
   ${roundButton}
   position: absolute;

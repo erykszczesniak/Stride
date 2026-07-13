@@ -74,4 +74,32 @@ describe("PhotoLightbox", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByText("1 / 1")).not.toBeInTheDocument();
   });
+
+  it("shows the owner's delete button and reports the index", () => {
+    const onDelete = jest.fn();
+    render(
+      <PhotoLightbox
+        photos={photos}
+        index={1}
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        onDelete={onDelete}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByLabelText("activities.details.photoViewer.delete"),
+    );
+    expect(onDelete).toHaveBeenCalledWith(1);
+  });
+
+  it("hides the delete button without an onDelete handler", () => {
+    render(
+      <PhotoLightbox photos={photos} index={0} onClose={jest.fn()} onNavigate={jest.fn()} />,
+    );
+
+    expect(
+      screen.queryByLabelText("activities.details.photoViewer.delete"),
+    ).not.toBeInTheDocument();
+  });
 });

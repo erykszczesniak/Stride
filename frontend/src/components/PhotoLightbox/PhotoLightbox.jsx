@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiTrash2, FiX } from "react-icons/fi";
 import {
   CloseButton,
   Counter,
+  DeleteButton,
   LightboxImage,
   NavButton,
   Overlay,
@@ -13,7 +14,7 @@ import {
  * Fullscreen photo viewer for the activity gallery. Closes on overlay click
  * or Escape; ←/→ (and the side buttons) page through multiple photos.
  */
-const PhotoLightbox = ({ photos, index, onClose, onNavigate }) => {
+const PhotoLightbox = ({ photos, index, onClose, onNavigate, onDelete }) => {
   const { t } = useTranslation();
   const count = photos.length;
 
@@ -42,6 +43,17 @@ const PhotoLightbox = ({ photos, index, onClose, onNavigate }) => {
       >
         <FiX size={22} />
       </CloseButton>
+      {onDelete && (
+        <DeleteButton
+          aria-label={t("activities.details.photoViewer.delete")}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(index);
+          }}
+        >
+          <FiTrash2 size={20} />
+        </DeleteButton>
+      )}
       {count > 1 && (
         <NavButton
           $side="left"
