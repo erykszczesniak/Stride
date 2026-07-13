@@ -182,6 +182,12 @@
       "atl": "ATL · Fatigue",
       "tsb": "TSB · Form",
       "gaugeAlt": "Training form gauge, TSB {{tsb}}"
+    },
+    "weeklyVolume": {
+      "title": "Weekly Volume",
+      "swim": "Swim",
+      "bike": "Bike",
+      "run": "Run"
     }
   },
   "activities": {

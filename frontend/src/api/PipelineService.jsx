@@ -28,6 +28,12 @@ const PipelineService = {
     const response = await pipelineClient.get(`/activities/act-${activityId}`);
     return response.data;
   },
+
+  // { ctl, atl, weeklyVolumes: [{ weekStart, swimKm, bikeKm, runKm }], ... }
+  getLoad: async (range = "3m") => {
+    const response = await pipelineClient.get(`/metrics/load?range=${range}`);
+    return response.data;
+  },
 };
 
 export default PipelineService;

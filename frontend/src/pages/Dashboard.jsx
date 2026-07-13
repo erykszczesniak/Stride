@@ -6,7 +6,7 @@ import Layout from "../components/Layout/Layout";
 import NotificationDropdown from "../components/Navbar/NotificationDropdown";
 import StatsCard from "../components/StatsCard/StatsCard";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
-import WeeklyChart from "../components/WeeklyChart/WeeklyChart";
+import WeeklyVolume from "../components/WeeklyVolume/WeeklyVolume";
 import GoalProgress from "../components/GoalProgress/GoalProgress";
 import EventCard from "../components/EventCard/EventCard";
 import { EventsList, EventsHeader, EventsTitle, ViewAllLink as EventsViewAllLink } from "../components/EventCard/EventCardStyles";
@@ -61,7 +61,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [monthlyStats, setMonthlyStats] = useState(null);
   const [trainingForm, setTrainingForm] = useState(null);
-  const [weeklyStats, setWeeklyStats] = useState(null);
+  const [weeklyVolumes, setWeeklyVolumes] = useState(null);
   const [activities, setActivities] = useState([]);
   const [goals, setGoals] = useState([]);
   const [events, setEvents] = useState([]);
@@ -90,19 +90,19 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        const [monthlyRes, weeklyRes, activitiesRes, goalsRes, eventsRes, pipelineRes] = await Promise.all([
+        const [monthlyRes, activitiesRes, goalsRes, eventsRes, pipelineRes, loadRes] = await Promise.all([
           ActivityService.getMonthlyStats().catch(() => ({ data: null })),
-          ActivityService.getWeeklyStats().catch(() => ({ data: null })),
           ActivityService.getFeedActivities(0, 5).catch(() => ({ data: [] })),
           GoalService.getUserGoals().catch(() => ({ data: [] })),
           EventService.getUpcomingEvents(0, 3).catch(() => ({ data: [] })),
           // Optional: the training-form numbers come from the pipeline facade.
           PipelineService.getDashboard().catch(() => null),
+          PipelineService.getLoad("3m").catch(() => null),
         ]);
 
         setMonthlyStats(monthlyRes.data);
         setTrainingForm(pipelineRes?.form ?? null);
-        setWeeklyStats(weeklyRes.data);
+        setWeeklyVolumes(loadRes?.weeklyVolumes ?? null);
         setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
         setGoals(Array.isArray(goalsRes.data) ? goalsRes.data : []);
         setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
@@ -300,10 +300,7 @@ const Dashboard = () => {
         <SideColumn>
           <FormGauge form={trainingForm} />
 
-          <WeeklyChart
-            data={weeklyStats?.dailyStats}
-            trendPercentage={weeklyStats?.trendPercentage}
-          />
+          <WeeklyVolume weeklyVolumes={weeklyVolumes} />
 
           {goals.length > 0 && (
             <Section>

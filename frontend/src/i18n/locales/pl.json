@@ -190,6 +190,12 @@
       "atl": "ATL · Zmęczenie",
       "tsb": "TSB · Forma",
       "gaugeAlt": "Wskaźnik formy, TSB {{tsb}}"
+    },
+    "weeklyVolume": {
+      "title": "Tygodniowa objętość",
+      "swim": "Pływanie",
+      "bike": "Rower",
+      "run": "Bieg"
     }
   },
   "activities": {
