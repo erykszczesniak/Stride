@@ -188,6 +188,9 @@
       "swim": "Swim",
       "bike": "Bike",
       "run": "Run"
+    },
+    "trainingLoad": {
+      "title": "Training Load"
     }
   },
   "activities": {

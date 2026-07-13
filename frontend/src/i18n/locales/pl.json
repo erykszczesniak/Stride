@@ -196,6 +196,9 @@
       "swim": "Pływanie",
       "bike": "Rower",
       "run": "Bieg"
+    },
+    "trainingLoad": {
+      "title": "Obciążenie treningowe"
     }
   },
   "activities": {

@@ -7,6 +7,7 @@ import NotificationDropdown from "../components/Navbar/NotificationDropdown";
 import StatsCard from "../components/StatsCard/StatsCard";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
 import WeeklyVolume from "../components/WeeklyVolume/WeeklyVolume";
+import TrainingLoadChart from "../components/TrainingLoadChart/TrainingLoadChart";
 import GoalProgress from "../components/GoalProgress/GoalProgress";
 import EventCard from "../components/EventCard/EventCard";
 import { EventsList, EventsHeader, EventsTitle, ViewAllLink as EventsViewAllLink } from "../components/EventCard/EventCardStyles";
@@ -62,6 +63,7 @@ const Dashboard = () => {
   const [monthlyStats, setMonthlyStats] = useState(null);
   const [trainingForm, setTrainingForm] = useState(null);
   const [weeklyVolumes, setWeeklyVolumes] = useState(null);
+  const [trainingLoad, setTrainingLoad] = useState(null);
   const [activities, setActivities] = useState([]);
   const [goals, setGoals] = useState([]);
   const [events, setEvents] = useState([]);
@@ -103,6 +105,7 @@ const Dashboard = () => {
         setMonthlyStats(monthlyRes.data);
         setTrainingForm(pipelineRes?.form ?? null);
         setWeeklyVolumes(loadRes?.weeklyVolumes ?? null);
+        setTrainingLoad(loadRes ? { ctl: loadRes.ctl, atl: loadRes.atl } : null);
         setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
         setGoals(Array.isArray(goalsRes.data) ? goalsRes.data : []);
         setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
@@ -299,6 +302,8 @@ const Dashboard = () => {
 
         <SideColumn>
           <FormGauge form={trainingForm} />
+
+          <TrainingLoadChart ctl={trainingLoad?.ctl} atl={trainingLoad?.atl} />
 
           <WeeklyVolume weeklyVolumes={weeklyVolumes} />
 
