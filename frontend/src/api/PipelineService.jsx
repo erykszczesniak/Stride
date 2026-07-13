@@ -21,6 +21,13 @@ const PipelineService = {
     const response = await pipelineClient.get("/dashboard");
     return response.data;
   },
+
+  // { activity, paceSeries, heartRateSeries, splits, routePolyline, elevationSeries }
+  // Pace units per contract: sec/km (run), km/h (bike), sec/100m (swim).
+  getActivityDetail: async (activityId) => {
+    const response = await pipelineClient.get(`/activities/act-${activityId}`);
+    return response.data;
+  },
 };
 
 export default PipelineService;

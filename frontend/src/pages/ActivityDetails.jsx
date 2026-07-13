@@ -20,6 +20,8 @@ import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
 import ActivityMap from "../components/ActivityMap/ActivityMap";
 import ElevationProfile from "../components/ElevationProfile/ElevationProfile";
+import PaceHrChart from "../components/PaceHrChart/PaceHrChart";
+import PipelineService from "../api/PipelineService";
 import ShareModal from "../components/ShareModal/ShareModal";
 import PhotoLightbox from "../components/PhotoLightbox/PhotoLightbox";
 import ActivityAiChat from "../components/ActivityAiChat/ActivityAiChat";
@@ -258,6 +260,7 @@ const ActivityDetails = () => {
   const [editContent, setEditContent] = useState("");
   const [likedByMe, setLikedByMe] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [pipelineDetail, setPipelineDetail] = useState(null);
   const [likesCount, setLikesCount] = useState(0);
   const [commentReactions, setCommentReactions] = useState({});
   const [userReactions, setUserReactions] = useState({});
@@ -275,6 +278,11 @@ const ActivityDetails = () => {
         setActivity(res.data);
         setLikedByMe(res.data.likedByCurrentUser || false);
         setLikesCount(res.data.likesCount || 0);
+        // Optional: the pipeline serves precomputed pace/HR series for
+        // triathlon disciplines — absence just hides the chart.
+        PipelineService.getActivityDetail(id)
+          .then(setPipelineDetail)
+          .catch(() => setPipelineDetail(null));
       } catch (error) {
       } finally {
         setLoading(false);
@@ -594,6 +602,8 @@ const ActivityDetails = () => {
         elevations={activity.elevationProfile}
         totalDistanceKm={activity.distance}
       />
+
+      <PaceHrChart detail={pipelineDetail} totalDistanceKm={activity.distance} />
 
       {/* Splits only make sense for distance-based sports (runs, rides,
           swims, ...). Gym sessions, yoga, weight training etc. don't cover

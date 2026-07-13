@@ -297,6 +297,11 @@
         "next": "Następne zdjęcie",
         "delete": "Usuń zdjęcie",
         "confirmDelete": "Usunąć to zdjęcie?"
+      },
+      "paceHr": {
+        "title": "Tempo i tętno",
+        "pace": "Tempo",
+        "hr": "Tętno"
       }
     },
     "record": {

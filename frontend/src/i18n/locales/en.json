@@ -289,6 +289,11 @@
         "next": "Next photo",
         "delete": "Delete photo",
         "confirmDelete": "Delete this photo?"
+      },
+      "paceHr": {
+        "title": "Pace & Heart Rate",
+        "pace": "Pace",
+        "hr": "Heart rate"
       }
     },
     "record": {
