@@ -57,7 +57,7 @@ describe("TrainingLoadChart", () => {
     // A negative left margin shifted the plot over the Y-axis labels and
     // clipped them (e.g. "120" rendered as "20").
     expect(LOAD_CHART_MARGIN.left).toBeGreaterThanOrEqual(0);
-    // Daily series → a tick every 7th sample is one label per week.
-    expect(LOAD_X_AXIS.interval).toBe(6);
+    // The pipeline samples the quarter range weekly → every point is a week.
+    expect(LOAD_X_AXIS.interval).toBe(0);
   });
 });
