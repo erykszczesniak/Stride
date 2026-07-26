@@ -93,7 +93,7 @@ const WeeklyVolume = ({ weeklyVolumes }) => {
               tickLine={false}
               tick={{ fontSize: 10, fill: "#94a3b8" }}
               unit=" km"
-              width={56}
+              width={48}
             />
             <Tooltip
               formatter={tooltipFormatter}

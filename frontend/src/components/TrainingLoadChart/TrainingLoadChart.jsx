@@ -23,10 +23,10 @@ export const LOAD_COLORS = {
 };
 
 // Same frame rules as WeeklyVolume: no negative left margin (it clips the
-// Y-axis labels) and a tick every week — the pipeline samples the quarter
-// range weekly, so every point gets a label, angled to fit.
+// Y-axis labels) and a tick every week — the series is daily, so every 7th
+// point — angled to fit a quarter of labels.
 export const LOAD_CHART_MARGIN = { top: 5, right: 4, left: 0, bottom: 0 };
-export const LOAD_X_AXIS = { interval: 0, angle: -40, textAnchor: "end", height: 34 };
+export const LOAD_X_AXIS = { interval: 6, angle: -40, textAnchor: "end", height: 34 };
 
 /** Pipeline ctl/atl point series → recharts rows keyed by a short date label. */
 export const toTrainingLoadData = (ctl, atl) => {
