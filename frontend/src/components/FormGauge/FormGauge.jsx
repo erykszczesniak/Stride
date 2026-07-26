@@ -47,7 +47,7 @@ const FormGauge = ({ form }) => {
       </GaugeHeader>
       <GaugeSvgWrap>
         <svg
-          viewBox="0 0 200 104"
+          viewBox="0 0 200 118"
           role="img"
           aria-label={t("dashboard.form.gaugeAlt", { tsb })}
         >
@@ -69,13 +69,14 @@ const FormGauge = ({ form }) => {
             strokeLinecap="round"
           />
           <circle cx={cx} cy={cy} r="5" fill="currentColor" />
-          <text x="24" y="102" fontSize="10" fill="currentColor" opacity="0.6">
+          {/* Labels centered below the arc ends with breathing room, like the iOS dial */}
+          <text x="30" y="112" textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.6">
             -30
           </text>
-          <text x="97" y="12" fontSize="10" fill="currentColor" opacity="0.6">
+          <text x="100" y="12" textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.6">
             0
           </text>
-          <text x="160" y="102" fontSize="10" fill="currentColor" opacity="0.6">
+          <text x="170" y="112" textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.6">
             +30
           </text>
         </svg>

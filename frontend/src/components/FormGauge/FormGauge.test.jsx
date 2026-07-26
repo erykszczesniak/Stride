@@ -36,4 +36,20 @@ describe("FormGauge", () => {
     expect(screen.getByText("+7")).toBeInTheDocument();
     expect(screen.getByText("dashboard.form.fresh")).toBeInTheDocument();
   });
+
+  it("centers the scale labels below the arc ends", () => {
+    render(<FormGauge form={{ ctl: 7, atl: 4, tsb: 3 }} />);
+
+    const low = screen.getByText("-30");
+    const high = screen.getByText("+30");
+
+    // Centered on the arc endpoints (x=30 / x=170), clearly below the
+    // arc's bottom edge (y=95) so they don't touch the rounded caps
+    expect(low).toHaveAttribute("text-anchor", "middle");
+    expect(high).toHaveAttribute("text-anchor", "middle");
+    expect(low).toHaveAttribute("x", "30");
+    expect(high).toHaveAttribute("x", "170");
+    expect(Number(low.getAttribute("y"))).toBeGreaterThan(104);
+    expect(Number(high.getAttribute("y"))).toBeGreaterThan(104);
+  });
 });
