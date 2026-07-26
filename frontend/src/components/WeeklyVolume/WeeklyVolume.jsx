@@ -26,6 +26,12 @@ export const VOLUME_COLORS = {
   run: "#fc4c02",
 };
 
+// Chart frame shared with TrainingLoadChart: no negative left margin (it
+// clips the Y-axis labels) and every week labelled on the X axis, angled so
+// twelve ticks fit — mirrors the iOS Load-tab chart.
+export const VOLUME_CHART_MARGIN = { top: 5, right: 4, left: 0, bottom: 0 };
+export const VOLUME_X_AXIS = { interval: 0, angle: -40, textAnchor: "end", height: 34 };
+
 /** Pipeline weeklyVolumes → recharts rows with a short week label. */
 export const toWeeklyVolumeData = (weeklyVolumes) =>
   (weeklyVolumes || []).map((week) => ({
@@ -70,21 +76,24 @@ const WeeklyVolume = ({ weeklyVolumes }) => {
       </ChartHeader>
       <ChartWrapper>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 4, left: -18, bottom: 0 }}>
+          <BarChart data={data} margin={VOLUME_CHART_MARGIN}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis
               dataKey="week"
-              interval="preserveStartEnd"
+              interval={VOLUME_X_AXIS.interval}
+              angle={VOLUME_X_AXIS.angle}
+              textAnchor={VOLUME_X_AXIS.textAnchor}
+              height={VOLUME_X_AXIS.height}
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: "#94a3b8" }}
+              tick={{ fontSize: 9, fill: "#94a3b8" }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: "#94a3b8" }}
               unit=" km"
-              width={52}
+              width={48}
             />
             <Tooltip
               formatter={tooltipFormatter}

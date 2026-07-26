@@ -1,6 +1,10 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import TrainingLoadChart, { toTrainingLoadData } from "./TrainingLoadChart";
+import TrainingLoadChart, {
+  LOAD_CHART_MARGIN,
+  LOAD_X_AXIS,
+  toTrainingLoadData,
+} from "./TrainingLoadChart";
 
 beforeAll(() => {
   global.ResizeObserver = class {
@@ -47,5 +51,13 @@ describe("TrainingLoadChart", () => {
   it("renders nothing without enough points", () => {
     const { container } = render(<TrainingLoadChart ctl={[ctl[0]]} atl={null} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("keeps the Y-axis labels inside the chart and ticks weekly", () => {
+    // A negative left margin shifted the plot over the Y-axis labels and
+    // clipped them (e.g. "120" rendered as "20").
+    expect(LOAD_CHART_MARGIN.left).toBeGreaterThanOrEqual(0);
+    // Daily series → a tick every 7th sample is one label per week.
+    expect(LOAD_X_AXIS.interval).toBe(6);
   });
 });

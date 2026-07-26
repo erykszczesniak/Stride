@@ -90,7 +90,13 @@ const formatDuration = (seconds) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-const formatValue = (key, value, unitsCtx) => {
+// Fields needed to compute pace client-side (per sport + unit system)
+const PACE_SOURCE_FIELDS = ["distance", "duration", "activityType"];
+
+const formatValue = (key, value, unitsCtx, row) => {
+  if (key === "pace" && unitsCtx && row) {
+    return unitsCtx.formatPaceFromActivity(Number(row.distance), Number(row.duration), row.activityType);
+  }
   if (value === null || value === undefined) return "-";
   switch (key) {
     case "distance":
@@ -111,7 +117,12 @@ const formatValue = (key, value, unitsCtx) => {
   }
 };
 
-const getRawValue = (key, value) => {
+const getRawValue = (key, value, row) => {
+  if (key === "pace") {
+    const distance = Number(row?.distance);
+    const duration = Number(row?.duration);
+    return distance > 0 && duration > 0 ? duration / distance : Number.MAX_SAFE_INTEGER;
+  }
   if (value === null || value === undefined) return 0;
   switch (key) {
     case "distance":
@@ -255,8 +266,8 @@ const Reports = () => {
   const sortedRows = useMemo(() => {
     if (!sortConfig.field || !sortConfig.direction) return rows;
     const sorted = [...rows].sort((a, b) => {
-      const aVal = getRawValue(sortConfig.field, a[sortConfig.field]);
-      const bVal = getRawValue(sortConfig.field, b[sortConfig.field]);
+      const aVal = getRawValue(sortConfig.field, a[sortConfig.field], a);
+      const bVal = getRawValue(sortConfig.field, b[sortConfig.field], b);
       if (typeof aVal === "string" && typeof bVal === "string") {
         return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
@@ -314,11 +325,15 @@ const Reports = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      // Pace is formatted client-side per sport and unit system, so fetch its source fields too
+      const queryFields = selectedFields.includes("pace")
+        ? [...new Set([...selectedFields, ...PACE_SOURCE_FIELDS])]
+        : selectedFields;
       const query = `
         query GenerateReport($dateFrom: String!, $dateTo: String!, $fields: [String!]!, $activityType: String) {
           generateReport(dateFrom: $dateFrom, dateTo: $dateTo, fields: $fields, activityType: $activityType) {
             rows {
-              ${selectedFields.join("\n              ")}
+              ${queryFields.join("\n              ")}
             }
             summary {
               totalDistance totalDuration totalCalories totalElevation totalActivities
@@ -338,7 +353,7 @@ const Reports = () => {
           variables: {
             dateFrom,
             dateTo,
-            fields: selectedFields,
+            fields: queryFields,
             activityType: activityTypeFilter || null,
           },
         }),
@@ -371,6 +386,7 @@ const Reports = () => {
           dateTo,
           fields: selectedFields,
           activityType: activityTypeFilter || null,
+          units: unitsCtx.units,
         }),
       });
       const blob = await res.blob();
@@ -399,7 +415,12 @@ const Reports = () => {
 
     const headers = selectedFields.map((f) => AVAILABLE_FIELDS.find((af) => af.key === f)?.label || f);
     const body = sortedRows.map((row) =>
-      selectedFields.map((f) => formatValue(f, row[f], unitsCtx).replace(/ km\/h| km| mi| mph| m| ft| kcal/g, ""))
+      selectedFields.map((f) => {
+        const formatted = formatValue(f, row[f], unitsCtx, row);
+        // Pace units differ per sport, so keep them in the cell; "—" is not in jsPDF's standard fonts
+        if (f === "pace") return formatted.replace("—", "-");
+        return formatted.replace(/ km\/h| km| mi| mph| m| ft| kcal/g, "");
+      })
     );
 
     autoTable(doc, {
@@ -548,7 +569,7 @@ const Reports = () => {
                     {sortedRows.map((row, i) => (
                       <tr key={i}>
                         {selectedFields.map((f) => (
-                          <Td key={f}>{formatValue(f, row[f], unitsCtx)}</Td>
+                          <Td key={f}>{formatValue(f, row[f], unitsCtx, row)}</Td>
                         ))}
                       </tr>
                     ))}

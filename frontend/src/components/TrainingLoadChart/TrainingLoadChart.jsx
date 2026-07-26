@@ -22,6 +22,12 @@ export const LOAD_COLORS = {
   atl: "#94a3b8",
 };
 
+// Same frame rules as WeeklyVolume: no negative left margin (it clips the
+// Y-axis labels) and a tick every week — the series is daily, so every 7th
+// point — angled to fit a quarter of labels.
+export const LOAD_CHART_MARGIN = { top: 5, right: 4, left: 0, bottom: 0 };
+export const LOAD_X_AXIS = { interval: 6, angle: -40, textAnchor: "end", height: 34 };
+
 /** Pipeline ctl/atl point series → recharts rows keyed by a short date label. */
 export const toTrainingLoadData = (ctl, atl) => {
   const fitness = ctl || [];
@@ -58,20 +64,23 @@ const TrainingLoadChart = ({ ctl, atl }) => {
       </ChartHeader>
       <ChartWrapper>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 4, left: -24, bottom: 0 }}>
+          <LineChart data={data} margin={LOAD_CHART_MARGIN}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis
               dataKey="date"
-              interval="preserveStartEnd"
+              interval={LOAD_X_AXIS.interval}
+              angle={LOAD_X_AXIS.angle}
+              textAnchor={LOAD_X_AXIS.textAnchor}
+              height={LOAD_X_AXIS.height}
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: "#94a3b8" }}
+              tick={{ fontSize: 9, fill: "#94a3b8" }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: "#94a3b8" }}
-              width={40}
+              width={36}
             />
             <Tooltip
               contentStyle={{

@@ -1,6 +1,10 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import WeeklyVolume, { toWeeklyVolumeData } from "./WeeklyVolume";
+import WeeklyVolume, {
+  VOLUME_CHART_MARGIN,
+  VOLUME_X_AXIS,
+  toWeeklyVolumeData,
+} from "./WeeklyVolume";
 
 beforeAll(() => {
   global.ResizeObserver = class {
@@ -52,5 +56,13 @@ describe("WeeklyVolume", () => {
   it("renders nothing without pipeline data", () => {
     const { container } = render(<WeeklyVolume weeklyVolumes={null} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("keeps the Y-axis labels inside the chart and labels every week", () => {
+    // A negative left margin shifted the plot over the Y-axis labels and
+    // clipped them (e.g. "120 km" rendered as "20 km").
+    expect(VOLUME_CHART_MARGIN.left).toBeGreaterThanOrEqual(0);
+    // interval 0 = a tick for every bar, i.e. every week gets its label.
+    expect(VOLUME_X_AXIS.interval).toBe(0);
   });
 });

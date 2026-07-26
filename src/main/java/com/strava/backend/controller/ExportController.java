@@ -7,6 +7,7 @@ import com.strava.backend.enums.ActivityType;
 import com.strava.backend.exception.ApiRequestException;
 import com.strava.backend.mapper.CommonMapper;
 import com.strava.backend.repository.ActivityRepository;
+import com.strava.backend.util.PaceFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -211,6 +212,7 @@ public class ExportController extends BaseController {
         String dateFrom = (String) request.get("dateFrom");
         String dateTo = (String) request.get("dateTo");
         String activityTypeStr = (String) request.get("activityType");
+        boolean imperial = "imperial".equals(request.get("units"));
         @SuppressWarnings("unchecked")
         List<String> fields = (List<String>) request.get("fields");
 
@@ -242,7 +244,7 @@ public class ExportController extends BaseController {
                     case "calories" -> String.valueOf(a.getCalories() != null ? a.getCalories() : 0);
                     case "averageSpeed" -> String.valueOf(a.getAverageSpeed() != null ? a.getAverageSpeed() : 0);
                     case "averageHeartRate" -> String.valueOf(a.getAverageHeartRate() != null ? a.getAverageHeartRate() : 0);
-                    case "pace" -> calculatePace(a);
+                    case "pace" -> PaceFormatter.format(a.getActivityType(), a.getDistance(), a.getDuration(), imperial);
                     case "likesCount" -> String.valueOf(a.getLikesCount());
                     case "commentsCount" -> String.valueOf(a.getComments() != null ? a.getComments().size() : 0);
                     default -> "";
@@ -261,13 +263,5 @@ public class ExportController extends BaseController {
     private String quote(String s) {
         if (s == null) return "";
         return "\"" + s.replace("\"", "\"\"") + "\"";
-    }
-
-    private String calculatePace(Activity a) {
-        if (a.getDistance() == null || a.getDistance() == 0 || a.getDuration() == null || a.getDuration() == 0) return "-";
-        double pace = (a.getDuration() / 60.0) / a.getDistance();
-        int mins = (int) pace;
-        int secs = (int) ((pace - mins) * 60);
-        return String.format("%d:%02d", mins, secs);
     }
 }

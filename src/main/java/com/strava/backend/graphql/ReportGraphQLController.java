@@ -4,6 +4,7 @@ import com.strava.backend.domain.Activity;
 import com.strava.backend.enums.ActivityType;
 import com.strava.backend.repository.ActivityRepository;
 import com.strava.backend.controller.BaseController;
+import com.strava.backend.util.PaceFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -62,23 +63,13 @@ public class ReportGraphQLController extends BaseController {
                 case "calories" -> row.put("calories", a.getCalories());
                 case "averageSpeed" -> row.put("averageSpeed", a.getAverageSpeed());
                 case "averageHeartRate" -> row.put("averageHeartRate", a.getAverageHeartRate());
-                case "pace" -> row.put("pace", calculatePace(a));
+                case "pace" -> row.put("pace", PaceFormatter.format(a.getActivityType(), a.getDistance(), a.getDuration(), false));
                 case "likesCount" -> row.put("likesCount", a.getLikesCount());
                 case "commentsCount" -> row.put("commentsCount", a.getComments() != null ? a.getComments().size() : 0);
                 default -> {}
             }
         }
         return row;
-    }
-
-    private String calculatePace(Activity a) {
-        if (a.getDistance() == null || a.getDistance() == 0 || a.getDuration() == null || a.getDuration() == 0) {
-            return "-";
-        }
-        double paceMinPerKm = (a.getDuration() / 60.0) / a.getDistance();
-        int mins = (int) paceMinPerKm;
-        int secs = (int) ((paceMinPerKm - mins) * 60);
-        return String.format("%d:%02d min/km", mins, secs);
     }
 
     private Map<String, Object> buildSummary(List<Activity> activities) {

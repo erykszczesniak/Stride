@@ -31,8 +31,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ExportController.class)
@@ -192,6 +195,71 @@ class ExportControllerTest {
             mockMvc.perform(get("/api/v1/export/activities/txt"))
                     .andExpect(status().isOk())
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("Total activities: 1")));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/export/report/csv")
+    class ExportReportCsvTests {
+
+        private List<Activity> mixedSportActivities() {
+            Activity run = TestDataFactory.createActivity(1L, testUser);
+            run.setActivityType(ActivityType.RUN);
+            run.setDistance(10.0);
+            run.setDuration(3000);
+
+            Activity ride = TestDataFactory.createActivity(2L, testUser);
+            ride.setActivityType(ActivityType.RIDE);
+            ride.setDistance(35.0);
+            ride.setDuration(5400);
+
+            Activity swim = TestDataFactory.createActivity(3L, testUser);
+            swim.setActivityType(ActivityType.SWIM);
+            swim.setDistance(1.0);
+            swim.setDuration(1500);
+
+            return List.of(run, ride, swim);
+        }
+
+        private String reportRequest(String units) {
+            return """
+                    {
+                      "dateFrom": "2024-01-01",
+                      "dateTo": "2024-01-31",
+                      "fields": ["activityTitle", "activityType", "pace"],
+                      "activityType": null%s
+                    }
+                    """.formatted(units != null ? ", \"units\": \"" + units + "\"" : "");
+        }
+
+        @Test
+        @DisplayName("Should format pace per sport in metric units")
+        void shouldFormatPacePerSportMetric() throws Exception {
+            given(activityRepository.findByUserIdAndDateRange(eq(1L), any(), any()))
+                    .willReturn(mixedSportActivities());
+
+            mockMvc.perform(post("/api/v1/export/report/csv")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(reportRequest(null)))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("5:00 min/km")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("23.3 km/h")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("2:30 /100m")));
+        }
+
+        @Test
+        @DisplayName("Should format pace per sport in imperial units")
+        void shouldFormatPacePerSportImperial() throws Exception {
+            given(activityRepository.findByUserIdAndDateRange(eq(1L), any(), any()))
+                    .willReturn(mixedSportActivities());
+
+            mockMvc.perform(post("/api/v1/export/report/csv")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(reportRequest("imperial")))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("8:03 min/mi")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("14.5 mph")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("2:17 /100yd")));
         }
     }
 
