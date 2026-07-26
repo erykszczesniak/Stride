@@ -16,6 +16,7 @@ import {
   ChartTitle,
   ChartWrapper,
 } from "../WeeklyChart/WeeklyChartStyles";
+import { formatWeekRange } from "../WeeklyVolume/WeeklyVolume";
 
 export const LOAD_COLORS = {
   ctl: "#fc4c02",
@@ -23,23 +24,22 @@ export const LOAD_COLORS = {
 };
 
 // Same frame rules as WeeklyVolume: no negative left margin (it clips the
-// Y-axis labels) and a tick every week — the pipeline samples the quarter
-// range weekly, so every point gets a label, angled to fit.
+// Y-axis labels), no X-axis tick labels — the tooltip names the week the
+// point closes (the pipeline samples the quarter range weekly).
 export const LOAD_CHART_MARGIN = { top: 5, right: 4, left: 0, bottom: 0 };
-export const LOAD_X_AXIS = { interval: 0, angle: -40, textAnchor: "end", height: 34 };
 
-/** Pipeline ctl/atl point series → recharts rows keyed by a short date label. */
+/** Pipeline ctl/atl point series → recharts rows keyed by the trailing week. */
 export const toTrainingLoadData = (ctl, atl) => {
   const fitness = ctl || [];
   const fatigue = atl || [];
   const count = Math.max(fitness.length, fatigue.length);
   return Array.from({ length: count }, (_, i) => {
     const point = fitness[i] || fatigue[i];
+    const end = new Date(point.date);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 7);
     return {
-      date: new Date(point.date).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      }),
+      date: formatWeekRange(start),
       ctl: fitness[i] ? Math.round(fitness[i].value) : undefined,
       atl: fatigue[i] ? Math.round(fatigue[i].value) : undefined,
     };
@@ -66,16 +66,7 @@ const TrainingLoadChart = ({ ctl, atl }) => {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={LOAD_CHART_MARGIN}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-            <XAxis
-              dataKey="date"
-              interval={LOAD_X_AXIS.interval}
-              angle={LOAD_X_AXIS.angle}
-              textAnchor={LOAD_X_AXIS.textAnchor}
-              height={LOAD_X_AXIS.height}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 9, fill: "#94a3b8" }}
-            />
+            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={false} height={8} />
             <YAxis
               axisLine={false}
               tickLine={false}

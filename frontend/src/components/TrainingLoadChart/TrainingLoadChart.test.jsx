@@ -2,7 +2,6 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import TrainingLoadChart, {
   LOAD_CHART_MARGIN,
-  LOAD_X_AXIS,
   toTrainingLoadData,
 } from "./TrainingLoadChart";
 
@@ -28,12 +27,13 @@ const atl = [
 ];
 
 describe("toTrainingLoadData", () => {
-  it("merges the two point series into rounded rows", () => {
+  it("merges the two point series into rounded rows keyed by trailing week", () => {
     const data = toTrainingLoadData(ctl, atl);
 
     expect(data).toHaveLength(2);
     expect(data[0]).toMatchObject({ ctl: 8, atl: 31 });
-    expect(typeof data[0].date).toBe("string");
+    // The 2026-06-29 sample closes the week that started seven days earlier.
+    expect(data[0].date).toBe("22-29.06");
   });
 
   it("handles a missing series and null input", () => {
@@ -53,11 +53,9 @@ describe("TrainingLoadChart", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("keeps the Y-axis labels inside the chart and ticks weekly", () => {
+  it("keeps the Y-axis labels inside the chart", () => {
     // A negative left margin shifted the plot over the Y-axis labels and
     // clipped them (e.g. "120" rendered as "20").
     expect(LOAD_CHART_MARGIN.left).toBeGreaterThanOrEqual(0);
-    // The pipeline samples the quarter range weekly → every point is a week.
-    expect(LOAD_X_AXIS.interval).toBe(0);
   });
 });

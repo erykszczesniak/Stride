@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import WeeklyVolume, {
   VOLUME_CHART_MARGIN,
-  VOLUME_X_AXIS,
+  formatWeekRange,
   toWeeklyVolumeData,
 } from "./WeeklyVolume";
 
@@ -23,14 +23,23 @@ const volumes = [
   { weekStart: "2026-07-06T00:00:00Z", swimKm: 0, bikeKm: 67.2, runKm: 19.5 },
 ];
 
+describe("formatWeekRange", () => {
+  it("renders a same-month week as day-day.month", () => {
+    expect(formatWeekRange("2026-05-04T00:00:00")).toBe("4-11.05");
+  });
+
+  it("spells out both months when the week crosses one", () => {
+    expect(formatWeekRange("2026-06-29T00:00:00")).toBe("29.06-6.07");
+  });
+});
+
 describe("toWeeklyVolumeData", () => {
-  it("maps pipeline weeks to labelled stacked rows", () => {
+  it("maps pipeline weeks to week-range rows", () => {
     const data = toWeeklyVolumeData(volumes);
 
     expect(data).toHaveLength(2);
     expect(data[0]).toMatchObject({ swim: 1.5, bike: 40.2, run: 12 });
-    expect(typeof data[0].week).toBe("string");
-    expect(data[0].week.length).toBeGreaterThan(0);
+    expect(data[0].week).toBe(formatWeekRange(volumes[0].weekStart));
   });
 
   it("defaults missing sports to zero and handles null input", () => {
@@ -58,11 +67,9 @@ describe("WeeklyVolume", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("keeps the Y-axis labels inside the chart and labels every week", () => {
+  it("keeps the Y-axis labels inside the chart", () => {
     // A negative left margin shifted the plot over the Y-axis labels and
     // clipped them (e.g. "120 km" rendered as "20 km").
     expect(VOLUME_CHART_MARGIN.left).toBeGreaterThanOrEqual(0);
-    // interval 0 = a tick for every bar, i.e. every week gets its label.
-    expect(VOLUME_X_AXIS.interval).toBe(0);
   });
 });

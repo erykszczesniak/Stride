@@ -27,18 +27,25 @@ export const VOLUME_COLORS = {
 };
 
 // Chart frame shared with TrainingLoadChart: no negative left margin (it
-// clips the Y-axis labels) and every week labelled on the X axis, angled so
-// twelve ticks fit — mirrors the iOS Load-tab chart.
+// clips the Y-axis labels). The X axis keeps no tick labels — the tooltip
+// names the week instead — mirrors the iOS Load-tab chart.
 export const VOLUME_CHART_MARGIN = { top: 5, right: 4, left: 0, bottom: 0 };
-export const VOLUME_X_AXIS = { interval: 0, angle: -40, textAnchor: "end", height: 34 };
 
-/** Pipeline weeklyVolumes → recharts rows with a short week label. */
+/** "4-11.05" (or "29.06-6.07" across months) for the week starting at `date`. */
+export const formatWeekRange = (date, offsetDays = 7) => {
+  const start = new Date(date);
+  const end = new Date(start);
+  end.setDate(end.getDate() + offsetDays);
+  const month = (d) => String(d.getMonth() + 1).padStart(2, "0");
+  return start.getMonth() === end.getMonth()
+    ? `${start.getDate()}-${end.getDate()}.${month(start)}`
+    : `${start.getDate()}.${month(start)}-${end.getDate()}.${month(end)}`;
+};
+
+/** Pipeline weeklyVolumes → recharts rows keyed by the week's date range. */
 export const toWeeklyVolumeData = (weeklyVolumes) =>
   (weeklyVolumes || []).map((week) => ({
-    week: new Date(week.weekStart).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    }),
+    week: formatWeekRange(week.weekStart),
     swim: week.swimKm ?? 0,
     bike: week.bikeKm ?? 0,
     run: week.runKm ?? 0,
@@ -78,16 +85,7 @@ const WeeklyVolume = ({ weeklyVolumes }) => {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={VOLUME_CHART_MARGIN}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-            <XAxis
-              dataKey="week"
-              interval={VOLUME_X_AXIS.interval}
-              angle={VOLUME_X_AXIS.angle}
-              textAnchor={VOLUME_X_AXIS.textAnchor}
-              height={VOLUME_X_AXIS.height}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 9, fill: "#94a3b8" }}
-            />
+            <XAxis dataKey="week" axisLine={false} tickLine={false} tick={false} height={8} />
             <YAxis
               axisLine={false}
               tickLine={false}
