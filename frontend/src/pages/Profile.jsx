@@ -9,6 +9,7 @@ import { useUnits } from "../context/UnitsContext";
 import Layout from "../components/Layout/Layout";
 import ActivityCard from "../components/ActivityCard/ActivityCard";
 import PersonalRecords from "../components/PersonalRecords/PersonalRecords";
+import FollowListModal from "../components/FollowListModal/FollowListModal";
 import {
   Container,
   ProfileHeader,
@@ -111,6 +112,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
+  const [followListKind, setFollowListKind] = useState(null);
   const [followingCount, setFollowingCount] = useState(0);
   const [isFollowed, setIsFollowed] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -456,11 +458,21 @@ const Profile = () => {
             <StatValue>{totals.count}</StatValue>
             <StatLabel>{t("profile.stats.activities")}</StatLabel>
           </StatItem>
-          <StatItem>
+          <StatItem
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer" }}
+            onClick={() => setFollowListKind("followers")}
+          >
             <StatValue>{followersCount.toLocaleString()}</StatValue>
             <StatLabel>{t("profile.stats.followers")}</StatLabel>
           </StatItem>
-          <StatItem>
+          <StatItem
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer" }}
+            onClick={() => setFollowListKind("following")}
+          >
             <StatValue>{followingCount.toLocaleString()}</StatValue>
             <StatLabel>{t("profile.stats.following")}</StatLabel>
           </StatItem>
@@ -794,6 +806,13 @@ const Profile = () => {
           </>
         )}
       </Container>
+
+      <FollowListModal
+        isOpen={followListKind !== null}
+        onClose={() => setFollowListKind(null)}
+        userId={user?.id}
+        kind={followListKind || "followers"}
+      />
     </Layout>
   );
 };

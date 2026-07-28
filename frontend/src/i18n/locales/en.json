@@ -419,7 +419,15 @@
       "consistentDesc": "10+ activities completed"
     },
     "privateProfile": "Private profile",
-    "privateProfileDescription": "This profile is private. Follow to see their activities and stats."
+    "privateProfileDescription": "This profile is private. Follow to see their activities and stats.",
+    "followList": {
+      "followersTitle": "Followers",
+      "followingTitle": "Following",
+      "close": "Close",
+      "loading": "Loading…",
+      "error": "Could not load the list.",
+      "empty": "Nobody here yet."
+    }
   },
   "goals": {
     "myGoals": "My Goals",

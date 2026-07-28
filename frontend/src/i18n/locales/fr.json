@@ -374,7 +374,15 @@
       "consistentDesc": "10+ activités terminées"
     },
     "privateProfile": "Profil privé",
-    "privateProfileDescription": "Ce profil est privé. Suivez pour voir les activités et les statistiques."
+    "privateProfileDescription": "Ce profil est privé. Suivez pour voir les activités et les statistiques.",
+    "followList": {
+      "followersTitle": "Abonnés",
+      "followingTitle": "Abonnements",
+      "close": "Fermer",
+      "loading": "Chargement…",
+      "error": "Impossible de charger la liste.",
+      "empty": "Personne ici pour l’instant."
+    }
   },
   "goals": {
     "myGoals": "Mes objectifs",

@@ -427,7 +427,15 @@
       "consistentDesc": "Co najmniej 10 aktywności"
     },
     "privateProfile": "Profil prywatny",
-    "privateProfileDescription": "Ten profil jest prywatny. Obserwuj, aby zobaczyć aktywności i statystyki."
+    "privateProfileDescription": "Ten profil jest prywatny. Obserwuj, aby zobaczyć aktywności i statystyki.",
+    "followList": {
+      "followersTitle": "Obserwujący",
+      "followingTitle": "Obserwowani",
+      "close": "Zamknij",
+      "loading": "Wczytywanie…",
+      "error": "Nie udało się wczytać listy.",
+      "empty": "Jeszcze nikogo tu nie ma."
+    }
   },
   "goals": {
     "myGoals": "Moje cele",
