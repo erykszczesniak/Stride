@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { FiX } from "react-icons/fi";
@@ -73,7 +74,10 @@ const FollowListModal = ({ isOpen, onClose, userId, kind }) => {
     navigate(`/profile/${id}`);
   };
 
-  return (
+  // Portaled to <body>: any transformed ancestor (the tab panes animate with
+  // translateY) becomes the containing block for position: fixed and drags
+  // the overlay off-centre.
+  return createPortal(
     <Overlay onClick={handleOverlayClick} data-testid="follow-list-modal">
       <Modal>
         <Header>
@@ -119,7 +123,8 @@ const FollowListModal = ({ isOpen, onClose, userId, kind }) => {
           </List>
         )}
       </Modal>
-    </Overlay>
+    </Overlay>,
+    document.body
   );
 };
 

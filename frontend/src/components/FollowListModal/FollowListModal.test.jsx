@@ -39,6 +39,21 @@ describe("FollowListModal", () => {
     expect(UserService.getFollowers).not.toHaveBeenCalled();
   });
 
+  it("portals the overlay to document.body so transformed ancestors can't shift it", async () => {
+    UserService.getFollowers.mockResolvedValue({ data: users });
+    render(
+      // A transformed wrapper would become the containing block for
+      // position: fixed if the modal rendered in place.
+      <div style={{ transform: "translateY(10px)" }}>
+        <FollowListModal isOpen onClose={jest.fn()} userId={1} kind="followers" />
+      </div>,
+    );
+
+    await screen.findByText("Jane Smith");
+    const overlay = screen.getByTestId("follow-list-modal");
+    expect(overlay.parentElement).toBe(document.body);
+  });
+
   it("staggers the row entrance with a capped animation delay", async () => {
     UserService.getFollowers.mockResolvedValue({
       data: Array.from({ length: 12 }, (_, i) => ({
