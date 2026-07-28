@@ -39,6 +39,24 @@ describe("FollowListModal", () => {
     expect(UserService.getFollowers).not.toHaveBeenCalled();
   });
 
+  it("staggers the row entrance with a capped animation delay", async () => {
+    UserService.getFollowers.mockResolvedValue({
+      data: Array.from({ length: 12 }, (_, i) => ({
+        id: i + 1, firstName: "User", lastName: `${i}`, avatar: null, city: null,
+      })),
+    });
+    render(
+      <FollowListModal isOpen onClose={jest.fn()} userId={1} kind="followers" />,
+    );
+
+    await screen.findByText("User 0");
+    const rows = screen.getAllByRole("button").filter((b) => b.textContent.startsWith("U"));
+    expect(rows[0]).toHaveStyle("animation-delay: 0ms");
+    expect(rows[1]).toHaveStyle("animation-delay: 30ms");
+    // The cascade caps at eight steps so long lists don't feel sluggish.
+    expect(rows[11]).toHaveStyle("animation-delay: 240ms");
+  });
+
   it("lists followers with initials and city", async () => {
     UserService.getFollowers.mockResolvedValue({ data: users });
     render(

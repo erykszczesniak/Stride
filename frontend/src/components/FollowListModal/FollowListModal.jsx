@@ -94,8 +94,13 @@ const FollowListModal = ({ isOpen, onClose, userId, kind }) => {
           <StateMessage>{t("profile.followList.empty")}</StateMessage>
         ) : (
           <List>
-            {users.map((user) => (
-              <Row key={user.id} onClick={() => openProfile(user.id)}>
+            {users.map((user, index) => (
+              <Row
+                key={user.id}
+                onClick={() => openProfile(user.id)}
+                // Short cascade, capped so long lists don't feel sluggish.
+                style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+              >
                 {user.avatar ? (
                   <Avatar src={user.avatar} alt="" />
                 ) : (

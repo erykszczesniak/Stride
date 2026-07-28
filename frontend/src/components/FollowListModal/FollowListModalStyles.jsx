@@ -1,4 +1,21 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+// The SearchModal entrance, so every overlay in the app opens the same way.
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const riseIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+`;
 
 export const Overlay = styled.div`
   position: fixed;
@@ -11,18 +28,30 @@ export const Overlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: ${fadeIn} 0.15s ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 export const Modal = styled.div`
   background: ${({ theme }) => theme.bgCard};
   border-radius: 12px;
+  border: 1px solid ${({ theme }) => theme.border};
   padding: 20px;
   width: 100%;
   max-width: 420px;
   max-height: 70vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 16px 48px ${({ theme }) => theme.shadowMedium},
+    0 0 0 1px ${({ theme }) => theme.border};
+  animation: ${riseIn} 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 export const Header = styled.div`
@@ -73,9 +102,15 @@ export const Row = styled.button`
   border-radius: 8px;
   cursor: pointer;
   text-align: left;
+  /* Rows cascade in after the list loads; the delay comes inline per row. */
+  animation: ${fadeIn} 0.2s ease-out backwards;
 
   &:hover {
     background-color: ${({ theme }) => theme.bgHover};
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 `;
 
