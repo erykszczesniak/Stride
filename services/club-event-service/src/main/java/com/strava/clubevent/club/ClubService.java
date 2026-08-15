@@ -1,6 +1,7 @@
 package com.strava.clubevent.club;
 
-import com.strava.clubevent.domain.*;
+import com.strava.clubevent.common.ActivityType;
+import com.strava.clubevent.exception.BadRequestException;
 import com.strava.clubevent.exception.ForbiddenException;
 import com.strava.clubevent.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -9,97 +10,142 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Port of the monolith's ClubServiceImpl — same rules (owner/admin
+ * permissions, private-club join guard, owner cannot leave) and the same
+ * error messages, over id-based membership sets.
+ */
 @Service
 @RequiredArgsConstructor
 public class ClubService {
 
-    private final ClubRepository clubs;
-    private final ClubMemberRepository members;
+    private final ClubRepository clubRepository;
 
-    @Transactional
-    public ClubDto create(Long userId, CreateClubRequest req) {
-        Club c = Club.builder()
-                .name(req.name())
-                .description(req.description())
-                .location(req.location())
-                .ownerUserId(userId)
-                .isPrivate(Boolean.TRUE.equals(req.isPrivate()))
-                .build();
-        clubs.save(c);
-        members.save(ClubMember.builder()
-                .clubId(c.getId())
-                .userId(userId)
-                .role(ClubMemberRole.OWNER)
-                .build());
-        return ClubDto.from(c, 1);
+    @Transactional(readOnly = true)
+    public Club getClubById(Long clubId) {
+        return clubRepository.findById(clubId)
+                .orElseThrow(() -> new NotFoundException("Club not found"));
     }
 
     @Transactional(readOnly = true)
-    public ClubDto get(Long id) {
-        Club c = clubs.findById(id).orElseThrow(() -> new NotFoundException("Club " + id + " not found"));
-        return ClubDto.from(c, members.countByClubId(id));
+    public Page<Club> getAllPublicClubs(Pageable pageable) {
+        return clubRepository.findPublicClubsOrderByMembersCount(pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ClubDto> search(String q, Pageable pageable) {
-        return clubs.searchPublic((q == null || q.isBlank()) ? null : q.trim(), pageable)
-                .map(c -> ClubDto.from(c, members.countByClubId(c.getId())));
+    public List<Club> getClubsByUserId(Long userId) {
+        return clubRepository.findClubsByUserId(userId);
     }
 
     @Transactional
-    public ClubDto update(Long clubId, Long userId, UpdateClubRequest req) {
-        Club c = clubs.findById(clubId).orElseThrow(() -> new NotFoundException("Club " + clubId + " not found"));
-        if (!c.getOwnerUserId().equals(userId)) {
-            throw new ForbiddenException("Only the club owner can modify the club");
-        }
-        if (req.name() != null) c.setName(req.name());
-        if (req.description() != null) c.setDescription(req.description());
-        if (req.location() != null) c.setLocation(req.location());
-        if (req.isPrivate() != null) c.setPrivate(req.isPrivate());
-        return ClubDto.from(c, members.countByClubId(clubId));
+    public Club createClub(Club club, Long ownerId) {
+        club.setOwnerId(ownerId);
+        club.getMemberIds().add(ownerId);
+        club.getAdminIds().add(ownerId);
+        return clubRepository.save(club);
     }
 
     @Transactional
-    public void delete(Long clubId, Long userId) {
-        Club c = clubs.findById(clubId).orElseThrow(() -> new NotFoundException("Club " + clubId + " not found"));
-        if (!c.getOwnerUserId().equals(userId)) {
-            throw new ForbiddenException("Only the club owner can delete the club");
+    public Club updateClub(Long clubId, Club updatedClub, Long userId) {
+        Club club = getClubById(clubId);
+
+        if (!club.getOwnerId().equals(userId) && !clubRepository.isUserAdmin(clubId, userId)) {
+            throw new ForbiddenException("You don't have permission to update this club");
         }
-        members.deleteAll(members.findAllByClubId(clubId, Pageable.unpaged()).getContent());
-        clubs.delete(c);
+
+        club.setName(updatedClub.getName());
+        club.setDescription(updatedClub.getDescription());
+        club.setCity(updatedClub.getCity());
+        club.setCountry(updatedClub.getCountry());
+        club.setSportType(updatedClub.getSportType());
+        club.setWebsite(updatedClub.getWebsite());
+        club.setPrivate(updatedClub.isPrivate());
+
+        if (updatedClub.getCoverImage() != null) {
+            club.setCoverImage(updatedClub.getCoverImage());
+        }
+        if (updatedClub.getProfileImage() != null) {
+            club.setProfileImage(updatedClub.getProfileImage());
+        }
+
+        return clubRepository.save(club);
     }
 
     @Transactional
-    public void join(Long clubId, Long userId) {
-        if (!clubs.existsById(clubId)) {
-            throw new NotFoundException("Club " + clubId + " not found");
+    public void deleteClub(Long clubId, Long userId) {
+        Club club = getClubById(clubId);
+
+        if (!club.getOwnerId().equals(userId)) {
+            throw new ForbiddenException("Only the owner can delete the club");
         }
-        if (members.existsByClubIdAndUserId(clubId, userId)) return; // idempotent
-        members.save(ClubMember.builder()
-                .clubId(clubId)
-                .userId(userId)
-                .role(ClubMemberRole.MEMBER)
-                .build());
+
+        clubRepository.delete(club);
     }
 
     @Transactional
-    public void leave(Long clubId, Long userId) {
-        Club c = clubs.findById(clubId).orElseThrow(() -> new NotFoundException("Club " + clubId + " not found"));
-        if (c.getOwnerUserId().equals(userId)) {
-            throw new ForbiddenException("The owner cannot leave their own club — delete it or transfer ownership");
+    public void joinClub(Long clubId, Long userId) {
+        Club club = getClubById(clubId);
+
+        if (club.isPrivate()) {
+            throw new ForbiddenException("This club is private. Request to join.");
         }
-        members.deleteByClubIdAndUserId(clubId, userId);
+
+        if (clubRepository.isUserMember(clubId, userId)) {
+            throw new BadRequestException("You are already a member of this club");
+        }
+
+        club.getMemberIds().add(userId);
+        clubRepository.save(club);
+    }
+
+    @Transactional
+    public void leaveClub(Long clubId, Long userId) {
+        Club club = getClubById(clubId);
+
+        if (club.getOwnerId().equals(userId)) {
+            throw new BadRequestException("Owner cannot leave the club. Transfer ownership first.");
+        }
+
+        if (!clubRepository.isUserMember(clubId, userId)) {
+            throw new BadRequestException("You are not a member of this club");
+        }
+
+        club.getMemberIds().remove(userId);
+        club.getAdminIds().remove(userId);
+        clubRepository.save(club);
     }
 
     @Transactional(readOnly = true)
-    public Page<ClubMember> listMembers(Long clubId, Pageable pageable) {
-        return members.findAllByClubId(clubId, pageable);
+    public List<Long> getClubMemberIds(Long clubId) {
+        Club club = getClubById(clubId);
+        return new ArrayList<>(club.getMemberIds());
     }
 
     @Transactional(readOnly = true)
-    public List<ClubMember> myClubs(Long userId) {
-        return members.findAllByUserId(userId);
+    public boolean isUserMember(Long clubId, Long userId) {
+        return clubRepository.isUserMember(clubId, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Club> searchClubs(String searchText, Pageable pageable) {
+        return clubRepository.searchClubs(searchText, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Club> getClubsBySportType(ActivityType sportType, Pageable pageable) {
+        return clubRepository.findPublicClubsBySportType(sportType, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public long countPublicClubs() {
+        return clubRepository.countPublicClubs();
+    }
+
+    @Transactional(readOnly = true)
+    public long countTotalMembers() {
+        return clubRepository.sumAllMembers();
     }
 }

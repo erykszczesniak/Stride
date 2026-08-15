@@ -31,9 +31,18 @@ resilience4j:
         minimumNumberOfCalls: 5
         failureRateThreshold: 40
         waitDurationInOpenState: 30s
+      user-service:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
   retry:
     instances:
       activity-service:
+        maxAttempts: 3
+        waitDuration: 250ms
+        exponentialBackoffMultiplier: 2
+      user-service:
         maxAttempts: 3
         waitDuration: 250ms
         exponentialBackoffMultiplier: 2

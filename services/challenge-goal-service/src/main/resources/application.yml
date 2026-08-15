@@ -26,9 +26,23 @@ resilience4j:
           - org.springframework.web.client.RestClientException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
+      user-service:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
   retry:
     instances:
       activity-service:
+        maxAttempts: 3
+        waitDuration: 200ms
+        exponentialBackoffMultiplier: 2
+      user-service:
         maxAttempts: 3
         waitDuration: 200ms
         exponentialBackoffMultiplier: 2

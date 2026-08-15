@@ -71,22 +71,21 @@ public class ActivityClient {
 
         // Pull all activities in the window (paged); we sum locally. For very
         // active users this would need server-side aggregation in
-        // activity-service — that's an obvious follow-up.
-        String url = "lb://activity-service/api/activities/user/" + userId
+        // activity-service — that's an obvious follow-up. The /api/v1 contract
+        // returns a plain JSON array plus page-total-count/page-total-elements
+        // headers (not a Spring Page envelope).
+        String url = "lb://activity-service/api/v1/activities/user/" + userId
                 + "?size=200&page=0";
 
         var response = loadBalanced.exchange(
                 url,
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
-                new ParameterizedTypeReference<Map<String, Object>>() {}
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
         );
 
-        Map<String, Object> body = response.getBody();
-        if (body == null) return ActivitySummary.EMPTY;
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> content = (List<Map<String, Object>>) body.getOrDefault("content", List.of());
+        List<Map<String, Object>> content = response.getBody();
+        if (content == null) return ActivitySummary.EMPTY;
 
         double dist = 0;
         long dur = 0;

@@ -10,6 +10,29 @@ spring:
         max-attempts: 6
         initial-interval: 2000
 
+# Resilience4j tuning for the user-service batch lookup (applies in every
+# profile). Generous in dev so the fallback path shows up quickly when
+# user-service isn't running; tightened for prod in the config server.
+resilience4j:
+  circuitbreaker:
+    instances:
+      user-service:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+  retry:
+    instances:
+      user-service:
+        maxAttempts: 3
+        waitDuration: 200ms
+        exponentialBackoffMultiplier: 2
+
 ---
 spring:
   config:
@@ -38,4 +61,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,info,prometheus,metrics,circuitbreakers,retries
