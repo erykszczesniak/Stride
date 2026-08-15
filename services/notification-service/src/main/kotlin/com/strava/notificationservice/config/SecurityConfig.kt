@@ -18,6 +18,9 @@ class SecurityConfig {
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/actuator/**").permitAll()
+                    // Roles come from the gateway-injected X-User-Roles header
+                    // (HeaderAuthenticationFilter maps them to ROLE_*).
+                    .requestMatchers("/api/v1/notifications/weekly-summary/trigger").hasRole("ADMIN")
                     .anyRequest().authenticated()
             }
             .addFilterBefore(HeaderAuthenticationFilter(), UsernamePasswordAuthenticationFilter::class.java)

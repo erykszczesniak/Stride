@@ -1,26 +1,29 @@
 package com.strava.notificationservice.domain
 
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 interface NotificationRepository : JpaRepository<Notification, Long> {
 
-    fun findAllByRecipientUserIdOrderByCreatedAtDesc(userId: Long, pageable: Pageable): Page<Notification>
+    fun findByRecipientIdOrderByCreatedAtDesc(recipientId: Long): List<Notification>
 
-    fun countByRecipientUserIdAndReadFalse(userId: Long): Long
+    fun countByRecipientIdAndIsReadFalse(recipientId: Long): Long
+
+    /** Duplicate-suppression rule for unread LIKEs — mirrors the monolith. */
+    fun existsByRecipientIdAndSenderIdAndTypeAndReferenceIdAndIsReadFalse(
+        recipientId: Long,
+        senderId: Long,
+        type: NotificationType,
+        referenceId: Long
+    ): Boolean
 
     @Modifying
-    @Transactional
-    @Query("""
-        UPDATE Notification n
-        SET n.read = true, n.readAt = :now
-        WHERE n.recipientUserId = :userId AND n.read = false
-        """)
-    fun markAllReadForUser(@Param("userId") userId: Long, @Param("now") now: LocalDateTime): Int
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.recipientId = :recipientId AND n.isRead = false")
+    fun markAllAsReadByRecipientId(@Param("recipientId") recipientId: Long)
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.recipientId = :recipientId")
+    fun deleteAllByRecipientId(@Param("recipientId") recipientId: Long)
 }

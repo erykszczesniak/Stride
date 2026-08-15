@@ -1,13 +1,14 @@
 package com.strava.notificationservice.domain
 
+/**
+ * Mirrors the monolith's com.strava.backend.enums.NotificationType 1:1 —
+ * the frontend switches on these exact values.
+ */
 enum class NotificationType {
-    WELCOME,
-    NEW_FOLLOWER,
-    NEW_ACTIVITY,
-    PR_ACHIEVED,
-    GOAL_COMPLETED,
-    CHALLENGE_COMPLETED,
+    LIKE,
     COMMENT,
-    REACTION,
+    FOLLOW,
+    ACHIEVEMENT,
+    GOAL_COMPLETED,
     SYSTEM
 }

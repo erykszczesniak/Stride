@@ -7,12 +7,19 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
+/**
+ * Mirrors the monolith's SseNotificationController:
+ * GET /api/v1/notifications/stream (text/event-stream). The gateway
+ * validates the EventSource `?token=` query param and injects X-User-Id
+ * for this path, so by the time we run the principal is populated.
+ */
 @RestController
-@RequestMapping("/api/sse/notifications")
+@RequestMapping("/api/v1/notifications")
 class SseController(
-    private val sse: SseService
+    private val sseEmitterService: SseEmitterService
 ) {
 
-    @GetMapping(produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-    fun stream(@AuthenticationPrincipal userId: Long): SseEmitter = sse.subscribe(userId)
+    @GetMapping("/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun streamNotifications(@AuthenticationPrincipal userId: Long): SseEmitter =
+        sseEmitterService.createEmitter(userId)
 }
