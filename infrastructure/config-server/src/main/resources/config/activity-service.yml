@@ -16,4 +16,38 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/common
+    # db/migration/postgresql carries the PG flavor of vendor-specific
+    # statements (setval after the fixed-id sample inserts).
+    locations: classpath:db/migration/common,classpath:db/migration/postgresql
+
+# Activity photo storage. Mount a volume and point UPLOAD_DIR at it in
+# containers — the same value drives both the upload path and the
+# /uploads/photos/** static handler.
+app:
+  upload:
+    dir: ${UPLOAD_DIR:uploads/photos}
+
+# Tighter Resilience4j thresholds for prod — break the circuit faster, recover faster.
+resilience4j:
+  circuitbreaker:
+    instances:
+      user-service:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
+      social-service:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
+  retry:
+    instances:
+      user-service:
+        maxAttempts: 3
+        waitDuration: 250ms
+        exponentialBackoffMultiplier: 2
+      social-service:
+        maxAttempts: 3
+        waitDuration: 250ms
+        exponentialBackoffMultiplier: 2

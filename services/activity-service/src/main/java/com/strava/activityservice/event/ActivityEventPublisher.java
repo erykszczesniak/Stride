@@ -3,6 +3,8 @@ package com.strava.activityservice.event;
 import com.strava.activityservice.domain.Activity;
 import com.strava.activityservice.domain.PersonalRecord;
 import com.strava.shared.events.ActivityCreatedEvent;
+import com.strava.shared.events.ActivityDeletedEvent;
+import com.strava.shared.events.ActivityVisibilityChangedEvent;
 import com.strava.shared.events.PersonalRecordAchievedEvent;
 import com.strava.shared.events.Topics;
 import lombok.RequiredArgsConstructor;
@@ -27,31 +29,27 @@ public class ActivityEventPublisher {
     private final KafkaTemplate<String, Object> kafka;
 
     public void publishActivityCreated(Activity a) {
-        ActivityCreatedEvent event = new ActivityCreatedEvent(
-                a.getId(), a.getUserId(), a.getActivityType().name(),
-                a.getTitle(), a.isPrivate(),
-                a.getDistance() != null ? a.getDistance() * 1000.0 : null,
-                a.getDuration() != null ? a.getDuration().longValue() : null,
-                a.getElevationGain() != null ? a.getElevationGain().doubleValue() : null,
-                a.getStartTime() != null ? a.getStartTime().toInstant(ZoneOffset.UTC) : null,
-                Instant.now()
-        );
-        send(Topics.ACTIVITY_CREATED, String.valueOf(a.getId()), event);
+        send(Topics.ACTIVITY_CREATED, String.valueOf(a.getId()), toCreatedEvent(a));
     }
 
     public void publishActivityUpdated(Activity a) {
         // Reuse the same event DTO — Topics.ACTIVITY_UPDATED is a separate stream
         // so consumers can subscribe to "new activities" vs "any change" independently.
-        ActivityCreatedEvent event = new ActivityCreatedEvent(
-                a.getId(), a.getUserId(), a.getActivityType().name(),
-                a.getTitle(), a.isPrivate(),
-                a.getDistance() != null ? a.getDistance() * 1000.0 : null,
-                a.getDuration() != null ? a.getDuration().longValue() : null,
-                a.getElevationGain() != null ? a.getElevationGain().doubleValue() : null,
-                a.getStartTime() != null ? a.getStartTime().toInstant(ZoneOffset.UTC) : null,
+        send(Topics.ACTIVITY_UPDATED, String.valueOf(a.getId()), toCreatedEvent(a));
+    }
+
+    public void publishActivityVisibilityChanged(Activity a) {
+        ActivityVisibilityChangedEvent event = new ActivityVisibilityChangedEvent(
+                a.getId(), a.getUserId(), a.isPrivate(),
+                a.getCreatedAt() != null ? a.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                 Instant.now()
         );
-        send(Topics.ACTIVITY_UPDATED, String.valueOf(a.getId()), event);
+        send(Topics.ACTIVITY_VISIBILITY_CHANGED, String.valueOf(a.getId()), event);
+    }
+
+    public void publishActivityDeleted(Long activityId, Long userId) {
+        ActivityDeletedEvent event = new ActivityDeletedEvent(activityId, userId, Instant.now());
+        send(Topics.ACTIVITY_DELETED, String.valueOf(activityId), event);
     }
 
     public void publishPersonalRecordAchieved(PersonalRecord pr) {
@@ -62,6 +60,18 @@ public class ActivityEventPublisher {
                 Instant.now()
         );
         send(Topics.PERSONAL_RECORD_ACHIEVED, String.valueOf(pr.getUserId()), event);
+    }
+
+    private ActivityCreatedEvent toCreatedEvent(Activity a) {
+        return new ActivityCreatedEvent(
+                a.getId(), a.getUserId(), a.getActivityType().name(),
+                a.getTitle(), a.isPrivate(),
+                a.getDistance() != null ? a.getDistance() * 1000.0 : null,
+                a.getDuration() != null ? a.getDuration().longValue() : null,
+                a.getElevationGain() != null ? a.getElevationGain().doubleValue() : null,
+                a.getStartTime() != null ? a.getStartTime().toInstant(ZoneOffset.UTC) : null,
+                Instant.now()
+        );
     }
 
     private void send(String topic, String key, Object payload) {

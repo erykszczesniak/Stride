@@ -29,13 +29,5 @@ public enum ActivityType {
     WINDSURF,
     WORKOUT,
     YOGA,
-    OTHER;
-
-    public boolean isDistanceSport() {
-        return switch (this) {
-            case RUN, RIDE, SWIM, WALK, HIKE, VIRTUAL_RIDE, VIRTUAL_RUN,
-                 NORDIC_SKI, ROLLER_SKI, INLINE_SKATE, KAYAKING, ROWING -> true;
-            default -> false;
-        };
-    }
+    OTHER
 }

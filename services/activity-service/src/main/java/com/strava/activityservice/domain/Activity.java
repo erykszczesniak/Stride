@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -22,6 +24,7 @@ public class Activity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Logical reference to user-service.users.id — no FK across service DBs. */
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
@@ -60,6 +63,13 @@ public class Activity {
     @Column(name = "max_heart_rate")
     private Integer maxHeartRate;
 
+    @Column(name = "average_cadence")
+    private Integer averageCadence;
+
+    /** Watts. */
+    @Column(name = "average_power")
+    private Integer averagePower;
+
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
 
@@ -75,12 +85,35 @@ public class Activity {
     @Column(name = "route_polyline", columnDefinition = "TEXT")
     private String routePolyline;
 
+    // JSON-serialized array of doubles (meters), one per polyline point.
+    // Null when the source had no altitude data — consumers treat null as
+    // "no elevation profile available".
+    @Column(name = "elevation_profile", columnDefinition = "TEXT")
+    private String elevationProfile;
+
+    // JSON-serialized array of longs (epoch seconds), 1:1 aligned with the
+    // polyline points. Null when the source had no per-trackpoint time data —
+    // consumers fall back to uniform-pace splits, so "no timestamps" degrades
+    // gracefully.
+    @Column(name = "point_timestamps", columnDefinition = "TEXT")
+    private String pointTimestamps;
+
     @Column(name = "map_image_url")
     private String mapImageUrl;
 
     @Builder.Default
     @Column(name = "is_private", nullable = false)
     private boolean isPrivate = false;
+
+    @Builder.Default
+    @Column(name = "has_kudos", nullable = false)
+    private boolean hasKudos = false;
+
+    @ElementCollection
+    @CollectionTable(name = "activity_photos", joinColumns = @JoinColumn(name = "activity_id"))
+    @Column(name = "photo_url")
+    @Builder.Default
+    private List<String> photos = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -91,17 +124,25 @@ public class Activity {
     @PrePersist
     void onCreate() {
         createdAt = LocalDateTime.now();
+        calculateDerivedFields();
     }
 
     @PreUpdate
     void onUpdate() {
         updatedAt = LocalDateTime.now();
+        calculateDerivedFields();
     }
 
-    /** Average pace (seconds per kilometer) using uniform pace from total distance/duration. */
-    public double averagePaceSecondsPerKm() {
-        if (distance == null || distance <= 0) return 0;
-        return duration / distance;
+    // Mirrors main's derived-field behavior: averageSpeed is always
+    // recomputed from distance/duration on persist (a client-supplied value
+    // is overwritten), and endTime defaults to startTime + duration.
+    private void calculateDerivedFields() {
+        if (distance != null && duration != null && duration > 0) {
+            this.averageSpeed = (distance / duration) * 3600; // km/h
+        }
+        if (endTime == null && startTime != null && duration != null) {
+            this.endTime = startTime.plusSeconds(duration);
+        }
     }
 
     @Override

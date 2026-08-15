@@ -9,8 +9,61 @@ spring:
       retry:
         max-attempts: 6
         initial-interval: 2000
+  # Photo uploads: 5MB per file (mirrors the service-side MAX_PHOTO_SIZE
+  # check), 25MB per request (5 photos x 5MB).
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
 
-# Local fallback — H2 + no Eureka, used for fast smoke tests.
+app:
+  upload:
+    dir: ${UPLOAD_DIR:uploads/photos}
+
+# Resilience4j tuning (applies in every profile). Generous in dev so that the
+# smoke test sees the fallback path quickly when user-service/social-service
+# aren't running; prod overlays live in the config server.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      user-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 200ms
+        exponentialBackoffMultiplier: 2
+    instances:
+      user-service:
+        baseConfig: default
+      social-service:
+        baseConfig: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,circuitbreakers,retries
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+# Local fallback — H2 + no Eureka/Kafka listeners, used for fast smoke tests.
 ---
 spring:
   config:
@@ -29,21 +82,26 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/common
+    # db/migration/h2 carries the H2 flavor of vendor-specific statements
+    # (identity restart after the fixed-id sample inserts).
+    locations: classpath:db/migration/common,classpath:db/migration/h2
   kafka:
     bootstrap-servers: localhost:9092
+    listener:
+      auto-startup: false
     producer:
       properties:
         max.block.ms: 1000
         delivery.timeout.ms: 2000
         request.timeout.ms: 1500
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.strava.shared.events,*
 server:
   port: 8082
 eureka:
   client:
     enabled: false
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus,metrics
