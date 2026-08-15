@@ -19,12 +19,13 @@ public class SocialEventPublisher {
 
     private final KafkaTemplate<String, Object> kafka;
 
-    public void publishCommentAdded(Comment c) {
+    public void publishCommentAdded(Comment c, Long activityOwnerId, String authorDisplayName) {
         String preview = c.getContent().length() > 100
                 ? c.getContent().substring(0, 100) + "…"
                 : c.getContent();
         CommentAddedEvent event = new CommentAddedEvent(
-                c.getId(), c.getActivityId(), c.getUserId(), preview, Instant.now()
+                c.getId(), c.getActivityId(), activityOwnerId, c.getUserId(),
+                authorDisplayName, preview, Instant.now()
         );
         send(Topics.COMMENT_ADDED, String.valueOf(c.getActivityId()), event);
     }

@@ -6,5 +6,6 @@ public record UserRegisteredEvent(
         Long userId,
         String email,
         String displayName,
+        String avatar,
         Instant occurredAt
 ) {}

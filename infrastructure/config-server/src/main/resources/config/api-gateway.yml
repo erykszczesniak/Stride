@@ -1,5 +1,12 @@
-# Gateway-specific routing + JWT config.
-# Routes will be filled in as each service comes online (Phase 2+).
+# Gateway routing + JWT config.
+#
+# The public contract is identical to the monolith on `main` (/api/v1/**, /graphql,
+# /pipeline/v1/**, /uploads/**). The gateway does NO path rewriting — services mount
+# the public paths directly, so traces and logs show the same URL end to end.
+#
+# Route matching notes:
+#  - Fine-grained social routes (comments/likes/feed/public under /api/v1/activities)
+#    carry order -1 so they win over the activity-service catch-all (order 0).
 
 server:
   port: 8080
@@ -18,61 +25,82 @@ spring:
             redis-rate-limiter.burstCapacity: 200
             key-resolver: "#{@principalKeyResolver}"
       routes:
-        # === Phase 2: user-service ===
+        # === user-service: auth, users, follow graph, search, admin (users) ===
         - id: user-service-auth
           uri: lb://user-service
           predicates:
-            - Path=/api/auth/**
+            - Path=/api/v1/auth/**
         - id: user-service-users
           uri: lb://user-service
           predicates:
-            - Path=/api/users/**
+            - Path=/api/v1/users/**,/api/v1/search/**,/api/v1/admin/users/**
 
-        # === Phase 3: activity-service ===
+        # === social-service: comments, reactions, likes, feed read model ===
+        # More specific than the activity-service catch-all → explicit order -1.
+        - id: social-service-activity-subresources
+          uri: lb://social-service
+          order: -1
+          predicates:
+            - Path=/api/v1/activities/feed,/api/v1/activities/public,/api/v1/activities/*/comments/**,/api/v1/activities/*/like
+
+        # === activity-service: activities, PRs, gear, import, Strava integration, photos ===
         - id: activity-service
           uri: lb://activity-service
           predicates:
-            - Path=/api/activities/**,/api/personal-records/**,/api/imports/**
+            - Path=/api/v1/activities/**,/api/v1/personal-records/**,/api/v1/gear/**,/api/v1/import/**,/api/v1/integrations/strava/**,/api/v1/admin/activities/**,/uploads/**
 
-        # === Phase 4: notification-service ===
+        # === notification-service: notifications + SSE stream ===
         - id: notification-service
           uri: lb://notification-service
           predicates:
-            - Path=/api/notifications/**,/api/sse/notifications/**
+            - Path=/api/v1/notifications/**
 
-        # === Phase 5: social-service ===
-        - id: social-service
-          uri: lb://social-service
-          predicates:
-            - Path=/api/comments/**,/api/dashboard/**,/api/feed/**
-
-        # === Phase 6: club-event-service ===
+        # === club-event-service ===
         - id: club-event-service
           uri: lb://club-event-service
           predicates:
-            - Path=/api/clubs/**,/api/events/**
+            - Path=/api/v1/clubs/**,/api/v1/events/**
 
-        # === Phase 7: challenge-goal-service ===
+        # === challenge-goal-service: challenges, goals, training plan templates ===
         - id: challenge-goal-service
           uri: lb://challenge-goal-service
           predicates:
-            - Path=/api/challenges/**,/api/goals/**
+            - Path=/api/v1/challenges/**,/api/v1/goals/**,/api/v1/training-plans/**
 
-        # === Phase 8: ai-service ===
+        # === ai-service ===
         - id: ai-service
           uri: lb://ai-service
           predicates:
-            - Path=/api/ai/**
+            - Path=/api/v1/ai/**
+
+        # === web-bff: dashboard composition, report GraphQL, CSV export, admin stats ===
+        - id: web-bff
+          uri: lb://web-bff
+          predicates:
+            - Path=/api/v1/dashboard/**,/graphql,/api/v1/export/**,/api/v1/admin/stats
+
+        # === pipeline-service: iOS facade + personal token management ===
+        - id: pipeline-service
+          uri: lb://pipeline-service
+          predicates:
+            - Path=/pipeline/v1/**,/api/v1/pipeline/**
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
 
+cors:
+  origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+
 jwt:
   secret: ${JWT_SECRET:dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
   public-paths:
-    - /api/auth/login
-    - /api/auth/register
-    - /api/auth/refresh
-    - /api/auth/oauth2/**
+    - /api/v1/auth/**
+    - /api/v1/integrations/strava/callback
+    - /uploads/**
     - /actuator/**
+    # tri_ personal tokens are not JWTs — pipeline-service authenticates them itself.
+    - /pipeline/v1/**
+  # EventSource cannot send an Authorization header — these paths may pass ?token=.
+  query-token-paths:
+    - /api/v1/notifications/stream

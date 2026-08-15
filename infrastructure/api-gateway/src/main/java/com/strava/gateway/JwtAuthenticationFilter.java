@@ -34,11 +34,14 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private final JwtParser jwtParser;
     private final List<String> publicPaths;
+    private final List<String> queryTokenPaths;
 
     public JwtAuthenticationFilter(JwtParser jwtParser,
-                                   @org.springframework.beans.factory.annotation.Value("${jwt.public-paths:}") List<String> publicPaths) {
+                                   @org.springframework.beans.factory.annotation.Value("${jwt.public-paths:}") List<String> publicPaths,
+                                   @org.springframework.beans.factory.annotation.Value("${jwt.query-token-paths:}") List<String> queryTokenPaths) {
         this.jwtParser = jwtParser;
         this.publicPaths = publicPaths;
+        this.queryTokenPaths = queryTokenPaths;
     }
 
     @Override
@@ -60,10 +63,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         }
 
         String authHeader = stripped.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith(BEARER)) {
-            return unauthorized(exchange, "Missing or malformed Authorization header");
+        String token;
+        if (authHeader != null && authHeader.startsWith(BEARER)) {
+            token = authHeader.substring(BEARER.length()).trim();
+        } else {
+            // EventSource cannot set headers, so SSE endpoints accept ?token= as a fallback.
+            token = allowsQueryToken(path) ? request.getQueryParams().getFirst("token") : null;
+            if (token == null || token.isBlank()) {
+                return unauthorized(exchange, "Missing or malformed Authorization header");
+            }
         }
-        String token = authHeader.substring(BEARER.length()).trim();
 
         try {
             JwtClaims claims = jwtParser.parse(token);
@@ -81,6 +90,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private boolean isPublic(String path) {
         for (String pattern : publicPaths) {
+            if (MATCHER.match(pattern, path)) return true;
+        }
+        return false;
+    }
+
+    private boolean allowsQueryToken(String path) {
+        for (String pattern : queryTokenPaths) {
             if (MATCHER.match(pattern, path)) return true;
         }
         return false;

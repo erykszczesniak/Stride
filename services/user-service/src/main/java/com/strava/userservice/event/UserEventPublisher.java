@@ -22,6 +22,7 @@ public class UserEventPublisher {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
+                user.getAvatar(),
                 Instant.now()
         );
         // Best-effort publish — never let a transient broker outage block registration.

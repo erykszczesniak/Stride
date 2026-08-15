@@ -35,11 +35,13 @@ public class EventConsumers {
                 .ifPresentOrElse(
                         existing -> {
                             existing.setDisplayName(event.displayName());
+                            existing.setAvatar(event.avatar());
                             existing.setUpdatedAt(LocalDateTime.now());
                         },
                         () -> users.save(UserCache.builder()
                                 .userId(event.userId())
                                 .displayName(event.displayName())
+                                .avatar(event.avatar())
                                 .updatedAt(LocalDateTime.now())
                                 .build()));
     }

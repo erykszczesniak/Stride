@@ -29,6 +29,7 @@ public class ActivityEventPublisher {
     public void publishActivityCreated(Activity a) {
         ActivityCreatedEvent event = new ActivityCreatedEvent(
                 a.getId(), a.getUserId(), a.getActivityType().name(),
+                a.getTitle(), a.isPrivate(),
                 a.getDistance() != null ? a.getDistance() * 1000.0 : null,
                 a.getDuration() != null ? a.getDuration().longValue() : null,
                 a.getElevationGain() != null ? a.getElevationGain().doubleValue() : null,
@@ -43,6 +44,7 @@ public class ActivityEventPublisher {
         // so consumers can subscribe to "new activities" vs "any change" independently.
         ActivityCreatedEvent event = new ActivityCreatedEvent(
                 a.getId(), a.getUserId(), a.getActivityType().name(),
+                a.getTitle(), a.isPrivate(),
                 a.getDistance() != null ? a.getDistance() * 1000.0 : null,
                 a.getDuration() != null ? a.getDuration().longValue() : null,
                 a.getElevationGain() != null ? a.getElevationGain().doubleValue() : null,

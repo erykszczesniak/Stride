@@ -45,6 +45,8 @@ public class GatewayConfig {
         config.setAllowedOrigins(List.of(origins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        // Pagination metadata travels in headers (main-branch contract) — expose them to browsers.
+        config.setExposedHeaders(List.of("page-total-count", "page-total-elements"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
