@@ -85,8 +85,11 @@ describe("isPaceActivity", () => {
     expect(isPaceActivity("RIDE")).toBe(false);
   });
 
-  test("returns false for SWIM, WORKOUT, unknown types", () => {
-    expect(isPaceActivity("SWIM")).toBe(false);
+  test("returns true for SWIM — swims render pace per 100m", () => {
+    expect(isPaceActivity("SWIM")).toBe(true);
+  });
+
+  test("returns false for WORKOUT and unknown types", () => {
     expect(isPaceActivity("WORKOUT")).toBe(false);
     expect(isPaceActivity("UNKNOWN")).toBe(false);
     expect(isPaceActivity(undefined)).toBe(false);

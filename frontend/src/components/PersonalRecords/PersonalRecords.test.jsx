@@ -11,6 +11,14 @@ jest.mock("../../api/PersonalRecordService", () => ({
   },
 }));
 
+jest.mock("../../context/UnitsContext", () => ({
+  useUnits: () => ({
+    convertDistance: (km) => km,
+    distanceUnit: "km",
+    formatPaceFromActivity: () => "5:00 /km",
+  }),
+}));
+
 import PersonalRecordService from "../../api/PersonalRecordService";
 import PersonalRecords from "./PersonalRecords";
 

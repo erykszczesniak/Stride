@@ -54,5 +54,10 @@
   "proxy": "http://localhost:8080",
   "devDependencies": {
     "@playwright/test": "^1.59.1"
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!axios)/"
+    ]
   }
 }

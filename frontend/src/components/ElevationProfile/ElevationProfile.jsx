@@ -35,6 +35,19 @@ import {
  * component in without guarding — legacy activities without a stored profile
  * produce no UI.
  */
+/**
+ * Y-axis domain hugging the altitude band (like the iOS chart and Strava)
+ * instead of anchoring at 0 — a 10 m swell on a 90 m plateau should read
+ * as hills, not a flat line. Padding: 15% of the span, at least 2 units.
+ */
+export const elevationDomain = (values) => {
+  if (!values || values.length === 0) return [0, 0];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = Math.max((max - min) * 0.15, 2);
+  return [Math.floor(min - pad), Math.ceil(max + pad)];
+};
+
 const ElevationProfile = ({ elevations, totalDistanceKm }) => {
   const { t } = useTranslation();
   const {
@@ -48,9 +61,9 @@ const ElevationProfile = ({ elevations, totalDistanceKm }) => {
   // Build the chart data + gain/loss summary in one pass. useMemo so we don't
   // recompute on every parent re-render — elevation arrays can be hundreds of
   // points long after a GPX import.
-  const { chartData, gain, loss } = useMemo(() => {
+  const { chartData, gain, loss, yDomain } = useMemo(() => {
     if (!elevations || elevations.length < 2) {
-      return { chartData: [], gain: 0, loss: 0 };
+      return { chartData: [], gain: 0, loss: 0, yDomain: [0, 0] };
     }
 
     // Compute gain/loss in METERS from the raw series, then convert for display.
@@ -77,6 +90,7 @@ const ElevationProfile = ({ elevations, totalDistanceKm }) => {
       chartData: data,
       gain: Math.round(convertElevation(gainMeters)),
       loss: Math.round(convertElevation(lossMeters)),
+      yDomain: elevationDomain(data.map((point) => point.elevation)),
     };
   }, [elevations, totalDistanceKm, convertDistance, convertElevation]);
 
@@ -149,6 +163,7 @@ const ElevationProfile = ({ elevations, totalDistanceKm }) => {
               unit={` ${distanceUnit}`}
             />
             <YAxis
+              domain={yDomain}
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 11, fill: "#94a3b8" }}

@@ -31,6 +31,8 @@ import {
   ActionsGroup,
   MapPreview,
   CoverPhoto,
+  MediaRow,
+  MediaTile,
 } from "./ActivityCardStyles";
 import ShareModal from "../ShareModal/ShareModal";
 import ActivityMap from "../ActivityMap/ActivityMap";
@@ -62,6 +64,12 @@ const ActivityCard = ({ activity, onLike }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const colors = activityColors[activity.activityType] || activityColors.RUN;
   const icon = activityIcons[activity.activityType] || activityIcons.RUN;
+  const coverPhotoUrl =
+    activity.photos && activity.photos.length > 0
+      ? activity.photos[0].startsWith("http")
+        ? activity.photos[0]
+        : `${process.env.REACT_APP_API_BASE_URL || "http://localhost:8080"}${activity.photos[0]}`
+      : null;
 
   const handleLike = (e) => {
     e.preventDefault();
@@ -98,7 +106,7 @@ const ActivityCard = ({ activity, onLike }) => {
             <UserName onClick={handleUserClick} style={{ cursor: "pointer" }}>
               {activity.user?.firstName} {activity.user?.lastName}
             </UserName>
-            <ActivityTime>{getTimeAgo(activity.createdAt)}</ActivityTime>
+            <ActivityTime>{getTimeAgo(activity.startTime || activity.createdAt)}</ActivityTime>
           </UserInfo>
           <ActivityType bgColor={colors.bg} color={colors.color}>
             {icon}
@@ -110,20 +118,25 @@ const ActivityCard = ({ activity, onLike }) => {
           <ActivityDescription>{activity.description}</ActivityDescription>
         )}
 
-        {activity.photos && activity.photos.length > 0 && (
+        {coverPhotoUrl && activity.routePolyline ? (
+          // Strava-style media row: route map square beside the photo square.
+          <MediaRow onClick={(e) => e.preventDefault()}>
+            <MediaTile>
+              <ActivityMap
+                coordinates={activity.routePolyline}
+                height="100%"
+                showMarkers={false}
+              />
+            </MediaTile>
+            <MediaTile>
+              <img src={coverPhotoUrl} alt={activity.title} />
+            </MediaTile>
+          </MediaRow>
+        ) : coverPhotoUrl ? (
           <CoverPhoto>
-            <img
-              src={
-                activity.photos[0].startsWith('http')
-                  ? activity.photos[0]
-                  : `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}${activity.photos[0]}`
-              }
-              alt={activity.title}
-            />
+            <img src={coverPhotoUrl} alt={activity.title} />
           </CoverPhoto>
-        )}
-
-        {activity.routePolyline && !(activity.photos && activity.photos.length > 0) && (
+        ) : activity.routePolyline ? (
           <MapPreview onClick={(e) => e.preventDefault()}>
             <ActivityMap
               coordinates={activity.routePolyline}
@@ -131,7 +144,7 @@ const ActivityCard = ({ activity, onLike }) => {
               showMarkers={false}
             />
           </MapPreview>
-        )}
+        ) : null}
 
         <StatsRow>
           <StatItem>

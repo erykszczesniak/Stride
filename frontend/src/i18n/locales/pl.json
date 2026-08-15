@@ -180,7 +180,26 @@
     "upcoming": "Nadchodzące",
     "noActivitiesYet": "Jeszcze brak aktywności. Zacznij śledzić swoje treningi!",
     "weeklyActivity": "Aktywność tygodniowa",
-    "distanceLabel": "Dystans (km)"
+    "distanceLabel": "Dystans (km)",
+    "form": {
+      "title": "Forma",
+      "fresh": "Wypoczęty",
+      "neutral": "Neutralnie",
+      "fatigued": "Zmęczony",
+      "ctl": "CTL · Kondycja",
+      "atl": "ATL · Zmęczenie",
+      "tsb": "TSB · Forma",
+      "gaugeAlt": "Wskaźnik formy, TSB {{tsb}}"
+    },
+    "weeklyVolume": {
+      "title": "Tygodniowa objętość",
+      "swim": "Pływanie",
+      "bike": "Rower",
+      "run": "Bieg"
+    },
+    "trainingLoad": {
+      "title": "Obciążenie treningowe"
+    }
   },
   "activities": {
     "title": "Aktywności",
@@ -280,6 +299,18 @@
         "partial": "częściowe",
         "estimatedNote": "Okrążenia oszacowane na podstawie średniego tempa; dane z poszczególnych punktów nie są jeszcze zapisywane.",
         "accurateNote": "Okrążenia obliczone na podstawie znaczników czasu GPS."
+      },
+      "photoViewer": {
+        "close": "Zamknij zdjęcie",
+        "prev": "Poprzednie zdjęcie",
+        "next": "Następne zdjęcie",
+        "delete": "Usuń zdjęcie",
+        "confirmDelete": "Usunąć to zdjęcie?"
+      },
+      "paceHr": {
+        "title": "Tempo i tętno",
+        "pace": "Tempo",
+        "hr": "Tętno"
       }
     },
     "record": {
@@ -332,6 +363,20 @@
       }
     }
   },
+  "aiChat": {
+    "title": "Trener AI",
+    "empty": "Poproś trenera AI o analizę tej aktywności lub wybierz jedną z podpowiedzi poniżej.",
+    "placeholder": "Zapytaj o cokolwiek dotyczące tej aktywności...",
+    "send": "Wyślij",
+    "clear": "Wyczyść",
+    "thinking": "Myślę...",
+    "error": "Nie udało się połączyć z trenerem AI. Spróbuj ponownie.",
+    "suggestions": {
+      "analyze": "Przeanalizuj tę aktywność",
+      "pacing": "Jak wyglądało moje tempo?",
+      "recovery": "Powinienem odpocząć czy trenować jutro?"
+    }
+  },
   "profile": {
     "loading": "Wczytywanie profilu...",
     "userNotFound": "Nie znaleziono użytkownika",
@@ -382,7 +427,15 @@
       "consistentDesc": "Co najmniej 10 aktywności"
     },
     "privateProfile": "Profil prywatny",
-    "privateProfileDescription": "Ten profil jest prywatny. Obserwuj, aby zobaczyć aktywności i statystyki."
+    "privateProfileDescription": "Ten profil jest prywatny. Obserwuj, aby zobaczyć aktywności i statystyki.",
+    "followList": {
+      "followersTitle": "Obserwujący",
+      "followingTitle": "Obserwowani",
+      "close": "Zamknij",
+      "loading": "Wczytywanie…",
+      "error": "Nie udało się wczytać listy.",
+      "empty": "Jeszcze nikogo tu nie ma."
+    }
   },
   "goals": {
     "myGoals": "Moje cele",
@@ -994,7 +1047,7 @@
       "calories": "Kalorie",
       "averageSpeed": "Śr. prędkość (km/h)",
       "averageHeartRate": "Śr. tętno",
-      "pace": "Tempo (min/km)",
+      "pace": "Tempo",
       "likesCount": "Polubienia",
       "commentsCount": "Komentarze"
     },

@@ -26,4 +26,13 @@ module.exports = function (app) {
       changeOrigin: true,
     })
   );
+
+  // Pipeline facade (the iOS contract) — the dashboard Form gauge reads it too
+  app.use(
+    "/pipeline/v1",
+    createProxyMiddleware({
+      target: "http://localhost:8080",
+      changeOrigin: true,
+    })
+  );
 };

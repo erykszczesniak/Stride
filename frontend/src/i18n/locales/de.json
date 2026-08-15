@@ -374,7 +374,15 @@
       "consistentDesc": "10+ Aktivitäten absolviert"
     },
     "privateProfile": "Privates Profil",
-    "privateProfileDescription": "Dieses Profil ist privat. Folgen Sie, um Aktivitäten und Statistiken zu sehen."
+    "privateProfileDescription": "Dieses Profil ist privat. Folgen Sie, um Aktivitäten und Statistiken zu sehen.",
+    "followList": {
+      "followersTitle": "Follower",
+      "followingTitle": "Folgt",
+      "close": "Schließen",
+      "loading": "Lädt…",
+      "error": "Liste konnte nicht geladen werden.",
+      "empty": "Noch niemand hier."
+    }
   },
   "goals": {
     "myGoals": "Meine Ziele",
@@ -984,7 +992,7 @@
       "calories": "Kalorien",
       "averageSpeed": "Ø Geschw. (km/h)",
       "averageHeartRate": "Ø Herzfrequenz",
-      "pace": "Pace (min/km)",
+      "pace": "Pace",
       "likesCount": "Likes",
       "commentsCount": "Kommentare"
     },

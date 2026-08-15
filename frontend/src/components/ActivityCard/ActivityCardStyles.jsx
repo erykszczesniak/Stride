@@ -207,6 +207,37 @@ export const CoverPhoto = styled.div`
   }
 `;
 
+export const MediaRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0 16px 0;
+`;
+
+export const MediaTile = styled.div`
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
+    background: ${({ theme }) => theme.bgHover};
+  }
+
+  .leaflet-control-attribution,
+  .leaflet-control-zoom {
+    display: none;
+  }
+`;
+
 export const MapPreview = styled.div`
   margin: 12px 0 16px 0;
   border-radius: 12px;

@@ -172,7 +172,26 @@
     "upcoming": "Upcoming",
     "noActivitiesYet": "No activities yet. Start tracking your workouts!",
     "weeklyActivity": "Weekly Activity",
-    "distanceLabel": "Distance (km)"
+    "distanceLabel": "Distance (km)",
+    "form": {
+      "title": "Form",
+      "fresh": "Fresh",
+      "neutral": "Neutral",
+      "fatigued": "Fatigued",
+      "ctl": "CTL · Fitness",
+      "atl": "ATL · Fatigue",
+      "tsb": "TSB · Form",
+      "gaugeAlt": "Training form gauge, TSB {{tsb}}"
+    },
+    "weeklyVolume": {
+      "title": "Weekly Volume",
+      "swim": "Swim",
+      "bike": "Bike",
+      "run": "Run"
+    },
+    "trainingLoad": {
+      "title": "Training Load"
+    }
   },
   "activities": {
     "title": "Activities",
@@ -272,6 +291,18 @@
         "partial": "partial",
         "estimatedNote": "Splits estimated from average pace; per-point timing not yet recorded.",
         "accurateNote": "Splits computed from GPS timestamps."
+      },
+      "photoViewer": {
+        "close": "Close photo",
+        "prev": "Previous photo",
+        "next": "Next photo",
+        "delete": "Delete photo",
+        "confirmDelete": "Delete this photo?"
+      },
+      "paceHr": {
+        "title": "Pace & Heart Rate",
+        "pace": "Pace",
+        "hr": "Heart rate"
       }
     },
     "record": {
@@ -324,6 +355,20 @@
       }
     }
   },
+  "aiChat": {
+    "title": "AI Coach",
+    "empty": "Ask the AI coach to analyze this activity, or pick a suggestion below.",
+    "placeholder": "Ask anything about this activity...",
+    "send": "Send",
+    "clear": "Clear",
+    "thinking": "Thinking...",
+    "error": "Could not reach the AI coach. Please try again.",
+    "suggestions": {
+      "analyze": "Analyze this activity",
+      "pacing": "How was my pacing?",
+      "recovery": "Should I rest or train tomorrow?"
+    }
+  },
   "profile": {
     "loading": "Loading profile...",
     "userNotFound": "User not found",
@@ -374,7 +419,15 @@
       "consistentDesc": "10+ activities completed"
     },
     "privateProfile": "Private profile",
-    "privateProfileDescription": "This profile is private. Follow to see their activities and stats."
+    "privateProfileDescription": "This profile is private. Follow to see their activities and stats.",
+    "followList": {
+      "followersTitle": "Followers",
+      "followingTitle": "Following",
+      "close": "Close",
+      "loading": "Loading…",
+      "error": "Could not load the list.",
+      "empty": "Nobody here yet."
+    }
   },
   "goals": {
     "myGoals": "My Goals",
@@ -984,7 +1037,7 @@
       "calories": "Calories",
       "averageSpeed": "Avg Speed (km/h)",
       "averageHeartRate": "Avg Heart Rate",
-      "pace": "Pace (min/km)",
+      "pace": "Pace",
       "likesCount": "Likes",
       "commentsCount": "Comments"
     },

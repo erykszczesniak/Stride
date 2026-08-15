@@ -20,7 +20,11 @@ import ActivityService from "../api/ActivityService";
 import CommentService from "../api/CommentService";
 import ActivityMap from "../components/ActivityMap/ActivityMap";
 import ElevationProfile from "../components/ElevationProfile/ElevationProfile";
+import PaceHrChart from "../components/PaceHrChart/PaceHrChart";
+import PipelineService from "../api/PipelineService";
 import ShareModal from "../components/ShareModal/ShareModal";
+import PhotoLightbox from "../components/PhotoLightbox/PhotoLightbox";
+import ActivityAiChat from "../components/ActivityAiChat/ActivityAiChat";
 import { useAuth } from "../context/AuthContext";
 import { useUnits } from "../context/UnitsContext";
 import { LoadingSpinner } from "./DashboardStyles";
@@ -242,6 +246,11 @@ const ActivityDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const unitsCtx = useUnits();
+  // Backend photo paths are host-relative; absolute URLs pass through.
+  const resolvePhotoUrl = (photo) =>
+    photo.startsWith("http")
+      ? photo
+      : `${process.env.REACT_APP_API_BASE_URL || "http://localhost:8080"}${photo}`;
   const [loading, setLoading] = useState(true);
   const [activity, setActivity] = useState(null);
   const [comments, setComments] = useState([]);
@@ -250,6 +259,8 @@ const ActivityDetails = () => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState("");
   const [likedByMe, setLikedByMe] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [pipelineDetail, setPipelineDetail] = useState(null);
   const [likesCount, setLikesCount] = useState(0);
   const [commentReactions, setCommentReactions] = useState({});
   const [userReactions, setUserReactions] = useState({});
@@ -267,6 +278,11 @@ const ActivityDetails = () => {
         setActivity(res.data);
         setLikedByMe(res.data.likedByCurrentUser || false);
         setLikesCount(res.data.likesCount || 0);
+        // Optional: the pipeline serves precomputed pace/HR series for
+        // triathlon disciplines — absence just hides the chart.
+        PipelineService.getActivityDetail(id)
+          .then(setPipelineDetail)
+          .catch(() => setPipelineDetail(null));
       } catch (error) {
       } finally {
         setLoading(false);
@@ -432,6 +448,18 @@ const ActivityDetails = () => {
 
   const isOwner = user && activity?.user?.id === user.id;
 
+  const handleDeletePhoto = async (index) => {
+    if (!window.confirm(t("activities.details.photoViewer.confirmDelete"))) return;
+    try {
+      await ActivityService.deletePhoto(id, index);
+      const remaining = activity.photos.filter((_, i) => i !== index);
+      setActivity((prev) => ({ ...prev, photos: remaining }));
+      setLightboxIndex(remaining.length === 0 ? null : Math.min(index, remaining.length - 1));
+    } catch (error) {
+      console.error("Failed to delete photo", error);
+    }
+  };
+
   const handleDeleteActivity = async () => {
     if (!window.confirm(t("activities.details.confirmDelete", { title: activity.title }))) return;
     try {
@@ -575,6 +603,8 @@ const ActivityDetails = () => {
         totalDistanceKm={activity.distance}
       />
 
+      <PaceHrChart detail={pipelineDetail} totalDistanceKm={activity.distance} />
+
       {/* Splits only make sense for distance-based sports (runs, rides,
           swims, ...). Gym sessions, yoga, weight training etc. don't cover
           ground, so a table of "per-km splits" is meaningless there. */}
@@ -661,19 +691,26 @@ const ActivityDetails = () => {
             {t("activities.details.photos")} ({activity.photos.length})
           </PhotoGallerySectionTitle>
           <PhotoGrid>
-            {activity.photos.map((photo, index) => {
-              const photoUrl = photo.startsWith('http')
-                ? photo
-                : `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}${photo}`;
-              return (
-                <PhotoGridItem key={index}>
-                  <PhotoGridImage src={photoUrl} alt={t("activities.details.photoAlt", { index: index + 1 })} />
-                </PhotoGridItem>
-              );
-            })}
+            {activity.photos.map((photo, index) => (
+              <PhotoGridItem key={index} onClick={() => setLightboxIndex(index)}>
+                <PhotoGridImage src={resolvePhotoUrl(photo)} alt={t("activities.details.photoAlt", { index: index + 1 })} />
+              </PhotoGridItem>
+            ))}
           </PhotoGrid>
         </PhotoGallerySection>
       )}
+
+      {lightboxIndex != null && activity.photos && activity.photos.length > 0 && (
+        <PhotoLightbox
+          photos={activity.photos.map(resolvePhotoUrl)}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+          onDelete={isOwner ? handleDeletePhoto : undefined}
+        />
+      )}
+
+      {isOwner && <ActivityAiChat activityId={id} />}
 
       <CommentsSection ref={commentsSectionRef}>
         <CommentsSectionTitle>

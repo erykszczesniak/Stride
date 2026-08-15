@@ -568,7 +568,7 @@ export const IntegrationRow = styled.div`
   padding: 16px;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
-  background: ${({ theme }) => theme.cardBg || theme.bg};
+  background: ${({ theme }) => theme.bgCard};
   margin-bottom: 12px;
 `;
 
@@ -583,12 +583,12 @@ export const IntegrationName = styled.p`
   font-size: 15px;
   font-weight: 600;
   margin: 0;
-  color: ${({ theme }) => theme.text};
+  color: ${({ theme }) => theme.textPrimary};
 `;
 
 export const IntegrationDetail = styled.p`
   font-size: 13px;
-  color: ${({ theme }) => theme.textSecondary || theme.text};
+  color: ${({ theme }) => theme.textSecondary};
   margin: 0;
 `;
 
@@ -629,7 +629,7 @@ export const SecondaryButton = styled.button`
   gap: 6px;
   padding: 10px 14px;
   background: transparent;
-  color: ${({ theme }) => theme.text};
+  color: ${({ theme }) => theme.textPrimary};
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 6px;
   font-size: 14px;
@@ -637,7 +637,7 @@ export const SecondaryButton = styled.button`
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: ${({ theme }) => theme.hover || "rgba(0,0,0,0.04)"};
+    background: ${({ theme }) => theme.bgHover};
   }
 
   &:disabled {

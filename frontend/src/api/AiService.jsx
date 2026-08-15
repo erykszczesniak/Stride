@@ -17,6 +17,20 @@ class AiService {
       weeks: parseInt(weeks) || 4
     });
   }
+
+  // --- AI activity-analysis chat (Claude-powered) ---
+
+  getActivityChat(activityId) {
+    return apiClient.get(`/ai/activities/${activityId}/chat`);
+  }
+
+  sendActivityChatMessage(activityId, message) {
+    return apiClient.post(`/ai/activities/${activityId}/chat`, { message });
+  }
+
+  clearActivityChat(activityId) {
+    return apiClient.delete(`/ai/activities/${activityId}/chat`);
+  }
 }
 
 const aiService = new AiService();
