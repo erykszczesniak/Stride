@@ -14,6 +14,12 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, UserFoll
     /** Users that the given user follows. */
     Page<UserFollow> findAllByFollowerId(Long followerId, Pageable pageable);
 
+    /** Edges pointing at the given user — their followers (unpaged, contract returns full list). */
+    List<UserFollow> findAllByUserId(Long userId);
+
+    /** Edges originating from the given user — who they follow (unpaged). */
+    List<UserFollow> findAllByFollowerId(Long followerId);
+
     long countByUserId(Long userId);
 
     long countByFollowerId(Long followerId);

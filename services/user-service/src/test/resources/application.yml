@@ -1,0 +1,29 @@
+# Test configuration — shadows the main application.yml on the test classpath so no
+# config-server import / Eureka / Elasticsearch is attempted during tests.
+spring:
+  application:
+    name: user-service
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+  test:
+    database:
+      replace: none
+  datasource:
+    url: jdbc:h2:mem:stride_user_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/common,classpath:db/migration/h2
+eureka:
+  client:
+    enabled: false

@@ -18,8 +18,24 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration/common,classpath:db/migration/postgresql
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
 
 jwt:
   secret: ${JWT_SECRET:dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
   access-token-ttl-seconds: 3600
   refresh-token-ttl-seconds: 604800
+
+google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+
+app:
+  strava:
+    # "Continue with Strava" login flow (the import/integration flow lives in
+    # activity-service). Same env vars as the monolith.
+    client-id: ${STRAVA_CLIENT_ID:}
+    client-secret: ${STRAVA_CLIENT_SECRET:}
+    login-redirect-uri: ${STRAVA_LOGIN_REDIRECT_URI:http://localhost:8080/api/v1/auth/strava/callback}
+    login-frontend-redirect: ${STRAVA_LOGIN_FRONTEND_REDIRECT:http://localhost:3000/auth/strava/callback}
+    login-frontend-error-redirect: ${STRAVA_LOGIN_FRONTEND_ERROR_REDIRECT:http://localhost:3000/login}
+    state-secret: ${STRAVA_STATE_SECRET:}

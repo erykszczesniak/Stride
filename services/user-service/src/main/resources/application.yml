@@ -10,13 +10,22 @@ spring:
         max-attempts: 6
         initial-interval: 2000
 
-# Local fallback profile — run user-service without the rest of the stack.
+# Local fallback profile — run user-service without the rest of the stack
+# (H2 instead of Postgres, no Elasticsearch, no Kafka broker required, no Eureka).
 # Activate with -Dspring.profiles.active=standalone.
 ---
 spring:
   config:
     activate:
       on-profile: standalone
+  autoconfigure:
+    # No Elasticsearch in standalone — user search serves the SQL fallback only.
+    exclude:
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRepositoriesAutoConfiguration
   datasource:
     url: jdbc:h2:mem:stride_user;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -29,7 +38,7 @@ spring:
       hibernate.dialect: org.hibernate.dialect.H2Dialect
   flyway:
     enabled: true
-    locations: classpath:db/migration/common
+    locations: classpath:db/migration/common,classpath:db/migration/h2
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -49,6 +58,12 @@ jwt:
   secret: dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod
   access-token-ttl-seconds: 3600
   refresh-token-ttl-seconds: 604800
+google:
+  client-id: ""
+app:
+  strava:
+    client-id: ""
+    client-secret: ""
 management:
   endpoints:
     web:
