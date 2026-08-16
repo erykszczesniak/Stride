@@ -1,0 +1,44 @@
+server:
+  port: 8088
+
+spring:
+  graphql:
+    schema:
+      # Prod posture: the report schema is not discoverable from outside.
+      # Dev/standalone keep introspection on via the module's application.yml.
+      introspection:
+        enabled: false
+
+# Tighter Resilience4j thresholds for prod — break the circuit faster, recover faster.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
+    instances:
+      user-service:
+        baseConfig: default
+      activity-service:
+        baseConfig: default
+      challenge-goal-service:
+        baseConfig: default
+      club-event-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 250ms
+        exponentialBackoffMultiplier: 2
+    instances:
+      user-service:
+        baseConfig: default
+      activity-service:
+        baseConfig: default
+      challenge-goal-service:
+        baseConfig: default
+      club-event-service:
+        baseConfig: default

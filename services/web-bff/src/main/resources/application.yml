@@ -1,0 +1,82 @@
+spring:
+  application:
+    name: web-bff
+  config:
+    import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
+  cloud:
+    config:
+      fail-fast: false
+      retry:
+        max-attempts: 6
+        initial-interval: 2000
+  graphql:
+    schema:
+      locations: classpath:graphql/
+      # Introspection stays on for dev/standalone (like main, which never
+      # disabled it); the config-server overlay turns it off for prod.
+      introspection:
+        enabled: true
+
+server:
+  port: 8088
+
+# Resilience4j tuning (applies in every profile). Generous in dev so that the
+# smoke test sees the fallback path quickly when a downstream isn't running;
+# the config-server overlay tightens it for prod.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      user-service:
+        baseConfig: default
+      activity-service:
+        baseConfig: default
+      challenge-goal-service:
+        baseConfig: default
+      club-event-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 200ms
+        exponentialBackoffMultiplier: 2
+    instances:
+      user-service:
+        baseConfig: default
+      activity-service:
+        baseConfig: default
+      challenge-goal-service:
+        baseConfig: default
+      club-event-service:
+        baseConfig: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,circuitbreakers,retries
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: standalone
+
+eureka:
+  client:
+    enabled: false

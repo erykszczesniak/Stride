@@ -1,0 +1,14 @@
+# Test-classpath shadow of the main application.yml: no config-server import,
+# no Eureka — the BFF has no database, so nothing else to fake.
+spring:
+  application:
+    name: web-bff
+  cloud:
+    config:
+      enabled: false
+  graphql:
+    schema:
+      locations: classpath:graphql/
+eureka:
+  client:
+    enabled: false

@@ -36,6 +36,7 @@
         <module>services/club-event-service</module>
         <module>services/challenge-goal-service</module>
         <module>services/ai-service</module>
+        <module>services/web-bff</module>
     </modules>
 
     <dependencyManagement>

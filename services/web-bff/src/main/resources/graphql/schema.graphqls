@@ -1,0 +1,39 @@
+# Report Builder — the one GraphQL surface any client actually uses
+# (Reports.jsx's GenerateReport query). Type/field names are verbatim from the
+# monolith's schema.graphqls report section; the monolith's other GraphQL types
+# were REST shadows nothing called, and are deliberately not duplicated
+# (see docs/parity-plan.md).
+type Query {
+    generateReport(dateFrom: String!, dateTo: String!, fields: [String!]!, activityType: String): ReportResult!
+}
+
+type ReportRow {
+    activityTitle: String
+    activityType: String
+    date: String
+    distance: Float
+    duration: Int
+    elevationGain: Int
+    calories: Int
+    averageSpeed: Float
+    averageHeartRate: Int
+    pace: String
+    likesCount: Int
+    commentsCount: Int
+}
+
+type ReportSummary {
+    totalDistance: Float
+    totalDuration: Int
+    totalCalories: Int
+    totalElevation: Int
+    totalActivities: Int
+    avgDistance: Float
+    avgDuration: Int
+    avgCalories: Int
+}
+
+type ReportResult {
+    rows: [ReportRow!]!
+    summary: ReportSummary!
+}
