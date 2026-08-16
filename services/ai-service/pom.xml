@@ -14,13 +14,14 @@
     <artifactId>ai-service</artifactId>
     <name>Stride :: Services :: AI (Kotlin)</name>
     <description>
-        Stateless proxy in front of the Groq Chat Completions API. Exposes
-        domain-specific endpoints (analyze-activity, training-tip, weekly-
-        summary) that compose prompts internally. The outbound call to Groq
-        is wrapped in Resilience4j (circuit breaker + retry + timeout) so a
-        slow or down LLM provider degrades gracefully rather than tying up
-        request threads. Written in Kotlin, second JVM-language service in
-        the stack.
+        Monolith-parity AI surface under /api/v1/ai: SMART-goal and training-
+        plan generation proxied to the Groq Chat Completions API, plus the
+        persisted per-activity AI analysis chat backed by Anthropic Claude
+        (official anthropic-java SDK) with its own Postgres schema
+        (ai_conversations / ai_messages). Activity context for the chat's
+        system prompt is fetched from activity-service's internal batch API
+        via lb:// + Resilience4j. Written in Kotlin, second JVM-language
+        service in the stack.
     </description>
 
     <properties>
@@ -49,6 +50,10 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
@@ -67,8 +72,19 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
 
-        <!-- Resilience4j: protects the outbound Groq call. -->
+        <!-- Official Anthropic SDK — powers the persisted activity-analysis chat. -->
+        <dependency>
+            <groupId>com.anthropic</groupId>
+            <artifactId>anthropic-java</artifactId>
+            <version>2.34.0</version>
+        </dependency>
+
+        <!-- Resilience4j: protects the outbound Groq and activity-service calls. -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
@@ -83,6 +99,27 @@
             <groupId>com.strava</groupId>
             <artifactId>shared-security</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
@@ -102,11 +139,23 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito.kotlin</groupId>
+            <artifactId>mockito-kotlin</artifactId>
+            <version>5.4.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <finalName>ai-service</finalName>
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -118,13 +167,23 @@
                         <arg>-java-parameters</arg>
                     </args>
                     <compilerPlugins>
+                        <!-- @SpringBootApplication, @Configuration, @Component, @Service, @RestController,
+                             @Repository, @Transactional get the all-open treatment (CGLIB proxies
+                             need to subclass). -->
                         <plugin>spring</plugin>
+                        <!-- @Entity, @Embeddable, @MappedSuperclass need parameterless ctors. -->
+                        <plugin>jpa</plugin>
                     </compilerPlugins>
                 </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-allopen</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-noarg</artifactId>
                         <version>${kotlin.version}</version>
                     </dependency>
                 </dependencies>
@@ -135,6 +194,15 @@
                         <configuration>
                             <sourceDirs>
                                 <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals><goal>test-compile</goal></goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
                             </sourceDirs>
                         </configuration>
                     </execution>

@@ -1,0 +1,26 @@
+# Test-classpath shadow of the main application.yml: no config-server import,
+# no Eureka, H2 (MODE=PostgreSQL) with the real Flyway migration validated by
+# Hibernate — same recipe as the other services' test configs.
+spring:
+  application:
+    name: ai-service
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:test_ai;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/common
+eureka:
+  client:
+    enabled: false
