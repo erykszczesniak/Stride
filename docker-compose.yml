@@ -11,26 +11,28 @@ services:
   # Messaging — Kafka in KRaft mode (no Zookeeper)
   # ============================================
   kafka:
-    image: bitnami/kafka:3.7
+    # Official Apache image (Bitnami's Docker Hub tags were withdrawn upstream).
+    image: apache/kafka:3.9.0
     container_name: stride-kafka
     restart: unless-stopped
     ports:
       - "9092:9092"
+      - "9094:9094"
     environment:
-      KAFKA_CFG_NODE_ID: "0"
-      KAFKA_CFG_PROCESS_ROLES: controller,broker
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-    volumes:
-      - kafka_data:/bitnami/kafka
+      KAFKA_NODE_ID: "0"
+      KAFKA_PROCESS_ROLES: controller,broker
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -70,10 +72,34 @@ services:
     networks: [stride-net]
 
   # ============================================
+  # Search — Elasticsearch (user search index; SQL fallback when down)
+  # ============================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: stride-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks: [stride-net]
+
+  # ============================================
   # Distributed tracing
   # ============================================
   jaeger:
-    image: jaegertracing/all-in-one:1.62
+    # 1.62 was withdrawn from Docker Hub; 1.71 is the current maintained v1 line.
+    image: jaegertracing/all-in-one:1.71.0
     container_name: stride-jaeger
     restart: unless-stopped
     ports:
@@ -115,6 +141,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks: [stride-net]
 
   # ============================================
@@ -234,6 +261,44 @@ services:
       retries: 5
     networks: [stride-net]
 
+  postgres-ai:
+    image: postgres:16-alpine
+    container_name: stride-postgres-ai
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_ai
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_ai_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
+  postgres-pipeline:
+    image: postgres:16-alpine
+    container_name: stride-postgres-pipeline
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stride_pipeline
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres_pipeline_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stride -d stride_pipeline"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [stride-net]
+
   # ============================================
   # Spring Cloud infrastructure
   # ============================================
@@ -330,6 +395,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET:-dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
+      ELASTICSEARCH_URIS: http://elasticsearch:9200
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID:-}
+      STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET:-}
+      STRAVA_LOGIN_REDIRECT_URI: ${STRAVA_LOGIN_REDIRECT_URI:-http://localhost:8080/api/v1/auth/strava/callback}
+      STRAVA_LOGIN_FRONTEND_REDIRECT: ${STRAVA_LOGIN_FRONTEND_REDIRECT:-http://localhost:3000/oauth2/strava}
+      STRAVA_LOGIN_FRONTEND_ERROR_REDIRECT: ${STRAVA_LOGIN_FRONTEND_ERROR_REDIRECT:-http://localhost:3000/login}
+      STRAVA_STATE_SECRET: ${STRAVA_STATE_SECRET:-}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -337,6 +410,9 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      elasticsearch:
+        # Soft dependency: search falls back to SQL when the index is unavailable.
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
       interval: 15s
@@ -364,6 +440,15 @@ services:
       POSTGRES_USER: stride
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      UPLOAD_DIR: /data/uploads/photos
+      STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID:-}
+      STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET:-}
+      STRAVA_REDIRECT_URI: ${STRAVA_REDIRECT_URI:-http://localhost:8080/api/v1/integrations/strava/callback}
+      STRAVA_FRONTEND_REDIRECT: ${STRAVA_FRONTEND_REDIRECT:-http://localhost:3000/settings}
+      STRAVA_STATE_SECRET: ${STRAVA_STATE_SECRET:-}
+      STRAVA_IMPORT_STREAMS: ${STRAVA_IMPORT_STREAMS:-true}
+    volumes:
+      - activity_uploads:/data/uploads
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -398,6 +483,11 @@ services:
       POSTGRES_USER: stride
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -528,13 +618,78 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      POSTGRES_HOST: postgres-ai
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: stride_ai
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5}
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres-ai:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8087/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks: [stride-net]
+
+  web-bff:
+    build:
+      context: .
+      dockerfile: services/web-bff/Dockerfile
+    image: stride/web-bff:dev
+    container_name: stride-web-bff
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     depends_on:
       discovery-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8087/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8088/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks: [stride-net]
+
+  pipeline-service:
+    build:
+      context: .
+      dockerfile: services/pipeline-service/Dockerfile
+    image: stride/pipeline-service:dev
+    container_name: stride-pipeline-service
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      POSTGRES_HOST: postgres-pipeline
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: stride_pipeline
+      POSTGRES_USER: stride
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stride}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres-pipeline:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8089/actuator/health"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -547,13 +702,16 @@ networks:
     name: stride-net
 
 volumes:
-  kafka_data:
   redis_data:
+  elasticsearch_data:
   prometheus_data:
   grafana_data:
+  activity_uploads:
   postgres_user_data:
   postgres_activity_data:
   postgres_social_data:
   postgres_notification_data:
   postgres_club_event_data:
   postgres_challenge_goal_data:
+  postgres_ai_data:
+  postgres_pipeline_data:

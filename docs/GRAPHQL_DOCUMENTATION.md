@@ -2,6 +2,13 @@
 
 **Endpoint:** `http://localhost:8080/graphql`
 
+> **`microservices` branch note:** only the report schema
+> (`generateReport` → `ReportResult`) is served here, by **web-bff** — it is
+> the single GraphQL operation any client uses (the report wizard). The
+> monolith's remaining GraphQL surface is REST-shadowed dead code and was
+> deliberately not duplicated; the sections below other than *Reports*
+> document the monolith on `main` only.
+
 ---
 
 ## Testing

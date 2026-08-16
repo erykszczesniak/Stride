@@ -38,9 +38,7 @@ logs/
 # Tests
 src/test/
 
-# Maven wrapper (we install maven in Docker)
-.mvn/
-mvnw*
+# Maven wrapper is REQUIRED in the build context — the Dockerfiles run ./mvnw.
 
 # CI/CD
 .github/

@@ -53,19 +53,30 @@ calls is ported 1:1.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 10 | Frontend synced 1:1 with `main` | done |
-| 11 | Shared events v2, gateway `/api/v1` route table, SSE `?token=`, CORS page headers, first tests | done |
-| 12 | user-service full parity | pending |
-| 13 | activity-service core parity | pending |
-| 14 | gear tracking | pending |
-| 15 | file import + Strava integration | pending |
-| 16 | social-service parity (likes, comments+reactions, CQRS feed fan-out) | pending |
-| 17 | notification-service parity (contract, email, weekly summary) | pending |
-| 18 | challenge-goal + club-event parity + training plans | pending |
-| 19 | ai-service parity (persisted chat, generate-goal/plan) | pending |
-| 20 | web-bff (dashboard, GenerateReport, CSV export, admin stats) | pending |
-| 21 | pipeline-service (iOS facade + `tri_` tokens) | pending |
-| 22 | infra wiring (compose, config, k8s, monitoring, CI), docs, full verification | pending |
+| 10 | Frontend synced 1:1 with `main` | done (`a91f0a9`) |
+| 11 | Shared events v2, gateway `/api/v1` route table, SSE `?token=`, CORS page headers, first tests | done (`4ef85b5`) |
+| 12 | user-service full parity | done (`646a386`, 143 tests) |
+| 13 | activity-service core parity | done (`306b3e1`, 95 tests) |
+| 14 | gear tracking | done (PR #141) |
+| 15 | file import + Strava integration | done (PR #141, module at 218 tests) |
+| 16 | social-service parity (likes, comments+reactions, CQRS feed fan-out) | done (PR #144, 85 tests) |
+| 17 | notification-service parity (contract, email, weekly summary) | done (`4d7a526`, 57 tests) |
+| 18 | challenge-goal + club-event parity + training plans | done (`db2a66c`, 179 tests) |
+| 19 | ai-service parity (persisted chat, generate-goal/plan) | done (PR #140, 45 tests) |
+| 20 | web-bff (dashboard, GenerateReport, CSV export, admin stats) | done (PR #142, 35 tests) |
+| 21 | pipeline-service (iOS facade + `tri_` tokens) | done (PR #143, 63 tests) |
+| 22 | infra wiring (compose, config, k8s, monitoring, CI), docs, full verification | done (this commit) |
+
+Full-reactor `./mvnw verify` on the merged tree: **BUILD SUCCESS, 833 tests, 0
+failures** (including the 8 gateway filter tests).
+
+Known deliberate deviations (documented at their code sites): ProblemDetail +
+`message` errors instead of the monolith's ad-hoc maps; the REST-shadowed dead
+GraphQL surface is not duplicated; social-served feed rows carry `gear: null`;
+BFF admin club/challenge/event counts are approximations; refresh tokens must
+carry `type=refresh`; per-section BFF degradation on downstream outages.
+Follow-up open: user-service profile activity counts still come from a stub
+port until wired to activity-service internal stats.
 
 ## Testing convention (established in Phase 11)
 

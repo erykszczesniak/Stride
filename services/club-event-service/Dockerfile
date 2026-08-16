@@ -1,12 +1,15 @@
 # syntax=docker/dockerfile:1.7
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /workspace
+# The parent POM's reactor references every module, so the whole module tree
+# must be present even when building a single service with -pl/-am.
 COPY pom.xml ./pom.xml
-COPY shared ./shared
-COPY services/club-event-service ./services/club-event-service
 COPY .mvn ./.mvn
 COPY mvnw ./mvnw
-RUN ./mvnw -q -pl services/club-event-service -am -DskipTests package
+COPY shared ./shared
+COPY infrastructure ./infrastructure
+COPY services ./services
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -pl services/club-event-service -am -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -S stride && adduser -S stride -G stride

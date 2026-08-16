@@ -2,12 +2,15 @@
 # Build stage
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /workspace
+# The parent POM's reactor references every module, so the whole module tree
+# must be present even when building a single service with -pl/-am.
 COPY pom.xml ./pom.xml
-COPY shared ./shared
-COPY infrastructure/config-server ./infrastructure/config-server
 COPY .mvn ./.mvn
 COPY mvnw ./mvnw
-RUN ./mvnw -q -pl infrastructure/config-server -am -DskipTests package
+COPY shared ./shared
+COPY infrastructure ./infrastructure
+COPY services ./services
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -pl infrastructure/config-server -am -DskipTests package
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine

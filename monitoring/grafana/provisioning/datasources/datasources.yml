@@ -1,15 +1,10 @@
 apiVersion: 1
 
+# Jaeger lives in its own file (jaeger.yml) so its uid stays stable for links.
 datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
-    editable: true
-
-  - name: Jaeger
-    type: jaeger
-    access: proxy
-    url: http://jaeger:16686
     editable: true

@@ -5,7 +5,9 @@ spring:
   application:
     name: config-server
   profiles:
-    active: native
+    # `include` (not `active`) so the native backend survives environments that
+    # override SPRING_PROFILES_ACTIVE (docker-compose sets it to "docker").
+    include: native
   cloud:
     config:
       server:

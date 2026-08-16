@@ -34,8 +34,9 @@ class JwtAuthenticationFilterTest {
     void setUp() {
         filter = new JwtAuthenticationFilter(
                 new JwtParser(SECRET),
-                List.of("/api/v1/auth/**", "/actuator/**", "/pipeline/v1/**"),
-                List.of("/api/v1/notifications/stream"));
+                new JwtFilterProperties(SECRET,
+                        List.of("/api/v1/auth/**", "/actuator/**", "/pipeline/v1/**"),
+                        List.of("/api/v1/notifications/stream")));
         forwarded = new AtomicReference<>();
         chain = exchange -> {
             forwarded.set(exchange);

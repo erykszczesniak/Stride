@@ -13,13 +13,15 @@ decomposition.
 | config-server            | 8888  | Java     | Spring Cloud Config (classpath-served YAML)       | 1     |
 | discovery-server         | 8761  | Java     | Eureka registry                                   | 1     |
 | api-gateway              | 8080  | Java     | Routing, JWT validation, rate-limit, CORS         | 1     |
-| user-service             | 8081  | Java     | Identity, auth, profiles, follow graph            | 2     |
-| activity-service         | 8082  | Java     | Activities, personal records                      | 3     |
-| notification-service     | 8083  | **Kotlin** | Notifications (Kafka consumer + SSE push)        | 4     |
-| social-service           | 8084  | Java     | Comments, reactions, CQRS feed                    | 5     |
-| club-event-service       | 8085  | Java     | Clubs, members, events, participants              | 6     |
-| challenge-goal-service   | 8086  | Java     | Challenges, goals (Resilience4j + Redis cache)    | 7     |
-| ai-service               | 8087  | **Kotlin** | Groq Chat Completions proxy                      | 8     |
+| user-service             | 8081  | Java     | Identity, auth (JWT/Google/Strava), profiles, follow graph, ES search, admin users | 2, 12 |
+| activity-service         | 8082  | Java     | Activities, stats, photos, PRs, gear, file import, Strava integration | 3, 13–15 |
+| notification-service     | 8083  | **Kotlin** | Notifications, SSE push, email + weekly summary  | 4, 17 |
+| social-service           | 8084  | Java     | Likes, comments + emoji reactions, per-user CQRS feed fan-out | 5, 16 |
+| club-event-service       | 8085  | Java     | Clubs, members, events, participants              | 6, 18 |
+| challenge-goal-service   | 8086  | Java     | Challenges, goals, training plans (Resilience4j + Redis cache) | 7, 18 |
+| ai-service               | 8087  | **Kotlin** | Persisted AI activity chat (Anthropic) + goal/plan generation (Groq) | 8, 19 |
+| web-bff                  | 8088  | Java     | Web BFF: dashboard composition, report GraphQL, CSV export, admin stats | 20 |
+| pipeline-service         | 8089  | Java     | iOS BFF: /pipeline/v1 facade + tri_ personal tokens (own auth chain) | 21 |
 
 Two services in Kotlin (notification-service, ai-service) deliberately,
 to demonstrate incremental JVM-language migration without rewriting the
@@ -93,12 +95,18 @@ options in this codebase:
 
 | Topic                       | Producer                | Consumer(s)                     |
 |-----------------------------|-------------------------|---------------------------------|
-| `stride.user.registered`    | user-service            | notification, social            |
-| `stride.activity.created`   | activity-service        | challenge-goal (cache invalidation), social (CQRS projection) |
-| `stride.activity.updated`   | activity-service        | (reserved)                      |
-| `stride.pr.achieved`        | activity-service        | notification                    |
-| `stride.comment.added`      | social-service          | social (count increment)        |
-| `stride.reaction.added`     | social-service          | social (count increment)        |
+| `stride.user.registered`    | user-service            | social + activity (user_cache projections) |
+| `stride.user.updated`       | user-service            | social, activity (cache refresh) |
+| `stride.user.deleted`       | user-service            | social (purge), activity (cache) |
+| `stride.user.followed`      | user-service            | social (follow graph + feed backfill), notification (FOLLOW) |
+| `stride.user.unfollowed`    | user-service            | social (edge removal + feed purge) |
+| `stride.activity.created`   | activity-service        | social (snapshot + feed fan-out), challenge-goal (cache invalidation) |
+| `stride.activity.updated`   | activity-service        | social (snapshot refresh)       |
+| `stride.activity.deleted`   | activity-service        | social (feed retraction + local cleanup) |
+| `stride.activity.visibility-changed` | activity-service | social (feed retraction / re-fan-out) |
+| `stride.activity.liked`     | social-service          | notification (LIKE)             |
+| `stride.pr.achieved`        | activity-service        | notification (ACHIEVEMENT)      |
+| `stride.comment.added`      | social-service          | notification (COMMENT)          |
 
 Producers and consumers share event DTOs through the `shared/events`
 module (Java records) — typed contracts on top of JSON-serialized Kafka

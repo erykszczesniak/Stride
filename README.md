@@ -4,14 +4,21 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  10 Spring Boot/Kotlin services · Kafka events · Eureka discovery    │
-│  Spring Cloud Config · Redis cache · Resilience4j · CQRS-light       │
-│  OpenTelemetry → Jaeger · Micrometer → Prometheus → Grafana          │
-│  K8s manifests · Terraform AWS slice · Database-per-service          │
+│  12 Spring Boot/Kotlin services · Kafka events · Eureka discovery    │
+│  Spring Cloud Config · Redis cache · Elasticsearch · Resilience4j    │
+│  CQRS feed fan-out · 2 BFFs (web + iOS) · OpenTelemetry → Jaeger     │
+│  Micrometer → Prometheus → Grafana · K8s · Terraform · DB-per-service│
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Phases (all 9 shipped)
+**Full product parity with `main`:** the React frontend and the iOS
+`/pipeline/v1` client run unchanged against this stack — same `/api/v1`
+contract, same DTOs, same behavior, served by 9 domain services behind the
+gateway instead of one monolith. The parity work (Phases 10–22) is tracked
+in [docs/parity-plan.md](docs/parity-plan.md); every service module ships
+with tests (830+ across the reactor).
+
+## Phases
 
 | #  | Scope                                                                    | Commit       |
 |----|--------------------------------------------------------------------------|--------------|
@@ -24,7 +31,19 @@
 | 6  | club-event-service (combined: clubs + group events)                      | `86f2ce5`    |
 | 7  | challenge-goal-service (Resilience4j + Redis cache + Kafka invalidation) | `ecba2b0`    |
 | 8  | ai-service in Kotlin (Groq + Resilience4j on external API)               | `7239306`    |
-| 9  | K8s manifests · Terraform AWS slice · architecture docs · saga doc       | this commit  |
+| 9  | K8s manifests · Terraform AWS slice · architecture docs · saga doc       | `1a035af`    |
+| 10 | Frontend synced 1:1 with `main`                                          | `a91f0a9`    |
+| 11 | Shared events v2 · gateway `/api/v1` contract · first tests              | `4ef85b5`    |
+| 12 | user-service full parity (OAuth logins, reset, search/ES, admin)         | `646a386`    |
+| 13 | activity-service core parity (stats, photos, streams, visibility, PRs)   | `306b3e1`    |
+| 14–15 | gear tracking · file import (GPX/TCX/FIT) · Strava integration        | PR #141      |
+| 16 | social-service parity (likes, comments+reactions, CQRS feed fan-out)     | PR #144      |
+| 17 | notification-service parity (contract, email, weekly summary)            | `4d7a526`    |
+| 18 | challenge-goal + club-event parity · training plan templates             | `db2a66c`    |
+| 19 | ai-service parity (persisted AI chat, goal/plan generation)              | PR #140      |
+| 20 | web-bff (dashboard composition, report GraphQL, CSV export)              | PR #142      |
+| 21 | pipeline-service (iOS BFF, `tri_` personal tokens)                       | PR #143      |
+| 22 | Infra wiring (ES, new DBs, compose, k8s, CI) · docs · E2E verification   | this commit  |
 
 ## Architecture at a glance
 
@@ -38,32 +57,33 @@
                                 │
                        ┌────────▼───────┐   Redis
                        │  api-gateway   │←──(rate limit + session)
-                       │  · JWT verify  │
-                       │  · CORS        │
+                       │  · JWT verify  │   serves the monolith's exact
+                       │  · CORS        │   /api/v1 · /graphql · /pipeline/v1
                        └────────┬───────┘
                                 │  (lb:// via Eureka)
-        ┌───────────┬───────────┼───────────┬───────────┬─────────┐
-        ▼           ▼           ▼           ▼           ▼         ▼
-   ┌────────┐  ┌─────────┐  ┌─────────┐  ┌────────┐  ┌─────────┐  ┌────┐
-   │  user  │  │activity │  │ social  │  │ club/  │  │challenge│  │ ai │
-   │ :8081  │  │ :8082   │  │ :8084   │  │ event  │  │ /goal   │  │ Kt │
-   └───┬────┘  └────┬────┘  └────┬────┘  │ :8085  │  │ :8086   │  │8087│
-       │            │            │       └────────┘  └────┬────┘  └─┬──┘
+        ┌───────────┬───────────┼───────────┬───────────┬─────────┬───────────┐
+        ▼           ▼           ▼           ▼           ▼         ▼           ▼
+   ┌────────┐  ┌─────────┐  ┌─────────┐  ┌────────┐  ┌─────────┐  ┌────┐  ┌─────────┐
+   │  user  │  │activity │  │ social  │  │ club/  │  │challenge│  │ ai │  │ BFFs:   │
+   │ :8081  │  │ :8082   │  │ :8084   │  │ event  │  │ /goal   │  │ Kt │  │ web 8088│
+   └───┬────┘  └────┬────┘  └────┬────┘  │ :8085  │  │ :8086   │  │8087│  │ iOS 8089│
+       │            │            │       └────────┘  └────┬────┘  └─┬──┘  └─────────┘
        │            └────────┬───┴──────────┬─────────────┘         │
-       │                     │              │                       ▼
-       │                     ▼              ▼                  Groq API
-  ┌────────────────────────────────────────────────────────────────────┐
-  │                          Kafka topics                              │
-  │  user.registered · activity.created · activity.updated             │
-  │  pr.achieved · comment.added · reaction.added                      │
-  └─────────────────────────────────┬──────────────────────────────────┘
-                                    ▼
-                         ┌────────────────────┐
-                         │ notification (Kt)  │ ← SSE push to browsers
-                         │ :8083              │
-                         └────────────────────┘
+       │                     │              │              Groq + Anthropic APIs
+       ▼                     ▼              ▼
+  Elasticsearch  ┌──────────────────────────────────────────────────────────┐
+  (user search)  │                       Kafka topics                       │
+                 │  user.{registered,updated,deleted,followed,unfollowed}   │
+                 │  activity.{created,updated,deleted,visibility,liked}     │
+                 │  pr.achieved · comment.added                             │
+                 └──────────────────────┬───────────────────────────────────┘
+                                        ▼
+                             ┌────────────────────┐
+                             │ notification (Kt)  │ ← SSE push + email
+                             │ :8083              │
+                             └────────────────────┘
 
-  7× Postgres (database-per-service)   Tracing → Jaeger   Metrics → Prometheus
+  8× Postgres (database-per-service)   Tracing → Jaeger   Metrics → Prometheus
 ```
 
 Full details in [docs/architecture.md](docs/architecture.md) ·
@@ -77,13 +97,15 @@ observability setup in [docs/observability.md](docs/observability.md).
 | config-server            | 8888  | Java       | Spring Cloud Config (classpath-served YAML)       |
 | discovery-server         | 8761  | Java       | Netflix Eureka registry                           |
 | api-gateway              | 8080  | Java       | Routing, JWT validation, rate-limit, CORS         |
-| user-service             | 8081  | Java       | Identity, auth, profiles, follow graph            |
-| activity-service         | 8082  | Java       | Activities, personal records                      |
-| notification-service     | 8083  | **Kotlin** | Notifications (Kafka consumer + SSE push)         |
-| social-service           | 8084  | Java       | Comments, reactions, CQRS feed                    |
+| user-service             | 8081  | Java       | Identity, auth (JWT/Google/Strava), profiles, follow graph, ES search, admin users |
+| activity-service         | 8082  | Java       | Activities, stats, photos, personal records, gear, file import, Strava integration |
+| notification-service     | 8083  | **Kotlin** | Notifications (Kafka consumers, SSE push, email + weekly summary) |
+| social-service           | 8084  | Java       | Likes, comments + emoji reactions, per-user CQRS feed fan-out |
 | club-event-service       | 8085  | Java       | Clubs, members, events, participants              |
-| challenge-goal-service   | 8086  | Java       | Challenges, goals (Resilience4j + Redis cache)    |
-| ai-service               | 8087  | **Kotlin** | Groq Chat Completions proxy                       |
+| challenge-goal-service   | 8086  | Java       | Challenges, goals, training plans (Resilience4j + Redis cache) |
+| ai-service               | 8087  | **Kotlin** | Persisted AI activity chat (Anthropic) + goal/plan generation (Groq) |
+| web-bff                  | 8088  | Java       | Web BFF: dashboard composition, report GraphQL, CSV export, admin stats |
+| pipeline-service         | 8089  | Java       | iOS BFF: `/pipeline/v1` facade, `tri_` personal tokens |
 
 Two services are deliberately in Kotlin (notification-service, ai-service)
 to demonstrate incremental JVM-language migration without rewriting the
@@ -105,6 +127,10 @@ whole stack.
 | **Kotlin + Java interop**     | Kotlin services consume Java records from `shared/events`, plug into the Java `HeaderAuthenticationFilter` from `shared/security` |
 | **Defense-in-depth security** | NetworkPolicy in `k8s/network-policies.yaml` blocks domain services from external traffic — only the gateway can reach them |
 | **Per-service Resilience4j tuning** | dev defaults in each service's `application.yml`, prod-tighter overlay in Config Server |
+| **Backend-for-frontend (×2)** | `web-bff` (dashboard composition, report GraphQL, CSV export) and `pipeline-service` (iOS facade with its own `tri_` token auth) — one BFF per client type |
+| **Per-user feed fan-out (CQRS)** | `social-service.user_feed_entries` materialized from activity/follow events: author-always, public-only follower fan-out, visibility retraction, follow backfill, unfollow purge |
+| **Search index with graceful fallback** | `user-service` mirrors users into Elasticsearch (async, swallow-on-failure); search falls back to SQL `ILIKE` when the index is down |
+| **API composition with identity forwarding** | BFFs call domain services with the caller's verified `X-User-*` headers; internal `/internal/**` APIs are gateway-unroutable and cluster-only |
 
 ## Run it locally
 
@@ -182,7 +208,9 @@ full stack.
 │   ├── social-service/             # Phase 5 (CQRS)
 │   ├── club-event-service/         # Phase 6
 │   ├── challenge-goal-service/     # Phase 7 (Resilience4j + Redis)
-│   └── ai-service/                 # Phase 8 (Kotlin, Groq)
+│   ├── ai-service/                 # Phase 8 (Kotlin, Groq + Anthropic)
+│   ├── web-bff/                    # Phase 20 (web BFF: dashboard/report/export)
+│   └── pipeline-service/           # Phase 21 (iOS BFF: /pipeline/v1 + tri_ tokens)
 ├── k8s/                            # Kubernetes manifests (Phase 9)
 ├── terraform/aws/                  # AWS free-tier deployment skeleton
 ├── monitoring/                     # Prometheus + Grafana provisioning

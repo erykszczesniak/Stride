@@ -36,12 +36,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private final List<String> publicPaths;
     private final List<String> queryTokenPaths;
 
-    public JwtAuthenticationFilter(JwtParser jwtParser,
-                                   @org.springframework.beans.factory.annotation.Value("${jwt.public-paths:}") List<String> publicPaths,
-                                   @org.springframework.beans.factory.annotation.Value("${jwt.query-token-paths:}") List<String> queryTokenPaths) {
+    public JwtAuthenticationFilter(JwtParser jwtParser, JwtFilterProperties properties) {
         this.jwtParser = jwtParser;
-        this.publicPaths = publicPaths;
-        this.queryTokenPaths = queryTokenPaths;
+        this.publicPaths = properties.publicPaths();
+        this.queryTokenPaths = properties.queryTokenPaths();
     }
 
     @Override

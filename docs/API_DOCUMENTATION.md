@@ -1,8 +1,13 @@
-# Strava Clone API Documentation
+# Stride API Documentation
 
-**Base URL:** `http://localhost:8080`
+**Base URL:** `http://localhost:8080` (the API Gateway)
 
-**Note:** Authorization is temporarily disabled. All endpoints accept an optional `userId` parameter - if not provided, `DEFAULT_USER_ID = 1` is used.
+On the `microservices` branch this `/api/v1` contract is identical to the
+monolith's and is served by the domain services behind the gateway (routing
+map in `infrastructure/config-server/src/main/resources/config/api-gateway.yml`).
+All endpoints require `Authorization: Bearer <JWT>` unless listed as public
+(`/api/v1/auth/**`, the Strava integration callback, `/uploads/**`); the SSE
+stream additionally accepts `?token=`.
 
 ---
 

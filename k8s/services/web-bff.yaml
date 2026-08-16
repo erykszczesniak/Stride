@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-bff
+  namespace: stride
+  labels: { app: web-bff, role: domain }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: web-bff }
+  template:
+    metadata:
+      labels: { app: web-bff, role: domain }
+    spec:
+      containers:
+        - name: web-bff
+          image: stride/web-bff:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8088
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-server:8888
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8088 }
+            initialDelaySeconds: 30
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8088 }
+            initialDelaySeconds: 60
+          resources:
+            requests: { memory: 384Mi, cpu: 50m }
+            limits:   { memory: 512Mi, cpu: 300m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-bff
+  namespace: stride
+spec:
+  selector: { app: web-bff }
+  ports:
+    - port: 8088
+      targetPort: 8088
