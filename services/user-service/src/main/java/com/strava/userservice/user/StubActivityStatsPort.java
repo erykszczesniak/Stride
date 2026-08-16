@@ -1,15 +1,17 @@
 package com.strava.userservice.user;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
- * Placeholder implementation until activity-service exposes its batch stats API
- * (parity plan Phase 13); profiles render with zero activity stats and an empty
- * recent-activities list until then.
+ * Standalone-profile implementation: no discovery, no activity-service, so
+ * profiles render with zero activity stats and an empty recent-activities list.
+ * Composed environments use {@code RestActivityStatsPort}.
  */
 @Component
+@Profile("standalone")
 public class StubActivityStatsPort implements ActivityStatsPort {
 
     @Override

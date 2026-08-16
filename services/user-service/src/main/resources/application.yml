@@ -10,6 +10,24 @@ spring:
         max-attempts: 6
         initial-interval: 2000
 
+# Resilience4j for the activity-service composition (profile stats + recent
+# activities). Dev defaults here; config-server tightens them for prod.
+resilience4j:
+  circuitbreaker:
+    instances:
+      activity-service:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+  retry:
+    instances:
+      activity-service:
+        maxAttempts: 3
+        waitDuration: 200ms
+        exponentialBackoffMultiplier: 2
+
 # Local fallback profile — run user-service without the rest of the stack
 # (H2 instead of Postgres, no Elasticsearch, no Kafka broker required, no Eureka).
 # Activate with -Dspring.profiles.active=standalone.
