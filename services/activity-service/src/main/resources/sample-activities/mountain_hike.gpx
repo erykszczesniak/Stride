@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Stride"
+     xmlns="http://www.topografix.com/GPX/1/1"
+     xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+  <metadata>
+    <name>Mountain Hike - Morskie Oko</name>
+    <desc>Hike from Palenica Białczańska to Morskie Oko lake in the Polish Tatras</desc>
+  </metadata>
+  <trk>
+    <name>Mountain Hike - Morskie Oko</name>
+    <trkseg>
+      <trkpt lat="49.2690" lon="20.0730">
+        <ele>1010</ele>
+        <time>2024-03-17T08:00:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>95</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2682" lon="20.0745">
+        <ele>1025</ele>
+        <time>2024-03-17T08:05:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>105</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2670" lon="20.0760">
+        <ele>1045</ele>
+        <time>2024-03-17T08:10:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>110</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2658" lon="20.0778">
+        <ele>1065</ele>
+        <time>2024-03-17T08:15:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>115</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2645" lon="20.0795">
+        <ele>1090</ele>
+        <time>2024-03-17T08:20:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>118</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2630" lon="20.0810">
+        <ele>1115</ele>
+        <time>2024-03-17T08:26:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>120</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2615" lon="20.0828">
+        <ele>1140</ele>
+        <time>2024-03-17T08:32:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>122</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2600" lon="20.0845">
+        <ele>1170</ele>
+        <time>2024-03-17T08:38:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>125</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2585" lon="20.0860">
+        <ele>1195</ele>
+        <time>2024-03-17T08:44:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>128</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2570" lon="20.0878">
+        <ele>1220</ele>
+        <time>2024-03-17T08:50:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>130</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2555" lon="20.0895">
+        <ele>1250</ele>
+        <time>2024-03-17T08:57:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>132</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2540" lon="20.0910">
+        <ele>1280</ele>
+        <time>2024-03-17T09:04:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>134</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2525" lon="20.0928">
+        <ele>1310</ele>
+        <time>2024-03-17T09:12:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>136</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2510" lon="20.0942">
+        <ele>1340</ele>
+        <time>2024-03-17T09:20:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>138</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2495" lon="20.0958">
+        <ele>1365</ele>
+        <time>2024-03-17T09:28:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>140</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2483" lon="20.0970">
+        <ele>1385</ele>
+        <time>2024-03-17T09:35:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>138</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2470" lon="20.0985">
+        <ele>1395</ele>
+        <time>2024-03-17T09:42:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>135</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="49.2460" lon="20.0995">
+        <ele>1393</ele>
+        <time>2024-03-17T09:48:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>125</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -3,8 +3,11 @@ package com.strava.activityservice.activity;
 import com.strava.activityservice.domain.Activity;
 import com.strava.activityservice.domain.ActivityRepository;
 import com.strava.activityservice.domain.ActivityType;
+import com.strava.activityservice.domain.Gear;
+import com.strava.activityservice.domain.GearType;
 import com.strava.activityservice.event.ActivityEventPublisher;
 import com.strava.activityservice.exception.ApiRequestException;
+import com.strava.activityservice.gear.GearService;
 import com.strava.activityservice.pr.PersonalRecordService;
 import com.strava.activityservice.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +41,9 @@ class ActivityServiceTest {
 
     @Mock
     private PersonalRecordService personalRecordService;
+
+    @Mock
+    private GearService gearService;
 
     @Mock
     private ActivityEventPublisher eventPublisher;
@@ -437,6 +443,159 @@ class ActivityServiceTest {
             assertThat(saved.getRoutePolyline()).isEqualTo(ROUTE);
             assertThat(saved.getPointTimestamps()).isEqualTo("[100,160,220]");
             assertThat(saved.getElevationProfile()).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("Gear lifecycle wiring (mirrors main's ActivityServiceImpl)")
+    class GearLifecycle {
+
+        private Gear gear(Long id, ActivityType... types) {
+            Gear g = Gear.builder()
+                    .id(id)
+                    .userId(1L)
+                    .name("Saucony Endorphin Pro 3")
+                    .type(GearType.SHOES)
+                    .activityTypes(java.util.EnumSet.copyOf(java.util.List.of(types)))
+                    .build();
+            return g;
+        }
+
+        private ActivityRequest runRequest(Long gearId, double distance) {
+            ActivityRequest request = TestDataFactory.createActivityRequest();
+            request.setActivityType(ActivityType.RUN);
+            request.setDistance(distance);
+            request.setGearId(gearId);
+            return request;
+        }
+
+        @Test
+        @DisplayName("create with gearId resolves ownership + type and increments mileage")
+        void createWithGearIncrementsMileage() {
+            when(gearService.getGearById(10L, 1L)).thenReturn(gear(10L, ActivityType.RUN));
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> {
+                Activity a = inv.getArgument(0);
+                a.setId(99L);
+                return a;
+            });
+
+            Activity saved = activityService.createActivity(1L, runRequest(10L, 12.5));
+
+            assertThat(saved.getGear()).isNotNull();
+            assertThat(saved.getGear().getId()).isEqualTo(10L);
+            verify(gearService).incrementGearMileage(10L, 12.5);
+        }
+
+        @Test
+        @DisplayName("create rejects gear that doesn't support the activity type")
+        void createRejectsIncompatibleGear() {
+            when(gearService.getGearById(10L, 1L)).thenReturn(gear(10L, ActivityType.RIDE));
+
+            assertThatThrownBy(() -> activityService.createActivity(1L, runRequest(10L, 12.5)))
+                    .isInstanceOf(ApiRequestException.class)
+                    .hasMessage(GEAR_ACTIVITY_TYPE_MISMATCH)
+                    .extracting("status").isEqualTo(HttpStatus.BAD_REQUEST);
+
+            verify(activityRepository, never()).save(any(Activity.class));
+            verify(gearService, never()).incrementGearMileage(any(), anyDouble());
+        }
+
+        @Test
+        @DisplayName("create without gearId touches no gear counters")
+        void createWithoutGearIsNoop() {
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            activityService.createActivity(1L, runRequest(null, 12.5));
+
+            verify(gearService, never()).incrementGearMileage(any(), anyDouble());
+            verify(gearService, never()).decrementGearMileage(any(), anyDouble());
+        }
+
+        @Test
+        @DisplayName("update transition none→gear only increments the new gear")
+        void updateNoneToGear() {
+            testActivity.setGear(null);
+            testActivity.setDistance(10.0);
+            when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(gearService.getGearById(10L, 1L)).thenReturn(gear(10L, ActivityType.RUN));
+
+            activityService.updateActivity(1L, 1L, runRequest(10L, 8.0));
+
+            verify(gearService).incrementGearMileage(10L, 8.0);
+            verify(gearService, never()).decrementGearMileage(any(), anyDouble());
+        }
+
+        @Test
+        @DisplayName("update transition gear→none only decrements the old gear")
+        void updateGearToNone() {
+            testActivity.setGear(gear(10L, ActivityType.RUN));
+            testActivity.setDistance(10.0);
+            when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            activityService.updateActivity(1L, 1L, runRequest(null, 8.0));
+
+            verify(gearService).decrementGearMileage(10L, 10.0);
+            verify(gearService, never()).incrementGearMileage(any(), anyDouble());
+        }
+
+        @Test
+        @DisplayName("update transition gear→other reverses the old entry and applies the new")
+        void updateGearToOtherGear() {
+            testActivity.setGear(gear(10L, ActivityType.RUN));
+            testActivity.setDistance(10.0);
+            when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(gearService.getGearById(20L, 1L)).thenReturn(gear(20L, ActivityType.RUN));
+
+            activityService.updateActivity(1L, 1L, runRequest(20L, 8.0));
+
+            verify(gearService).decrementGearMileage(10L, 10.0);
+            verify(gearService).incrementGearMileage(20L, 8.0);
+        }
+
+        @Test
+        @DisplayName("update with same gear and changed distance reverses then re-applies")
+        void updateSameGearDistanceChanged() {
+            testActivity.setGear(gear(10L, ActivityType.RUN));
+            testActivity.setDistance(10.0);
+            when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(gearService.getGearById(10L, 1L)).thenReturn(gear(10L, ActivityType.RUN));
+
+            activityService.updateActivity(1L, 1L, runRequest(10L, 12.0));
+
+            verify(gearService).decrementGearMileage(10L, 10.0);
+            verify(gearService).incrementGearMileage(10L, 12.0);
+        }
+
+        @Test
+        @DisplayName("update with same gear and same distance leaves counters untouched")
+        void updateSameGearSameDistance() {
+            testActivity.setGear(gear(10L, ActivityType.RUN));
+            testActivity.setDistance(10.0);
+            when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+            when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(gearService.getGearById(10L, 1L)).thenReturn(gear(10L, ActivityType.RUN));
+
+            activityService.updateActivity(1L, 1L, runRequest(10L, 10.0));
+
+            verify(gearService, never()).incrementGearMileage(any(), anyDouble());
+            verify(gearService, never()).decrementGearMileage(any(), anyDouble());
+        }
+
+        @Test
+        @DisplayName("owner delete decrements the tagged gear's mileage")
+        void deleteDecrementsGear() {
+            testActivity.setGear(gear(10L, ActivityType.RUN));
+            testActivity.setDistance(10.0);
+            when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+
+            activityService.deleteActivity(1L, 1L);
+
+            verify(activityRepository).delete(testActivity);
+            verify(gearService).decrementGearMileage(10L, 10.0);
         }
     }
 }

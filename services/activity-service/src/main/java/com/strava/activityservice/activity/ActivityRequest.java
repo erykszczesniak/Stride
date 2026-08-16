@@ -13,7 +13,6 @@ import static com.strava.activityservice.constants.ErrorMessage.*;
 /**
  * Ported 1:1 from main (field names, validation messages and the Lombok
  * boolean quirk: {@code isPrivate} binds to the JSON property "private").
- * The monolith's gearId field arrives with gear tracking in a later phase.
  */
 @Data
 public class ActivityRequest {
@@ -65,4 +64,10 @@ public class ActivityRequest {
     private String elevationProfile;
 
     private boolean isPrivate;
+
+    /**
+     * Optional gear to tag this activity with. Must belong to the user and
+     * support the activity's type — service layer enforces both.
+     */
+    private Long gearId;
 }

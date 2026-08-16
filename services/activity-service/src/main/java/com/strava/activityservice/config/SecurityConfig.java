@@ -28,6 +28,10 @@ public class SecurityConfig {
                         // so it is unreachable from outside the cluster; k8s
                         // NetworkPolicies narrow it further.
                         .requestMatchers("/internal/**").permitAll()
+                        // Strava's OAuth redirect hits this without our JWT or the
+                        // gateway's identity headers — identity is recovered from
+                        // the HMAC-signed state parameter (mirrors main's permitAll).
+                        .requestMatchers("/api/v1/integrations/strava/callback").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

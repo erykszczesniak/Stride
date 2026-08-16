@@ -7,6 +7,7 @@ import com.strava.activityservice.common.HeaderResponse;
 import com.strava.activityservice.domain.Activity;
 import com.strava.activityservice.domain.ActivityType;
 import com.strava.activityservice.exception.ApiRequestException;
+import com.strava.activityservice.gear.GearMapper;
 import com.strava.activityservice.user.BaseUserResponse;
 import com.strava.activityservice.user.UserCacheService;
 import com.strava.activityservice.util.StreamJson;
@@ -45,6 +46,7 @@ public class ActivityMapper {
     private final UserVisibilityClient userVisibilityClient;
     private final SocialSummaryClient socialSummaryClient;
     private final UserCacheService userCacheService;
+    private final GearMapper gearMapper;
 
     @Transactional(readOnly = true)
     public FullActivityResponse getActivityById(Long activityId, Long currentUserId) {
@@ -125,7 +127,12 @@ public class ActivityMapper {
                 .toList();
     }
 
-    ActivityResponse mapToActivityResponse(Activity activity, Long currentUserId) {
+    /**
+     * Public so the import + Strava flows (which persist through the same
+     * create pipeline) can reuse the exact response assembly.
+     */
+    @Transactional(readOnly = true)
+    public ActivityResponse mapToActivityResponse(Activity activity, Long currentUserId) {
         SocialSummary social = socialSummaryClient.summariesFor(List.of(activity.getId()), currentUserId)
                 .getOrDefault(activity.getId(), SocialSummary.empty(activity.getId()));
         return mapToActivityResponse(activity, social, userCacheService.userFor(activity.getUserId()));
@@ -156,7 +163,7 @@ public class ActivityMapper {
         response.setUser(user);
         response.setElevationProfile(StreamJson.parseElevationProfile(activity.getElevationProfile()));
         response.setPointTimestamps(StreamJson.parsePointTimestamps(activity.getPointTimestamps()));
-        // gear stays null until the gear phase lands
+        response.setGear(gearMapper.toSummary(activity.getGear()));
         return response;
     }
 
@@ -198,6 +205,7 @@ public class ActivityMapper {
         // Comment storage is owned by social-service; the frontend loads the
         // thread from /{id}/comments, so the embedded list is always empty here.
         response.setComments(List.of());
+        response.setGear(gearMapper.toSummary(activity.getGear()));
         return response;
     }
 

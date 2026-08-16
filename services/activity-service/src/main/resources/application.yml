@@ -9,16 +9,32 @@ spring:
       retry:
         max-attempts: 6
         initial-interval: 2000
-  # Photo uploads: 5MB per file (mirrors the service-side MAX_PHOTO_SIZE
-  # check), 25MB per request (5 photos x 5MB).
+  # Multipart ceiling: activity-file imports accept up to 10MB (service-side
+  # MAX_IMPORT_FILE_SIZE); photos stay capped at 5MB by the service-side
+  # MAX_PHOTO_SIZE check. 25MB per request (5 photos x 5MB).
   servlet:
     multipart:
-      max-file-size: 5MB
+      max-file-size: 10MB
       max-request-size: 25MB
 
 app:
   upload:
     dir: ${UPLOAD_DIR:uploads/photos}
+  # Strava OAuth2 integration (import flow only — the "Continue with Strava"
+  # LOGIN variant is owned by user-service). Empty defaults on purpose: the
+  # service boots without credentials, but /api/v1/integrations/strava
+  # endpoints answer 503 until STRAVA_* env vars are set.
+  strava:
+    client-id: ${STRAVA_CLIENT_ID:}
+    client-secret: ${STRAVA_CLIENT_SECRET:}
+    redirect-uri: ${STRAVA_REDIRECT_URI:http://localhost:8080/api/v1/integrations/strava/callback}
+    state-secret: ${STRAVA_STATE_SECRET:}
+    frontend-redirect: ${STRAVA_FRONTEND_REDIRECT:http://localhost:3000/settings?section=account}
+    # Pull the per-activity streams endpoint to populate GPS polyline, per-point
+    # timestamps, and elevation on imported activities. Set
+    # STRAVA_IMPORT_STREAMS=false when bulk-importing 1000+ activities to
+    # conserve the 100 req / 15 min rate-limit budget.
+    import-streams: ${STRAVA_IMPORT_STREAMS:true}
 
 # Resilience4j tuning (applies in every profile). Generous in dev so that the
 # smoke test sees the fallback path quickly when user-service/social-service

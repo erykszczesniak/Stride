@@ -101,6 +101,15 @@ public class Activity {
     @Column(name = "map_image_url")
     private String mapImageUrl;
 
+    /**
+     * Optional gear this activity is tagged with (mirrors main). The FK is
+     * declared ON DELETE SET NULL in the migration so deleting a gear record
+     * doesn't cascade-wipe activity history.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gear_id")
+    private Gear gear;
+
     @Builder.Default
     @Column(name = "is_private", nullable = false)
     private boolean isPrivate = false;

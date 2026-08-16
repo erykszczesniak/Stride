@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.strava.activityservice.domain.Activity;
 import com.strava.activityservice.domain.ActivityRepository;
 import com.strava.activityservice.domain.ActivityType;
+import com.strava.activityservice.domain.Gear;
 import com.strava.activityservice.event.ActivityEventPublisher;
 import com.strava.activityservice.exception.ApiRequestException;
+import com.strava.activityservice.gear.GearService;
 import com.strava.activityservice.pr.PersonalRecordService;
 import com.strava.activityservice.util.GeoUtils;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +40,9 @@ import static com.strava.activityservice.constants.ErrorMessage.*;
 
 /**
  * Business logic ported from main's ActivityServiceImpl. Deviations forced by
- * the service split: likes/comments/feed live in social-service, gear lands
- * in a later phase, and cross-service effects go out as Kafka events instead
- * of in-process Spring events.
+ * the service split: likes/comments/feed live in social-service, and
+ * cross-service effects go out as Kafka events instead of in-process Spring
+ * events. Gear resolution + mileage bookkeeping mirror main exactly.
  */
 @Slf4j
 @Service
@@ -56,6 +58,7 @@ public class ActivityService {
 
     private final ActivityRepository activityRepository;
     private final PersonalRecordService personalRecordService;
+    private final GearService gearService;
     private final ActivityEventPublisher eventPublisher;
 
     @Value("${app.upload.dir:uploads/photos}")
@@ -76,8 +79,11 @@ public class ActivityService {
     public Activity createActivity(Long userId, ActivityRequest request) {
         validateStreamAlignment(request);
 
+        Gear gear = resolveGear(request.getGearId(), userId, request.getActivityType());
+
         Activity activity = Activity.builder()
                 .userId(userId)
+                .gear(gear)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .activityType(request.getActivityType())
@@ -101,6 +107,9 @@ public class ActivityService {
                 .build();
 
         Activity saved = activityRepository.save(activity);
+        if (gear != null && saved.getDistance() != null) {
+            gearService.incrementGearMileage(gear.getId(), saved.getDistance());
+        }
         personalRecordService.checkAndUpdatePRs(saved);
 
         eventPublisher.publishActivityCreated(saved);
@@ -118,6 +127,10 @@ public class ActivityService {
             throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
         }
 
+        // Snapshot old gear/distance before mutating the activity — we need
+        // both to reverse the old mileage entry before applying the new one.
+        Gear oldGear = activity.getGear();
+        Double oldDistance = activity.getDistance();
         // Snapshot privacy so we can detect a flip and notify the social read model.
         boolean wasPrivate = activity.isPrivate();
 
@@ -130,6 +143,9 @@ public class ActivityService {
         activity.setCalories(request.getCalories());
         activity.setAverageSpeed(request.getAverageSpeed());
         activity.setPrivate(request.isPrivate());
+
+        Gear newGear = resolveGear(request.getGearId(), userId, request.getActivityType());
+        activity.setGear(newGear);
 
         // Only update optional fields if provided (preserve existing GPS/route data)
         if (request.getMaxSpeed() != null) activity.setMaxSpeed(request.getMaxSpeed());
@@ -150,6 +166,10 @@ public class ActivityService {
         }
 
         Activity saved = activityRepository.save(activity);
+
+        // Adjust gear mileage after the save so we don't leave gear counters
+        // in an inconsistent state if the save itself fails.
+        adjustGearMileageOnUpdate(oldGear, oldDistance, newGear, saved.getDistance());
 
         personalRecordService.checkAndUpdatePRs(saved);
 
@@ -232,7 +252,16 @@ public class ActivityService {
             throw new ApiRequestException(ACTIVITY_ACCESS_DENIED, HttpStatus.FORBIDDEN);
         }
 
+        // Snapshot before the delete — mirrors main: the owner delete path
+        // reverses the gear mileage entry (the admin path, like main's, does not).
+        Gear gear = activity.getGear();
+        Double distance = activity.getDistance();
+
         deleteWithPersonalRecords(activity);
+
+        if (gear != null && distance != null) {
+            gearService.decrementGearMileage(gear.getId(), distance);
+        }
     }
 
     /**
@@ -474,6 +503,56 @@ public class ActivityService {
         stats.put("totalCalories", activityRepository.sumCaloriesByUserAndDateRange(userId, from, to).orElse(0L));
         stats.put("activityCount", activityRepository.countByUserAndDateRange(userId, from, to));
         return stats;
+    }
+
+    /**
+     * Look up the gear by id, confirm it belongs to the caller, and confirm
+     * it's allowed for this activity type. Returns null if gearId is null.
+     *
+     * We use GearService.getGearById so the ownership check lives in one
+     * place (throws 403 if foreign, 404 if missing) and stays consistent
+     * with direct gear CRUD.
+     */
+    private Gear resolveGear(Long gearId, Long userId, ActivityType activityType) {
+        if (gearId == null) return null;
+        Gear gear = gearService.getGearById(gearId, userId);
+        if (gear.getActivityTypes() != null && !gear.getActivityTypes().isEmpty()
+                && !gear.getActivityTypes().contains(activityType)) {
+            throw new ApiRequestException(GEAR_ACTIVITY_TYPE_MISMATCH, HttpStatus.BAD_REQUEST);
+        }
+        return gear;
+    }
+
+    /**
+     * Bookkeeping for the four possible gear transitions on update:
+     *   1. no gear before or after   → no-op
+     *   2. gear added                → +distance on new gear
+     *   3. gear removed              → -oldDistance on old gear
+     *   4. gear changed or distance changed → full reverse + re-apply
+     */
+    private void adjustGearMileageOnUpdate(Gear oldGear, Double oldDistance, Gear newGear, Double newDistance) {
+        Long oldId = oldGear == null ? null : oldGear.getId();
+        Long newId = newGear == null ? null : newGear.getId();
+        boolean sameGear = oldId != null && oldId.equals(newId);
+
+        if (sameGear) {
+            // Same gear on both sides — only adjust if distance changed.
+            double diff = (newDistance == null ? 0.0 : newDistance) - (oldDistance == null ? 0.0 : oldDistance);
+            if (diff != 0) {
+                // Reverse then re-apply, keeping activity_count stable net-net
+                // (mirrors main's approach).
+                gearService.decrementGearMileage(oldId, oldDistance == null ? 0.0 : oldDistance);
+                gearService.incrementGearMileage(newId, newDistance == null ? 0.0 : newDistance);
+            }
+            return;
+        }
+
+        if (oldId != null && oldDistance != null) {
+            gearService.decrementGearMileage(oldId, oldDistance);
+        }
+        if (newId != null && newDistance != null) {
+            gearService.incrementGearMileage(newId, newDistance);
+        }
     }
 
     private String getFileExtension(String filename) {

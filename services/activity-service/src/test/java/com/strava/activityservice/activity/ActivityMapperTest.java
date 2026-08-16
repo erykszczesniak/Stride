@@ -62,9 +62,10 @@ class ActivityMapperTest {
 
     @BeforeEach
     void setUp() {
-        ActivityService activityService = new ActivityService(activityRepository, null, null);
+        ActivityService activityService = new ActivityService(activityRepository, null, null, null);
         mapper = new ActivityMapper(activityVisibility, activityService,
-                userVisibilityClient, socialSummaryClient, userCacheService);
+                userVisibilityClient, socialSummaryClient, userCacheService,
+                new com.strava.activityservice.gear.GearMapper());
 
         activity = TestDataFactory.createActivity(1L, 5L);
         BaseUserResponse author = new BaseUserResponse();
