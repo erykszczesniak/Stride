@@ -3,25 +3,31 @@ package com.strava.socialservice.domain;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface FeedItemRepository extends JpaRepository<FeedItem, Long> {
 
     Optional<FeedItem> findByActivityId(Long activityId);
 
-    Page<FeedItem> findAllByOrderByStartedAtDesc(Pageable pageable);
+    List<FeedItem> findAllByActivityIdIn(Collection<Long> activityIds);
 
-    Page<FeedItem> findAllByUserIdOrderByStartedAtDesc(Long userId, Pageable pageable);
+    /** Public feed: non-private snapshots, newest start first. */
+    Page<FeedItem> findByIsPrivateFalseOrderByStartedAtDesc(Pageable pageable);
 
-    @Modifying
-    @Query("UPDATE FeedItem f SET f.commentCount = f.commentCount + 1 WHERE f.activityId = :activityId")
-    int incrementCommentCount(@Param("activityId") Long activityId);
+    /**
+     * Follow-backfill source — the followee's recent PUBLIC activities,
+     * mirroring main's ActivityRepository.findRecentPublicByUserId
+     * (ORDER BY created_at DESC, projected here as occurred_at).
+     */
+    @Query("SELECT f FROM FeedItem f WHERE f.userId = :userId AND f.isPrivate = false ORDER BY f.occurredAt DESC")
+    List<FeedItem> findRecentPublicByUserId(@Param("userId") Long userId, Pageable pageable);
 
-    @Modifying
-    @Query("UPDATE FeedItem f SET f.reactionCount = f.reactionCount + 1 WHERE f.activityId = :activityId")
-    int incrementReactionCount(@Param("activityId") Long activityId);
+    void deleteByActivityId(Long activityId);
+
+    void deleteByUserId(Long userId);
 }

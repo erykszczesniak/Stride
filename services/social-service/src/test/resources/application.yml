@@ -1,0 +1,47 @@
+# Test configuration — deliberately shadows src/main/resources/application.yml
+# (no config-server import, no Eureka, H2 with the PostgreSQL-compatible
+# migrations from db/migration/common).
+spring:
+  application:
+    name: social-service
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+  datasource:
+    url: jdbc:h2:mem:stride_social_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/common
+  test:
+    database:
+      replace: none
+  kafka:
+    bootstrap-servers: localhost:9092
+    listener:
+      auto-startup: false
+    producer:
+      properties:
+        max.block.ms: 500
+        delivery.timeout.ms: 1000
+        request.timeout.ms: 800
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.strava.shared.events,*
+
+eureka:
+  client:
+    enabled: false

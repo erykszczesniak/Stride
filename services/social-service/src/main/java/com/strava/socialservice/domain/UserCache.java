@@ -6,10 +6,14 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * Local denormalized snapshot of user identity data. Populated by
- * UserRegisteredEvent + UserUpdatedEvent consumers so the social feed can
- * render author names/avatars without calling out to user-service on the
- * read path.
+ * Local denormalized snapshot of user identity data, populated by the Kafka
+ * listeners on user.registered/updated/deleted so responses can embed the
+ * author (BaseUserResponse: id/firstName/lastName/avatar) without calling
+ * user-service on the read path.
+ *
+ * The events only carry a displayName ("John Doe"); first/last name are a
+ * best-effort split at the first space — same convention as activity-service's
+ * user_cache projection.
  */
 @Entity
 @Table(name = "user_cache")
@@ -24,8 +28,11 @@ public class UserCache {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "display_name", nullable = false, length = 255)
-    private String displayName;
+    @Column(name = "first_name", length = 100)
+    private String firstName;
+
+    @Column(name = "last_name", length = 100)
+    private String lastName;
 
     @Column(length = 500)
     private String avatar;

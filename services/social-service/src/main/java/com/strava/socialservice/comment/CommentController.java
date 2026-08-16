@@ -2,35 +2,95 @@ package com.strava.socialservice.comment;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Nested comment + emoji-reaction contract, ported 1:1 from main's
+ * CommentController (paths, verbs, status codes and response shapes).
+ */
 @RestController
-@RequestMapping("/api/comments")
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/activities")
 public class CommentController {
 
-    private final CommentService service;
+    private final CommentService commentService;
 
-    @PostMapping("/activity/{activityId}")
-    @ResponseStatus(HttpStatus.CREATED)
-    public CommentDto create(@AuthenticationPrincipal Long userId,
-                             @PathVariable Long activityId,
-                             @Valid @RequestBody CreateCommentRequest req) {
-        return service.create(activityId, userId, req);
+    @GetMapping("/{activityId}/comments")
+    public ResponseEntity<List<CommentResponse>> getActivityComments(@PathVariable Long activityId) {
+        return ResponseEntity.ok(commentService.getCommentsByActivityId(activityId));
     }
 
-    @GetMapping("/activity/{activityId}")
-    public Page<CommentDto> list(@PathVariable Long activityId, Pageable pageable) {
-        return service.list(activityId, pageable);
+    @PostMapping("/{activityId}/comments")
+    public ResponseEntity<CommentResponse> createComment(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long activityId,
+            @Valid @RequestBody CommentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(commentService.createComment(activityId, userId, request.getContent()));
     }
 
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
-        service.delete(id, userId);
+    @PutMapping("/{activityId}/comments/{commentId}")
+    public ResponseEntity<CommentResponse> updateComment(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long activityId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody CommentRequest request) {
+        return ResponseEntity.ok(commentService.updateComment(commentId, userId, request.getContent()));
+    }
+
+    @DeleteMapping("/{activityId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long activityId,
+            @PathVariable Long commentId) {
+        commentService.deleteComment(commentId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{activityId}/comments/{commentId}/reactions")
+    public ResponseEntity<Map<String, Object>> addReaction(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long activityId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody ReactionRequest request) {
+        commentService.addReaction(commentId, userId, request.getEmoji());
+        return ResponseEntity.ok(Map.of(
+                "message", "Reaction added",
+                "reactions", commentService.getReactionCounts(commentId),
+                "userReactions", commentService.getUserReactions(commentId, userId)
+        ));
+    }
+
+    @DeleteMapping("/{activityId}/comments/{commentId}/reactions")
+    public ResponseEntity<Map<String, Object>> removeReaction(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long activityId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody ReactionRequest request) {
+        commentService.removeReaction(commentId, userId, request.getEmoji());
+        return ResponseEntity.ok(Map.of(
+                "message", "Reaction removed",
+                "reactions", commentService.getReactionCounts(commentId),
+                "userReactions", commentService.getUserReactions(commentId, userId)
+        ));
+    }
+
+    @GetMapping("/{activityId}/comments/{commentId}/reactions")
+    public ResponseEntity<Map<String, Object>> getReactions(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long activityId,
+            @PathVariable Long commentId) {
+        return ResponseEntity.ok(Map.of(
+                "reactions", commentService.getReactionCounts(commentId),
+                "userReactions", userId != null
+                        ? commentService.getUserReactions(commentId, userId)
+                        : List.of()
+        ));
     }
 }

@@ -7,22 +7,27 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Denormalized feed read model — one row per activity, built from
- * Kafka events (ActivityCreated → insert; CommentAdded / ReactionAdded →
- * increment counts). Activity data is denormalized so the feed query
- * never has to hit activity-service or any other DB.
+ * Denormalized activity snapshot — one row per activity, maintained from
+ * activity.created/updated/deleted/visibility-changed events. It serves three
+ * jobs:
  *
- * The author's displayName/avatar is NOT denormalized here — instead we
- * keep a separate user_cache table populated by UserRegisteredEvent and
- * join locally inside the read query. That way a user rename propagates
- * to every feed item without us having to fan out updates.
+ *   1. local activity-existence + owner lookup for the comment/like write
+ *      side (no sync call to activity-service on writes);
+ *   2. source for the public feed query and the follow-backfill;
+ *   3. degraded fallback payload when activity-service is down and the feed
+ *      hydration circuit is open.
+ *
+ * Social counts are NOT denormalized here (they were, pre-parity): they are
+ * indexed COUNT(*) queries over the local comments/activity_likes tables,
+ * which cannot drift under at-least-once event delivery.
  */
 @Entity
 @Table(name = "feed_items",
         uniqueConstraints = @UniqueConstraint(name = "uq_feed_activity", columnNames = "activity_id"),
         indexes = {
-                @Index(name = "idx_feed_started",      columnList = "started_at"),
-                @Index(name = "idx_feed_user_started", columnList = "user_id, started_at")
+                @Index(name = "idx_feed_started",         columnList = "started_at"),
+                @Index(name = "idx_feed_user_started",    columnList = "user_id, started_at"),
+                @Index(name = "idx_feed_private_started", columnList = "is_private, started_at")
         })
 @Getter
 @Setter
@@ -44,6 +49,13 @@ public class FeedItem {
     @Column(name = "sport", nullable = false, length = 32)
     private String sport;
 
+    @Column(name = "title")
+    private String title;
+
+    @Builder.Default
+    @Column(name = "is_private", nullable = false)
+    private boolean isPrivate = false;
+
     @Column(name = "distance_meters")
     private Double distanceMeters;
 
@@ -56,14 +68,7 @@ public class FeedItem {
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt;
 
-    @Builder.Default
-    @Column(name = "comment_count", nullable = false)
-    private Integer commentCount = 0;
-
-    @Builder.Default
-    @Column(name = "reaction_count", nullable = false)
-    private Integer reactionCount = 0;
-
+    /** Projection of the activity's created_at — the feed sort key upstream uses. */
     @Column(name = "occurred_at", nullable = false)
     private LocalDateTime occurredAt;
 

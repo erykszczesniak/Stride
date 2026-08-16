@@ -1,10 +1,9 @@
 package com.strava.socialservice.event;
 
+import com.strava.shared.events.ActivityLikedEvent;
 import com.strava.shared.events.CommentAddedEvent;
-import com.strava.shared.events.ReactionAddedEvent;
 import com.strava.shared.events.Topics;
 import com.strava.socialservice.domain.Comment;
-import com.strava.socialservice.domain.Reaction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -12,6 +11,13 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
+/**
+ * Best-effort Kafka publishing with tight producer timeouts (configured via
+ * spring.kafka.producer.properties) — a broker outage must never block a
+ * like or a comment. Consumed by notification-service (LIKE / COMMENT
+ * notifications). The old ReactionAddedEvent stream is gone: activity-level
+ * likes replaced the KUDOS reaction model in Phase 16.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -30,11 +36,12 @@ public class SocialEventPublisher {
         send(Topics.COMMENT_ADDED, String.valueOf(c.getActivityId()), event);
     }
 
-    public void publishReactionAdded(Reaction r) {
-        ReactionAddedEvent event = new ReactionAddedEvent(
-                r.getActivityId(), r.getUserId(), r.getReactionType(), Instant.now()
+    public void publishActivityLiked(Long activityId, Long activityOwnerId,
+                                     Long likerUserId, String likerDisplayName) {
+        ActivityLikedEvent event = new ActivityLikedEvent(
+                activityId, activityOwnerId, likerUserId, likerDisplayName, Instant.now()
         );
-        send(Topics.REACTION_ADDED, String.valueOf(r.getActivityId()), event);
+        send(Topics.ACTIVITY_LIKED, String.valueOf(activityId), event);
     }
 
     private void send(String topic, String key, Object payload) {

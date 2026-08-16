@@ -17,3 +17,20 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration/common
+
+# Feed hydration calls activity-service's internal batch API; when the circuit
+# opens the feed degrades to the local feed_items snapshot instead of failing.
+resilience4j:
+  circuitbreaker:
+    instances:
+      activity-service:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
+  retry:
+    instances:
+      activity-service:
+        maxAttempts: 3
+        waitDuration: 250ms
+        exponentialBackoffMultiplier: 2

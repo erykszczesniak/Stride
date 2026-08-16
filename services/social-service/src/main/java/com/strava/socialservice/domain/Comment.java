@@ -28,7 +28,7 @@ public class Comment {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(nullable = false, length = 2000)
+    @Column(nullable = false, length = 1000)
     private String content;
 
     @Column(name = "created_at", nullable = false, updatable = false)

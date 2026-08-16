@@ -19,6 +19,12 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/**").permitAll()
+                        // Cluster-internal API: called service-to-service without
+                        // user identity headers (activity-service's social counts).
+                        // The gateway has no /internal route, so it is unreachable
+                        // from outside the cluster; k8s NetworkPolicies narrow it
+                        // further.
+                        .requestMatchers("/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new HeaderAuthenticationFilter(),
