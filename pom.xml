@@ -37,6 +37,7 @@
         <module>services/challenge-goal-service</module>
         <module>services/ai-service</module>
         <module>services/web-bff</module>
+        <module>services/pipeline-service</module>
     </modules>
 
     <dependencyManagement>

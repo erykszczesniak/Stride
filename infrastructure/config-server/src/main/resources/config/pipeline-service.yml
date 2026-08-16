@@ -1,0 +1,61 @@
+server:
+  port: 8089
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres-pipeline}:${POSTGRES_PORT:5432}/${POSTGRES_DB:stride_pipeline}
+    username: ${POSTGRES_USER:stride}
+    password: ${POSTGRES_PASSWORD:stride}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/common
+
+# /pipeline/v1/** accepts Stride JWTs next to tri_ tokens — same signing
+# secret as the gateway/user-service.
+jwt:
+  secret: ${JWT_SECRET:dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
+
+# Tighter Resilience4j thresholds for prod — break the circuit faster, recover faster.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
+        ignoreExceptions:
+          - com.strava.pipeline.exception.ApiRequestException
+    instances:
+      activity-service:
+        baseConfig: default
+      user-service:
+        baseConfig: default
+      challenge-goal-service:
+        baseConfig: default
+      club-event-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 250ms
+        ignoreExceptions:
+          - com.strava.pipeline.exception.ApiRequestException
+    instances:
+      activity-service:
+        baseConfig: default
+      user-service:
+        baseConfig: default
+      challenge-goal-service:
+        baseConfig: default
+      club-event-service:
+        baseConfig: default
