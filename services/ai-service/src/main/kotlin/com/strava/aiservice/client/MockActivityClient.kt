@@ -31,4 +31,19 @@ class MockActivityClient : ActivityContextClient {
             startTime = LocalDateTime.now().minusDays(1)
         )
     }
+
+    override fun recentActivities(userId: Long, limit: Int): List<ActivityContext> {
+        log.info("[mock] recentActivities({}, {}) — returning a canned week", userId, limit)
+        return listOf(
+            ActivityContext(id = 901, title = "Morning Run", activityType = "RUN", distance = 10.0,
+                duration = 3000, elevationGain = 85, averageHeartRate = 152,
+                startTime = LocalDateTime.now().minusDays(1)),
+            ActivityContext(id = 902, title = "Tempo Intervals", activityType = "RUN", distance = 8.0,
+                duration = 2400, elevationGain = 40, averageHeartRate = 165,
+                startTime = LocalDateTime.now().minusDays(3)),
+            ActivityContext(id = 903, title = "Recovery Spin", activityType = "RIDE", distance = 20.0,
+                duration = 3600, elevationGain = 60, averageHeartRate = 121,
+                startTime = LocalDateTime.now().minusDays(5))
+        ).take(if (limit <= 0) 20 else limit)
+    }
 }

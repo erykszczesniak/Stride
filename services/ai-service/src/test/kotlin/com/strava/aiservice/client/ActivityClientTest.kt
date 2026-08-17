@@ -3,7 +3,10 @@ package com.strava.aiservice.client
 import com.strava.aiservice.exception.ApiRequestException
 import com.strava.grpc.activity.ActivityInternalServiceGrpc
 import com.strava.grpc.activity.ActivityPayload
+import com.strava.grpc.activity.ActivitySummaryItem
 import com.strava.grpc.activity.GetActivitiesRequest
+import com.strava.grpc.activity.ListRecentActivitiesRequest
+import com.strava.grpc.activity.ListRecentActivitiesResponse
 import com.strava.grpc.activity.GetActivitiesResponse
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerAutoConfiguration
@@ -56,6 +59,24 @@ class ActivityClientTest {
         var calls = 0
         var failWith: Status? = null // null -> answer with `response`
         var response: GetActivitiesResponse = GetActivitiesResponse.getDefaultInstance()
+
+        var lastHistoryRequest: ListRecentActivitiesRequest? = null
+        var historyResponse: ListRecentActivitiesResponse = ListRecentActivitiesResponse.getDefaultInstance()
+
+        override fun listRecentActivities(
+            request: ListRecentActivitiesRequest,
+            responseObserver: StreamObserver<ListRecentActivitiesResponse>
+        ) {
+            calls++
+            lastHistoryRequest = request
+            val failure = failWith
+            if (failure != null) {
+                responseObserver.onError(failure.asRuntimeException())
+                return
+            }
+            responseObserver.onNext(historyResponse)
+            responseObserver.onCompleted()
+        }
 
         override fun getActivities(
             request: GetActivitiesRequest,
@@ -294,5 +315,40 @@ class ActivityClientTest {
         private const val RECORD_EXCEPTIONS = "io.grpc.StatusRuntimeException," +
             "java.io.IOException," +
             "java.util.concurrent.TimeoutException"
+    }
+
+    @Test
+    @DisplayName("recentActivities maps summary items and passes userId + limit")
+    fun recentActivitiesMapsSummaries() {
+        fake.historyResponse = ListRecentActivitiesResponse.newBuilder()
+            .addActivities(
+                ActivitySummaryItem.newBuilder()
+                    .setId(12).setTitle("Morning Speed Work").setActivityType("RUN")
+                    .setDistance(8.0).setDuration(2400).setAverageHeartRate(155)
+                    .setStartTime("2026-08-16T22:46"))
+            .build()
+
+        val history = newClient().recentActivities(2, 20)
+
+        assertThat(history).hasSize(1)
+        with(history.single()) {
+            assertThat(title).isEqualTo("Morning Speed Work")
+            assertThat(distance).isEqualTo(8.0)
+            assertThat(averageHeartRate).isEqualTo(155)
+            assertThat(calories).isNull()
+        }
+        assertThat(fake.lastHistoryRequest!!.userId).isEqualTo(2)
+        assertThat(fake.lastHistoryRequest!!.limit).isEqualTo(20)
+    }
+
+    @Test
+    @DisplayName("history degrades to an empty list when activity-service is unreachable (chat must not die)")
+    fun historyDegradesToEmpty() {
+        fake.failWith = Status.UNAVAILABLE
+
+        resilienceContext(newClient()).run { context ->
+            val client = context.getBean(ActivityClient::class.java)
+            assertThat(client.recentActivities(2, 20)).isEmpty()
+        }
     }
 }

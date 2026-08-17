@@ -6,6 +6,9 @@ import com.strava.activityservice.internal.InternalActivityResponse;
 import com.strava.grpc.activity.ActivityInternalServiceGrpc;
 import com.strava.grpc.activity.ActivityPayload;
 import com.strava.grpc.activity.ActivityStatsRange;
+import com.strava.grpc.activity.ActivitySummaryItem;
+import com.strava.grpc.activity.ListRecentActivitiesRequest;
+import com.strava.grpc.activity.ListRecentActivitiesResponse;
 import com.strava.grpc.activity.GetActivitiesRequest;
 import com.strava.grpc.activity.GetActivitiesResponse;
 import com.strava.grpc.activity.GetStatsRangeRequest;
@@ -45,6 +48,37 @@ import java.util.Map;
 public class ActivityInternalGrpcService extends ActivityInternalServiceGrpc.ActivityInternalServiceImplBase {
 
     private final InternalActivityQueryService internalActivityQueryService;
+
+    /** Lightweight recent history, newest first — no streams/photos. */
+    @Override
+    public void listRecentActivities(ListRecentActivitiesRequest request,
+                                     StreamObserver<ListRecentActivitiesResponse> responseObserver) {
+        try {
+            ListRecentActivitiesResponse.Builder response = ListRecentActivitiesResponse.newBuilder();
+            internalActivityQueryService.recentActivities(request.getUserId(), request.getLimit())
+                    .forEach(a -> response.addActivities(toSummaryItem(a)));
+            responseObserver.onNext(response.build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("listRecentActivities failed for userId={}", request.getUserId(), e);
+            responseObserver.onError(new StatusRuntimeException(
+                    Status.INTERNAL.withDescription("Internal error")));
+        }
+    }
+
+    private static ActivitySummaryItem toSummaryItem(com.strava.activityservice.domain.Activity a) {
+        ActivitySummaryItem.Builder b = ActivitySummaryItem.newBuilder()
+                .setId(a.getId())
+                .setTitle(a.getTitle())
+                .setActivityType(a.getActivityType().name());
+        if (a.getDistance() != null) b.setDistance(a.getDistance());
+        if (a.getDuration() != null) b.setDuration(a.getDuration());
+        if (a.getElevationGain() != null) b.setElevationGain(a.getElevationGain());
+        if (a.getAverageHeartRate() != null) b.setAverageHeartRate(a.getAverageHeartRate());
+        if (a.getCalories() != null) b.setCalories(a.getCalories());
+        if (a.getStartTime() != null) b.setStartTime(a.getStartTime().toString());
+        return b.build();
+    }
 
     /** Batch fetch by id; unknown ids are silently skipped. */
     @Override

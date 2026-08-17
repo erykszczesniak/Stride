@@ -22,6 +22,10 @@ service ActivityInternalService {
   // Per-user summary with optional sport filter — server-side replacement for
   // the old pattern of paging the public endpoint and summing client-side.
   rpc GetUserActivitySummary(GetUserActivitySummaryRequest) returns (UserActivitySummary);
+
+  // Lightweight recent-history listing (newest first) — e.g. the AI coach's
+  // training-load context. No streams/photos; capped server-side.
+  rpc ListRecentActivities(ListRecentActivitiesRequest) returns (ListRecentActivitiesResponse);
 }
 
 message GetActivitiesRequest {
@@ -88,4 +92,25 @@ message UserActivitySummary {
   int64 total_duration_seconds = 2;
   double total_elevation_meters = 3;
   int32 activity_count = 4;
+}
+
+message ListRecentActivitiesRequest {
+  int64 user_id = 1;
+  int32 limit = 2;                       // <=0 means server default (20); capped at 50
+}
+
+message ListRecentActivitiesResponse {
+  repeated ActivitySummaryItem activities = 1;   // newest first
+}
+
+message ActivitySummaryItem {
+  int64 id = 1;
+  string title = 2;
+  string activity_type = 3;
+  optional double distance = 4;          // km
+  optional int32 duration = 5;           // seconds
+  optional int32 elevation_gain = 6;     // meters
+  optional int32 average_heart_rate = 7;
+  optional int32 calories = 8;
+  optional string start_time = 9;        // ISO-8601 LocalDateTime
 }

@@ -6,7 +6,9 @@ export const ChatSection = styled.section`
   box-shadow: 0 1px 3px ${({ theme }) => theme.shadow};
   border: 1px solid ${({ theme }) => theme.border};
   padding: 24px;
-  margin-top: 24px;
+  /* Explicit gap on both sides — the comments card below has no margin-top
+     of its own, so without this the two cards collide. */
+  margin: 24px 0;
 `;
 
 export const ChatHeader = styled.div`

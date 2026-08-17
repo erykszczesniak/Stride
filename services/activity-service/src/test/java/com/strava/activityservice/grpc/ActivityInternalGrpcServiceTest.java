@@ -3,11 +3,18 @@ package com.strava.activityservice.grpc;
 import com.strava.activityservice.activity.ActivityService;
 import com.strava.activityservice.domain.Activity;
 import com.strava.activityservice.domain.ActivityRepository;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import com.strava.activityservice.domain.ActivityType;
 import com.strava.activityservice.internal.InternalActivityQueryService;
 import com.strava.activityservice.util.TestDataFactory;
 import com.strava.grpc.activity.ActivityPayload;
 import com.strava.grpc.activity.ActivityStatsRange;
+import com.strava.grpc.activity.ActivitySummaryItem;
+import com.strava.grpc.activity.ListRecentActivitiesRequest;
+import com.strava.grpc.activity.ListRecentActivitiesResponse;
 import com.strava.grpc.activity.GetActivitiesRequest;
 import com.strava.grpc.activity.GetActivitiesResponse;
 import com.strava.grpc.activity.GetStatsRangeRequest;
@@ -336,5 +343,56 @@ class ActivityInternalGrpcServiceTest {
                 .isEqualTo("Internal error")
                 .doesNotContain("boom")
                 .doesNotContain("secret");
+    }
+
+    @Test
+    @DisplayName("ListRecentActivities: newest-first summaries with only present metrics; limit defaults and caps")
+    void listRecentActivitiesMapsSummaries() {
+        var a = com.strava.activityservice.domain.Activity.builder()
+                .id(12L).userId(2L).title("Morning Speed Work")
+                .activityType(com.strava.activityservice.domain.ActivityType.RUN)
+                .distance(8.0).duration(2400).elevationGain(45).averageHeartRate(155)
+                .startTime(java.time.LocalDateTime.of(2026, 8, 16, 22, 46))
+                .build();
+        when(activityRepository.findByUserId(org.mockito.ArgumentMatchers.eq(2L),
+                org.mockito.ArgumentMatchers.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(a)));
+
+        var observer = new CapturingObserver<ListRecentActivitiesResponse>();
+        grpcService.listRecentActivities(
+                ListRecentActivitiesRequest.newBuilder().setUserId(2L).setLimit(0).build(), observer);
+
+        ActivitySummaryItem item = observer.single().getActivities(0);
+        assertThat(item.getId()).isEqualTo(12L);
+        assertThat(item.getActivityType()).isEqualTo("RUN");
+        assertThat(item.getDistance()).isEqualTo(8.0);
+        assertThat(item.getStartTime()).isEqualTo("2026-08-16T22:46");
+        assertThat(item.hasCalories()).isFalse();
+
+        // limit <= 0 -> default 20; sorted newest first on startTime
+        var pageable = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        org.mockito.Mockito.verify(activityRepository)
+                .findByUserId(org.mockito.ArgumentMatchers.eq(2L), pageable.capture());
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(20);
+        assertThat(pageable.getValue().getSort())
+                .isEqualTo(Sort.by(Sort.Direction.DESC, "startTime"));
+    }
+
+    @Test
+    @DisplayName("ListRecentActivities: limit is hard-capped at 50")
+    void listRecentActivitiesCapsLimit() {
+        when(activityRepository.findByUserId(org.mockito.ArgumentMatchers.eq(2L),
+                org.mockito.ArgumentMatchers.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        var observer = new CapturingObserver<ListRecentActivitiesResponse>();
+        grpcService.listRecentActivities(
+                ListRecentActivitiesRequest.newBuilder().setUserId(2L).setLimit(500).build(), observer);
+        observer.single();
+
+        var pageable = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        org.mockito.Mockito.verify(activityRepository)
+                .findByUserId(org.mockito.ArgumentMatchers.eq(2L), pageable.capture());
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(50);
     }
 }

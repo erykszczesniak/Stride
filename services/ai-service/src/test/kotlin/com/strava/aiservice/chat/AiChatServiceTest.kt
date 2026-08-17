@@ -185,4 +185,50 @@ class AiChatServiceTest {
         // Metrics that are null must not leak placeholder lines.
         assertThat(prompt).doesNotContain("Calories")
     }
+
+    @Test
+    @DisplayName("buildSystemPrompt appends the training history block with the discussed marker")
+    fun buildSystemPromptIncludesHistory() {
+        val history = listOf(
+            activity,
+            ActivityContext(id = 99, title = "Easy Jog", activityType = "RUN", distance = 5.5,
+                duration = 1980, averageHeartRate = 138, elevationGain = 20,
+                startTime = LocalDateTime.of(2026, 5, 11, 7, 0))
+        )
+
+        val prompt = service.buildSystemPrompt(activity, history)
+
+        assertThat(prompt)
+            .contains("Recent training history")
+            .contains("2026-05-11 | RUN | \"Easy Jog\" | 5.5 km")
+            .contains("avg HR 138")
+            .contains("<- discussed")
+        // The discussed marker must sit on the current activity's line only.
+        val discussedLine = prompt.lines().single { it.endsWith("<- discussed") }
+        assertThat(discussedLine).contains("Wednesday Group Ride")
+    }
+
+    @Test
+    @DisplayName("buildSystemPrompt omits the history block when the history is empty")
+    fun buildSystemPromptWithoutHistory() {
+        assertThat(service.buildSystemPrompt(activity, emptyList()))
+            .doesNotContain("Recent training history")
+    }
+
+    @Test
+    @DisplayName("sendMessage feeds the recent history into the system prompt")
+    fun sendMessageUsesHistoryContext() {
+        whenever(activityClient.findActivity(100)).thenReturn(activity)
+        whenever(activityClient.recentActivities(1, AiChatService.HISTORY_LIMIT))
+            .thenReturn(listOf(activity))
+        whenever(conversationRepository.findByUserIdAndActivityId(1, 100)).thenReturn(Optional.empty())
+        whenever(conversationRepository.save(anyOrNull())).thenAnswer { it.arguments[0] }
+        val systemPrompt = argumentCaptor<String>()
+        whenever(claudeClient.chat(systemPrompt.capture(), anyOrNull())).thenReturn("ok")
+
+        service.sendMessage(1, 100, "how was my week?")
+
+        assertThat(systemPrompt.firstValue).contains("Recent training history")
+        verify(activityClient).recentActivities(1, AiChatService.HISTORY_LIMIT)
+    }
 }

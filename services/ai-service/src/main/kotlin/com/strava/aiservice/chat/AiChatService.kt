@@ -50,7 +50,10 @@ class AiChatService(
         request.add(ChatMessage(ChatRole.USER, message))
 
         // If Claude fails the transaction rolls back, so neither turn is persisted.
-        val reply = claudeClient.chat(buildSystemPrompt(activity), request)
+        // Optional enrichment: recent history gives the coach training-load
+        // context; the client degrades to an empty list when unavailable.
+        val history = activityClient.recentActivities(userId, HISTORY_LIMIT)
+        val reply = claudeClient.chat(buildSystemPrompt(activity, history), request)
 
         conversation.addMessage(ChatRole.USER, message)
         conversation.addMessage(ChatRole.ASSISTANT, reply)
@@ -86,12 +89,13 @@ class AiChatService(
     }
 
     /**
-     * Grounds Claude in this specific activity: a coaching persona plus the available metrics.
-     * Only non-null metrics are listed so the model never reasons about absent data, and it's told
-     * to stick to what's provided rather than inventing numbers. Ported verbatim from main's
-     * AiChatServiceImpl.buildSystemPrompt.
+     * Grounds Claude in the activity being discussed plus the athlete's recent
+     * training history (newest first, capped) for load/recovery reasoning.
+     * Only non-null metrics are listed so the model never reasons about absent
+     * data, and it's told to stick to what's provided rather than inventing
+     * numbers. Mirrors main's AiChatServiceImpl.buildSystemPrompt.
      */
-    internal fun buildSystemPrompt(activity: ActivityContext): String {
+    internal fun buildSystemPrompt(activity: ActivityContext, history: List<ActivityContext> = emptyList()): String {
         val facts = StringBuilder()
         facts.append("- Type: ").append(activity.activityType).append('\n')
         facts.append("- Title: ").append(activity.title).append('\n')
@@ -115,13 +119,37 @@ class AiChatService(
             facts.append("- Athlete's note: ").append(activity.description).append('\n')
         }
 
-        return "You are an expert endurance coach analysing a single training activity for an athlete " +
-            "on a fitness-tracking app. Be concise, encouraging, and specific. Reference concrete " +
-            "numbers from the activity data and explain what they mean for training. Only use the " +
-            "metrics provided below — never invent data that isn't present. If the athlete asks " +
-            "something the data can't answer, say so briefly.\n" +
-            "\n" +
-            "Activity data:\n" + facts
+        val prompt = StringBuilder()
+        prompt.append(
+            "You are an expert endurance coach for an athlete on a fitness-tracking app. The " +
+                "athlete is asking about one specific activity, and you also have their recent " +
+                "training history for context. Be concise, encouraging, and specific. Reference " +
+                "concrete numbers from the data and explain what they mean for training; use the " +
+                "history to reason about training load, progress and recovery when relevant. Only " +
+                "use the data provided below — never invent numbers that aren't present. If the " +
+                "athlete asks something the data can't answer, say so briefly.\n\n")
+        prompt.append("Activity being discussed:\n").append(facts)
+        if (history.isNotEmpty()) {
+            prompt.append("\nRecent training history (newest first, up to ")
+                .append(HISTORY_LIMIT)
+                .append(" activities; \"<- discussed\" marks the one above):\n")
+            history.forEach { h -> prompt.append(historyLine(h, h.id != null && h.id == activity.id)) }
+        }
+        return prompt.toString()
+    }
+
+    /** One compact line per past activity: date | type | title | metrics that exist. */
+    private fun historyLine(h: ActivityContext, isCurrent: Boolean): String {
+        val parts = mutableListOf<String>()
+        parts.add(h.startTime?.toLocalDate()?.toString() ?: "unknown date")
+        parts.add(h.activityType ?: "UNKNOWN")
+        parts.add("\"" + (h.title ?: "Untitled") + "\"")
+        h.distance?.let { parts.add(String.format(Locale.ROOT, "%.1f km", it)) }
+        h.duration?.let { parts.add(formatDuration(it)) }
+        h.averageHeartRate?.let { parts.add("avg HR $it") }
+        h.elevationGain?.let { parts.add("+$it m") }
+        h.calories?.let { parts.add("$it kcal") }
+        return "- " + parts.joinToString(" | ") + (if (isCurrent) "  <- discussed" else "") + "\n"
     }
 
     private fun appendPace(sb: StringBuilder, activity: ActivityContext) {
@@ -159,6 +187,8 @@ class AiChatService(
     }
 
     companion object {
+        internal const val HISTORY_LIMIT = 20
+
         const val ACTIVITY_NOT_FOUND = "Activity not found"
     }
 }

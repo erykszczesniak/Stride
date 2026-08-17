@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,19 @@ public class InternalActivityQueryService {
                         StreamJson.parseElevationProfile(a.getElevationProfile()),
                         StreamJson.parsePointTimestamps(a.getPointTimestamps())))
                 .toList();
+    }
+
+    /**
+     * Lightweight recent history (newest first) for cross-service consumers
+     * that need training-load context without streams/photos — e.g. the AI
+     * coach. {@code limit <= 0} falls back to 20; hard-capped at 50.
+     */
+    @Transactional(readOnly = true)
+    public List<Activity> recentActivities(Long userId, int limit) {
+        int size = limit <= 0 ? 20 : Math.min(limit, 50);
+        return activityRepository
+                .findByUserId(userId, PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "startTime")))
+                .getContent();
     }
 
     /** Aggregated stats for a user over [from, to] — delegates to the same SQL the REST path uses. */

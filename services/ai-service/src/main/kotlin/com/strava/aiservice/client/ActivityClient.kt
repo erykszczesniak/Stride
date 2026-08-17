@@ -3,7 +3,9 @@ package com.strava.aiservice.client
 import com.strava.aiservice.exception.ApiRequestException
 import com.strava.grpc.activity.ActivityInternalServiceGrpc
 import com.strava.grpc.activity.ActivityPayload
+import com.strava.grpc.activity.ActivitySummaryItem
 import com.strava.grpc.activity.GetActivitiesRequest
+import com.strava.grpc.activity.ListRecentActivitiesRequest
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import io.github.resilience4j.retry.annotation.Retry
 import net.devh.boot.grpc.client.inject.GrpcClient
@@ -57,6 +59,39 @@ class ActivityClient : ActivityContextClient {
             .activitiesList
             .firstOrNull()
             ?.toContext()
+
+    /**
+     * Training-history context (ListRecentActivities). Unlike [findActivity],
+     * failures degrade to an empty list: history enriches the coaching prompt
+     * but must never take the chat down with it.
+     */
+    @CircuitBreaker(name = "activity-service", fallbackMethod = "historyFallback")
+    @Retry(name = "activity-service")
+    override fun recentActivities(userId: Long, limit: Int): List<ActivityContext> =
+        activityStub
+            .withDeadlineAfter(DEADLINE_SECONDS, TimeUnit.SECONDS)
+            .listRecentActivities(
+                ListRecentActivitiesRequest.newBuilder().setUserId(userId).setLimit(limit).build())
+            .activitiesList
+            .map { it.toContext() }
+
+    @Suppress("unused", "UNUSED_PARAMETER")
+    private fun historyFallback(userId: Long, limit: Int, ex: Throwable): List<ActivityContext> {
+        log.warn("ActivityClient history fallback for userId={} (cause: {})", userId, ex.message)
+        return emptyList()
+    }
+
+    private fun ActivitySummaryItem.toContext() = ActivityContext(
+        id = id,
+        title = title,
+        activityType = activityType,
+        distance = if (hasDistance()) distance else null,
+        duration = if (hasDuration()) duration else null,
+        elevationGain = if (hasElevationGain()) elevationGain else null,
+        averageHeartRate = if (hasAverageHeartRate()) averageHeartRate else null,
+        calories = if (hasCalories()) calories else null,
+        startTime = if (hasStartTime()) LocalDateTime.parse(startTime) else null
+    )
 
     @Suppress("unused", "UNUSED_PARAMETER")
     private fun activityFallback(activityId: Long, ex: Throwable): ActivityContext? {

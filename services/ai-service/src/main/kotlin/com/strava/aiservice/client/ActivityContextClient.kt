@@ -41,4 +41,12 @@ interface ActivityContextClient {
      *         activity-service is unreachable.
      */
     fun findActivity(activityId: Long): ActivityContext?
+
+    /**
+     * Lightweight recent training history for the user, newest first (no
+     * streams/photos). Optional enrichment: implementations degrade to an
+     * empty list when activity-service is unreachable, so chat still works
+     * with single-activity context only.
+     */
+    fun recentActivities(userId: Long, limit: Int): List<ActivityContext>
 }
