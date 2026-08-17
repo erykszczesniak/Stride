@@ -194,4 +194,35 @@ class AiChatServiceImplTest {
         // Metrics that are null must not leak placeholder lines.
         assertThat(prompt).doesNotContain("Calories");
     }
+
+    @org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.DisplayName("buildSystemPrompt appends the training history block with the discussed marker")
+    void buildSystemPromptIncludesHistory() {
+        Activity older = new Activity();
+        older.setId(99L);
+        older.setTitle("Easy Jog");
+        older.setActivityType(com.strava.backend.enums.ActivityType.RUN);
+        older.setDistance(5.5);
+        older.setDuration(1980);
+        older.setAverageHeartRate(138);
+        older.setStartTime(java.time.LocalDateTime.of(2026, 5, 11, 7, 0));
+
+        String prompt = service.buildSystemPrompt(activity, java.util.List.of(activity, older));
+
+        org.assertj.core.api.Assertions.assertThat(prompt)
+                .contains("Recent training history")
+                .contains("2026-05-11 | RUN | \"Easy Jog\" | 5.5 km")
+                .contains("avg HR 138")
+                .contains("<- discussed");
+        String discussedLine = prompt.lines()
+                .filter(l -> l.endsWith("<- discussed")).reduce((a, b) -> { throw new IllegalStateException("two markers"); }).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(discussedLine).contains(activity.getTitle());
+    }
+
+    @org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.DisplayName("buildSystemPrompt omits the history block when the history is empty")
+    void buildSystemPromptWithoutHistory() {
+        org.assertj.core.api.Assertions.assertThat(service.buildSystemPrompt(activity, java.util.List.of()))
+                .doesNotContain("Recent training history");
+    }
 }

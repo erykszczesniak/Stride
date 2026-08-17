@@ -36,7 +36,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  * /api/v1, and GPS-stream-derived splits in the detail payload.
  */
 @DisplayName("Pipeline API Integration Tests")
+@org.junit.jupiter.api.condition.EnabledIf("isDockerAvailable")
 class PipelineIntegrationTest extends AbstractIntegrationTest {
+
+    // Same guard as UserIntegrationTest: skip (not error) on machines where the
+    // Docker environment isn't reachable; CI always runs these.
+    static boolean isDockerAvailable() {
+        try {
+            org.testcontainers.DockerClientFactory.instance().client();
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     @Autowired
     private TestRestTemplate restTemplate;

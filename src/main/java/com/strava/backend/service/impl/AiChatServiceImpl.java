@@ -19,6 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +33,8 @@ import static com.strava.backend.constants.ErrorMessage.USER_NOT_FOUND;
 @Slf4j
 @RequiredArgsConstructor
 public class AiChatServiceImpl implements AiChatService {
+
+    static final int HISTORY_LIMIT = 20;
 
     private final AiConversationRepository conversationRepository;
     private final ActivityRepository activityRepository;
@@ -60,8 +65,10 @@ public class AiChatServiceImpl implements AiChatService {
                 .forEach(m -> request.add(new ClaudeMessage(m.getRole(), m.getContent())));
         request.add(new ClaudeMessage(ChatRole.USER, message));
 
+        // Optional enrichment: recent history gives the coach training-load context.
+        List<Activity> history = recentHistory(userId);
         // If Claude fails the transaction rolls back, so neither turn is persisted.
-        String reply = claudeService.chat(buildSystemPrompt(activity), request);
+        String reply = claudeService.chat(buildSystemPrompt(activity, history), request);
 
         conversation.addMessage(ChatRole.USER, message);
         conversation.addMessage(ChatRole.ASSISTANT, reply);
@@ -104,12 +111,30 @@ public class AiChatServiceImpl implements AiChatService {
         return new ConversationResponse(conversation.getActivity().getId(), messages);
     }
 
+    /** Newest-first light history for the prompt; failures must never take the chat down. */
+    private List<Activity> recentHistory(Long userId) {
+        try {
+            return activityRepository
+                    .findByUserId(userId, PageRequest.of(0, HISTORY_LIMIT,
+                            Sort.by(Sort.Direction.DESC, "startTime")))
+                    .getContent();
+        } catch (RuntimeException e) {
+            log.warn("Recent-history lookup failed for userId={}; chatting without it", userId, e);
+            return List.of();
+        }
+    }
+
     /**
-     * Grounds Claude in this specific activity: a coaching persona plus the available metrics.
-     * Only non-null metrics are listed so the model never reasons about absent data, and it's told
-     * to stick to what's provided rather than inventing numbers.
+     * Grounds Claude in the activity being discussed plus the athlete's recent training
+     * history (newest first, capped) for load/recovery reasoning. Only non-null metrics are
+     * listed so the model never reasons about absent data, and it's told to stick to what's
+     * provided rather than inventing numbers.
      */
     String buildSystemPrompt(Activity activity) {
+        return buildSystemPrompt(activity, List.of());
+    }
+
+    String buildSystemPrompt(Activity activity, List<Activity> history) {
         StringBuilder facts = new StringBuilder();
         facts.append("- Type: ").append(activity.getActivityType()).append('\n');
         facts.append("- Title: ").append(activity.getTitle()).append('\n');
@@ -133,15 +158,39 @@ public class AiChatServiceImpl implements AiChatService {
             facts.append("- Athlete's note: ").append(activity.getDescription()).append('\n');
         }
 
-        return """
-                You are an expert endurance coach analysing a single training activity for an athlete \
-                on a fitness-tracking app. Be concise, encouraging, and specific. Reference concrete \
-                numbers from the activity data and explain what they mean for training. Only use the \
-                metrics provided below — never invent data that isn't present. If the athlete asks \
-                something the data can't answer, say so briefly.
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("""
+                You are an expert endurance coach for an athlete on a fitness-tracking app. The \
+                athlete is asking about one specific activity, and you also have their recent \
+                training history for context. Be concise, encouraging, and specific. Reference \
+                concrete numbers from the data and explain what they mean for training; use the \
+                history to reason about training load, progress and recovery when relevant. Only \
+                use the data provided below — never invent numbers that aren't present. If the \
+                athlete asks something the data can't answer, say so briefly.
 
-                Activity data:
-                """ + facts;
+                Activity being discussed:
+                """).append(facts);
+        if (!history.isEmpty()) {
+            prompt.append("\nRecent training history (newest first, up to ").append(HISTORY_LIMIT)
+                    .append(" activities; \"<- discussed\" marks the one above):\n");
+            history.forEach(h -> prompt.append(
+                    historyLine(h, h.getId() != null && h.getId().equals(activity.getId()))));
+        }
+        return prompt.toString();
+    }
+
+    /** One compact line per past activity: date | type | title | metrics that exist. */
+    private String historyLine(Activity h, boolean isCurrent) {
+        List<String> parts = new ArrayList<>();
+        parts.add(h.getStartTime() != null ? h.getStartTime().toLocalDate().toString() : "unknown date");
+        parts.add(h.getActivityType() != null ? h.getActivityType().name() : "UNKNOWN");
+        parts.add("\"" + (h.getTitle() != null ? h.getTitle() : "Untitled") + "\"");
+        if (h.getDistance() != null) parts.add(String.format(Locale.ROOT, "%.1f km", h.getDistance()));
+        if (h.getDuration() != null) parts.add(formatDuration(h.getDuration()));
+        if (h.getAverageHeartRate() != null) parts.add("avg HR " + h.getAverageHeartRate());
+        if (h.getElevationGain() != null) parts.add("+" + h.getElevationGain() + " m");
+        if (h.getCalories() != null) parts.add(h.getCalories() + " kcal");
+        return "- " + String.join(" | ", parts) + (isCurrent ? "  <- discussed" : "") + "\n";
     }
 
     private void appendPace(StringBuilder sb, Activity activity) {
