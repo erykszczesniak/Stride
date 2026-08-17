@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package stride.internal.v1;
+
+option java_multiple_files = true;
+option java_package = "com.strava.grpc.social";
+option java_outer_classname = "SocialInternalProto";
+
+// Cluster-internal social summaries. Mirrors the (now deprecated) REST
+// /internal/social/activities contract used by activity-service to enrich
+// activity responses with like/comment state.
+service SocialInternalService {
+
+  // Every requested id gets a row; activities with no social state come back
+  // zero-filled.
+  rpc GetSocialSummaries(GetSocialSummariesRequest) returns (GetSocialSummariesResponse);
+}
+
+message GetSocialSummariesRequest {
+  repeated int64 activity_ids = 1;
+  optional int64 viewer_id = 2;
+}
+
+message GetSocialSummariesResponse {
+  repeated SocialSummary summaries = 1;
+}
+
+message SocialSummary {
+  int64 activity_id = 1;
+  int32 likes_count = 2;
+  int32 comments_count = 3;
+  bool liked_by_viewer = 4;
+}

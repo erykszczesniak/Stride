@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package stride.internal.v1;
+
+option java_multiple_files = true;
+option java_package = "com.strava.grpc.user";
+option java_outer_classname = "UserInternalProto";
+
+// Cluster-internal user data. Mirrors the (now deprecated) REST /internal/users
+// contract used for name/avatar hydration, visibility checks and the weekly
+// summary job.
+service UserInternalService {
+
+  // Batch identity summaries; unknown ids are silently skipped.
+  rpc GetUserSummaries(GetUserSummariesRequest) returns (GetUserSummariesResponse);
+
+  // Profile privacy + follow-edge fact for activity visibility rules.
+  rpc GetVisibility(GetVisibilityRequest) returns (GetVisibilityResponse);
+
+  // Notification preferences + address for one user.
+  rpc GetNotificationProfile(GetNotificationProfileRequest) returns (NotificationProfile);
+
+  // Paged recipients with weeklySummary=true and active=true.
+  rpc ListWeeklySummaryRecipients(ListWeeklySummaryRecipientsRequest) returns (ListWeeklySummaryRecipientsResponse);
+}
+
+message GetUserSummariesRequest {
+  repeated int64 ids = 1;
+}
+
+message GetUserSummariesResponse {
+  repeated UserSummary users = 1;
+}
+
+message UserSummary {
+  int64 id = 1;
+  optional string first_name = 2;
+  optional string last_name = 3;
+  optional string full_name = 4;
+  optional string avatar = 5;
+}
+
+message GetVisibilityRequest {
+  int64 user_id = 1;
+  optional int64 viewer_id = 2;
+}
+
+message GetVisibilityResponse {
+  bool is_private = 1;
+  bool viewer_follows = 2;
+}
+
+message GetNotificationProfileRequest {
+  int64 user_id = 1;
+}
+
+message NotificationProfile {
+  int64 id = 1;
+  string email = 2;
+  optional string first_name = 3;
+  optional string last_name = 4;
+  optional string full_name = 5;
+  optional string avatar = 6;
+  bool email_notifications = 7;
+  bool push_notifications = 8;
+  bool weekly_summary = 9;
+  bool active = 10;
+}
+
+message ListWeeklySummaryRecipientsRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message ListWeeklySummaryRecipientsResponse {
+  repeated NotificationProfile recipients = 1;
+  int64 total_elements = 2;
+  int32 total_pages = 3;
+}

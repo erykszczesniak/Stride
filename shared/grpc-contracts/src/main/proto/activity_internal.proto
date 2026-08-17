@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package stride.internal.v1;
+
+option java_multiple_files = true;
+option java_package = "com.strava.grpc.activity";
+option java_outer_classname = "ActivityInternalProto";
+
+// Cluster-internal activity data. Mirrors the (now deprecated) REST
+// /internal/activities payload: every public ActivityResponse field except
+// the social counts and the embedded user object, plus userId and the full
+// detail-level metrics/streams. Timestamps are ISO-8601 local date-times,
+// exactly as the JSON contract serialized them.
+service ActivityInternalService {
+
+  // Batch fetch by id; unknown ids are silently skipped.
+  rpc GetActivities(GetActivitiesRequest) returns (GetActivitiesResponse);
+
+  // Aggregate totals for one user within a closed date-time window.
+  rpc GetStatsRange(GetStatsRangeRequest) returns (ActivityStatsRange);
+
+  // Per-user summary with optional sport filter — server-side replacement for
+  // the old pattern of paging the public endpoint and summing client-side.
+  rpc GetUserActivitySummary(GetUserActivitySummaryRequest) returns (UserActivitySummary);
+}
+
+message GetActivitiesRequest {
+  repeated int64 ids = 1;
+}
+
+message GetActivitiesResponse {
+  repeated ActivityPayload activities = 1;
+}
+
+message ActivityPayload {
+  int64 id = 1;
+  int64 user_id = 2;
+  string title = 3;
+  optional string description = 4;
+  string activity_type = 5;
+  optional double distance = 6;          // km
+  optional int32 duration = 7;           // seconds
+  optional int32 elevation_gain = 8;     // meters
+  optional int32 calories = 9;
+  optional double average_speed = 10;
+  optional double max_speed = 11;
+  optional int32 average_heart_rate = 12;
+  optional int32 max_heart_rate = 13;
+  optional int32 average_cadence = 14;
+  optional int32 average_power = 15;
+  optional string start_time = 16;       // ISO-8601 LocalDateTime
+  optional string end_time = 17;
+  optional string start_location = 18;
+  optional string end_location = 19;
+  optional string route_polyline = 20;   // Google encoded polyline
+  repeated double elevation_profile = 21;
+  repeated int64 point_timestamps = 22;  // epoch seconds, 1:1 with polyline points
+  optional string map_image_url = 23;
+  bool is_private = 24;
+  repeated string photos = 25;
+  optional string created_at = 26;
+  optional string updated_at = 27;
+}
+
+message GetStatsRangeRequest {
+  int64 user_id = 1;
+  string from = 2;                       // ISO-8601 LocalDateTime, inclusive
+  string to = 3;                         // ISO-8601 LocalDateTime, inclusive
+}
+
+message ActivityStatsRange {
+  double total_distance_km = 1;
+  int64 total_duration_seconds = 2;
+  int64 total_elevation_gain = 3;
+  int64 total_calories = 4;
+  int32 activity_count = 5;
+}
+
+message GetUserActivitySummaryRequest {
+  int64 user_id = 1;
+  optional string sport_filter = 2;      // ActivityType name; unset = all sports
+  string from = 3;                       // ISO-8601 LocalDateTime, inclusive
+  string to = 4;
+}
+
+message UserActivitySummary {
+  double total_distance_km = 1;
+  int64 total_duration_seconds = 2;
+  double total_elevation_meters = 3;
+  int32 activity_count = 4;
+}
