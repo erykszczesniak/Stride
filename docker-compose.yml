@@ -15,10 +15,12 @@ services:
     image: apache/kafka:3.9.0
     container_name: stride-kafka
     restart: unless-stopped
+    mem_limit: 768m
     ports:
       - "9092:9092"
       - "9094:9094"
     environment:
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
       KAFKA_NODE_ID: "0"
       KAFKA_PROCESS_ROLES: controller,broker
       KAFKA_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
@@ -40,6 +42,7 @@ services:
     networks: [stride-net]
 
   kafka-ui:
+    profiles: ["observability"]
     image: provectuslabs/kafka-ui:latest
     container_name: stride-kafka-ui
     restart: unless-stopped
@@ -75,9 +78,11 @@ services:
   # Search — Elasticsearch (user search index; SQL fallback when down)
   # ============================================
   elasticsearch:
+    profiles: ["search"]
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     container_name: stride-elasticsearch
     restart: unless-stopped
+    mem_limit: 1g
     ports:
       - "9200:9200"
     environment:
@@ -114,6 +119,7 @@ services:
   # Metrics + dashboards
   # ============================================
   prometheus:
+    profiles: ["observability"]
     image: prom/prometheus:v2.55.0
     container_name: stride-prometheus
     restart: unless-stopped
@@ -128,6 +134,7 @@ services:
     networks: [stride-net]
 
   grafana:
+    profiles: ["observability"]
     image: grafana/grafana:11.3.0
     container_name: stride-grafana
     restart: unless-stopped
@@ -303,6 +310,8 @@ services:
   # Spring Cloud infrastructure
   # ============================================
   config-server:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 384m
     build:
       context: .
       dockerfile: infrastructure/config-server/Dockerfile
@@ -322,6 +331,8 @@ services:
     networks: [stride-net]
 
   discovery-server:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 448m
     build:
       context: .
       dockerfile: infrastructure/discovery-server/Dockerfile
@@ -345,6 +356,8 @@ services:
     networks: [stride-net]
 
   api-gateway:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 512m
     build:
       context: .
       dockerfile: infrastructure/api-gateway/Dockerfile
@@ -376,6 +389,8 @@ services:
   # Domain services
   # ============================================
   user-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/user-service/Dockerfile
@@ -410,9 +425,6 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-      elasticsearch:
-        # Soft dependency: search falls back to SQL when the index is unavailable.
-        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
       interval: 15s
@@ -422,6 +434,8 @@ services:
     networks: [stride-net]
 
   activity-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/activity-service/Dockerfile
@@ -465,6 +479,8 @@ services:
     networks: [stride-net]
 
   notification-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/notification-service/Dockerfile
@@ -504,6 +520,8 @@ services:
     networks: [stride-net]
 
   social-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/social-service/Dockerfile
@@ -538,6 +556,8 @@ services:
     networks: [stride-net]
 
   club-event-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/club-event-service/Dockerfile
@@ -569,6 +589,8 @@ services:
     networks: [stride-net]
 
   challenge-goal-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/challenge-goal-service/Dockerfile
@@ -606,6 +628,8 @@ services:
     networks: [stride-net]
 
   ai-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/ai-service/Dockerfile
@@ -641,6 +665,8 @@ services:
     networks: [stride-net]
 
   web-bff:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/web-bff/Dockerfile
@@ -665,6 +691,8 @@ services:
     networks: [stride-net]
 
   pipeline-service:
+    # Heap sizes itself from this limit via -XX:MaxRAMPercentage=75.
+    mem_limit: 640m
     build:
       context: .
       dockerfile: services/pipeline-service/Dockerfile
