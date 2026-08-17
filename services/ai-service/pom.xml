@@ -19,9 +19,10 @@
         persisted per-activity AI analysis chat backed by Anthropic Claude
         (official anthropic-java SDK) with its own Postgres schema
         (ai_conversations / ai_messages). Activity context for the chat's
-        system prompt is fetched from activity-service's internal batch API
-        via lb:// + Resilience4j. Written in Kotlin, second JVM-language
-        service in the stack.
+        system prompt is fetched from activity-service's cluster-internal
+        gRPC API (ActivityInternalService, resolved via discovery:/// +
+        Eureka) wrapped in Resilience4j. Written in Kotlin, second
+        JVM-language service in the stack.
     </description>
 
     <properties>
@@ -72,9 +73,20 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
+        <!-- Cluster-internal gRPC client: blocking stub for activity-service's
+             ActivityInternalService (chat activity context), injected via
+             @GrpcClient and resolved through Eureka with the discovery:///
+             scheme. Replaced the lb:// RestTemplate + /internal/activities
+             REST call in Phase 23c. -->
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.strava</groupId>
+            <artifactId>shared-grpc-contracts</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Official Anthropic SDK — powers the persisted activity-analysis chat. -->
@@ -148,6 +160,25 @@
             <groupId>org.mockito.kotlin</groupId>
             <artifactId>mockito-kotlin</artifactId>
             <version>5.4.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- In-process gRPC transport. Tests run real stubs against a fake
+             service implementation (no sockets, no Mockito on generated
+             types), but the scope must be RUNTIME, not test: net.devh 3.1.0's
+             GrpcClientAutoConfiguration class-loads
+             io.grpc.inprocess.InProcessChannelBuilder at startup, and since
+             grpc 1.60 that class lives outside grpc-core — with test scope the
+             (standalone) boot dies with ClassNotFound. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+            <version>${grpc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+            <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

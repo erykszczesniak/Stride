@@ -1,75 +1,99 @@
 package com.strava.challengegoal.client;
 
+import com.strava.grpc.activity.ActivityInternalServiceGrpc;
+import com.strava.grpc.activity.GetUserActivitySummaryRequest;
+import com.strava.grpc.activity.UserActivitySummary;
+import io.grpc.ManagedChannel;
+import io.grpc.Server;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.stub.StreamObserver;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Verifies parsing of activity-service's /api/v1 contract: a plain JSON array
- * of ActivityResponse objects (not a Spring Page envelope), summed client-side
- * with sport + date-window filtering.
+ * Verifies the gRPC cutover of the activity summary lookup: one
+ * {@code GetUserActivitySummary} call carrying (userId, optional sport,
+ * ISO local-date-time window) instead of the old REST page-and-sum — the
+ * aggregation semantics themselves now live (and are tested) server-side
+ * in activity-service. Generated stubs are final, so the test runs against
+ * a fake ImplBase behind an in-process server rather than a Mockito mock.
  */
-@ExtendWith(MockitoExtension.class)
 @DisplayName("ActivityClient Unit Tests")
 class ActivityClientTest {
 
-    @Mock
-    private RestTemplate loadBalanced;
-
-    @InjectMocks
+    private Server server;
+    private ManagedChannel channel;
     private ActivityClient activityClient;
 
-    private static final String URL = "lb://activity-service/api/v1/activities/user/7?size=200&page=0";
+    private final AtomicReference<GetUserActivitySummaryRequest> lastRequest = new AtomicReference<>();
+    private UserActivitySummary cannedResponse = UserActivitySummary.getDefaultInstance();
+    private Status cannedError;
 
-    private static Map<String, Object> activity(String type, String startTime,
-                                                Double distance, Integer duration, Integer elevation) {
-        Map<String, Object> a = new HashMap<>();
-        a.put("activityType", type);
-        a.put("startTime", startTime);
-        a.put("distance", distance);
-        a.put("duration", duration);
-        a.put("elevationGain", elevation);
-        return a;
+    private final ActivityInternalServiceGrpc.ActivityInternalServiceImplBase fakeService =
+            new ActivityInternalServiceGrpc.ActivityInternalServiceImplBase() {
+                @Override
+                public void getUserActivitySummary(GetUserActivitySummaryRequest request,
+                                                   StreamObserver<UserActivitySummary> responseObserver) {
+                    lastRequest.set(request);
+                    if (cannedError != null) {
+                        responseObserver.onError(cannedError.asRuntimeException());
+                        return;
+                    }
+                    responseObserver.onNext(cannedResponse);
+                    responseObserver.onCompleted();
+                }
+            };
+
+    @BeforeEach
+    void setUp() throws IOException {
+        String serverName = InProcessServerBuilder.generateName();
+        server = InProcessServerBuilder.forName(serverName)
+                .directExecutor()
+                .addService(fakeService)
+                .build()
+                .start();
+        channel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
+        activityClient = new ActivityClient(ActivityInternalServiceGrpc.newBlockingStub(channel));
     }
 
-    @SuppressWarnings("unchecked")
-    private void givenBody(List<Map<String, Object>> body) {
-        given(loadBalanced.exchange(eq(URL), eq(HttpMethod.GET), any(HttpEntity.class),
-                any(ParameterizedTypeReference.class)))
-                .willReturn(ResponseEntity.ok(body));
+    @AfterEach
+    void tearDown() {
+        channel.shutdownNow();
+        server.shutdownNow();
     }
 
     @Test
-    @DisplayName("Should sum activities from the JSON array, filtering sport and window")
-    void shouldSumActivitiesFilteringSportAndWindow() {
+    @DisplayName("Should send one summary request with sport filter and ISO window, mapping the totals")
+    void shouldSendSummaryRequestAndMapTotals() {
         LocalDateTime from = LocalDateTime.of(2026, 8, 1, 0, 0);
         LocalDateTime to = LocalDateTime.of(2026, 8, 31, 23, 59);
-        givenBody(List.of(
-                activity("RUN", "2026-08-10T08:00:00", 10.0, 3600, 100),
-                activity("RUN", "2026-08-12T08:00:00", 5.0, 1800, 50),
-                activity("RIDE", "2026-08-13T08:00:00", 40.0, 7200, 300),   // wrong sport
-                activity("RUN", "2026-07-01T08:00:00", 21.0, 7200, 200)    // outside window
-        ));
+        cannedResponse = UserActivitySummary.newBuilder()
+                .setTotalDistanceKm(15.0)
+                .setTotalDurationSeconds(5400)
+                .setTotalElevationMeters(150.0)
+                .setActivityCount(2)
+                .build();
 
         ActivitySummary summary = activityClient.summaryFor(7L, "RUN", from, to);
+
+        GetUserActivitySummaryRequest sent = lastRequest.get();
+        assertThat(sent.getUserId()).isEqualTo(7L);
+        assertThat(sent.hasSportFilter()).isTrue();
+        assertThat(sent.getSportFilter()).isEqualTo("RUN");
+        assertThat(sent.getFrom()).isEqualTo("2026-08-01T00:00");
+        assertThat(sent.getTo()).isEqualTo("2026-08-31T23:59");
 
         assertThat(summary.totalDistanceKm()).isEqualTo(15.0);
         assertThat(summary.totalDurationSeconds()).isEqualTo(5400);
@@ -78,29 +102,43 @@ class ActivityClientTest {
     }
 
     @Test
-    @DisplayName("Should include all sports when no sport filter is set")
-    void shouldIncludeAllSportsWhenNoFilter() {
-        LocalDateTime from = LocalDateTime.of(2026, 8, 1, 0, 0);
-        LocalDateTime to = LocalDateTime.of(2026, 8, 31, 23, 59);
-        givenBody(List.of(
-                activity("RUN", "2026-08-10T08:00:00", 10.0, 3600, 100),
-                activity("RIDE", "2026-08-13T08:00:00", 40.0, 7200, 300)
-        ));
+    @DisplayName("Should leave the sport filter unset when no sport filter is given")
+    void shouldLeaveSportFilterUnsetWhenNoFilter() {
+        cannedResponse = UserActivitySummary.newBuilder()
+                .setTotalDistanceKm(50.0)
+                .setActivityCount(2)
+                .build();
 
-        ActivitySummary summary = activityClient.summaryFor(7L, null, from, to);
+        ActivitySummary summary = activityClient.summaryFor(7L, null,
+                LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59));
 
+        assertThat(lastRequest.get().hasSportFilter()).isFalse();
         assertThat(summary.totalDistanceKm()).isEqualTo(50.0);
         assertThat(summary.activityCount()).isEqualTo(2);
     }
 
     @Test
-    @DisplayName("Should return EMPTY when the body is null")
-    void shouldReturnEmptyWhenBodyIsNull() {
-        givenBody(null);
+    @DisplayName("Should map an all-defaults response to EMPTY")
+    void shouldMapDefaultsResponseToEmpty() {
+        cannedResponse = UserActivitySummary.getDefaultInstance();
 
         ActivitySummary summary = activityClient.summaryFor(7L, "RUN",
                 LocalDateTime.now().minusDays(7), LocalDateTime.now());
 
         assertThat(summary).isEqualTo(ActivitySummary.EMPTY);
+    }
+
+    @Test
+    @DisplayName("Should surface StatusRuntimeException so the circuit breaker records it")
+    void shouldSurfaceStatusRuntimeException() {
+        // The Resilience4j proxy (recordExceptions: io.grpc.StatusRuntimeException)
+        // turns this into the ActivitySummary.EMPTY fallback in the Spring context;
+        // the raw client must let it propagate.
+        cannedError = Status.UNAVAILABLE.withDescription("activity-service down");
+
+        assertThatThrownBy(() -> activityClient.summaryFor(7L, "RUN",
+                LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59)))
+                .isInstanceOf(StatusRuntimeException.class)
+                .hasMessageContaining("UNAVAILABLE");
     }
 }

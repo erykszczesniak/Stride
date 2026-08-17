@@ -71,6 +71,20 @@ management:
       probes:
         enabled: true
 
+# Cluster-internal gRPC client (Phase 23c): ActivityInternalService.GetActivities
+# replaces the REST /internal/activities?ids= power enrichment. The discovery://
+# scheme resolves activity-service through Eureka (net.devh publishes the gRPC
+# port as `gRPC.port` instance metadata); plaintext because the port is
+# cluster-internal and never routed by the gateway — same trust model as the
+# lb:// REST calls. In the standalone profile Eureka is off, so the resolver
+# simply finds no instances: boot is unaffected (channels connect lazily) and
+# calls degrade through the Resilience4j fallback (power enrichment → empty).
+grpc:
+  client:
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
+
 ---
 spring:
   config:

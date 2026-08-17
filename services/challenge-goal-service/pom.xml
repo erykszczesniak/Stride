@@ -59,15 +59,34 @@
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
-        <!-- Resilience4j: circuit breaker + retry on sync REST calls -->
+        <!-- Cluster-internal gRPC clients (activity-service + user-service),
+             resolved through Eureka via the net.devh discovery name resolver. -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.strava</groupId>
+            <artifactId>shared-grpc-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- RUNTIME, not test: net.devh 3.1.0's GrpcClientAutoConfiguration
+             class-loads io.grpc.inprocess.InProcessChannelBuilder at startup,
+             and since grpc 1.60 that class lives outside grpc-core — without
+             this the app fails to boot with NoClassDefFoundError. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+            <version>${grpc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Resilience4j: circuit breaker + retry on sync internal gRPC calls -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
@@ -137,6 +156,15 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- In-process gRPC server for client unit tests (generated stubs are
+             final classes — not mockable, so tests run against a fake ImplBase).
+             grpc-inprocess itself is a runtime dependency above. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+            <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

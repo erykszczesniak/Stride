@@ -1,6 +1,18 @@
 server:
   port: 8083
 
+# Client side of the cluster-internal gRPC surfaces (UserInternalService,
+# ActivityInternalService). Resolved through Eureka instance metadata
+# (gRPC.port); plaintext inside the cluster.
+grpc:
+  client:
+    user-service:
+      address: discovery:///user-service
+      negotiationType: plaintext
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
+
 spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:postgres-notification}:${POSTGRES_PORT:5432}/${POSTGRES_DB:stride_notification}

@@ -71,10 +71,6 @@
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
@@ -82,7 +78,20 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
-        <!-- Resilience4j: circuit breaker + retry on sync REST calls (same pattern as challenge-goal-service) -->
+        <!-- Cluster-internal gRPC clients: UserInternalService (notification profile,
+             weekly-summary recipients) + ActivityInternalService (range stats),
+             resolved via discovery:///, replacing the retired REST /internal calls. -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.strava</groupId>
+            <artifactId>shared-grpc-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Resilience4j: circuit breaker + retry on the sync internal calls (same pattern as challenge-goal-service) -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
@@ -156,6 +165,22 @@
             <groupId>org.mockito.kotlin</groupId>
             <artifactId>mockito-kotlin</artifactId>
             <version>5.4.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- In-process gRPC transport. Runtime (not test) scope: net.devh's client
+             channel factory class-loads InProcessChannelBuilder at startup, and since
+             grpc 1.60 the io.grpc.inprocess package lives in this artifact instead of
+             grpc-core. Also serves the in-process fake server in unit tests. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+            <version>${grpc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+            <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

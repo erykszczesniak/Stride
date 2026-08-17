@@ -27,9 +27,22 @@ app:
     model: ${ANTHROPIC_MODEL:claude-opus-5}
     max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}
 
+# Cluster-internal gRPC client: the chat's activity context comes from
+# activity-service's ActivityInternalService (grpc.server.port 9082). The
+# channel resolves through Eureka via the discovery:/// scheme (the server
+# publishes its port as `gRPC.port` instance metadata); plaintext inside the
+# cluster. Inert in standalone: MockActivityClient replaces ActivityClient
+# there, so no @GrpcClient injection point exists and the lazy channel is
+# never created.
+grpc:
+  client:
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
+
 # Resilience4j tuning. groq records every failure (GroqClient maps them all to
 # ApiRequestException before they leave the method); activity-service records
-# transport-level errors only. Prod overlays live in config-server's ai-service.yml.
+# transport/RPC-level errors only. Prod overlays live in config-server's ai-service.yml.
 resilience4j:
   circuitbreaker:
     instances:
@@ -46,7 +59,11 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         recordExceptions:
-          - org.springframework.web.client.RestClientException
+          # gRPC call failures (UNAVAILABLE, DEADLINE_EXCEEDED, INTERNAL, ...)
+          # surface as StatusRuntimeException — must be recorded or the breaker
+          # would never open on a dead activity-service. RestClientException
+          # left with the retired lb:// RestTemplate (Phase 23c).
+          - io.grpc.StatusRuntimeException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
   retry:

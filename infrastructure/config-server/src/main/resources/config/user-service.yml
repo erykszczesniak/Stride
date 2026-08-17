@@ -5,6 +5,12 @@ server:
 grpc:
   server:
     port: 9081
+  # Client side of the cluster-internal ActivityInternalService (activity totals).
+  # Resolved through Eureka instance metadata (gRPC.port); plaintext inside the cluster.
+  client:
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
 
 spring:
   datasource:

@@ -53,7 +53,33 @@
             <artifactId>shared-security</artifactId>
         </dependency>
 
-        <!-- Resilience4j: circuit breaker + retry on sync REST calls -->
+        <!-- Cluster-internal gRPC client: ActivityInternalService.GetActivities
+             on activity-service, resolved via discovery:///activity-service
+             (net.devh publishes the port as gRPC.port Eureka metadata). The
+             public /api/v1 composition deliberately stays on REST. -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.strava</groupId>
+            <artifactId>shared-grpc-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- RUNTIME (not test) scope: net.devh 3.1.0 GrpcClientAutoConfiguration
+             class-loads io.grpc.inprocess.InProcessChannelBuilder at startup,
+             and since grpc 1.60 that class lives outside grpc-core — without
+             this the service fails to boot with ClassNotFound. Runtime scope
+             also puts it on the test classpath for the in-process client tests. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+            <version>${grpc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Resilience4j: circuit breaker + retry on sync downstream calls (REST + gRPC) -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
@@ -109,6 +135,16 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- In-process gRPC server for client tests: a fake ImplBase behind an
+             in-process channel replaces the network — generated stubs are never
+             Mockito-mocked. grpc-inprocess itself is declared above at runtime
+             scope (net.devh boot requirement), which the test classpath inherits. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+            <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

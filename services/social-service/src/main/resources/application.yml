@@ -54,6 +54,16 @@ server:
 eureka:
   client:
     enabled: false
+# Standalone runs without Eureka, so pin the feed-hydration client to a fixed
+# local address instead of the discovery:/// resolver the cluster config uses.
+# With no activity-service listening the call fails fast (UNAVAILABLE) and the
+# feed degrades to the feed_items snapshot — same behavior the lb:// REST
+# client had when discovery was absent.
+grpc:
+  client:
+    activity-service:
+      address: static://localhost:9082
+      negotiationType: plaintext
 management:
   endpoints:
     web:

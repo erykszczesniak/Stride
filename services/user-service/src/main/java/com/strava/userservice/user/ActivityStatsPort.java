@@ -4,9 +4,10 @@ import java.util.List;
 
 /**
  * Activity data needed by user profiles and user/admin responses. Activities live in
- * activity-service; this port is the composition seam that a sync REST client
- * (Resilience4j-wrapped, Phase 13/22 of the parity plan) will implement. Until then the
- * {@link StubActivityStatsPort} keeps the contract shape with zeroed stats.
+ * activity-service; this port is the composition seam implemented by the
+ * Resilience4j-wrapped {@code ActivityStatsPortAdapter} (gRPC totals + public REST
+ * recent activities). In standalone runs the {@link StubActivityStatsPort} keeps the
+ * contract shape with zeroed stats.
  */
 public interface ActivityStatsPort {
 

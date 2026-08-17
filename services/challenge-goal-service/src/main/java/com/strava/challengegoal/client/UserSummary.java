@@ -1,8 +1,9 @@
 package com.strava.challengegoal.client;
 
 /**
- * Shape of one element returned by user-service's internal batch endpoint
- * {@code GET /internal/users?ids=1,2,3}.
+ * Shape of one element returned by user-service's internal batch lookup
+ * ({@code UserInternalService.GetUserSummaries}); absent proto3 optional
+ * fields arrive here as nulls, exactly like the old JSON contract.
  */
 public record UserSummary(
         Long id,

@@ -48,10 +48,6 @@
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
@@ -84,6 +80,12 @@
         <dependency>
             <groupId>net.devh</groupId>
             <artifactId>grpc-server-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
+        <!-- gRPC client for activity-service's ActivityInternalService (feed hydration) -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
             <version>${grpc-spring.version}</version>
         </dependency>
         <dependency>
@@ -137,6 +139,24 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- In-process gRPC transport. RUNTIME (not test) scope on purpose:
+             net.devh 3.1.0's GrpcClientAutoConfiguration class-loads
+             io.grpc.inprocess.InProcessChannelBuilder at startup, and since
+             grpc 1.60 that class lives outside grpc-core — without it on the
+             runtime classpath the app fails to boot. Tests also use it to run
+             ActivityBatchClient against a fake in-process server. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+            <version>${grpc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+            <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

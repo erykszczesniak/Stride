@@ -1,6 +1,15 @@
 server:
   port: 8087
 
+# Cluster-internal gRPC client (chat activity context — ActivityInternalService
+# on activity-service's grpc.server.port 9082): Eureka discovery via the
+# discovery:/// scheme, plaintext inside the cluster.
+grpc:
+  client:
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
+
 spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:postgres-ai}:${POSTGRES_PORT:5432}/${POSTGRES_DB:stride_ai}

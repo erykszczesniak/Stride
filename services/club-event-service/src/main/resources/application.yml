@@ -10,9 +10,21 @@ spring:
         max-attempts: 6
         initial-interval: 2000
 
+# Cluster-internal gRPC client. The net.devh discovery resolver reads the
+# `gRPC.port` Eureka instance metadata published by user-service; plaintext
+# because the internal port never leaves the cluster network. Channels are
+# created lazily, so this is harmless when Eureka is disabled (standalone).
+grpc:
+  client:
+    user-service:
+      address: discovery:///user-service
+      negotiationType: plaintext
+
 # Resilience4j tuning for the user-service batch lookup (applies in every
 # profile). Generous in dev so the fallback path shows up quickly when
 # user-service isn't running; tightened for prod in the config server.
+# StatusRuntimeException covers every failed gRPC call (UNAVAILABLE,
+# DEADLINE_EXCEEDED, ...) so the breaker records them.
 resilience4j:
   circuitbreaker:
     instances:
@@ -23,7 +35,7 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         recordExceptions:
-          - org.springframework.web.client.RestClientException
+          - io.grpc.StatusRuntimeException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
   retry:

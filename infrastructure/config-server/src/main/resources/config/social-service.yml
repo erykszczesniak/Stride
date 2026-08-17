@@ -5,6 +5,12 @@ server:
 grpc:
   server:
     port: 9084
+  # Feed hydration client: activity-service's ActivityInternalService, resolved
+  # from Eureka instance metadata (gRPC.port) by net.devh's discovery resolver.
+  client:
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
 
 spring:
   datasource:
@@ -23,8 +29,11 @@ spring:
     enabled: true
     locations: classpath:db/migration/common
 
-# Feed hydration calls activity-service's internal batch API; when the circuit
-# opens the feed degrades to the local feed_items snapshot instead of failing.
+# Feed hydration calls activity-service's internal batch API (gRPC); when the
+# circuit opens the feed degrades to the local feed_items snapshot instead of
+# failing. No recordExceptions filter is set on purpose: the default records
+# EVERY exception as a failure, so io.grpc.StatusRuntimeException (UNAVAILABLE,
+# DEADLINE_EXCEEDED, ...) counts toward the failure rate.
 resilience4j:
   circuitbreaker:
     instances:

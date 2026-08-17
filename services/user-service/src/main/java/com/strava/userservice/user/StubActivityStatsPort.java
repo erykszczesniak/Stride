@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Standalone-profile implementation: no discovery, no activity-service, so
  * profiles render with zero activity stats and an empty recent-activities list.
- * Composed environments use {@code RestActivityStatsPort}.
+ * Composed environments use {@code ActivityStatsPortAdapter}.
  */
 @Component
 @Profile("standalone")

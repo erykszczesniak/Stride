@@ -5,6 +5,15 @@ server:
 grpc:
   server:
     port: 9082
+  # Internal gRPC clients (user-service visibility, social-service summaries):
+  # Eureka discovery via the discovery:/// scheme, plaintext inside the cluster.
+  client:
+    user-service:
+      address: discovery:///user-service
+      negotiationType: plaintext
+    social-service:
+      address: discovery:///social-service
+      negotiationType: plaintext
 
 spring:
   datasource:

@@ -1,27 +1,28 @@
 package com.strava.challengegoal.client;
 
-import com.strava.shared.security.UserContext;
+import com.strava.grpc.activity.ActivityInternalServiceGrpc;
+import com.strava.grpc.activity.GetUserActivitySummaryRequest;
+import com.strava.grpc.activity.UserActivitySummary;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Calls activity-service via Spring Cloud LoadBalancer (lb://activity-service)
- * resolved through Eureka. Three layers of protection on the read path:
+ * Calls activity-service's cluster-internal gRPC endpoint
+ * ({@code ActivityInternalService.GetUserActivitySummary}), resolved through
+ * Eureka by the net.devh discovery name resolver (which reads the
+ * {@code gRPC.port} instance metadata the server publishes). The old REST
+ * page-and-sum is now a single server-side aggregation with identical
+ * semantics: inclusive startTime window, case-insensitive sport filter,
+ * null metrics count as 0 but the activity still counts.
+ *
+ * Three layers of protection on the read path:
  *
  *   1. Spring Cache (@Cacheable) backed by Redis — typical hit returns
  *      without touching activity-service at all (TTL set in
@@ -32,17 +33,29 @@ import java.util.Map;
  *      ActivitySummary.EMPTY so the read-side endpoints stay up and
  *      progress just reports 0 until the activity-service is healthy.
  *
- * The user identity is propagated to activity-service via the X-User-Id
- * header — same trust model gateway → service.
+ * A per-call deadline caps how long a sick dependency can hold a thread —
+ * the resulting DEADLINE_EXCEEDED StatusRuntimeException is a recorded
+ * exception for the circuit breaker. No caller identity is propagated:
+ * the internal gRPC port is never routed by the gateway, so the surface is
+ * cluster-trusted by construction (the REST-era X-User-Id header is gone).
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ActivityClient {
 
-    private final RestTemplate loadBalanced;
+    private static final long DEADLINE_SECONDS = 3;
 
-    private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    @GrpcClient("activity-service")
+    private ActivityInternalServiceGrpc.ActivityInternalServiceBlockingStub activityStub;
+
+    /** Spring path — the stub is injected into the field by net.devh. */
+    ActivityClient() {
+    }
+
+    /** Test seam — lets unit tests hand in a stub bound to an in-process channel. */
+    ActivityClient(ActivityInternalServiceGrpc.ActivityInternalServiceBlockingStub activityStub) {
+        this.activityStub = activityStub;
+    }
 
     /**
      * Cache key is the (user, sport, window) tuple — the same activity
@@ -63,52 +76,23 @@ public class ActivityClient {
         log.debug("Fetching activity summary userId={} sport={} from={} to={}",
                 userId, sportFilter, from, to);
 
-        // Propagate the calling user's identity to activity-service so its
-        // header-trust filter accepts us. Falls back to the target userId
-        // when no SecurityContext is present (background recomputation case).
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(UserContext.HEADER_USER_ID, callerOr(userId));
+        // LocalDateTime.toString() emits ISO-8601, exactly what the server's
+        // LocalDateTime.parse() expects on the other side of the wire.
+        GetUserActivitySummaryRequest.Builder request = GetUserActivitySummaryRequest.newBuilder()
+                .setUserId(userId)
+                .setFrom(from.toString())
+                .setTo(to.toString());
+        if (sportFilter != null) request.setSportFilter(sportFilter);
 
-        // Pull all activities in the window (paged); we sum locally. For very
-        // active users this would need server-side aggregation in
-        // activity-service — that's an obvious follow-up. The /api/v1 contract
-        // returns a plain JSON array plus page-total-count/page-total-elements
-        // headers (not a Spring Page envelope).
-        String url = "lb://activity-service/api/v1/activities/user/" + userId
-                + "?size=200&page=0";
+        UserActivitySummary summary = activityStub
+                .withDeadlineAfter(DEADLINE_SECONDS, TimeUnit.SECONDS)
+                .getUserActivitySummary(request.build());
 
-        var response = loadBalanced.exchange(
-                url,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
-        );
-
-        List<Map<String, Object>> content = response.getBody();
-        if (content == null) return ActivitySummary.EMPTY;
-
-        double dist = 0;
-        long dur = 0;
-        double elev = 0;
-        long count = 0;
-        for (Map<String, Object> a : content) {
-            String aSport = (String) a.get("activityType");
-            if (sportFilter != null && !sportFilter.equalsIgnoreCase(aSport)) continue;
-
-            String start = (String) a.get("startTime");
-            if (start == null) continue;
-            LocalDateTime started = LocalDateTime.parse(start, ISO);
-            if (started.isBefore(from) || started.isAfter(to)) continue;
-
-            Number distance = (Number) a.get("distance");
-            Number duration = (Number) a.get("duration");
-            Number elevation = (Number) a.get("elevationGain");
-            if (distance != null) dist += distance.doubleValue();
-            if (duration != null) dur += duration.longValue();
-            if (elevation != null) elev += elevation.doubleValue();
-            count++;
-        }
-        return new ActivitySummary(dist, dur, elev, count);
+        return new ActivitySummary(
+                summary.getTotalDistanceKm(),
+                summary.getTotalDurationSeconds(),
+                summary.getTotalElevationMeters(),
+                summary.getActivityCount());
     }
 
     @SuppressWarnings("unused")
@@ -119,11 +103,5 @@ public class ActivityClient {
                                      Throwable ex) {
         log.warn("ActivityClient fallback for userId={} (cause: {})", userId, ex.getMessage());
         return ActivitySummary.EMPTY;
-    }
-
-    private String callerOr(Long fallback) {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof Long id) return id.toString();
-        return fallback.toString();
     }
 }

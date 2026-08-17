@@ -1,6 +1,14 @@
 server:
   port: 8085
 
+# Cluster-internal gRPC client — resolved via the `gRPC.port` Eureka instance
+# metadata published by user-service; plaintext inside the cluster.
+grpc:
+  client:
+    user-service:
+      address: discovery:///user-service
+      negotiationType: plaintext
+
 spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:postgres-club-event}:${POSTGRES_PORT:5432}/${POSTGRES_DB:stride_club_event}

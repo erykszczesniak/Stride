@@ -79,6 +79,15 @@
             <artifactId>grpc-server-spring-boot-starter</artifactId>
             <version>${grpc-spring.version}</version>
         </dependency>
+        <!-- Cluster-internal gRPC clients: blocking stubs for user-service
+             (visibility facts) and social-service (like/comment summaries),
+             injected via @GrpcClient and resolved through Eureka with the
+             discovery:/// scheme. -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.strava</groupId>
             <artifactId>shared-grpc-contracts</artifactId>
@@ -130,6 +139,25 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- In-process gRPC transport. Used by the client tests (real stubs
+             against a fake service implementation, no sockets, no Mockito on
+             generated types), but scoped RUNTIME not test: net.devh 3.1.0's
+             GrpcClientAutoConfiguration class-loads
+             io.grpc.inprocess.InProcessChannelBuilder at startup, and since
+             grpc 1.60 that class lives outside grpc-core — without this the
+             app fails to boot with ClassNotFound. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+            <version>${grpc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+            <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -1,15 +1,14 @@
 package com.strava.aiservice.client
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.time.LocalDateTime
 
 /**
  * The slice of activity-service's cluster-internal batch payload
- * (InternalActivityResponse) the chat needs: userId for the ownership check
- * plus the metrics that ground the system prompt. Unknown fields (photos,
- * polyline, streams, ...) are ignored.
+ * (ActivityPayload, shared/grpc-contracts activity_internal.proto) the chat
+ * needs: userId for the ownership check plus the metrics that ground the
+ * system prompt. Wire fields the chat does not consume (photos, polyline,
+ * streams, ...) are simply never mapped.
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 data class ActivityContext(
     val id: Long? = null,
     val userId: Long? = null,
@@ -30,14 +29,14 @@ data class ActivityContext(
 )
 
 /**
- * Looks an activity up by id. ActivityClient (lb://activity-service) in prod,
- * MockActivityClient in standalone.
+ * Looks an activity up by id. ActivityClient (gRPC ActivityInternalService on
+ * discovery:///activity-service) in prod, MockActivityClient in standalone.
  */
 interface ActivityContextClient {
 
     /**
      * @return the activity, or null when activity-service does not know the id
-     *         (its internal batch endpoint silently skips missing ids).
+     *         (its internal batch API silently skips missing ids).
      * @throws com.strava.aiservice.exception.ApiRequestException 503 when
      *         activity-service is unreachable.
      */

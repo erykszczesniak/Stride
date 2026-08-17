@@ -1,5 +1,8 @@
 package com.strava.pipeline.client;
 
+import com.strava.grpc.activity.ActivityInternalServiceGrpc;
+import com.strava.grpc.activity.GetActivitiesRequest;
+import com.strava.grpc.activity.GetActivitiesResponse;
 import com.strava.pipeline.exception.ApiRequestException;
 import com.strava.pipeline.pipeline.ActivityData;
 import com.strava.pipeline.pipeline.ActivityType;
@@ -10,6 +13,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +45,13 @@ import java.util.stream.Collectors;
  * (FTP derivation only) is enriched via the cluster-internal batch API since
  * the public list payload does not carry it.
  *
+ * TRANSPORT SPLIT (Phase 23c): only that cluster-internal power enrichment
+ * moved to gRPC ({@code ActivityInternalService.GetActivities}, the twin of
+ * the now-deprecated REST {@code /internal/activities?ids=}). The public
+ * calls deliberately stay REST — they consume the public {@code /api/v1}
+ * contract exactly as external clients do, keeping its JSON payloads and
+ * visibility/404 semantics.
+ *
  * Failures of these primary sources surface as the pipeline contract's
  * server_error (main can only miss this data when the request itself is bad);
  * the power enrichment degrades to "no power data" like main does for
@@ -53,7 +65,24 @@ public class ActivityClient {
     /** Fetch-everything page: the pipeline aggregates the full history. */
     private static final int PAGE_SIZE = 1000;
 
+    /** Per-call gRPC deadline — matches the REST read timeout (3s). */
+    private static final long GRPC_DEADLINE_SECONDS = 3;
+
     private final RestTemplate loadBalanced;
+
+    /**
+     * Blocking stub for the cluster-internal gRPC surface of activity-service
+     * ({@code discovery:///activity-service}, plaintext — see application.yml).
+     * Field-injected by net.devh after construction; non-final so tests can
+     * swap in a stub bound to an in-process server.
+     */
+    @GrpcClient("activity-service")
+    private ActivityInternalServiceGrpc.ActivityInternalServiceBlockingStub activityInternal;
+
+    /** Test seam: binds the internal stub to an in-process channel. */
+    void setActivityInternal(ActivityInternalServiceGrpc.ActivityInternalServiceBlockingStub stub) {
+        this.activityInternal = stub;
+    }
 
     // --- activities ------------------------------------------------------
 
@@ -105,9 +134,19 @@ public class ActivityClient {
     }
 
     /**
-     * Average power by activity id via the cluster-internal batch API (the
-     * public list payload has no power field). Empty on failure — the FTP
-     * zone then reports "not set" (0), main's behavior for power-less data.
+     * Average power by activity id via the cluster-internal gRPC batch API
+     * ({@code GetActivities} — the public list payload has no power field).
+     * The wire {@code ActivityPayload} carries the full detail shape, but this
+     * enrichment only consumes {@code id} + {@code average_power} (proto3
+     * optional, so "no power" is distinguishable from 0); the GPS streams
+     * arrive as typed repeated fields ({@code repeated double
+     * elevation_profile}, {@code repeated int64 point_timestamps}) rather
+     * than JSON arrays, ready if the pipeline ever needs them from here.
+     *
+     * Failure semantics are unchanged: a failed call (StatusRuntimeException
+     * — NOT in the resilience config's ignoreExceptions, so it is recorded by
+     * the activity-service circuit breaker) degrades to an empty map and the
+     * FTP zone reports "not set" (0), main's behavior for power-less data.
      */
     @CircuitBreaker(name = "activity-service", fallbackMethod = "averagePowerFallback")
     @Retry(name = "activity-service")
@@ -115,19 +154,13 @@ public class ActivityClient {
         if (ids.isEmpty()) {
             return Map.of();
         }
-        String joined = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
-        String url = "lb://activity-service/internal/activities?ids=" + joined;
-        var response = loadBalanced.exchange(url, HttpMethod.GET, HttpEntity.EMPTY,
-                new ParameterizedTypeReference<List<InternalActivityPayload>>() {
-                });
-        List<InternalActivityPayload> body = response.getBody();
-        if (body == null) {
-            return Map.of();
-        }
+        GetActivitiesResponse response = activityInternal
+                .withDeadlineAfter(GRPC_DEADLINE_SECONDS, TimeUnit.SECONDS)
+                .getActivities(GetActivitiesRequest.newBuilder().addAllIds(ids).build());
         Map<Long, Integer> powers = new HashMap<>();
-        for (InternalActivityPayload payload : body) {
-            if (payload.id() != null && payload.averagePower() != null) {
-                powers.put(payload.id(), payload.averagePower());
+        for (com.strava.grpc.activity.ActivityPayload activity : response.getActivitiesList()) {
+            if (activity.hasAveragePower()) {
+                powers.put(activity.getId(), activity.getAveragePower());
             }
         }
         return powers;
@@ -198,9 +231,6 @@ public class ActivityClient {
                     distance, duration, averageHeartRate, maxHeartRate, averagePower,
                     startTime, routePolyline, elevationProfile, pointTimestamps);
         }
-    }
-
-    record InternalActivityPayload(Long id, Integer averagePower) {
     }
 
     record PersonalRecordPayload(

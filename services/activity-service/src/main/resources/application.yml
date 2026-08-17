@@ -49,6 +49,10 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         recordExceptions:
+          # gRPC call failures (UNAVAILABLE, DEADLINE_EXCEEDED, NOT_FOUND, ...)
+          # surface as StatusRuntimeException — must be recorded or the breaker
+          # would never open on a dead dependency.
+          - io.grpc.StatusRuntimeException
           - org.springframework.web.client.RestClientException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
@@ -86,6 +90,20 @@ management:
 grpc:
   server:
     port: 9082
+  # Cluster-internal gRPC clients: user-service (visibility facts) and
+  # social-service (like/comment summaries). Channels resolve through Eureka
+  # via the discovery:/// scheme (the servers publish their port as `gRPC.port`
+  # instance metadata); plaintext inside the cluster. In standalone (Eureka
+  # off) the resolver simply finds no instances, so calls fail fast into the
+  # Resilience4j fallbacks — boot itself is unaffected because channels are
+  # lazy.
+  client:
+    user-service:
+      address: discovery:///user-service
+      negotiationType: plaintext
+    social-service:
+      address: discovery:///social-service
+      negotiationType: plaintext
 
 # Local fallback — H2 + no Eureka/Kafka listeners, used for fast smoke tests.
 ---

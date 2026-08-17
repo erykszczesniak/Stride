@@ -37,6 +37,20 @@ management:
     mail:
       enabled: false  # blank creds must not fail the health probe (parity with main)
 
+# Client side of the cluster-internal gRPC surfaces (UserInternalService,
+# ActivityInternalService). Resolved through Eureka instance metadata
+# (gRPC.port); plaintext inside the cluster. Applies in every profile: in
+# standalone the resolver simply finds no instances and calls fail into the
+# Resilience4j fallbacks (null -> skip email / skip user).
+grpc:
+  client:
+    user-service:
+      address: discovery:///user-service
+      negotiationType: plaintext
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
+
 # Resilience4j tuning for the internal user-service / activity-service calls.
 # Generous in dev so fallbacks kick in quickly when peers aren't running;
 # prod overlays live in config-server's notification-service.yml.
@@ -50,7 +64,9 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         recordExceptions:
-          - org.springframework.web.client.RestClientException
+          # gRPC failures (UNAVAILABLE, DEADLINE_EXCEEDED, ...) all surface as
+          # StatusRuntimeException — the transport-swap twin of RestClientException.
+          - io.grpc.StatusRuntimeException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
       activity-service:
@@ -60,7 +76,7 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         recordExceptions:
-          - org.springframework.web.client.RestClientException
+          - io.grpc.StatusRuntimeException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
   retry:

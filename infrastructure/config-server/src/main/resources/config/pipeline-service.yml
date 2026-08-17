@@ -1,6 +1,15 @@
 server:
   port: 8089
 
+# Cluster-internal gRPC client — GetActivities power enrichment on
+# activity-service, discovered via Eureka (gRPC.port instance metadata).
+# Plaintext: the gRPC port is cluster-internal, never routed by the gateway.
+grpc:
+  client:
+    activity-service:
+      address: discovery:///activity-service
+      negotiationType: plaintext
+
 spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:postgres-pipeline}:${POSTGRES_PORT:5432}/${POSTGRES_DB:stride_pipeline}

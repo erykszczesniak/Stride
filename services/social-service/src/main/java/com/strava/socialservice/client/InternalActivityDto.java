@@ -1,17 +1,16 @@
 package com.strava.socialservice.client;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * Client-side mirror of activity-service's InternalActivityResponse (the
- * cluster-internal batch payload). Component names match the producer's
- * record 1:1 so Jackson round-trips symmetrically; unknown fields are
- * ignored so activity-service can add fields without breaking us.
+ * cluster-internal batch payload). Component names still match the producer's
+ * record 1:1; since the gRPC cutover the values are mapped from the
+ * ActivityPayload wire message ({@link ActivityBatchClient#activitiesById}),
+ * with proto3 optional fields translated back to nulls so feed hydration
+ * sees exactly the shape the REST JSON used to deliver.
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public record InternalActivityDto(
         Long id,
         Long userId,

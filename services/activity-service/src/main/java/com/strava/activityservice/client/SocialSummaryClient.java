@@ -1,25 +1,28 @@
 package com.strava.activityservice.client;
 
+import com.strava.grpc.social.GetSocialSummariesRequest;
+import com.strava.grpc.social.GetSocialSummariesResponse;
+import com.strava.grpc.social.SocialInternalServiceGrpc;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
+import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * Batch social counts (likes/comments/liked-by-viewer) from social-service's
- * cluster-internal API, one call per response page instead of N+1 per row.
- * Resolved via Spring Cloud LoadBalancer (lb://social-service), wrapped in
- * Resilience4j retry + circuit breaker (instance "social-service").
+ * cluster-internal gRPC API ({@code SocialInternalService.GetSocialSummaries}),
+ * one call per response page instead of N+1 per row. The channel is resolved
+ * through Eureka ({@code discovery:///social-service}), every call carries a
+ * short deadline, and the call is wrapped in Resilience4j retry + circuit
+ * breaker (instance "social-service"; StatusRuntimeException is in the
+ * recordExceptions list so gRPC failures count toward opening the breaker).
  *
  * The fallback returns no summaries, which the mappers render as
  * zeros/likedByCurrentUser=false — activity endpoints stay up when
@@ -27,10 +30,17 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class SocialSummaryClient {
 
-    private final RestTemplate loadBalanced;
+    private static final long DEADLINE_SECONDS = 2;
+
+    /**
+     * Package-private test seam. In production the net.devh starter injects a
+     * blocking stub on the discovery-resolved channel; tests assign a stub
+     * bound to an in-process server.
+     */
+    @GrpcClient("social-service")
+    SocialInternalServiceGrpc.SocialInternalServiceBlockingStub socialStub;
 
     public record SocialSummary(Long activityId, int likesCount, int commentsCount, boolean likedByViewer) {
 
@@ -46,14 +56,17 @@ public class SocialSummaryClient {
         if (activityIds == null || activityIds.isEmpty()) {
             return Map.of();
         }
-        String ids = activityIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-        String url = "lb://social-service/internal/social/activities?ids=" + ids
-                + (viewerId != null ? "&viewerId=" + viewerId : "");
-        var response = loadBalanced.exchange(url, HttpMethod.GET, null,
-                new ParameterizedTypeReference<List<SocialSummary>>() {});
-        List<SocialSummary> body = response.getBody() != null ? response.getBody() : List.of();
-        return body.stream()
-                .filter(s -> s.activityId() != null)
+        GetSocialSummariesRequest.Builder request = GetSocialSummariesRequest.newBuilder()
+                .addAllActivityIds(activityIds);
+        if (viewerId != null) {
+            request.setViewerId(viewerId);
+        }
+        GetSocialSummariesResponse response = socialStub
+                .withDeadlineAfter(DEADLINE_SECONDS, TimeUnit.SECONDS)
+                .getSocialSummaries(request.build());
+        return response.getSummariesList().stream()
+                .map(s -> new SocialSummary(
+                        s.getActivityId(), s.getLikesCount(), s.getCommentsCount(), s.getLikedByViewer()))
                 .collect(Collectors.toMap(SocialSummary::activityId, Function.identity(), (a, b) -> a));
     }
 

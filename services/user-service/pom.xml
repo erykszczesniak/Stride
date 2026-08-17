@@ -78,6 +78,12 @@
             <artifactId>grpc-server-spring-boot-starter</artifactId>
             <version>${grpc-spring.version}</version>
         </dependency>
+        <!-- gRPC client for the cluster-internal ActivityInternalService contract (activity totals) -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.strava</groupId>
             <artifactId>shared-grpc-contracts</artifactId>
@@ -143,6 +149,22 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- In-process gRPC transport. Runtime (not test) scope: net.devh's client
+             channel factory class-loads InProcessChannelBuilder at startup, and since
+             grpc 1.60 the io.grpc.inprocess package lives in this artifact instead of
+             grpc-core. Also serves the in-process fake server in unit tests. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+            <version>${grpc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+            <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
