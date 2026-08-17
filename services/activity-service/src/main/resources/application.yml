@@ -79,6 +79,14 @@ management:
       probes:
         enabled: true
 
+# Cluster-internal gRPC server (ActivityInternalService) — never routed by the
+# gateway, reachable only from sibling services inside the cluster. Applies in
+# every profile (harmless in standalone); the net.devh starter auto-publishes
+# the port into Eureka instance metadata as `gRPC.port`.
+grpc:
+  server:
+    port: 9082
+
 # Local fallback — H2 + no Eureka/Kafka listeners, used for fast smoke tests.
 ---
 spring:

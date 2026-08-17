@@ -10,6 +10,11 @@ spring:
         max-attempts: 6
         initial-interval: 2000
 
+# Cluster-internal gRPC server (SocialInternalService) — separate port, never routed by the gateway.
+grpc:
+  server:
+    port: 9084
+
 ---
 spring:
   config:

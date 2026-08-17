@@ -27,3 +27,7 @@ spring:
 eureka:
   client:
     enabled: false
+# Never bind the cluster-internal gRPC port in tests.
+grpc:
+  server:
+    port: -1

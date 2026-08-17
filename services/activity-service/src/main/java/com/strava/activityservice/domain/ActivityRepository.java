@@ -124,6 +124,12 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
+    // Window fetch for the internal user-activity-summary aggregation.
+    // BETWEEN is inclusive on both ends and filters on startTime — the same
+    // window rule the old client-side summation applied.
+    List<Activity> findByUserIdAndStartTimeBetween(
+            Long userId, LocalDateTime from, LocalDateTime to);
+
     // All activities for a user ordered by start time (for PR recalculation)
     @Query("SELECT a FROM Activity a WHERE a.userId = :userId ORDER BY a.startTime ASC")
     List<Activity> findAllByUserIdOrderByStartTimeAsc(@Param("userId") Long userId);

@@ -71,6 +71,18 @@
             <groupId>com.strava</groupId>
             <artifactId>shared-security</artifactId>
         </dependency>
+
+        <!-- gRPC server exposing the cluster-internal UserInternalService contract -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-server-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.strava</groupId>
+            <artifactId>shared-grpc-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>

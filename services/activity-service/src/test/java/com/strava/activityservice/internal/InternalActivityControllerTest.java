@@ -24,8 +24,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// The real InternalActivityQueryService is imported (repository/service
+// mocked underneath) so the REST slice still exercises the shared mapping
+// path — the same one the gRPC transport uses.
 @WebMvcTest(InternalActivityController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, InternalActivityQueryService.class})
 @DisplayName("InternalActivityController Unit Tests")
 class InternalActivityControllerTest {
 

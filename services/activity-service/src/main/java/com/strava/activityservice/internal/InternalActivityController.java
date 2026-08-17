@@ -1,12 +1,8 @@
 package com.strava.activityservice.internal;
 
-import com.strava.activityservice.activity.ActivityService;
-import com.strava.activityservice.domain.ActivityRepository;
-import com.strava.activityservice.util.StreamJson;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,14 +20,16 @@ import java.util.Map;
  * restricts who can reach the pod.
  *
  * The response shapes are cross-service contracts — do not change them.
+ * The same data is also served over gRPC (ActivityInternalService, see the
+ * grpc package); both transports delegate to InternalActivityQueryService so
+ * their semantics cannot drift.
  */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/internal/activities")
 public class InternalActivityController {
 
-    private final ActivityRepository activityRepository;
-    private final ActivityService activityService;
+    private final InternalActivityQueryService internalActivityQueryService;
 
     /**
      * Batch hydration by id. Missing ids are silently skipped; order is
@@ -39,14 +37,8 @@ public class InternalActivityController {
      * compose those themselves.
      */
     @GetMapping
-    @Transactional(readOnly = true)
     public ResponseEntity<List<InternalActivityResponse>> getActivities(@RequestParam List<Long> ids) {
-        List<InternalActivityResponse> payload = activityRepository.findAllById(ids).stream()
-                .map(a -> InternalActivityResponse.from(a,
-                        StreamJson.parseElevationProfile(a.getElevationProfile()),
-                        StreamJson.parsePointTimestamps(a.getPointTimestamps())))
-                .toList();
-        return ResponseEntity.ok(payload);
+        return ResponseEntity.ok(internalActivityQueryService.getActivities(ids));
     }
 
     /** Aggregated stats for a user over [from, to] (ISO date-times). */
@@ -55,6 +47,6 @@ public class InternalActivityController {
             @RequestParam Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
-        return ResponseEntity.ok(activityService.getRangeStats(userId, from, to));
+        return ResponseEntity.ok(internalActivityQueryService.getRangeStats(userId, from, to));
     }
 }

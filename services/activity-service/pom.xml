@@ -70,6 +70,20 @@
             <groupId>com.strava</groupId>
             <artifactId>shared-security</artifactId>
         </dependency>
+        <!-- Cluster-internal gRPC surface: serves ActivityInternalService (see
+             shared/grpc-contracts) on grpc.server.port — never routed by the
+             gateway. The starter also publishes the port into Eureka instance
+             metadata (gRPC.port) so sibling services can discover it. -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-server-spring-boot-starter</artifactId>
+            <version>${grpc-spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.strava</groupId>
+            <artifactId>shared-grpc-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>

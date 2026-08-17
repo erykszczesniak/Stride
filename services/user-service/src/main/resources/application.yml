@@ -10,6 +10,11 @@ spring:
         max-attempts: 6
         initial-interval: 2000
 
+# Cluster-internal gRPC endpoint (UserInternalService) — never routed by the gateway.
+grpc:
+  server:
+    port: 9081
+
 # Resilience4j for the activity-service composition (profile stats + recent
 # activities). Dev defaults here; config-server tightens them for prod.
 resilience4j:

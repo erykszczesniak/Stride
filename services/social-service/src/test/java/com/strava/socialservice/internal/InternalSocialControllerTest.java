@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(InternalSocialController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, SocialSummaryService.class})
 @DisplayName("InternalSocialController")
 class InternalSocialControllerTest {
 

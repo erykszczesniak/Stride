@@ -161,6 +161,31 @@ class ActivityRepositoryTest {
     }
 
     @Test
+    @DisplayName("findByUserIdAndStartTimeBetween filters on startTime, inclusive on both ends")
+    void startTimeWindowIsInclusive() {
+        Activity seeded = activityRepository.findById(1L).orElseThrow();
+
+        // A degenerate [startTime, startTime] window still matches — BETWEEN
+        // is inclusive on both bounds, the rule the internal user-activity
+        // summary aggregation relies on.
+        List<Activity> window = activityRepository.findByUserIdAndStartTimeBetween(
+                seeded.getUserId(), seeded.getStartTime(), seeded.getStartTime());
+        assertThat(window).extracting(Activity::getId).contains(1L);
+
+        // Just outside either bound -> excluded.
+        assertThat(activityRepository.findByUserIdAndStartTimeBetween(
+                seeded.getUserId(),
+                seeded.getStartTime().plusSeconds(1),
+                seeded.getStartTime().plusHours(1)))
+                .extracting(Activity::getId).doesNotContain(1L);
+        assertThat(activityRepository.findByUserIdAndStartTimeBetween(
+                seeded.getUserId(),
+                seeded.getStartTime().minusHours(1),
+                seeded.getStartTime().minusSeconds(1)))
+                .extracting(Activity::getId).doesNotContain(1L);
+    }
+
+    @Test
     @DisplayName("seeded PRs mirror what recalculateAllPRs derives (user 1 spot checks)")
     void seededPRs() {
         List<PersonalRecord> user1 = personalRecordRepository.findByUserId(1L);
