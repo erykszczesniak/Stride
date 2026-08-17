@@ -130,27 +130,35 @@ Reads of `GET /api/feed` hit a single table with one local join against
 feed is fast and resilient to those services being slow or down, at the
 cost of eventual consistency on counts.
 
-### 4. Sync calls protected by Resilience4j
+### 4. Sync calls: gRPC inside, REST at the edge, Resilience4j everywhere
 
-When sync is the right shape (activity aggregation for progress bars,
-external Groq calls), the outbound call is wrapped:
+Cluster-internal service-to-service calls ride **gRPC** (Phase 23): typed
+proto contracts in `shared/grpc-contracts`, blocking stubs resolved through
+Eureka (`discovery:///service-id` — the servers publish their port as
+`gRPC.port` instance metadata), plaintext inside the cluster, and a per-call
+deadline on every stub call. Providers: user-service (:9081), activity-service
+(:9082), social-service (:9084). The public `/api/v1` + `/pipeline/v1`
+contract — and every BFF call that consumes it — deliberately stays REST:
+browsers and the iOS client speak HTTP, and the BFF composition is part of
+the public contract, not an internal API.
+
+Every outbound call (gRPC or HTTP) is wrapped:
 
 ```
-@TimeLimiter(name)        ← cap per-call latency
-  @CircuitBreaker(name)   ← open after sustained failures, fall back
-    @Retry(name)          ← absorb transient blips
-      actual call         ← lb://service or HTTPS to external
+@CircuitBreaker(name)   ← open after sustained failures, fall back
+  @Retry(name)          ← absorb transient blips
+    actual call         ← gRPC stub w/ deadline, or HTTPS to external APIs
 ```
 
-Two deployments of this pattern:
-- `challenge-goal-service` → `activity-service` (peer microservice via
-  Eureka).
-- `ai-service` → Groq Chat Completions (external HTTP, much higher
-  variance, tighter timeouts, longer wait-in-open-state).
-
-Tuning lives in `application.yml` under
-`resilience4j.{circuitbreaker,retry,timelimiter}.instances.<name>`, with
-prod-tighter overlays served by Config Server.
+Deployments of this pattern: challenge-goal → activity (server-side
+GetUserActivitySummary behind the Redis cache), social → activity (feed
+hydration with degraded-snapshot fallback), activity → user/social,
+notification → user/activity, ai → activity (chat context), user → activity
+(profile totals), pipeline → activity (power enrichment), and external HTTP
+to Groq/Anthropic/Strava with tighter timeouts. `StatusRuntimeException` is
+a recorded exception in every consumer's breaker config. Tuning lives in
+`application.yml` under `resilience4j.*.instances.<name>`, with prod-tighter
+overlays served by Config Server.
 
 ### 5. JWT-only-at-gateway trust model
 

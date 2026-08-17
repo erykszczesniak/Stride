@@ -35,12 +35,6 @@ public class SecurityConfig {
                         // Login/registration/OAuth callbacks are unauthenticated by definition.
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        // /internal/** is cluster-only: the gateway route allowlist never
-                        // exposes it and a k8s NetworkPolicy restricts callers to sibling
-                        // services, so no identity headers are required here.
-                        .requestMatchers("/internal/**").permitAll()
-                        // Roles arrive via X-User-Roles (HeaderAuthenticationFilter maps
-                        // them to ROLE_* authorities).
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

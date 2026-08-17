@@ -4,7 +4,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  12 Spring Boot/Kotlin services · Kafka events · Eureka discovery    │
+│  12 Spring Boot/Kotlin services · Kafka events · gRPC inside         │
 │  Spring Cloud Config · Redis cache · Elasticsearch · Resilience4j    │
 │  CQRS feed fan-out · 2 BFFs (web + iOS) · OpenTelemetry → Jaeger     │
 │  Micrometer → Prometheus → Grafana · K8s · Terraform · DB-per-service│
@@ -130,7 +130,8 @@ whole stack.
 | **Backend-for-frontend (×2)** | `web-bff` (dashboard composition, report GraphQL, CSV export) and `pipeline-service` (iOS facade with its own `tri_` token auth) — one BFF per client type |
 | **Per-user feed fan-out (CQRS)** | `social-service.user_feed_entries` materialized from activity/follow events: author-always, public-only follower fan-out, visibility retraction, follow backfill, unfollow purge |
 | **Search index with graceful fallback** | `user-service` mirrors users into Elasticsearch (async, swallow-on-failure); search falls back to SQL `ILIKE` when the index is down |
-| **API composition with identity forwarding** | BFFs call domain services with the caller's verified `X-User-*` headers; internal `/internal/**` APIs are gateway-unroutable and cluster-only |
+| **API composition with identity forwarding** | BFFs call domain services with the caller's verified `X-User-*` headers over the public REST contract |
+| **gRPC inside, REST at the edge** | Cluster-internal calls use typed proto contracts (`shared/grpc-contracts`) over Eureka-discovered gRPC channels with per-call deadlines; the browser/iOS contract stays REST at the gateway |
 
 ## Run it locally
 

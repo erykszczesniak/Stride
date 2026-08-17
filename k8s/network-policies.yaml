@@ -55,7 +55,7 @@ spec:
     - {}    # all sources allowed (ingress controller etc.)
 ---
 # 4. Allow services to reach each other for service-to-service calls
-#    (challenge-goal-service → activity-service via lb://, Kafka, Redis, etc).
+#    (REST composition and the cluster-internal gRPC ports 9081/9082/9084).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

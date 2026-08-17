@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # Build stage
-FROM eclipse-temurin:21-jdk-alpine AS build
+# Debian-based build stage: protoc/protoc-gen-grpc-java from Maven Central are
+# glibc binaries and do not run on musl/Alpine. Runtime stays on Alpine JRE.
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /workspace
 # The parent POM's reactor references every module, so the whole module tree
 # must be present even when building a single service with -pl/-am.

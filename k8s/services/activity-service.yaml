@@ -18,6 +18,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
+            - containerPort: 9082   # cluster-internal gRPC
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: docker
@@ -56,8 +57,12 @@ metadata:
 spec:
   selector: { app: activity-service }
   ports:
-    - port: 8082
+    - name: http
+      port: 8082
       targetPort: 8082
+    - name: grpc
+      port: 9082
+      targetPort: 9082
 ---
 # Demo HPA on activity-service — the busiest write-heavy domain service.
 # Scales out on CPU when the dashboard refresh load spikes.

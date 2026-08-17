@@ -65,7 +65,11 @@ calls is ported 1:1.
 | 19 | ai-service parity (persisted chat, generate-goal/plan) | done (PR #140, 45 tests) |
 | 20 | web-bff (dashboard, GenerateReport, CSV export, admin stats) | done (PR #142, 35 tests) |
 | 21 | pipeline-service (iOS facade + `tri_` tokens) | done (PR #143, 63 tests) |
-| 22 | infra wiring (compose, config, k8s, monitoring, CI), docs, full verification | done (this commit) |
+| 22 | infra wiring (compose, config, k8s, monitoring, CI), docs, full verification | done (PR #145) |
+| 23a | shared gRPC contracts (protos + generated stubs) | done (PR #147) |
+| 23b | gRPC servers for the internal APIs (user/activity/social) | done (PR #148) |
+| 23c | every internal client cut over to gRPC stubs | done (PR #149) |
+| 23d | REST /internal removal, k8s gRPC ports, docs, E2E | done (this PR) |
 
 Full-reactor `./mvnw verify` on the merged tree: **BUILD SUCCESS, 833 tests, 0
 failures** (including the 8 gateway filter tests).

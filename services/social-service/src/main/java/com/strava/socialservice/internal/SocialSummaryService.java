@@ -14,7 +14,7 @@ import java.util.Set;
 
 /**
  * Single source of truth for the cluster-internal social-summary contract,
- * shared by the REST endpoint ({@link InternalSocialController}) and its gRPC
+ * shared by the REST endpoint ({@link SocialInternalGrpcService}) and its gRPC
  * successor ({@code SocialInternalGrpcService}).
  *
  * Semantics both transports rely on:
