@@ -133,6 +133,17 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+      # Ownership tags on every meter: cost attribution (monitoring/alerts/cost.rules.yml)
+      # groups infra cost by team / cost_center; one deployable, so one owner.
+      team: ${STRIDE_TEAM:domain}
+      cost_center: ${STRIDE_COST_CENTER:CC-STRIDE-001}
+    distribution:
+      # Latency histograms for http.server.requests: the SLO rules read the
+      # 500 ms bucket, the p95 alerts interpolate over the rest.
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 100ms,250ms,500ms,1s,2500ms
   tracing:
     enabled: true
     sampling:

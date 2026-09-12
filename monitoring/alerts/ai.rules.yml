@@ -1,0 +1,82 @@
+# AI endpoints of the monolith: two external LLM providers (Anthropic for
+# chat, Groq for goal/plan generation and as the chat fallback). Provider
+# trouble must show up as "the provider", not as a generic 5xx on the backend.
+# The ai_* metrics come from AiCallRecorder (see docs/ai-guardrails.md).
+groups:
+  - name: stride-ai
+    rules:
+
+      # The chat is being served by the secondary provider. Users get answers,
+      # but degraded ones, and Groq spend appears on the chat endpoint — worth a
+      # ticket even though nothing is "down".
+      - alert: AiProviderFailoverActive
+        expr: sum(rate(ai_failover_total[15m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          team: ai
+          tier: "2"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "Chat is failing over to the secondary provider"
+          description: "Chat turns have been routed from Anthropic to Groq for 10 minutes. Check AiProviderErrors for the Anthropic error ratio and the Anthropic status page; answers are degraded until the primary recovers."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+          dashboard_url: http://localhost:3003/d/stride-cost
+
+      # No circuit breaker on this branch (no Resilience4j), so the provider's
+      # own error ratio is the signal: more than half of the calls to one
+      # provider fail or time out.
+      - alert: AiProviderErrors
+        expr: |
+          sum by (provider) (rate(ai_requests_total{outcome=~"provider_error|timeout"}[10m]))
+            /
+          sum by (provider) (rate(ai_requests_total[10m]))
+            > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+          tier: "2"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "{{ $labels.provider }}: {{ $value | humanizePercentage }} of calls failing"
+          description: "More than half of the calls to {{ $labels.provider }} ended in a provider error or timeout over 10 minutes. Chat fails over to Groq automatically; goal/plan generation has no fallback and returns 502 until the provider recovers."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+          dashboard_url: http://localhost:3003/d/stride-cost
+
+      - alert: AiChatErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",uri=~"/api/v1/ai.*",status=~"5.."}[10m]))
+            /
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",uri=~"/api/v1/ai.*"}[10m]))
+            > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+          tier: "2"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "AI endpoints failing: {{ $value | humanizePercentage }} 5xx"
+          description: "More than 10% of /api/v1/ai requests fail. 502 = provider error, 503 = not configured; the runbook maps each to an action."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+
+      - alert: AiChatLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{app="strava-backend",uri=~"/api/v1/ai.*"}[10m]))
+          ) > 15
+        for: 10m
+        labels:
+          severity: warning
+          team: ai
+          tier: "1"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "AI p95 latency {{ $value | humanizeDuration }}"
+          description: "95th percentile of AI request latency is above 15 s. The provider is slow or the prompt (recent-history block) has grown; users hit the frontend timeout."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md

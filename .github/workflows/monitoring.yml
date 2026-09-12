@@ -1,0 +1,86 @@
+# Gate for everything under monitoring/: rule syntax + PromQL (promtool check),
+# rule behaviour (promtool test), the alert label/annotation/test contract
+# (check_alert_rules.py), Alertmanager config (amtool) and Grafana dashboards
+# (grafana/dashboard-linter). Runs on every PR that touches these files.
+name: Monitoring
+
+on:
+  push:
+    branches: [main, microservices]
+    paths: ["monitoring/**", ".github/workflows/monitoring.yml"]
+  pull_request:
+    branches: [main, microservices]
+    paths: ["monitoring/**", ".github/workflows/monitoring.yml"]
+
+permissions:
+  contents: read
+
+env:
+  PROMETHEUS_IMAGE: prom/prometheus:v2.55.0
+  ALERTMANAGER_IMAGE: prom/alertmanager:v0.27.0
+
+jobs:
+  rules:
+    name: Alert rules (promtool + contract)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: promtool check rules
+        run: |
+          docker run --rm -v "$PWD/monitoring:/m" --entrypoint promtool "$PROMETHEUS_IMAGE" \
+            check rules /m/alerts/*.rules.yml
+
+      - name: promtool test rules
+        run: |
+          docker run --rm -v "$PWD/monitoring:/m" --entrypoint promtool "$PROMETHEUS_IMAGE" \
+            test rules /m/alerts/tests/*.test.yml
+
+      - name: promtool check config
+        run: |
+          docker run --rm \
+            -v "$PWD/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "$PWD/monitoring/alerts:/etc/prometheus/rules:ro" \
+            --entrypoint promtool "$PROMETHEUS_IMAGE" check config /etc/prometheus/prometheus.yml
+
+      - name: amtool check-config
+        run: |
+          docker run --rm -v "$PWD/monitoring:/m" --entrypoint amtool "$ALERTMANAGER_IMAGE" \
+            check-config /m/alertmanager/alertmanager.yml
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Alert contract (labels, annotations, runbook, test coverage)
+        run: |
+          pip install --quiet pyyaml
+          python monitoring/scripts/check_alert_rules.py monitoring/alerts
+
+  dashboards:
+    name: Grafana dashboards (lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable   # dashboard-linter tracks the current Go release
+
+      # The module carries replace directives, so `go install ...@latest` is
+      # refused; build from a pinned checkout instead.
+      - name: Build dashboard-linter
+        run: |
+          git clone --quiet --depth 1 https://github.com/grafana/dashboard-linter /tmp/dashboard-linter
+          (cd /tmp/dashboard-linter && go build -o "$RUNNER_TEMP/dashboard-linter" .)
+
+      - name: Lint every provisioned dashboard
+        run: |
+          set -e
+          for f in monitoring/grafana/dashboards/*.json; do
+            echo "== $f"
+            python3 -c "import json,sys; d=json.load(open('$f')); assert d.get('uid'), 'missing uid'; assert d.get('title'), 'missing title'"
+            "$RUNNER_TEMP/dashboard-linter" lint --strict "$f"
+          done

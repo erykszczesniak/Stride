@@ -1,0 +1,82 @@
+# Cost attribution: what the deployable costs per hour, from the metrics the
+# JVM already exports, attributed by the team / cost_center tags every meter
+# carries (application.yml: management.metrics.tags). This is a model, not a
+# bill — see docs/cost-attribution.md for the price constants and their
+# provenance. AI provider spend is real (from token usage and the price table
+# in app.ai.pricing) and is attributed to the ai team.
+groups:
+
+  - name: stride-cost-recording
+    interval: 1m
+    rules:
+      # CPU actually consumed, in cores: process share of the machine × cores.
+      # Both gauges carry the same label set, so the multiplication matches
+      # one-to-one per instance.
+      - record: cost:cpu_cores:avg5m
+        expr: |
+          sum by (app, team, cost_center) (
+            avg_over_time(process_cpu_usage[5m]) * system_cpu_count
+          )
+
+      # Memory reserved, in GiB: the container limit derived from the heap max
+      # (the JVM runs with MaxRAMPercentage=75). Reserved, not used — that is
+      # what a cloud bill charges for.
+      - record: cost:memory_gib:reserved
+        expr: |
+          sum by (app, team, cost_center) (jvm_memory_max_bytes{area="heap"}) / 0.75 / 1073741824
+
+      # USD per hour. Price constants: 0.04 USD per core-hour, 0.005 USD per
+      # GiB-hour (on-demand general-purpose, rounded).
+      - record: cost:infra_usd:rate1h
+        expr: |
+          cost:cpu_cores:avg5m * 0.04
+            +
+          cost:memory_gib:reserved * 0.005
+
+      - record: cost:team_infra_usd:rate1h
+        expr: sum by (team, cost_center) (cost:infra_usd:rate1h)
+
+      # Real provider spend per hour, from AiCallRecorder's token accounting.
+      - record: cost:ai_usd:rate1h
+        expr: sum by (provider, model) (increase(ai_request_cost_usd_total[1h]))
+
+  - name: stride-cost-alerts
+    rules:
+
+      # Hourly cost doubled against its own 24h average and is above a floor
+      # that filters idle noise. Usually a runaway loop, a retry storm, or a
+      # memory limit bump nobody expected.
+      - alert: InfraCostSpike
+        expr: |
+          cost:infra_usd:rate1h > 2 * avg_over_time(cost:infra_usd:rate1h[24h])
+            and
+          cost:infra_usd:rate1h > 0.05
+        for: 30m
+        labels:
+          severity: warning
+          # Owned by whoever pays for it: the team label travels from the series.
+          team: "{{ $labels.team }}"
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} costs more than twice its 24h average"
+          description: "Modelled hourly infrastructure cost of {{ $labels.app }} (team {{ $labels.team }}, cost center {{ $labels.cost_center }}) has been above twice its trailing-24h average for 30 minutes. Check CPU first (retry storm, hot loop), then whether a memory limit was raised."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/jvm-heap-high.md
+          dashboard_url: http://localhost:3003/d/stride-cost
+
+      # Provider spend above a budget line for the hour. Latency incidents with
+      # retries multiply spend; this catches it before the monthly invoice does.
+      - alert: AiSpendHigh
+        expr: sum(increase(ai_request_cost_usd_total[1h])) > 5
+        for: 15m
+        labels:
+          severity: warning
+          team: ai
+          tier: "1"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "AI provider spend above 5 USD in the last hour"
+          description: "The backend has spent more than 5 USD on provider calls over the trailing hour for 15 minutes. Compare ai_requests_total by outcome: if error/timeout outcomes rose, the failover path is doubling calls — consider disabling chat failover until the primary recovers."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+          dashboard_url: http://localhost:3003/d/stride-cost

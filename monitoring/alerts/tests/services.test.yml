@@ -1,0 +1,193 @@
+rule_files:
+  - ../services.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ------------------------------------------------------ EndpointHighErrorRate
+  # POST /api/v1/activities fails half the time at ~1.7 req/s; GET is healthy
+  # and a rarely used endpoint failing once must not fire (traffic floor).
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="500",uri="/api/v1/activities",method="POST"}'
+        values: '0+50x30'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="201",uri="/api/v1/activities",method="POST"}'
+        values: '0+50x30'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="200",uri="/api/v1/activities",method="GET"}'
+        values: '0+90x30'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="500",uri="/api/v1/export/gpx",method="GET"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: EndpointHighErrorRate
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              uri: /api/v1/activities
+              method: POST
+              severity: warning
+              team: domain
+              tier: "2"
+              service: strava-backend
+            exp_annotations:
+              summary: "POST /api/v1/activities: 50% 5xx"
+              description: "More than 20% of POST /api/v1/activities requests fail with 5xx for 5 minutes at more than 0.1 req/s. This names the broken feature; EdgeHighErrorRate says whether it is bad enough to page."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
+              dashboard_url: http://localhost:3003/d/stride-jvm
+
+  # ----------------------------------------------------- EndpointHighLatencyP95
+  # Every request to the feed lands in the 2.5 s bucket → p95 interpolates to
+  # 2.425 s, above the 2 s endpoint threshold.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{job="strava-backend",app="strava-backend",uri="/api/v1/activities/feed",method="GET",le="1.0"}'
+        values: '0+0x30'
+      - series: 'http_server_requests_seconds_bucket{job="strava-backend",app="strava-backend",uri="/api/v1/activities/feed",method="GET",le="2.5"}'
+        values: '0+60x30'
+      - series: 'http_server_requests_seconds_bucket{job="strava-backend",app="strava-backend",uri="/api/v1/activities/feed",method="GET",le="+Inf"}'
+        values: '0+60x30'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",uri="/api/v1/activities/feed",method="GET",status="200"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: EndpointHighLatencyP95
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              uri: /api/v1/activities/feed
+              method: GET
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+            exp_annotations:
+              summary: "GET /api/v1/activities/feed p95 latency 2.425s"
+              description: "95th percentile latency of GET /api/v1/activities/feed is above 2 s for 10 minutes. Check the query plan and the Elasticsearch/DB pool panels before scaling; AI endpoints have their own budget (AiChatLatencyP95)."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/high-latency.md
+              dashboard_url: http://localhost:3003/d/stride-jvm
+
+  # ---------------------------------------------------------------- JvmHeapHigh
+  - interval: 1m
+    input_series:
+      - series: 'jvm_memory_used_bytes{app="strava-backend",instance="backend:8080",area="heap",id="G1 Old Gen"}'
+        values: '950+0x20'
+      - series: 'jvm_memory_max_bytes{app="strava-backend",instance="backend:8080",area="heap",id="G1 Old Gen"}'
+        values: '1000+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: JvmHeapHigh
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              instance: backend:8080
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+            exp_annotations:
+              summary: "strava-backend heap at 95%"
+              description: "Heap usage on backend:8080 stayed above 90% of max for 10 minutes. OOMKill or GC thrash is next; check for a leak (jvm dashboard: heap after GC trending up) before raising the limit."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/jvm-heap-high.md
+              dashboard_url: http://localhost:3003/d/stride-jvm
+
+  # Quiet: 40% heap.
+  - interval: 1m
+    input_series:
+      - series: 'jvm_memory_used_bytes{app="strava-backend",instance="backend:8080",area="heap",id="G1 Old Gen"}'
+        values: '400+0x20'
+      - series: 'jvm_memory_max_bytes{app="strava-backend",instance="backend:8080",area="heap",id="G1 Old Gen"}'
+        values: '1000+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: JvmHeapHigh
+        exp_alerts: []
+
+  # ------------------------------------------------------------- JvmGcPressure
+  # 30 s of GC pause per minute = 50% of wall time.
+  - interval: 1m
+    input_series:
+      - series: 'jvm_gc_pause_seconds_sum{app="strava-backend",instance="backend:8080",action="end of major GC",cause="G1 Evacuation Pause"}'
+        values: '0+30x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: JvmGcPressure
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              instance: backend:8080
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+            exp_annotations:
+              summary: "strava-backend spends 50% of wall time in GC"
+              description: "GC pauses consume more than 25% of time on backend:8080. Latency alerts usually follow; treat as the same incident."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/jvm-heap-high.md
+
+  # ------------------------------------------------------------ DbPoolSaturated
+  - interval: 1m
+    input_series:
+      - series: 'hikaricp_connections_active{app="strava-backend",instance="backend:8080",pool="HikariPool-1"}'
+        values: '19+0x20'
+      - series: 'hikaricp_connections_max{app="strava-backend",instance="backend:8080",pool="HikariPool-1"}'
+        values: '20+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: DbPoolSaturated
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              instance: backend:8080
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+            exp_annotations:
+              summary: "strava-backend DB pool 95% in use"
+              description: "More than 90% of the connection pool is busy for 10 minutes. Look for slow queries or a transaction holding connections before growing the pool."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/db-pool-exhausted.md
+
+  # ------------------------------------------------------------ DbPoolExhausted
+  - interval: 1m
+    input_series:
+      - series: 'hikaricp_connections_timeout_total{app="strava-backend",instance="backend:8080",pool="HikariPool-1"}'
+        values: '0 0 0 1 2 3 3 3 3 3'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: DbPoolExhausted
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: DbPoolExhausted
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              instance: backend:8080
+              severity: critical
+              team: domain
+              tier: "2"
+              service: strava-backend
+            exp_annotations:
+              summary: "strava-backend requests timed out waiting for a DB connection"
+              description: "Connection acquisitions timed out in the last 5 minutes on backend:8080. Those requests failed. This fires immediately: every occurrence is a user-visible error."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/db-pool-exhausted.md
+
+  # -------------------------------------------------------------- ErrorLogSpike
+  - interval: 1m
+    input_series:
+      - series: 'logback_events_total{app="strava-backend",instance="backend:8080",level="error"}'
+        values: '0+120x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: ErrorLogSpike
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+            exp_annotations:
+              summary: "strava-backend logs 2 errors/s"
+              description: "More than one ERROR log line per second for 10 minutes. Read the logs before anything else: `docker compose logs --since 15m backend`."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md

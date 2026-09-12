@@ -108,17 +108,54 @@ services:
   # Prometheus (Metrics)
   # ============================================
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.55.0
     container_name: strava-prometheus
     restart: unless-stopped
     ports:
       - "9091:9090"
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle          # `curl -X POST :9091/-/reload` after editing rules
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - strava-network
+
+  # ============================================
+  # Alertmanager (routing) + alert-sink (local receiver)
+  # ============================================
+  # Rules come from Prometheus; Alertmanager groups, inhibits and delivers.
+  # Locally every notification lands in `alert-sink`, an HTTP echo container,
+  # so `docker compose logs -f alert-sink` shows exactly what a pager or Teams
+  # channel would receive. Point receivers at real webhooks via
+  # monitoring/alertmanager/alertmanager.yml.
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: strava-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    networks:
+      - strava-network
+
+  alert-sink:
+    image: mendhak/http-https-echo:35
+    container_name: strava-alert-sink
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: "8000"
+      ECHO_BACK_TO_CLIENT: "false"
     networks:
       - strava-network
 

@@ -9,6 +9,10 @@ changelog.
 ## [Unreleased]
 
 ### Added
+- Alerts as code: 30 unit-tested Prometheus rules (availability, per-endpoint
+  errors/latency, JVM, DB pool, SLO burn-rate, AI provider, cost, self-observability),
+  Alertmanager routing with inhibition, JVM / SLO / cost Grafana dashboards,
+  request-latency histograms and team/cost_center tags on every meter.
 - Quality gates in the build: JaCoCo coverage floor (60% line / 40% branch),
   ArchUnit layer rules with a frozen store for the three legacy controllers,
   frontend Jest job in CI, CodeQL and Trivy scans.

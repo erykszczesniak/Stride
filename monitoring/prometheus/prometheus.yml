@@ -1,6 +1,18 @@
+# Prometheus for the monolith stack (docker compose). One application target;
+# the `app` label is attached here so every rule and dashboard can use the same
+# selectors as the microservices branch (where `app` comes from Eureka).
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+
+# Alert rules + recording rules; unit-tested with promtool (monitoring/alerts/tests).
+rule_files:
+  - /etc/prometheus/rules/*.rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
 
 scrape_configs:
   - job_name: 'strava-backend'
@@ -8,4 +20,17 @@ scrape_configs:
     static_configs:
       - targets: ['backend:8080']
         labels:
-          application: 'strava-backend'
+          app: 'strava-backend'
+
+  # The monitoring stack watches itself (self-observability.rules.yml).
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          app: 'prometheus'
+
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels:
+          app: 'alertmanager'

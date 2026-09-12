@@ -1,0 +1,103 @@
+rule_files:
+  - ../ai.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # --------------------------------------------------- AiProviderFailoverActive
+  - interval: 1m
+    input_series:
+      - series: 'ai_failover_total{app="strava-backend",instance="backend:8080",endpoint="chat",to="groq"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: AiProviderFailoverActive
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: ai
+              tier: "2"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "Chat is failing over to the secondary provider"
+              description: "Chat turns have been routed from Anthropic to Groq for 10 minutes. Check AiProviderErrors for the Anthropic error ratio and the Anthropic status page; answers are degraded until the primary recovers."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+              dashboard_url: http://localhost:3003/d/stride-cost
+
+  # ------------------------------------------------------------ AiProviderErrors
+  # Anthropic: 3 provider errors per minute against 1 success = 75 % failing;
+  # Groq is healthy and must not appear.
+  - interval: 1m
+    input_series:
+      - series: 'ai_requests_total{app="strava-backend",instance="backend:8080",endpoint="chat",provider="anthropic",model="claude-opus-4-8",outcome="provider_error"}'
+        values: '0+3x30'
+      - series: 'ai_requests_total{app="strava-backend",instance="backend:8080",endpoint="chat",provider="anthropic",model="claude-opus-4-8",outcome="ok"}'
+        values: '0+1x30'
+      - series: 'ai_requests_total{app="strava-backend",instance="backend:8080",endpoint="goal",provider="groq",model="openai/gpt-oss-120b",outcome="ok"}'
+        values: '0+4x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: AiProviderErrors
+        exp_alerts:
+          - exp_labels:
+              provider: anthropic
+              severity: warning
+              team: ai
+              tier: "2"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "anthropic: 75% of calls failing"
+              description: "More than half of the calls to anthropic ended in a provider error or timeout over 10 minutes. Chat fails over to Groq automatically; goal/plan generation has no fallback and returns 502 until the provider recovers."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+              dashboard_url: http://localhost:3003/d/stride-cost
+
+  # ------------------------------------------------------------ AiChatErrorRate
+  # 502s from the provider on 20% of chat calls.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{app="strava-backend",status="502",uri="/api/v1/ai/activities/{activityId}/chat",method="POST"}'
+        values: '0+2x30'
+      - series: 'http_server_requests_seconds_count{app="strava-backend",status="200",uri="/api/v1/ai/activities/{activityId}/chat",method="POST"}'
+        values: '0+8x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: AiChatErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: ai
+              tier: "2"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "AI endpoints failing: 20% 5xx"
+              description: "More than 10% of /api/v1/ai requests fail. 502 = provider error, 503 = not configured; the runbook maps each to an action."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+
+  # ------------------------------------------------------------ AiChatLatencyP95
+  # Every chat call takes between 10 and 30 s → p95 interpolates to 29 s.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{app="strava-backend",uri="/api/v1/ai/activities/{activityId}/chat",le="10.0"}'
+        values: '0+0x30'
+      - series: 'http_server_requests_seconds_bucket{app="strava-backend",uri="/api/v1/ai/activities/{activityId}/chat",le="30.0"}'
+        values: '0+60x30'
+      - series: 'http_server_requests_seconds_bucket{app="strava-backend",uri="/api/v1/ai/activities/{activityId}/chat",le="+Inf"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: AiChatLatencyP95
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: ai
+              tier: "1"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "AI p95 latency 29s"
+              description: "95th percentile of AI request latency is above 15 s. The provider is slow or the prompt (recent-history block) has grown; users hit the frontend timeout."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md

@@ -1,0 +1,85 @@
+# The monitoring stack watches itself. A broken alert pipeline is the one
+# failure no other alert can report, so these rules are the first ones to
+# check when everything else is suspiciously quiet.
+groups:
+  - name: stride-self-observability
+    rules:
+
+      # Dead-man switch: always firing. If the Watchdog stops arriving at the
+      # receiver, Prometheus → Alertmanager → receiver is broken somewhere.
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: info
+          team: platform
+          tier: "1"
+          service: prometheus
+        annotations:
+          summary: "Alerting pipeline heartbeat"
+          description: "This alert is meant to be always firing. Its absence at the receiver means Prometheus, Alertmanager or the delivery path is down."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/monitoring-pipeline.md
+
+      - alert: PrometheusTargetsMissing
+        expr: absent(up{job="strava-backend"})
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          tier: "2"
+          service: prometheus
+        annotations:
+          summary: "Prometheus has no backend target"
+          description: "The strava-backend scrape job produced no `up` series for 5 minutes: the static target in monitoring/prometheus/prometheus.yml is gone or Prometheus started with another config. Every application alert is blind until this is fixed."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/monitoring-pipeline.md
+
+      - alert: PrometheusRuleEvaluationFailures
+        expr: increase(prometheus_rule_evaluation_failures_total[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: prometheus
+        annotations:
+          summary: "Rule evaluations are failing in group {{ $labels.rule_group }}"
+          description: "A recording or alerting rule fails to evaluate (typically a typo that promtool could not catch, or a metric with unexpected labels). The affected group is not alerting."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/monitoring-pipeline.md
+
+      - alert: PrometheusHighCardinality
+        expr: prometheus_tsdb_head_series > 500000
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+          tier: "1"
+          service: prometheus
+        annotations:
+          summary: "{{ $value | humanize }} active series"
+          description: "Series count above 500k. Usual cause: a high-cardinality label (per-user id, unbounded uri) on a new metric. Find the metric with `topk(10, count by (__name__)({__name__=~\".+\"}))`."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/monitoring-pipeline.md
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          tier: "2"
+          service: alertmanager
+        annotations:
+          summary: "Alertmanager is not being scraped"
+          description: "Prometheus cannot reach Alertmanager. Alerts are evaluated but nobody is notified."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/monitoring-pipeline.md
+
+      - alert: AlertmanagerNotificationsFailing
+        expr: sum by (integration) (increase(alertmanager_notifications_failed_total[10m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+          tier: "2"
+          service: alertmanager
+        annotations:
+          summary: "Alertmanager failed to deliver via {{ $labels.integration }}"
+          description: "Notifications through the {{ $labels.integration }} integration failed in the last 10 minutes. Alerts are firing but not arriving."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/monitoring-pipeline.md

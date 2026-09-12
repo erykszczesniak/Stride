@@ -1,0 +1,114 @@
+# Availability and edge alerts for the monolith: is the backend up, and are
+# users getting errors. There is no gateway on this branch — the backend is
+# the edge — so the edge rules read the backend's own request metrics. Every
+# rule carries the label contract described in
+# .github/instructions/alert-rules.instructions.md and has cases in
+# tests/platform.test.yml.
+groups:
+  - name: stride-platform
+    rules:
+
+      # ------------------------------------------------------------------
+      # Availability. The target is static, so a dead backend keeps its `up`
+      # series at 0 (absent() is only needed when the scrape config itself
+      # breaks — see PrometheusTargetsMissing).
+      # ------------------------------------------------------------------
+      - alert: ServiceDown
+        expr: up{job="strava-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} scrape failing ({{ $labels.instance }})"
+          description: "Prometheus cannot scrape {{ $labels.app }} at {{ $labels.instance }} for 2 minutes. The backend is down or its /actuator/prometheus endpoint is unreachable."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/service-down.md
+          dashboard_url: http://localhost:3003/d/stride-jvm
+
+      # ------------------------------------------------------------------
+      # Edge error rate — a ratio, never a count. Actuator is excluded so
+      # probe traffic neither hides nor causes an alert.
+      # ------------------------------------------------------------------
+      - alert: EdgeHighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",status=~"5..",uri!~"/actuator.*"}[5m]))
+            /
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",uri!~"/actuator.*"}[5m]))
+            > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: domain
+          tier: "2"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "Backend 5xx ratio {{ $value | humanizePercentage }} over 5m"
+          description: "More than 5% of requests to the backend end in 5xx. Users are seeing errors. Find the failing endpoint (EndpointHighErrorRate, or the JVM dashboard's per-uri table) before touching anything else."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      - alert: EdgeElevatedErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",status=~"5..",uri!~"/actuator.*"}[10m]))
+            /
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",uri!~"/actuator.*"}[10m]))
+            > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "Backend 5xx ratio {{ $value | humanizePercentage }} over 10m"
+          description: "Between 1% and 5% of requests fail. Not paging yet, but the error budget is burning — see the SLO dashboard."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      # ------------------------------------------------------------------
+      # Silence is a failure too: traffic that collapses to ~zero while the
+      # backend reports healthy usually means DNS, ingress, or a broken
+      # frontend deploy — nothing a 5xx ratio would ever show.
+      # ------------------------------------------------------------------
+      - alert: EdgeTrafficCollapse
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",uri!~"/actuator.*"}[10m])) < 0.05
+            and
+          sum(rate(http_server_requests_seconds_count{app="strava-backend",uri!~"/actuator.*"}[1h] offset 1h)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "Edge traffic collapsed to {{ $value | humanize }} req/s"
+          description: "Requests to the backend dropped below 0.05 req/s for 10 minutes although the previous hour averaged above 0.5 req/s. The backend is reachable by Prometheus but users are not arriving."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-traffic-collapse.md
+
+      # ------------------------------------------------------------------
+      # Edge latency. p95 over 1 s for 10 minutes; EndpointHighLatencyP95 in
+      # services.rules.yml tells you which endpoint is slow.
+      # ------------------------------------------------------------------
+      - alert: EdgeHighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{app="strava-backend",uri!~"/actuator.*"}[5m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "Backend p95 latency {{ $value | humanizeDuration }}"
+          description: "95th percentile of request latency is above 1 s for 10 minutes."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/high-latency.md
+          dashboard_url: http://localhost:3003/d/stride-slo

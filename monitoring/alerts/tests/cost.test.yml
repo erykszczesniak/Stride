@@ -1,0 +1,103 @@
+rule_files:
+  - ../cost.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ---------------------------------------------------- recording rule maths
+  # 4-core host, JVM at 25 % of the machine → exactly 1.0 core; 384 MiB heap
+  # max ÷ 0.75 = 0.5 GiB reserved → 1.0 × 0.04 + 0.5 × 0.005 = 0.0425 USD/h
+  # (the expected value is the IEEE-754 result, which promtool compares exactly).
+  - interval: 1m
+    input_series:
+      - series: 'process_cpu_usage{app="strava-backend",instance="backend:8080",team="domain",cost_center="CC-STRIDE-001"}'
+        values: '0.25+0x30'
+      - series: 'system_cpu_count{app="strava-backend",instance="backend:8080",team="domain",cost_center="CC-STRIDE-001"}'
+        values: '4+0x30'
+      - series: 'jvm_memory_max_bytes{app="strava-backend",instance="backend:8080",team="domain",cost_center="CC-STRIDE-001",area="heap",id="G1 Old Gen"}'
+        values: '402653184+0x30'
+    promql_expr_test:
+      - expr: cost:cpu_cores:avg5m
+        eval_time: 10m
+        exp_samples:
+          - labels: 'cost:cpu_cores:avg5m{app="strava-backend",team="domain",cost_center="CC-STRIDE-001"}'
+            value: 1
+      - expr: cost:memory_gib:reserved
+        eval_time: 10m
+        exp_samples:
+          - labels: 'cost:memory_gib:reserved{app="strava-backend",team="domain",cost_center="CC-STRIDE-001"}'
+            value: 0.5
+      - expr: cost:infra_usd:rate1h
+        eval_time: 10m
+        exp_samples:
+          - labels: 'cost:infra_usd:rate1h{app="strava-backend",team="domain",cost_center="CC-STRIDE-001"}'
+            value: 0.0425
+      - expr: cost:team_infra_usd:rate1h
+        eval_time: 10m
+        exp_samples:
+          - labels: 'cost:team_infra_usd:rate1h{team="domain",cost_center="CC-STRIDE-001"}'
+            value: 0.0425
+
+  # ------------------------------------------------------------ InfraCostSpike
+  # 24 h at 10 % CPU, then 90 % for an hour: cost goes 0.019 → 0.147 USD/h,
+  # more than 2× the 24h average and above the 0.05 floor.
+  - interval: 5m
+    input_series:
+      - series: 'process_cpu_usage{app="strava-backend",instance="backend:8080",team="domain",cost_center="CC-STRIDE-001"}'
+        values: '0.1+0x288 0.9+0x12'
+      - series: 'system_cpu_count{app="strava-backend",instance="backend:8080",team="domain",cost_center="CC-STRIDE-001"}'
+        values: '4+0x300'
+      - series: 'jvm_memory_max_bytes{app="strava-backend",instance="backend:8080",team="domain",cost_center="CC-STRIDE-001",area="heap",id="G1 Old Gen"}'
+        values: '503316480+0x300'
+    alert_rule_test:
+      - eval_time: 1435m
+        alertname: InfraCostSpike
+        exp_alerts: []
+      - eval_time: 1495m
+        alertname: InfraCostSpike
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              team: domain
+              cost_center: CC-STRIDE-001
+              tier: "1"
+              severity: warning
+              service: strava-backend
+            exp_annotations:
+              summary: "strava-backend costs more than twice its 24h average"
+              description: "Modelled hourly infrastructure cost of strava-backend (team domain, cost center CC-STRIDE-001) has been above twice its trailing-24h average for 30 minutes. Check CPU first (retry storm, hot loop), then whether a memory limit was raised."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/jvm-heap-high.md
+              dashboard_url: http://localhost:3003/d/stride-cost
+
+  # --------------------------------------------------------------- AiSpendHigh
+  # 0.2 USD per minute = 12 USD/hour, above the 5 USD budget line.
+  - interval: 1m
+    input_series:
+      - series: 'ai_request_cost_usd_total{app="strava-backend",instance="backend:8080",provider="anthropic",model="claude-opus-4-8"}'
+        values: '0+0.2x120'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: AiSpendHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: ai
+              tier: "1"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "AI provider spend above 5 USD in the last hour"
+              description: "The backend has spent more than 5 USD on provider calls over the trailing hour for 15 minutes. Compare ai_requests_total by outcome: if error/timeout outcomes rose, the failover path is doubling calls — consider disabling chat failover until the primary recovers."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+              dashboard_url: http://localhost:3003/d/stride-cost
+
+  # Quiet: 0.02 USD per minute = 1.2 USD/hour.
+  - interval: 1m
+    input_series:
+      - series: 'ai_request_cost_usd_total{app="strava-backend",instance="backend:8080",provider="groq",model="openai/gpt-oss-120b"}'
+        values: '0+0.02x120'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: AiSpendHigh
+        exp_alerts: []

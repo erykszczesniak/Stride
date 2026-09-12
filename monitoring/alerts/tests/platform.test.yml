@@ -1,0 +1,145 @@
+# promtool unit tests for platform.rules.yml. Each alert has a firing case
+# with the exact labels/annotations a responder will see, and a case that
+# must stay quiet. Run: see .github/instructions/alert-rules.instructions.md
+rule_files:
+  - ../platform.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ----------------------------------------------------------------- ServiceDown
+  - interval: 1m
+    input_series:
+      - series: 'up{job="strava-backend",app="strava-backend",instance="backend:8080"}'
+        values: '1 1 0 0 0 0 0 0'
+      - series: 'up{job="prometheus",app="prometheus",instance="localhost:9090"}'
+        values: '1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: ServiceDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: ServiceDown
+        exp_alerts:
+          - exp_labels:
+              job: strava-backend
+              app: strava-backend
+              instance: backend:8080
+              severity: critical
+              team: platform
+              tier: "2"
+              service: strava-backend
+            exp_annotations:
+              summary: "strava-backend scrape failing (backend:8080)"
+              description: "Prometheus cannot scrape strava-backend at backend:8080 for 2 minutes. The backend is down or its /actuator/prometheus endpoint is unreachable."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/service-down.md
+              dashboard_url: http://localhost:3003/d/stride-jvm
+
+  # ----------------------------------------------------------- EdgeHighErrorRate
+  # 10 req/min 5xx against 90 req/min 2xx = 10% error ratio.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{app="strava-backend",job="strava-backend",status="500",uri="/api/v1/activities",method="GET"}'
+        values: '0+10x30'
+      - series: 'http_server_requests_seconds_count{app="strava-backend",job="strava-backend",status="200",uri="/api/v1/activities",method="GET"}'
+        values: '0+90x30'
+      # Actuator traffic must be ignored, so an all-5xx probe cannot trip it.
+      - series: 'http_server_requests_seconds_count{app="strava-backend",job="strava-backend",status="503",uri="/actuator/health",method="GET"}'
+        values: '0+100x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: EdgeHighErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: domain
+              tier: "2"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "Backend 5xx ratio 10% over 5m"
+              description: "More than 5% of requests to the backend end in 5xx. Users are seeing errors. Find the failing endpoint (EndpointHighErrorRate, or the JVM dashboard's per-uri table) before touching anything else."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
+              dashboard_url: http://localhost:3003/d/stride-slo
+      - eval_time: 12m
+        alertname: EdgeElevatedErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "Backend 5xx ratio 10% over 10m"
+              description: "Between 1% and 5% of requests fail. Not paging yet, but the error budget is burning — see the SLO dashboard."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
+              dashboard_url: http://localhost:3003/d/stride-slo
+
+  # 1% errors: below both thresholds, nothing fires.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{app="strava-backend",job="strava-backend",status="500",uri="/api/v1/activities",method="GET"}'
+        values: '0+1x30'
+      - series: 'http_server_requests_seconds_count{app="strava-backend",job="strava-backend",status="200",uri="/api/v1/activities",method="GET"}'
+        values: '0+99x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: EdgeHighErrorRate
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: EdgeElevatedErrorRate
+        exp_alerts: []
+
+  # ---------------------------------------------------------- EdgeTrafficCollapse
+  # One request per second for an hour, then nothing for over an hour.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{app="strava-backend",job="strava-backend",status="200",uri="/api/v1/activities",method="GET"}'
+        values: '0+60x60 3600+0x70'
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: EdgeTrafficCollapse
+        exp_alerts: []
+      - eval_time: 130m
+        alertname: EdgeTrafficCollapse
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              tier: "2"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "Edge traffic collapsed to 0 req/s"
+              description: "Requests to the backend dropped below 0.05 req/s for 10 minutes although the previous hour averaged above 0.5 req/s. The backend is reachable by Prometheus but users are not arriving."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-traffic-collapse.md
+
+  # ------------------------------------------------------------ EdgeHighLatencyP95
+  # All requests land in the 2.5 s bucket: p95 interpolates well above 1 s.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{app="strava-backend",job="strava-backend",uri="/api/v1/activities",le="0.5"}'
+        values: '0+0x30'
+      - series: 'http_server_requests_seconds_bucket{app="strava-backend",job="strava-backend",uri="/api/v1/activities",le="1.0"}'
+        values: '0+0x30'
+      - series: 'http_server_requests_seconds_bucket{app="strava-backend",job="strava-backend",uri="/api/v1/activities",le="2.5"}'
+        values: '0+60x30'
+      - series: 'http_server_requests_seconds_bucket{app="strava-backend",job="strava-backend",uri="/api/v1/activities",le="+Inf"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: EdgeHighLatencyP95
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+              app: strava-backend
+            exp_annotations:
+              summary: "Backend p95 latency 2.425s"
+              description: "95th percentile of request latency is above 1 s for 10 minutes."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/high-latency.md
+              dashboard_url: http://localhost:3003/d/stride-slo

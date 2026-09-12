@@ -16,20 +16,20 @@ applyTo: "monitoring/**"
 ```yaml
 - alert: GatewayHighErrorRate
   expr: |
-    sum(rate(http_server_requests_seconds_count{app="api-gateway",status=~"5.."}[5m]))
+    sum(rate(http_server_requests_seconds_count{app="strava-backend",status=~"5.."}[5m]))
       /
-    sum(rate(http_server_requests_seconds_count{app="api-gateway"}[5m])) > 0.05
+    sum(rate(http_server_requests_seconds_count{app="strava-backend"}[5m])) > 0.05
   for: 5m
   labels:
     severity: critical          # critical | warning | info
     team: platform              # platform | domain | ai | data
-    service: api-gateway
+    service: strava-backend
     tier: "2"                   # 1 = notify, 2 = actionable (page / ticket)
   annotations:
     summary: "Gateway 5xx ratio {{ $value | humanizePercentage }} over 5m"
     description: "More than 5% of edge requests fail. Users see errors."
-    runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/gateway-high-error-rate.md
-    dashboard_url: http://localhost:3001/d/stride-slo
+    runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
+    dashboard_url: http://localhost:3003/d/stride-slo
 ```
 
 ## Rules of thumb (learned the hard way)

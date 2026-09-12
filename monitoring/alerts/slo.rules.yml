@@ -1,0 +1,217 @@
+# Service level objectives as code.
+#
+# Targets (docs/slo.md):
+#   edge-availability   99.5% of backend requests succeed (non-5xx)        budget 0.5%
+#   edge-latency        95%   of backend requests finish under 500 ms      budget 5%
+#   ai-availability     98%   of /api/v1/ai requests succeed               budget 2%
+#
+# Alerting follows the multi-window, multi-burn-rate recipe from the SRE
+# workbook: a fast burn (14.4× budget, 1h and 5m windows both above) pages
+# because the 30-day budget would be gone in ~2 days; a slow burn (6× over
+# 6h and 30m) opens a ticket. The short window makes the alert stop as soon
+# as the problem does, the long window keeps a 5-minute blip from paging.
+#
+# One deployable, so the "per-service" SLO of the microservices branch
+# collapses into the edge SLO; the AI endpoints keep their own, looser budget
+# because two external providers sit behind them.
+groups:
+
+  - name: stride-slo-recording
+    interval: 30s
+    rules:
+      # ---- error ratios, four windows (job label keeps infra out)
+      - record: slo:http_error:ratio_rate5m
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[5m]))
+            /
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[5m]))
+      - record: slo:http_error:ratio_rate30m
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[30m]))
+            /
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[30m]))
+      - record: slo:http_error:ratio_rate1h
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[1h]))
+            /
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[1h]))
+      - record: slo:http_error:ratio_rate6h
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[6h]))
+            /
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[6h]))
+
+      # ---- latency: share of requests slower than 500 ms
+      - record: slo:http_slow:ratio_rate5m
+        expr: |
+          1 - (
+            sum by (app) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*",le="0.5"}[5m]))
+              /
+            sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[5m]))
+          )
+      - record: slo:http_slow:ratio_rate30m
+        expr: |
+          1 - (
+            sum by (app) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*",le="0.5"}[30m]))
+              /
+            sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[30m]))
+          )
+      - record: slo:http_slow:ratio_rate1h
+        expr: |
+          1 - (
+            sum by (app) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*",le="0.5"}[1h]))
+              /
+            sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[1h]))
+          )
+      - record: slo:http_slow:ratio_rate6h
+        expr: |
+          1 - (
+            sum by (app) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*",le="0.5"}[6h]))
+              /
+            sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[6h]))
+          )
+
+      # ---- AI endpoints: their own error ratio (two windows are enough for a fast-burn page)
+      - record: slo:ai_error:ratio_rate5m
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*",status=~"5.."}[5m]))
+            /
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*"}[5m]))
+      - record: slo:ai_error:ratio_rate1h
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*",status=~"5.."}[1h]))
+            /
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*"}[1h]))
+
+      # ---- 30-day error budget remaining, 1 = untouched, 0 = spent, <0 = overspent
+      - record: slo:error_budget_remaining:ratio
+        labels:
+          slo: availability
+        expr: |
+          1 - (
+            (
+              sum by (app) (increase(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[30d]))
+                /
+              sum by (app) (increase(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[30d]))
+            ) / 0.005
+          )
+
+  - name: stride-slo-alerts
+    rules:
+
+      # ================================================================
+      # Edge availability — 99.5 %, budget 0.005
+      # ================================================================
+      - alert: SLOBurnRateFast
+        expr: |
+          (slo:http_error:ratio_rate1h{app="strava-backend"} / 0.005) > 14.4
+            and
+          (slo:http_error:ratio_rate5m{app="strava-backend"} / 0.005) > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          team: domain
+          tier: "2"
+          service: strava-backend
+          slo: edge-availability
+        annotations:
+          summary: "strava-backend burning availability budget at {{ $value | humanize }}x (1h window)"
+          description: "The availability SLO (99.5%) is burning its 30-day error budget more than 14x faster than sustainable over both the last hour and the last 5 minutes. At this rate the whole month's budget is gone in about two days. Page."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      - alert: SLOBurnRateSlow
+        expr: |
+          (slo:http_error:ratio_rate6h{app="strava-backend"} / 0.005) > 6
+            and
+          (slo:http_error:ratio_rate30m{app="strava-backend"} / 0.005) > 6
+        for: 15m
+        labels:
+          severity: warning
+          team: domain
+          tier: "2"
+          service: strava-backend
+          slo: edge-availability
+        annotations:
+          summary: "strava-backend burning availability budget at {{ $value | humanize }}x (6h window)"
+          description: "The availability SLO (99.5%) has been burning budget 6x faster than sustainable for six hours. Not an outage, but a week of this empties the monthly budget. Ticket, investigate within the working day."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      # ================================================================
+      # Edge latency — 95 % under 500 ms, budget 0.05
+      # ================================================================
+      - alert: SLOLatencyBurnRateFast
+        expr: |
+          (slo:http_slow:ratio_rate1h{app="strava-backend"} / 0.05) > 14.4
+            and
+          (slo:http_slow:ratio_rate5m{app="strava-backend"} / 0.05) > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          team: domain
+          tier: "2"
+          service: strava-backend
+          slo: edge-latency
+        annotations:
+          summary: "strava-backend latency SLO burning at {{ $value | humanize }}x (1h window)"
+          description: "More than 72% of requests are slower than 500 ms over the last hour and the last 5 minutes (14.4x the 5% budget of the 95%-under-500ms SLO). This is a user-visible slowdown, not a blip."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      - alert: SLOLatencyBurnRateSlow
+        expr: |
+          (slo:http_slow:ratio_rate6h{app="strava-backend"} / 0.05) > 6
+            and
+          (slo:http_slow:ratio_rate30m{app="strava-backend"} / 0.05) > 6
+        for: 15m
+        labels:
+          severity: warning
+          team: domain
+          tier: "2"
+          service: strava-backend
+          slo: edge-latency
+        annotations:
+          summary: "strava-backend latency SLO burning at {{ $value | humanize }}x (6h window)"
+          description: "More than 30% of requests are slower than 500 ms sustained over six hours. Find the slow endpoint on the JVM dashboard (p95 per uri) before the fast-burn alert pages."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      # ================================================================
+      # AI availability — 98 %, budget 0.02 (two external providers)
+      # ================================================================
+      - alert: AiSLOBurnRateFast
+        expr: |
+          (slo:ai_error:ratio_rate1h{app="strava-backend"} / 0.02) > 14.4
+            and
+          (slo:ai_error:ratio_rate5m{app="strava-backend"} / 0.02) > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          team: ai
+          tier: "2"
+          service: strava-backend
+          slo: ai-availability
+        annotations:
+          summary: "strava-backend burning AI availability budget at {{ $value | humanize }}x (1h window)"
+          description: "AI requests (/api/v1/ai) are failing 14x faster than the 98% SLO allows over the last hour and last 5 minutes. Usually a provider outage — check AiProviderErrors and the failover metric first."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      # ================================================================
+      # Budget bookkeeping: tell the team when a month's budget is gone.
+      # ================================================================
+      - alert: SLOErrorBudgetExhausted
+        expr: slo:error_budget_remaining:ratio < 0
+        for: 1h
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+          slo: availability
+        annotations:
+          summary: "{{ $labels.app }} has spent its 30-day error budget"
+          description: "Less than zero budget remains for {{ $labels.app }} over the trailing 30 days. Per docs/slo.md the error-budget policy applies: reliability work before new features until the budget is back above zero."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo

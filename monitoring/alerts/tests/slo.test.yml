@@ -1,0 +1,185 @@
+rule_files:
+  - ../slo.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ---------------------------------------------------------- SLOBurnRateFast
+  # 10% of requests fail for 70 minutes: 1h and 5m error ratios are both
+  # 0.10 → burn rate 20x against a 0.5% budget. Fast burn pages, and because
+  # the slow windows are above 6x as well, the slow burn is also firing (it is
+  # inhibited by the fast one in Alertmanager, not here).
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="500",uri="/api/v1/activities",method="GET"}'
+        values: '0+10x80'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="200",uri="/api/v1/activities",method="GET"}'
+        values: '0+90x80'
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: SLOBurnRateFast
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              severity: critical
+              team: domain
+              tier: "2"
+              service: strava-backend
+              slo: edge-availability
+            exp_annotations:
+              summary: "strava-backend burning availability budget at 20x (1h window)"
+              description: "The availability SLO (99.5%) is burning its 30-day error budget more than 14x faster than sustainable over both the last hour and the last 5 minutes. At this rate the whole month's budget is gone in about two days. Page."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+              dashboard_url: http://localhost:3003/d/stride-slo
+      - eval_time: 70m
+        alertname: AiSLOBurnRateFast
+        exp_alerts: []
+    promql_expr_test:
+      - expr: slo:http_error:ratio_rate5m{app="strava-backend"}
+        eval_time: 70m
+        exp_samples:
+          - labels: 'slo:http_error:ratio_rate5m{app="strava-backend"}'
+            value: 0.1
+
+  # ---------------------------------------------------------- SLOBurnRateSlow
+  # 4% errors: 8x the budget — above the 6x slow threshold, below the 14.4x
+  # fast threshold. Ticket, no page.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="500",uri="/api/v1/activities",method="GET"}'
+        values: '0+4x400'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="200",uri="/api/v1/activities",method="GET"}'
+        values: '0+96x400'
+    alert_rule_test:
+      - eval_time: 380m
+        alertname: SLOBurnRateFast
+        exp_alerts: []
+      - eval_time: 380m
+        alertname: SLOBurnRateSlow
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              severity: warning
+              team: domain
+              tier: "2"
+              service: strava-backend
+              slo: edge-availability
+            exp_annotations:
+              summary: "strava-backend burning availability budget at 8x (6h window)"
+              description: "The availability SLO (99.5%) has been burning budget 6x faster than sustainable for six hours. Not an outage, but a week of this empties the monthly budget. Ticket, investigate within the working day."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+              dashboard_url: http://localhost:3003/d/stride-slo
+
+  # --------------------------------------------------- SLOLatencyBurnRateFast
+  # Every request slower than 500 ms → slow ratio 1.0 → 20x the 5% budget.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{job="strava-backend",app="strava-backend",uri="/api/v1/activities",le="0.5"}'
+        values: '0+0x80'
+      - series: 'http_server_requests_seconds_bucket{job="strava-backend",app="strava-backend",uri="/api/v1/activities",le="+Inf"}'
+        values: '0+60x80'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",uri="/api/v1/activities",status="200"}'
+        values: '0+60x80'
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: SLOLatencyBurnRateFast
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              severity: critical
+              team: domain
+              tier: "2"
+              service: strava-backend
+              slo: edge-latency
+            exp_annotations:
+              summary: "strava-backend latency SLO burning at 20x (1h window)"
+              description: "More than 72% of requests are slower than 500 ms over the last hour and the last 5 minutes (14.4x the 5% budget of the 95%-under-500ms SLO). This is a user-visible slowdown, not a blip."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+              dashboard_url: http://localhost:3003/d/stride-slo
+
+  # --------------------------------------------------- SLOLatencyBurnRateSlow
+  # 40% of requests slow → 8x the budget: slow burn only.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{job="strava-backend",app="strava-backend",uri="/api/v1/activities",le="0.5"}'
+        values: '0+60x400'
+      - series: 'http_server_requests_seconds_bucket{job="strava-backend",app="strava-backend",uri="/api/v1/activities",le="+Inf"}'
+        values: '0+100x400'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",uri="/api/v1/activities",status="200"}'
+        values: '0+100x400'
+    alert_rule_test:
+      - eval_time: 380m
+        alertname: SLOLatencyBurnRateFast
+        exp_alerts: []
+      - eval_time: 380m
+        alertname: SLOLatencyBurnRateSlow
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              severity: warning
+              team: domain
+              tier: "2"
+              service: strava-backend
+              slo: edge-latency
+            exp_annotations:
+              summary: "strava-backend latency SLO burning at 8x (6h window)"
+              description: "More than 30% of requests are slower than 500 ms sustained over six hours. Find the slow endpoint on the JVM dashboard (p95 per uri) before the fast-burn alert pages."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+              dashboard_url: http://localhost:3003/d/stride-slo
+
+  # -------------------------------------------------------- AiSLOBurnRateFast
+  # Half of the AI calls fail (25x the 2% budget) while the rest of the API is
+  # healthy: the edge error ratio is 5/1000 = 0.5% (1x), so only the AI SLO pages.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="502",uri="/api/v1/ai/activities/{activityId}/chat",method="POST"}'
+        values: '0+5x80'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="200",uri="/api/v1/ai/activities/{activityId}/chat",method="POST"}'
+        values: '0+5x80'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="200",uri="/api/v1/activities",method="GET"}'
+        values: '0+990x80'
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: AiSLOBurnRateFast
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              severity: critical
+              team: ai
+              tier: "2"
+              service: strava-backend
+              slo: ai-availability
+            exp_annotations:
+              summary: "strava-backend burning AI availability budget at 25x (1h window)"
+              description: "AI requests (/api/v1/ai) are failing 14x faster than the 98% SLO allows over the last hour and last 5 minutes. Usually a provider outage — check AiProviderErrors and the failover metric first."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+              dashboard_url: http://localhost:3003/d/stride-slo
+      - eval_time: 70m
+        alertname: SLOBurnRateFast
+        exp_alerts: []
+
+  # ------------------------------------------------- SLOErrorBudgetExhausted
+  # 2% errors sustained: 30-day budget of 0.5% is overspent (remaining = -3).
+  - interval: 5m
+    input_series:
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="500",uri="/api/v1/users/me",method="GET"}'
+        values: '0+2x30'
+      - series: 'http_server_requests_seconds_count{job="strava-backend",app="strava-backend",status="200",uri="/api/v1/users/me",method="GET"}'
+        values: '0+98x30'
+    alert_rule_test:
+      - eval_time: 150m
+        alertname: SLOErrorBudgetExhausted
+        exp_alerts:
+          - exp_labels:
+              app: strava-backend
+              severity: warning
+              team: domain
+              tier: "1"
+              service: strava-backend
+              slo: availability
+            exp_annotations:
+              summary: "strava-backend has spent its 30-day error budget"
+              description: "Less than zero budget remains for strava-backend over the trailing 30 days. Per docs/slo.md the error-budget policy applies: reliability work before new features until the budget is back above zero."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+              dashboard_url: http://localhost:3003/d/stride-slo

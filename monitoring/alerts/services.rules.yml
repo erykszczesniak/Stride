@@ -1,0 +1,139 @@
+# Health of the one deployable: which endpoint is failing or slow, JVM,
+# connection pool and the log-based canary. On the microservices branch these
+# are grouped by `app`; here the grouping that tells you *where* to look is the
+# endpoint (`uri`, `method`), because every feature lives in the same JVM.
+groups:
+  - name: stride-services
+    rules:
+
+      # ------------------------------------------------------------------
+      # Per-endpoint error ratio. Higher threshold than the edge rule (20 %)
+      # and a traffic floor, so one broken feature is named while a single
+      # failed request on a rarely used endpoint is not.
+      # ------------------------------------------------------------------
+      - alert: EndpointHighErrorRate
+        expr: |
+          (
+            sum by (app, uri, method) (rate(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[10m]))
+              /
+            sum by (app, uri, method) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[10m]))
+          ) > 0.20
+            and
+          sum by (app, uri, method) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[10m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: domain
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.method }} {{ $labels.uri }}: {{ $value | humanizePercentage }} 5xx"
+          description: "More than 20% of {{ $labels.method }} {{ $labels.uri }} requests fail with 5xx for 5 minutes at more than 0.1 req/s. This names the broken feature; EdgeHighErrorRate says whether it is bad enough to page."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
+          dashboard_url: http://localhost:3003/d/stride-jvm
+
+      - alert: EndpointHighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (app, uri, method, le) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*"}[5m]))
+          ) > 2
+            and
+          sum by (app, uri, method) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[5m])) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.method }} {{ $labels.uri }} p95 latency {{ $value | humanizeDuration }}"
+          description: "95th percentile latency of {{ $labels.method }} {{ $labels.uri }} is above 2 s for 10 minutes. Check the query plan and the Elasticsearch/DB pool panels before scaling; AI endpoints have their own budget (AiChatLatencyP95)."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/high-latency.md
+          dashboard_url: http://localhost:3003/d/stride-jvm
+
+      # ------------------------------------------------------------------
+      # JVM. Heap is compared with the container-derived max; the JVM in
+      # compose/k8s runs with MaxRAMPercentage=75 of its memory limit.
+      # ------------------------------------------------------------------
+      - alert: JvmHeapHigh
+        expr: |
+          sum by (app, instance) (jvm_memory_used_bytes{area="heap"})
+            /
+          sum by (app, instance) (jvm_memory_max_bytes{area="heap"})
+            > 0.90
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} heap at {{ $value | humanizePercentage }}"
+          description: "Heap usage on {{ $labels.instance }} stayed above 90% of max for 10 minutes. OOMKill or GC thrash is next; check for a leak (jvm dashboard: heap after GC trending up) before raising the limit."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/jvm-heap-high.md
+          dashboard_url: http://localhost:3003/d/stride-jvm
+
+      - alert: JvmGcPressure
+        expr: sum by (app, instance) (rate(jvm_gc_pause_seconds_sum[5m])) > 0.25
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} spends {{ $value | humanizePercentage }} of wall time in GC"
+          description: "GC pauses consume more than 25% of time on {{ $labels.instance }}. Latency alerts usually follow; treat as the same incident."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/jvm-heap-high.md
+
+      # ------------------------------------------------------------------
+      # HikariCP. Pending threads means requests are queueing for a
+      # connection; timeouts mean they gave up — that is user-visible.
+      # ------------------------------------------------------------------
+      - alert: DbPoolSaturated
+        expr: |
+          sum by (app, instance) (hikaricp_connections_active)
+            /
+          sum by (app, instance) (hikaricp_connections_max)
+            > 0.90
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} DB pool {{ $value | humanizePercentage }} in use"
+          description: "More than 90% of the connection pool is busy for 10 minutes. Look for slow queries or a transaction holding connections before growing the pool."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/db-pool-exhausted.md
+
+      - alert: DbPoolExhausted
+        expr: sum by (app, instance) (increase(hikaricp_connections_timeout_total[5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: domain
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} requests timed out waiting for a DB connection"
+          description: "Connection acquisitions timed out in the last 5 minutes on {{ $labels.instance }}. Those requests failed. This fires immediately: every occurrence is a user-visible error."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/db-pool-exhausted.md
+
+      # ------------------------------------------------------------------
+      # Log-based canary: a sustained stream of ERROR logs without a matching
+      # HTTP signal usually means a scheduled job, an event listener or the
+      # Elasticsearch sync is failing.
+      # ------------------------------------------------------------------
+      - alert: ErrorLogSpike
+        expr: sum by (app) (rate(logback_events_total{level="error"}[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} logs {{ $value | humanize }} errors/s"
+          description: "More than one ERROR log line per second for 10 minutes. Read the logs before anything else: `docker compose logs --since 15m backend`."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/edge-high-error-rate.md
