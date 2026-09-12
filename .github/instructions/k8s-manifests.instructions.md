@@ -4,10 +4,9 @@ applyTo: "k8s/**"
 
 # Kubernetes manifests
 
-- One file per workload under `k8s/services/` or `k8s/infra/`, containing the Deployment and its Service (and HPA if any). Namespace is always `stride`.
-- Every container has: readiness + liveness probes on `/actuator/health/{readiness,liveness}`, resource requests **and** limits, `imagePullPolicy: IfNotPresent` (images are side-loaded into kind).
-- Domain services are never exposed by an Ingress. External traffic enters only via `api-gateway`; `network-policies.yaml` enforces it. If you add a service, add it to the `domain-services-from-gateway-and-infra` policy selector.
-- gRPC ports (`908x`) are cluster-internal: declare them on the Service but never on the Ingress.
-- Secrets only from `stride-secrets` (`01-secrets-example.yaml` documents keys; the real file is gitignored). No literals in `env`.
-- Memory limits mirror `docker-compose.yml` (`mem_limit`) so heap sizing via `MaxRAMPercentage=75` behaves the same in both runtimes.
-- Validate before pushing: `kubectl apply --dry-run=client -f k8s/` and, if kind is up, `kubectl rollout status deploy/<name> -n stride`.
+- One directory per workload (`k8s/backend`, `k8s/frontend`, `k8s/postgres`), one file per object (`deployment.yaml`, `service.yaml`, `hpa.yaml`, `configmap.yaml`, `secret.yaml`). Namespace is always `strava` (`k8s/namespace.yaml`).
+- Every container has: readiness + liveness probes on `/actuator/health/{readiness,liveness}` (backend), resource requests **and** limits, `imagePullPolicy: IfNotPresent`.
+- Only the Ingress (`k8s/ingress.yaml`) is reachable from outside; the backend Service stays `ClusterIP`.
+- Secrets only via `secretKeyRef` from `backend-secret` / the postgres secret (`k8s/create-secrets.sh` creates them; committed `secret.yaml` files hold placeholders). No literals in `env`. A new provider key (for example `ANTHROPIC_API_KEY`) goes into the secret **and** into `create-secrets.sh`.
+- Memory limits mirror `docker-compose.yml` so heap sizing via `MaxRAMPercentage=75` behaves the same in both runtimes; a change to one is a change to both.
+- Validate before pushing: `kubectl apply --dry-run=client -f k8s/ -R` and, if a cluster is up, `kubectl rollout status deploy/backend -n strava`.

@@ -9,6 +9,9 @@ changelog.
 ## [Unreleased]
 
 ### Added
+- Documentation: 9 runbooks (one per alert), post-mortem index and the
+  2026-07-11 duplicate-Flyway-version write-up, 10 ADRs, SLO, cost-attribution,
+  AI-guardrails and observability docs for the monolith.
 - `scripts/smoke.sh` (API, one request per feature area, AI guard, Prometheus
   target and rules, Watchdog, no critical alert) and a nightly Playwright e2e
   workflow on the composed stack; `make smoke` / `make e2e-up`.
