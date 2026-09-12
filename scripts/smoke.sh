@@ -55,7 +55,7 @@ registered=$($CURL -H 'Accept: application/json' "$EUREKA_URL/eureka/apps" 2>/de
 if [ "${registered:-0}" -ge "$EXPECTED_SERVICES" ]; then pass "$registered services registered (expected ≥ $EXPECTED_SERVICES)"; else bad "only ${registered:-0} services registered (expected ≥ $EXPECTED_SERVICES)"; fi
 
 echo "== Monitoring $PROM_URL / $ALERTMANAGER_URL"
-up=$($CURL "$PROM_URL/api/v1/query?query=count(up{job=\"stride-services\"}==1)" 2>/dev/null | sed -n 's/.*"value":\[[0-9.]*,"\([0-9]*\)"\].*/\1/p')
+up=$($CURL -G "$PROM_URL/api/v1/query" --data-urlencode 'query=count(up{job="stride-services"}==1)' 2>/dev/null | sed -n 's/.*"value":\[[0-9.]*,"\([0-9]*\)"\].*/\1/p')
 if [ "${up:-0}" -ge "$EXPECTED_SERVICES" ]; then pass "Prometheus scrapes $up service targets"; else bad "Prometheus scrapes only ${up:-0} service targets"; fi
 rules=$($CURL "$PROM_URL/api/v1/rules" 2>/dev/null | grep -o '"name":"stride-' | wc -l | tr -d ' ')
 if [ "${rules:-0}" -ge 7 ]; then pass "$rules rule groups loaded"; else bad "only ${rules:-0} rule groups loaded (expected ≥ 7)"; fi
