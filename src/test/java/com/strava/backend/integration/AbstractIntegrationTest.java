@@ -35,7 +35,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * }</pre>
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @ActiveProfiles("testcontainers")
 public abstract class AbstractIntegrationTest {
 

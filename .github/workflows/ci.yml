@@ -26,8 +26,52 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Run tests
+      # `verify` = unit + Testcontainers integration tests (Docker is on the runner)
+      # + ArchUnit rules + the JaCoCo coverage gate (see pom.xml).
+      - name: Run tests, architecture rules and coverage gate
         run: ./mvnw verify -B
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          f=target/site/jacoco/jacoco.csv
+          if [ -f "$f" ]; then
+            echo "## JaCoCo line coverage" >> "$GITHUB_STEP_SUMMARY"
+            awk -F, 'NR>1 {cov+=$9; mis+=$8} END { if (cov+mis>0) printf "%d of %d lines covered (%.1f%%)\n", cov, cov+mis, 100*cov/(cov+mis) }' "$f" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ============================================
+  # Frontend: unit tests (Jest via react-scripts)
+  # ============================================
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: CI=true npm test -- --watchAll=false --ci
 
   # ============================================
   # Frontend: install + build
@@ -58,7 +102,7 @@ jobs:
   # ============================================
   docker:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [backend-test, frontend-build]
+    needs: [backend-test, frontend-test, frontend-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

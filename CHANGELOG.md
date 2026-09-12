@@ -9,6 +9,9 @@ changelog.
 ## [Unreleased]
 
 ### Added
+- Quality gates in the build: JaCoCo coverage floor (60% line / 40% branch),
+  ArchUnit layer rules with a frozen store for the three legacy controllers,
+  frontend Jest job in CI, CodeQL and Trivy scans.
 - Repository standards: `CODEOWNERS`, PR template with a mandatory
   verification section, Dependabot (Maven, npm, Actions, Docker), release-please,
   `AGENTS.md` and per-path Copilot instructions.

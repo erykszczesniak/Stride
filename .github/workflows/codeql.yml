@@ -1,0 +1,45 @@
+# Static analysis for the JVM services and the React frontend. Java/Kotlin use
+# build-mode none (no compilation needed since CodeQL 2.16), which keeps the job
+# at a few minutes instead of a full reactor build.
+name: CodeQL
+
+on:
+  push:
+    branches: [main, microservices]
+  pull_request:
+    branches: [main, microservices]
+  schedule:
+    - cron: "17 4 * * 1"   # Mondays 04:17 UTC — catches new query packs
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-and-quality
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

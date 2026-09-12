@@ -1,0 +1,3 @@
+#
+#Sat Sep 12 15:17:45 CEST 2026
+no\ classes\ that\ are\ annotated\ with\ @RestController\ should\ depend\ on\ classes\ that\ are\ assignable\ to\ org.springframework.data.repository.Repository,\ because\ controllers\ map\ HTTP\ to\ services;\ persistence\ decisions\ belong\ in\ the\ service\ layer=a4c214b4-74ca-46d5-9b69-74778f08c6cf
