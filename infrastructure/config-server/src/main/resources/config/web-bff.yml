@@ -42,3 +42,10 @@ resilience4j:
         baseConfig: default
       club-event-service:
         baseConfig: default
+
+# Cost attribution (docs/cost-attribution.md): every metric this service emits
+# carries team + cost_center via management.metrics.tags in the shared
+# application.yml. Change ownership here, never in the dashboards.
+stride:
+  team: platform
+  cost-center: CC-PLATFORM-001

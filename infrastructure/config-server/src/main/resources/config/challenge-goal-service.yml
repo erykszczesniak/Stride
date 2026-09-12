@@ -57,3 +57,10 @@ resilience4j:
         maxAttempts: 3
         waitDuration: 250ms
         exponentialBackoffMultiplier: 2
+
+# Cost attribution (docs/cost-attribution.md): every metric this service emits
+# carries team + cost_center via management.metrics.tags in the shared
+# application.yml. Change ownership here, never in the dashboards.
+stride:
+  team: domain
+  cost-center: CC-DOMAIN-002

@@ -104,3 +104,10 @@ jwt:
   # EventSource cannot send an Authorization header — these paths may pass ?token=.
   query-token-paths:
     - /api/v1/notifications/stream
+
+# Cost attribution (docs/cost-attribution.md): every metric this service emits
+# carries team + cost_center via management.metrics.tags in the shared
+# application.yml. Change ownership here, never in the dashboards.
+stride:
+  team: platform
+  cost-center: CC-PLATFORM-001

@@ -13,6 +13,11 @@ Conventional Commit PR titles.
   token, latency, cost and failover metrics plus a JSON audit line per
   provider call; a 42-case golden eval that gates the build
   (`docs/ai-guardrails.md`).
+- Cost attribution: every metric carries `team` and `cost_center` (set per
+  service in Config Server), recording rules model infra USD/hour from CPU
+  consumed and memory reserved, AI spend comes from token accounting;
+  `InfraCostSpike` and `AiSpendHigh` alerts; `stride-cost` dashboard;
+  `docs/cost-attribution.md`.
 - Architecture decision records (`docs/adr/`, 9 records): choreographed
   sagas, database per service, gRPC inside / REST at the edge, JWT at the
   gateway, what we deliberately do not run, alerts as code, SLO burn-rate

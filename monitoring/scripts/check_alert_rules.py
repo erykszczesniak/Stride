@@ -76,8 +76,12 @@ def main() -> int:
                 errors.append(f"{where}: missing label '{key}'")
         if labels.get("severity") not in SEVERITIES:
             errors.append(f"{where}: severity must be one of {sorted(SEVERITIES)}, got {labels.get('severity')!r}")
-        if labels.get("team") not in TEAMS:
-            errors.append(f"{where}: team must be one of {sorted(TEAMS)}, got {labels.get('team')!r}")
+        team = labels.get("team")
+        # A templated team ("{{ $labels.team }}") is allowed for alerts owned by
+        # whichever team the series belongs to (cost attribution); everything
+        # else must name a team so Alertmanager routing is static.
+        if team not in TEAMS and team != "{{ $labels.team }}":
+            errors.append(f"{where}: team must be one of {sorted(TEAMS)} or '{{{{ $labels.team }}}}', got {team!r}")
         if str(labels.get("tier")) not in TIERS:
             errors.append(f"{where}: tier must be \"1\" or \"2\", got {labels.get('tier')!r}")
 

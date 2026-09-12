@@ -63,3 +63,10 @@ resilience4j:
       activity-service:
         maxAttempts: 3
         waitDuration: 250ms
+
+# Cost attribution (docs/cost-attribution.md): every metric this service emits
+# carries team + cost_center via management.metrics.tags in the shared
+# application.yml. Change ownership here, never in the dashboards.
+stride:
+  team: ai
+  cost-center: CC-AI-003

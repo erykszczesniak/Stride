@@ -50,3 +50,10 @@ app:
     login-frontend-redirect: ${STRAVA_LOGIN_FRONTEND_REDIRECT:http://localhost:3000/auth/strava/callback}
     login-frontend-error-redirect: ${STRAVA_LOGIN_FRONTEND_ERROR_REDIRECT:http://localhost:3000/login}
     state-secret: ${STRAVA_STATE_SECRET:}
+
+# Cost attribution (docs/cost-attribution.md): every metric this service emits
+# carries team + cost_center via management.metrics.tags in the shared
+# application.yml. Change ownership here, never in the dashboards.
+stride:
+  team: domain
+  cost-center: CC-DOMAIN-002

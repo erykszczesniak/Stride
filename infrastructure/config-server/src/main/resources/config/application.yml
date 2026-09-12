@@ -37,6 +37,12 @@ management:
       # Stable identity for every metric regardless of how it was scraped
       # (Eureka SD adds `app`; this survives a static scrape too).
       application: ${spring.application.name}
+      # Cost attribution labels (docs/cost-attribution.md). Each service sets
+      # stride.team / stride.cost-center in its own <service>.yml; a service
+      # that forgets shows up as `unassigned` on the cost dashboard instead
+      # of silently disappearing from it.
+      team: ${stride.team:unassigned}
+      cost_center: ${stride.cost-center:unassigned}
   tracing:
     sampling:
       probability: 1.0
