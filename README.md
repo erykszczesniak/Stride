@@ -1,433 +1,132 @@
-# STRIDE - Fitness Activity Tracker
+# Stride - Fitness Activity Tracker
 
-A full-stack fitness activity tracking application inspired by Strava. Track your workouts, join challenges, connect with other athletes, and achieve your fitness goals.
+Stride is a full-stack fitness platform inspired by Strava. Record workouts,
+analyze progress, follow athletes, join events and use an AI coach. This
+`main` branch is a Spring Boot monolith. The
+[`microservices`](https://github.com/erykszczesniak/Stride/tree/microservices)
+branch provides the same product as 12 services.
 
-<img width="1985" height="1239" alt="image" src="https://github.com/user-attachments/assets/eb45b949-40b1-4a08-b218-1cc0d3e0896c" />
+**Built with:** Java 21, Kotlin, Spring Boot, React, PostgreSQL, Elasticsearch,
+Docker, Kubernetes and Terraform.
 
+<img width="1985" height="1239" alt="Stride dashboard" src="https://github.com/user-attachments/assets/eb45b949-40b1-4a08-b218-1cc0d3e0896c" />
 
+> The project is under active development. Features and UI may change.
 
-> **Note:** This project is currently in active development. Features and UI may change.
+## Table of contents
 
-![Dashboard Preview](docs/screenshots/dashboard.png)
-
-> This is the **`main` branch**: one Spring Boot monolith. The same product also
-> exists as 12 services on
-> [`microservices`](https://github.com/erykszczesniak/Stride/tree/microservices);
-> both branches carry the same operational tooling — see
-> [Operations & quality](#operations--quality).
-
-## Contents
-
-- [Features](#features)
+- [Technologies](#technologies)
+- [Project structure](#project-structure)
+- [How to run](#how-to-run)
 - [Screenshots](#screenshots)
-- [Tech Stack](#tech-stack)
-- [Operations & quality](#operations--quality)
-- [Getting Started](#getting-started)
-- [AWS Deployment (Terraform)](#aws-deployment-terraform)
-- [API Documentation](#api-documentation)
-- [Project Structure](#project-structure)
-- [Observability & Security](#observability--security)
-- [Recent Features — Configuration & Testing](#recent-features--configuration--testing)
-- [Running Tests](#running-tests)
+- [Features](#features)
+- [API documentation](#api-documentation)
+- [Observability and security](#observability-and-security)
+- [Operations and quality](#operations-and-quality)
+- [Recent features - configuration and testing](#recent-features---configuration-and-testing)
+- [Running tests](#running-tests)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 
-## Features
-
-### Native iOS client
-Stride has a full native iOS app — **[Triathlon Tracker](https://github.com/erykszczesniak/triathlon-tracker-ios)**
-(programmatic UIKit + The Composable Architecture). It consumes both API surfaces:
-the read-only `/pipeline/v1` analytics facade (form dial, training load, splits,
-records) and the stateful `/api/v1` REST API (JWT auth, social feed with live SSE
-notification badge, GPS recording with backend-computed splits, photos, AI coach,
-goals, training plans + Groq generators, events/challenges/clubs, gear, Strava
-OAuth), with offline fallback, a Face ID app lock, and English + Polish
-localization. The iOS repository documents the local-run recipe (Caddy TLS proxy +
-seeded JWT session) against this backend.
-
-
-### Activity Tracking
-- Record and track various activity types (Running, Cycling, Swimming, Hiking, Workouts)
-- View detailed activity statistics (distance, duration, pace, calories, elevation)
-- **Pace display for running** — RUN/WALK/HIKE activities show pace (min/km) instead of speed (km/h), matching how runners think about their stats
-- **Hours/minutes/seconds duration input** — record an activity down to the second (a 24:30 run is no longer rounded to whole minutes)
-- Upload up to 5 photos per activity (gallery view, card cover)
-- Like and comment on activities
-- Add reactions to comments
-
-### Activity File Import
-Import activities directly from any GPS watch or fitness platform that exports **GPX**, **TCX**, or **FIT** files (Garmin, Polar, Suunto, Decathlon Kiprun, Wahoo, etc.).
-
-- **GPX parser** — XML format, extracts GPS track, elevation, heart rate, cadence (via Garmin TrackPointExtension)
-- **TCX parser** — XML format, extracts multi-lap data, heart rate, cadence, power, `<Notes>` as activity description
-- **FIT parser** — Garmin/ANT+ binary format, hand-rolled parser with little-endian handling, developer fields, compressed timestamps, and FIT "invalid" sentinel filtering
-- **Drag-and-drop upload** on the Record Activity page with a Manual Entry / Upload File mode toggle
-- **Bundled sample files** — real-world GPX/TCX/FIT examples (5K run in Warsaw, 20K cycling in Amsterdam, Tatras hike, interval training, Lake Zegrze cycling loop, Night Run captured by a Decathlon Kiprun GPS 900) that you can download and re-import to test the feature
-- Automatic title synthesis for FIT files from sport + time-of-day ("Morning Run", "Evening Ride")
-- GPS tracks stored as compact Google Encoded Polyline (~10× smaller than JSON)
-
-### Personal Records
-Automatic detection and tracking of personal best times for standard distances across each sport.
-
-- **Standard distances:** 1 km, 5 km, 10 km, Half Marathon (21.0975 km), Marathon (42.195 km)
-- **Sliding-window GPS analysis** — when the activity has a GPS track, finds the fastest sub-segment of each standard distance. The best 5 km within a 10 km run still counts as a 5 km PR.
-- **Pace estimation fallback** — for activities without GPS, time is scaled proportionally from the overall pace
-- Detection runs automatically on every activity create/update — no manual trigger
-- **Recalculate** button on the profile rebuilds every PR from the full activity history (useful after bulk-importing GPX files)
-- Displayed as a new **Personal Records** tab on the profile, grouped by sport, showing distance, best time, pace, improvement vs. previous PR, and a link to the activity where the PR was set
-
-### Social Features
-- Follow other athletes
-- Public user profiles with stats, recent activities, and follow button
-- Activity feed showing followed users' activities
-- Clickable usernames/avatars → navigate to user profile
-- Clubs - join communities based on sport types
-- Events - create and join local fitness events
-
-### Challenges
-- Join monthly challenges
-- Track progress against goals
-- Leaderboard rankings
-- Earn badges for completing challenges
-
-### Goals & Progress
-- Set personal fitness goals
-- Track weekly and monthly progress
-- Visual progress charts and statistics
-
-### Notifications
-- Real-time toast notifications via SSE (Server-Sent Events)
-- Email notifications (likes, comments, follows, achievements)
-- Weekly training summary emails
-- Configurable per-user: toast notifications, email notifications, weekly summary
-- Duplicate notification prevention (e.g. re-liking same activity)
-
-### Report Builder
-- Dynamic report generation via GraphQL query
-- Drag-and-drop column reorder
-- Sortable table columns (asc/desc)
-- Activity type filter
-- Date range picker with quick presets (7 days, 30 days, this month, last month, this year)
-- Save/load report templates (localStorage)
-- Export to CSV (backend) and PDF (frontend, branded)
-- Summary row with totals and averages
-
-### Authentication
-- Email/password login with JWT tokens
-- Google OAuth2 login ("Continue with Google")
-- Auto-creates user on first Google login
-
-### User Experience
-- Dark/Light theme toggle
-- Responsive design
-- User profile customization
-
-## Screenshots
-
-<details>
-<summary>Click to expand all screenshots</summary>
-
-### Authentication
-
-#### Login
-![Login](docs/screenshots/login.png)
-*Clean login page with email and password fields, password visibility toggle*
-
-#### Register
-![Register](docs/screenshots/register.png)
-*Registration form with password strength indicator*
-
----
-
-### Main Application
-
-#### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
-*Main dashboard with stats cards, weekly chart, recent activities, and goals progress*
-
-#### Dashboard - User Menu
-![Dashboard User Menu](docs/screenshots/dashboard-user-menu.png)
-*User avatar dropdown with profile link, settings, and logout*
-
----
-
-### Activities
-
-#### Activities Feed
-![Activities](docs/screenshots/activities.png)
-*Activity feed with filters (All/Following/My Activities), type filtering, and sidebar*
-
-#### Record Activity
-![Record Activity](docs/screenshots/record-activity.png)
-*Create new activity - select type (Run, Ride, Swim, Hike, Walk, Workout) and enter stats*
-
-#### Activity Details
-![Activity Details](docs/screenshots/activity-details.png)
-*Full activity view with stats, map, comments section, and like/share buttons*
-
----
-
-### Profile
-
-#### User Profile
-![Profile](docs/screenshots/profile.png)
-*User profile with cover photo, avatar, stats (followers, following, activities)*
-
-#### Profile - Stats Tab
-![Profile Stats](docs/screenshots/profile-stats.png)
-*Detailed statistics with charts and visualizations*
-
----
-
-### Goals & Challenges
-
-#### Goals
-![Goals](docs/screenshots/goals.png)
-*Personal fitness goals with progress bars and deadlines*
-
-#### Challenges
-![Challenges](docs/screenshots/challenges.png)
-*Active challenges with progress tracking and participant counts*
-
----
-
-### Social Features
-
-#### Clubs
-![Clubs](docs/screenshots/clubs.png)
-*Sport communities - browse, search, and join clubs*
-
-#### Events
-![Events](docs/screenshots/events.png)
-*Local fitness events with date, location, and registration*
-
-#### Create Event
-![Create Event](docs/screenshots/create-event.png)
-*Event creation form with date picker, location, and details*
-
----
-
-### Training
-
-#### Training Plans
-![Training Plans](docs/screenshots/training-plans.png)
-*AI-generated training plans with workouts schedule*
-
----
-
-### Settings
-
-#### Settings - Profile
-![Settings Profile](docs/screenshots/settings-profile.png)
-*Edit profile information - name, bio, location, weight, height*
-
-#### Settings - Notifications
-![Settings Notifications](docs/screenshots/settings-notifications.png)
-*Notification settings - email, toast notifications, weekly summary*
-
-#### Settings - Preferences
-![Settings Preferences](docs/screenshots/settings-preferences.png)
-*App preferences - units, activity type, pace display, language, theme*
-
----
-
-### Admin Panel
-
-#### Admin - Overview
-![Admin Overview](docs/screenshots/admin-overview.png)
-*Admin dashboard with user and activity statistics*
-
-#### Admin - Users
-![Admin Users](docs/screenshots/admin-users.png)
-*User management table with search and actions*
-
-#### Admin - Export
-![Admin Export](docs/screenshots/admin-export.png)
-*Export data to Excel/PDF*
-
----
-
-### Theme Variants
-
-#### Light Mode
-![Light Mode](docs/screenshots/light-mode.png)
-*Default light theme*
-
-#### Dark Mode
-![Dark Mode](docs/screenshots/dark-mode.png)
-*Full dark mode support across all pages*
-
----
-
-### Responsive Design
-
-#### Mobile View
-![Mobile View](docs/screenshots/mobile-view.png)
-*Responsive layout optimized for mobile devices*
-
-</details>
-
-## Tech Stack
-
-### Backend
-- **Java 21** with **Spring Boot 3.4**
-- **Spring Security** with JWT authentication + **Google OAuth2**
-- **Spring Data JPA** with PostgreSQL
-- **GraphQL** API (queries for report builder)
-- **REST API** for all CRUD operations
-- **SSE** (Server-Sent Events) for real-time notifications
-- **Async event-driven** architecture (Spring ApplicationEventPublisher)
-- **Elasticsearch 8** for full-text user search (synced via async event listener)
-- **Flyway** for database migrations
-- **Hand-rolled GPX/TCX/FIT parsers** for activity file import (no external SDK dependencies)
-- **Thymeleaf** email templates
-- **Swagger/OpenAPI** documentation
-- **Testcontainers** for integration testing
-
-### Frontend
-- **React 18** with Hooks
-- **React Router** for navigation
-- **Styled Components** for styling
-- **Recharts** for data visualization
-- **Leaflet** + **React-Leaflet** for interactive route maps (decodes both legacy JSON and Google Encoded Polyline formats)
-- **Axios** for API communication
-- **jsPDF** for PDF report generation
-- **Jest** + **React Testing Library** for unit/component tests
-- **Playwright** for E2E testing
-- **React Icons** for iconography
-
-### Infrastructure & Observability
-- **Docker** & **Docker Compose**
-- **Terraform** for AWS infrastructure (EC2, RDS, ALB, ECR, VPC)
-- **Kubernetes** manifests (Deployments, Services, Ingress, Secrets, ConfigMaps)
-- **PostgreSQL 16**
-- **Nginx** (production)
-- **Prometheus** + **Grafana** for metrics & dashboards (`stride-jvm`, `stride-slo`, `stride-cost`)
-- **Alertmanager** with 30 unit-tested alert rules, SLO burn-rate alerting and cost attribution ([Operations & quality](#operations--quality))
-- **OpenTelemetry** distributed tracing exported via OTLP to **Jaeger**
-- **Structured logging** (JSON in prod via Logstash encoder) with `traceId` correlation
-- **Rate limiting** on auth endpoints
-
-## Operations & quality
-
-Everything an on-call engineer, a reviewer or a finance question needs is
-code in this repository and checked in CI. The series landed on
-`microservices` first (#156–#166) and was ported here in #167–#181; details
-in [`CHANGELOG.md`](CHANGELOG.md).
-
-| Area | What is there | Where |
-|---|---|---|
-| **CI gates** | JaCoCo floor 60 % lines / 40 % branches (69 % / 48 % today), ArchUnit layer rules with a frozen store for the three legacy controllers that still touch repositories, Testcontainers on real PostgreSQL, frontend Jest (141 tests) in CI, CodeQL, Trivy filesystem + image | `pom.xml`, `src/test/java/.../ArchitectureTest.java`, `.github/workflows/{ci,codeql,security-scan}.yml` |
-| **Alerts as code** | 30 Prometheus rules in 8 groups, a promtool test case per alert, a label/runbook/test contract enforced by CI, Alertmanager routing with inhibition, an echo receiver so deliveries are visible locally | [`monitoring/alerts/`](monitoring/alerts), [`monitoring/alertmanager/`](monitoring/alertmanager), `.github/workflows/monitoring.yml` |
-| **SLOs** | 3 objectives (availability 99.5 %, latency 95 % < 500 ms, AI 98 %), recording rules, multi-window burn-rate alerts (14.4× pages, 6× tickets), 30-day error budget and policy, `stride-slo` dashboard | [`docs/slo.md`](docs/slo.md), [`monitoring/alerts/slo.rules.yml`](monitoring/alerts/slo.rules.yml) |
-| **Runbooks & post-mortems** | 9 runbooks in one format (every one of the 30 alerts links to one, with the stack's real commands), post-mortem index + template and the duplicate-Flyway-version write-up reconstructed from git | [`docs/runbooks/`](docs/runbooks), [`docs/postmortems/`](docs/postmortems) |
-| **AI guardrails** | per-user rate limit, prompt guard with a 42-case golden eval that gates the build, PII masking before the provider *and* before persistence, token/latency/cost metrics + JSON audit line per call, Anthropic → Groq chat failover, live rubric evals (weekly, keys required) | [`docs/ai-guardrails.md`](docs/ai-guardrails.md), `src/main/java/com/strava/backend/ai/`, `.github/workflows/ai-eval.yml` |
-| **Cost attribution** | `team` / `cost_center` on every metric, modelled infra USD/hour from CPU consumed and memory reserved, real AI spend from tokens, `stride-cost` dashboard, spend-spike alerts | [`docs/cost-attribution.md`](docs/cost-attribution.md), [`monitoring/alerts/cost.rules.yml`](monitoring/alerts/cost.rules.yml) |
-| **E2E & smoke** | `scripts/smoke.sh` (API per feature area, AI guard, Prometheus target and rules, Alertmanager Watchdog, no critical alert) usable against compose, k8s or prod; nightly Playwright run on the composed stack | [`scripts/smoke.sh`](scripts/smoke.sh), `.github/workflows/e2e.yml`, `docker-compose.e2e.yml` |
-| **Decisions** | 10 ADRs with the alternatives that were on the table and the known gaps | [`docs/adr/`](docs/adr) |
-| **Repo standards** | CODEOWNERS, PR template with a mandatory verification section, Dependabot, release-please from Conventional Commit titles, `AGENTS.md` + path-scoped Copilot instructions | [`AGENTS.md`](AGENTS.md), `.github/` |
-
-```bash
-./mvnw verify                                   # tests + ArchUnit + JaCoCo gate + guard golden eval
-docker run --rm -v "$PWD/monitoring:/m" --entrypoint sh prom/prometheus:v2.55.0 \
-  -c 'promtool test rules /m/alerts/tests/*.test.yml'   # alert rule unit tests
-python3 monitoring/scripts/check_alert_rules.py         # label / runbook / test contract
-make smoke                                              # against the running stack
+## Technologies
+
+- **Backend:** Java 21, Kotlin 1.9, Spring Boot 3.4, Spring Security, JPA,
+  GraphQL, Flyway and SSE
+- **Frontend:** React 18, React Router, Styled Components, Recharts, Leaflet,
+  Axios and jsPDF
+- **Data:** PostgreSQL 16 and Elasticsearch 8 with SQL fallback
+- **AI and integrations:** Anthropic, Groq, Google OAuth and Strava OAuth
+- **Observability:** OpenTelemetry, Jaeger, Prometheus, Alertmanager and Grafana
+- **Delivery:** Maven, Docker Compose, Nginx, Kubernetes, Terraform and GitHub Actions
+- **Quality:** JUnit 5, Mockito, Testcontainers, JaCoCo, ArchUnit, Playwright,
+  CodeQL and Trivy
+
+## Project structure
+
+```text
+.
+├── src/main/java/com/strava/backend/
+│   ├── configuration/              # Spring configuration
+│   ├── controller/                 # REST endpoints
+│   ├── domain/                     # JPA entities
+│   ├── dto/                        # API models
+│   ├── graphql/                    # GraphQL resolvers
+│   ├── repository/                 # data access
+│   ├── security/                   # JWT and pipeline tokens
+│   └── service/                    # business logic
+├── src/main/kotlin/                # selected Kotlin services
+├── src/main/resources/
+│   ├── db/migration/               # Flyway migrations
+│   └── templates/                  # email templates
+├── frontend/                       # React SPA and Playwright tests
+├── monitoring/                     # alerts, dashboards and provisioning
+├── docs/                           # API docs, ADRs, SLOs and runbooks
+├── k8s/                            # Kubernetes manifests
+├── terraform/                      # AWS infrastructure
+├── docker-compose.yml              # local stack
+└── pom.xml                         # Maven build
 ```
 
-Grafana dashboards (`:3003`): **`stride-jvm`** (JVM & HTTP per endpoint),
-**`stride-slo`** (SLIs, burn rate, error budget), **`stride-cost`** (spend by
-team and model). Alert deliveries locally: `docker compose logs -f alert-sink`.
+## How to run
 
-## Getting Started
+### Getting started with Docker
 
-### Quick Start with Docker (Recommended)
-
-The easiest way to run the application is with Docker Compose.
-
-#### Prerequisites
-- Docker & Docker Compose
-- Make (optional, for convenience commands)
-
-#### Run the Application
+Requirements: Docker and Docker Compose. Make is optional.
 
 ```bash
-# Clone the repository
-git clone https://github.com/erykszczesniak/strava.git
-cd strava
-
-# Start all services (backend, frontend, PostgreSQL)
+git clone https://github.com/erykszczesniak/Stride.git
+cd Stride
 make up
+```
 
-# Or without make:
+Without Make:
+
+```bash
 docker compose up -d --build
 ```
 
-That's it! The application will be available at:
-- **Frontend:** http://localhost (port 80)
-- **Backend API:** http://localhost:8081
-- **Swagger UI:** http://localhost:8081/swagger-ui.html
-- **GraphQL:** http://localhost:8081/graphql
-- **Grafana:** http://localhost:3003 (admin/admin)
-- **Prometheus:** http://localhost:9091
-- **Elasticsearch:** http://localhost:9200
-- **Jaeger (Tracing):** http://localhost:16686
+| URL | Purpose |
+|---|---|
+| [localhost](http://localhost) | React frontend |
+| [localhost:8081](http://localhost:8081) | backend API in Docker |
+| [localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html) | Swagger UI |
+| [localhost:8081/graphql](http://localhost:8081/graphql) | GraphQL |
+| [localhost:9200](http://localhost:9200) | Elasticsearch |
+| [localhost:16686](http://localhost:16686) | Jaeger |
+| [localhost:9091](http://localhost:9091) | Prometheus |
+| [localhost:3003](http://localhost:3003) | Grafana, login `admin/admin` |
 
-#### Sample Users
+Sample accounts use password `password123`:
 
-| Email | Password | Role |
-|-------|----------|------|
-| pan@example.com | password123 | USER |
-| john@example.com | password123 | USER |
-| jane@example.com | password123 | USER |
-| admin@example.com | password123 | ADMIN |
+| Email | Role |
+|---|---|
+| `pan@example.com` | USER |
+| `john@example.com` | USER |
+| `jane@example.com` | USER |
+| `admin@example.com` | ADMIN |
 
-#### Useful Commands
+Useful commands:
 
 ```bash
-# View logs
 make logs
-
-# Stop all services
 make down
-
-# Restart backend only
 docker compose restart backend
-
-# Access database
 docker compose exec db psql -U strava -d stravadb
-
 ```
 
-> For more Docker commands, see [DOCKER.md](DOCKER.md)
+More commands are listed in [`DOCKER.md`](DOCKER.md).
 
----
+### Manual development
 
-### Manual Setup (Development)
-
-If you prefer to run services manually without Docker.
-
-#### Prerequisites
-- Java 21+
-- Node.js 18+
-- Maven 3.9+
-
-#### Backend
+Requirements: Java 21, Node.js 18+ and Maven 3.9+.
 
 ```bash
-# Clone and enter directory
-git clone https://github.com/erykszczesniak/strava.git
-cd strava
-
-# Run with H2 in-memory database (default for dev)
 ./mvnw spring-boot:run
 ```
 
-The API will be available at `http://localhost:8080`
-
-#### Frontend
+The backend uses H2 by default and runs at `http://localhost:8080`.
 
 ```bash
 cd frontend
@@ -435,819 +134,340 @@ npm install
 npm start
 ```
 
-The app will be available at `http://localhost:3000`
+The frontend runs at `http://localhost:3000`.
 
-#### Email Notifications (Optional)
+### Email notifications
 
-To enable email notifications locally, create `src/main/resources/application-local.yml`:
+Create the ignored file `src/main/resources/application-local.yml`:
 
 ```yaml
 spring:
   mail:
     username: your.email@gmail.com
-    password: xxxx-xxxx-xxxx-xxxx   # Gmail App Password
+    password: your-gmail-app-password
 ```
 
-Then run the backend with the `local` profile:
-
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
-```
-
-**Gmail setup:**
-1. Enable 2FA on your Google account
-2. Go to https://myaccount.google.com/apppasswords
-3. Generate an App Password for "Mail"
-4. Paste it in `application-local.yml`
-
-> **Note:** `application-local.yml` is in `.gitignore` and will not be committed.
-
-#### Testing Weekly Summary Email
-
-The weekly summary runs automatically every Monday at 9:00 AM. To trigger it manually for testing, log in as admin and run:
+Run with `./mvnw spring-boot:run -Dspring-boot.run.profiles=local`. Use a Gmail
+App Password, not the account password. Weekly summaries run Monday at 09:00.
+An admin can trigger one manually:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/notifications/weekly-summary/trigger \
   -H "Authorization: Bearer <ADMIN_TOKEN>"
 ```
 
-Get the admin token by logging in as `admin@example.com` / `password123` and copying `localStorage.token` from DevTools.
+### Kubernetes deployment
 
----
-
-### Kubernetes Deployment
-
-Kubernetes manifests are provided in the `k8s/` directory for deploying to any K8s cluster (minikube, kind, EKS, GKE, etc.).
-
-#### Prerequisites
-- A running Kubernetes cluster
-- `kubectl` configured and connected
-- Nginx Ingress Controller installed
-- Container images pushed to a registry (default: `ghcr.io/erykszczesniak/strava-*`)
-
-#### Deploy
+Requirements: a cluster, `kubectl`, Nginx Ingress and published images.
 
 ```bash
-# 1. Create the namespace
 kubectl apply -f k8s/namespace.yaml
-
-# 2. Deploy all resources
 kubectl apply -f k8s/ --recursive
-
-# 3. Verify everything is running
 kubectl get all -n strava
 ```
 
-#### Quick Start with minikube
+For minikube, enable ingress, build images in its Docker environment and map
+`strava.local` to `minikube ip`. Replace all placeholder secrets before a real
+deployment. Manifests cover PostgreSQL, backend, frontend and ingress.
 
 ```bash
-# Start minikube
-minikube start
-
-# Enable Ingress addon
-minikube addons enable ingress
-
-# Build images inside minikube (no registry needed)
-eval $(minikube docker-env)
-docker build -t ghcr.io/erykszczesniak/strava-backend:latest .
-docker build -t ghcr.io/erykszczesniak/strava-frontend:latest ./frontend
-
-# Deploy
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/ --recursive
-
-# Add host entry
-echo "$(minikube ip) strava.local" | sudo tee -a /etc/hosts
-
-# Open in browser
-open http://strava.local
-```
-
-#### Update Secrets
-
-Secrets use base64-encoded placeholder values. Replace them before deploying to a real environment:
-
-```bash
-# Generate a base64-encoded value
-echo -n 'your-real-password' | base64
-
-# Edit the secret files, then apply
-kubectl apply -f k8s/postgres/secret.yaml
-kubectl apply -f k8s/backend/secret.yaml
-```
-
-#### Manifest Structure
-
-```
-k8s/
-├── namespace.yaml          # strava namespace
-├── ingress.yaml            # Nginx Ingress (strava.local)
-├── postgres/
-│   ├── secret.yaml         # DB credentials
-│   ├── configmap.yaml      # PGDATA path
-│   ├── pvc.yaml            # 1Gi persistent volume
-│   ├── deployment.yaml     # Single replica, liveness/readiness probes
-│   └── service.yaml        # ClusterIP :5432
-├── backend/
-│   ├── secret.yaml         # JWT secret, DB password, API keys
-│   ├── configmap.yaml      # Spring config, CORS, Flyway
-│   ├── deployment.yaml     # 2 replicas, startup/liveness/readiness probes
-│   └── service.yaml        # ClusterIP :8080
-└── frontend/
-    ├── configmap.yaml       # Nginx config reference
-    ├── deployment.yaml      # 2 replicas, liveness/readiness probes
-    └── service.yaml         # ClusterIP :80
-```
-
-#### Useful Commands
-
-```bash
-# Check pod status
-kubectl get pods -n strava
-
-# View logs for a pod
 kubectl logs -f deployment/backend -n strava
-
-# Port-forward backend for local debugging
 kubectl port-forward svc/backend 8080:8080 -n strava
-
-# Scale backend replicas
 kubectl scale deployment backend --replicas=3 -n strava
-
-# Delete everything
 kubectl delete namespace strava
 ```
 
-## AWS Deployment (Terraform)
+### AWS deployment with Terraform
 
-Deploy to AWS Free Tier using Terraform. Architecture: ALB → EC2 (Docker) → RDS PostgreSQL.
-
-> **Note:** Currently `docker-compose.prod.yml` includes a local PostgreSQL service. Once AWS RDS is configured via Terraform, the local `postgres` service should be removed and the backend should point to the RDS endpoint instead.
-
-### Prerequisites
-- AWS CLI configured (`aws configure`)
-- Terraform >= 1.5
-- Docker (for building images)
-- An EC2 key pair created in your AWS region
-
-### Deploy
+The example architecture is ALB, EC2 with Docker and RDS PostgreSQL.
 
 ```bash
 cd terraform
-
-# Copy and edit variables
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your values (db_password, jwt_secret, etc.)
-
-# Initialize and apply
 terraform init
 terraform apply
 ```
 
-### Push Docker Images
+After deployment, push backend and frontend images to the generated ECR
+repositories. Use `terraform output -raw alb_dns` to get the application address
+and `terraform destroy` to remove all resources.
 
-After `terraform apply`, push your images to ECR:
+| Resource | Free-tier example |
+|---|---|
+| EC2 | `t3.micro`, 750 hours per month |
+| RDS | PostgreSQL `db.t3.micro`, 750 hours per month |
+| ALB | 750 hours per month |
+| ECR | 500 MB storage |
 
-```bash
-# Login to ECR
-aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $(terraform output -raw ecr_backend_url | cut -d'/' -f1)
+## Screenshots
 
-# Build and push backend
-docker build -t $(terraform output -raw ecr_backend_url):latest ..
-docker push $(terraform output -raw ecr_backend_url):latest
+The preview above shows the main dashboard. The complete screenshot plan covers:
 
-# Build and push frontend
-docker build -t $(terraform output -raw ecr_frontend_url):latest ../frontend
-docker push $(terraform output -raw ecr_frontend_url):latest
-```
+| Area | Features shown |
+|---|---|
+| Authentication | login, registration and password strength |
+| Dashboard | stats, weekly chart, recent activities and user menu |
+| Activities | feed, recording, route map, analysis, photos and comments |
+| Profile | athlete details, statistics and personal records |
+| Goals and challenges | progress, deadlines and leaderboards |
+| Social | clubs, events, follows, likes and reactions |
+| Training | templates and AI-generated plans |
+| Settings | profile, notifications, units, gear and theme |
+| Admin | overview, users, activities and exports |
+| Responsive UI | light mode, dark mode and mobile layout |
 
-### Access the App
+Capture names and routes are listed in
+[`docs/SCREENSHOTS_CHECKLIST.md`](docs/SCREENSHOTS_CHECKLIST.md).
 
-```bash
-# Get the ALB URL
-curl $(terraform output -raw alb_dns)
-```
+## Features
 
-### Infrastructure Overview
+### Native iOS client
 
-| Resource | Type | Free Tier |
-|----------|------|-----------|
-| EC2 | t3.micro | 750 hrs/month |
-| RDS | db.t3.micro PostgreSQL | 750 hrs/month |
-| ALB | Application LB | 750 hrs/month |
-| ECR | Container registry | 500 MB storage |
+[Triathlon Tracker](https://github.com/erykszczesniak/triathlon-tracker-ios)
+uses `/pipeline/v1` for analytics and `/api/v1` for product actions. It supports
+GPS recording, social features, AI coaching, offline fallback, Face ID and
+English or Polish localization.
 
-### Tear Down
+### Activity tracking
 
-```bash
-terraform destroy
-```
+- record running, cycling, swimming, hiking and workouts
+- view distance, duration, pace, calories, elevation and sensor data
+- attach up to five photos, gear, likes, comments and reactions
+- inspect routes, elevation profiles and per-kilometer splits
 
----
+### Activity file import
 
-## API Documentation
+- import GPX, TCX and FIT files from common watches and platforms
+- parse GPS, elevation, heart rate, cadence, power and notes
+- use drag and drop, bundled samples and automatic titles
+- store routes as compact Google Encoded Polylines
 
-Once the backend is running, API documentation is available at:
-- **Swagger UI:** http://localhost:8081/swagger-ui.html
-- **GraphQL Playground:** http://localhost:8081/graphql
+### Personal records
 
-### REST API Endpoints
+- detect best times for standard distances across supported sports
+- use GPS sliding windows or pace estimation when GPS is unavailable
+- recalculate records from the full history after bulk imports
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/v1/auth/register` | User registration |
-| `POST /api/v1/auth/login` | User login |
-| `GET /api/v1/activities` | Get activities |
-| `POST /api/v1/activities` | Create activity |
-| `GET /api/v1/challenges` | Get challenges |
-| `GET /api/v1/clubs` | Get clubs |
-| `GET /api/v1/events` | Get events |
-| `GET /api/v1/users/profile` | Get user profile |
-| `GET /api/v1/notifications` | Get user notifications |
-| `GET /api/v1/notifications/unread-count` | Get unread count |
-| `PUT /api/v1/notifications/{id}/read` | Mark as read |
-| `PUT /api/v1/notifications/read-all` | Mark all as read |
-| `GET /api/v1/notifications/stream` | SSE stream (real-time) |
-| `POST /api/v1/auth/google` | Google OAuth2 login |
-| `POST /api/v1/activities/{id}/photos` | Upload activity photos |
-| `DELETE /api/v1/activities/{id}/photos/{index}` | Delete activity photo |
-| `POST /api/v1/import/activities` | Import GPX/TCX/FIT file and create activity |
-| `GET /api/v1/import/samples` | List bundled sample files available for download |
-| `GET /api/v1/import/samples/{filename}` | Download a bundled sample file |
-| `GET /api/v1/personal-records` | Current user's personal records |
-| `GET /api/v1/personal-records/user/{userId}` | Another user's personal records |
-| `GET /api/v1/personal-records/activity-type/{type}` | Filter PRs by sport |
-| `POST /api/v1/personal-records/recalculate` | Rebuild all PRs from activity history |
-| `GET /api/v1/users/{id}/profile` | Public user profile |
-| `POST /api/v1/export/report/csv` | Export report as CSV |
+### Social features
 
-### GraphQL API
+- follow athletes and view public profiles
+- browse a personalized activity feed
+- join clubs and register for local events
 
-| Query/Mutation | Description |
-|----------------|-------------|
-| `generateReport(dateFrom, dateTo, fields, activityType)` | Dynamic report with selected fields |
-| `dashboard` | Dashboard stats, weekly chart, recent activities |
-| `activities(userId, page, size)` | Paginated activities |
-| `createActivity(input)` | Create new activity |
-| `likeActivity(id)` / `unlikeActivity(id)` | Like/unlike |
-| `followUser(userId)` / `unfollowUser(userId)` | Follow/unfollow |
+### Challenges
 
-### Pipeline API (read-only facade for native clients)
+- join challenges, track progress, compare leaderboards and earn badges
 
-A second, self-contained API surface under `/pipeline/v1/**` serves the
-[triathlon-tracker iOS app](https://github.com/erykszczesniak/triathlon_tracker_tca)'s
-contract without touching the main `/api/v1` shapes: camelCase JSON, ISO-8601
-dates **with offset**, disciplines `swim|bike|run`, and server-computed
-analytics (per-split times from GPS point timestamps, 17-sample pace/HR
-series, hrTSS-based CTL/ATL/TSB training load).
+### Goals and progress
 
-Auth is a `Bearer` header carrying either a long-lived **personal API token**
-(`tri_...`, SHA-256-hashed at rest, issued by a logged-in user) or a regular
-**Stride JWT** — so an authenticated app session needs no extra credential.
-The `/api/v1` chain still accepts JWTs only.
+- create weekly or monthly goals and view progress charts
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/v1/pipeline/tokens` | Issue a personal token (plaintext shown once) |
-| `GET /api/v1/pipeline/tokens` | List tokens (masked) |
-| `DELETE /api/v1/pipeline/tokens/{id}` | Revoke a token |
-| `GET /pipeline/v1/dashboard` | Form (CTL/ATL/TSB), weekly snapshots, recent activities |
-| `GET /pipeline/v1/activities` | Activity history (run/bike/swim) |
-| `GET /pipeline/v1/activities/{id}` | Detail + real splits + pace/HR series |
-| `GET /pipeline/v1/metrics/load?range=4w\|3m\|1y` | CTL/ATL series, weekly volumes, week summary |
-| `GET /pipeline/v1/records` | Personal records (tagged-union values) |
-| `GET /pipeline/v1/athlete/profile` | Athlete, season stats, goal, threshold zones |
+### Notifications
 
-Quick start:
+- receive SSE toasts, emails and weekly summaries
+- configure channels and avoid duplicate unread notifications
 
-```bash
-JWT=$(curl -s -X POST localhost:8080/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"pan@example.com","password":"password123"}' | jq -r .accessToken)
-TOKEN=$(curl -s -X POST localhost:8080/api/v1/pipeline/tokens \
-  -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' \
-  -d '{"name":"my client"}' | jq -r .token)
-curl -s localhost:8080/pipeline/v1/dashboard -H "Authorization: Bearer $TOKEN" | jq
-```
+### Report builder
 
-The iOS client hardcodes `https://<host>/v1/...`, so for a local simulator
-run put a TLS rewrite proxy in front (Caddy):
+- select and reorder GraphQL-backed columns
+- filter, sort, save templates and export CSV or PDF
 
-```caddyfile
-localhost {
-    tls internal
-    rewrite /v1/* /pipeline{uri}
-    reverse_proxy 127.0.0.1:8080
-}
-```
+### Authentication
 
-then trust Caddy's local root in the simulator
-(`xcrun simctl keychain booted add-root-cert "~/Library/Application Support/Caddy/pki/authorities/local/root.crt"`).
+- use email and JWT, Google OAuth or Strava OAuth
 
-## Project Structure
+### User experience
 
-```
-strava/
-├── docker-compose.yml     # Docker services configuration
-├── Dockerfile             # Backend Docker image
-├── Makefile               # Convenience commands
-├── DOCKER.md              # Docker commands reference
-├── terraform/             # AWS infrastructure (Terraform)
-├── k8s/                   # Kubernetes manifests
-│   ├── namespace.yaml
-│   ├── ingress.yaml
-│   ├── postgres/          # DB deployment, service, PVC, secrets
-│   ├── backend/           # API deployment, service, configmap, secrets
-│   └── frontend/          # Web deployment, service, configmap
-├── monitoring/
-│   ├── prometheus/        # Prometheus scrape config
-│   └── grafana/           # Grafana dashboards & provisioning
-├── src/main/java/com/strava/backend/
-│   ├── configuration/     # Spring configurations
-│   ├── controller/        # REST controllers
-│   ├── domain/            # Entity models
-│   ├── dto/               # Data transfer objects
-│   ├── graphql/           # GraphQL resolvers
-│   ├── event/             # Spring events (async notifications)
-│   ├── repository/        # JPA repositories
-│   ├── security/          # JWT & auth
-│   └── service/           # Business logic
-├── frontend/
-│   ├── Dockerfile         # Frontend Docker image
-│   ├── nginx.conf         # Nginx configuration
-│   ├── src/
-│   │   ├── api/           # API services
-│   │   ├── components/    # Reusable components
-│   │   ├── context/       # React contexts
-│   │   ├── pages/         # Page components
-│   │   └── styles/        # Theme & global styles
-│   └── public/
-└── docs/                   # Documentation & screenshots
-```
+- responsive layout, light and dark themes, metric and imperial units
 
-## Observability & Security
+## API documentation
 
-### Monitoring (Prometheus + Grafana)
+Swagger is available at `/swagger-ui.html`; GraphQL is available at `/graphql`.
+Full contracts are in [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md)
+and [`docs/GRAPHQL_DOCUMENTATION.md`](docs/GRAPHQL_DOCUMENTATION.md).
 
-Prometheus scrapes backend metrics every 15s. Grafana comes with a pre-built **JVM & Spring Boot** dashboard.
+Main REST areas:
+
+| Prefix | Responsibility |
+|---|---|
+| `/api/v1/auth` | registration, login, refresh and OAuth |
+| `/api/v1/activities` | activity CRUD, photos, likes and comments |
+| `/api/v1/import` | GPX, TCX and FIT import |
+| `/api/v1/personal-records` | records and recalculation |
+| `/api/v1/users` | profiles, follows and search |
+| `/api/v1/notifications` | list, read state and SSE stream |
+| `/api/v1/{clubs,events,challenges,goals,gear}` | community and planning features |
+| `/api/v1/ai` | AI chat, goals and plans |
+| `/api/v1/export` | report export |
+
+GraphQL supports reports, dashboard data, activities and social mutations.
+
+### Pipeline API
+
+`/pipeline/v1` is a read-only analytics facade for the iOS client. It returns
+activities, splits, CTL, ATL, TSB, weekly volume, records and athlete profiles.
+Authentication accepts a Stride JWT or a long-lived `tri_` token. Personal
+tokens are issued, listed and revoked under `/api/v1/pipeline/tokens`.
+
+For local iOS development, place a TLS proxy such as Caddy in front of
+`localhost:8080` and rewrite `/v1/*` to `/pipeline/v1/*`.
+
+## Observability and security
+
+### Monitoring
+
+Prometheus scrapes the backend every 15 seconds. Grafana includes `stride-jvm`,
+`stride-slo` and `stride-cost` dashboards.
+
+### Alerting
+
+Prometheus rules live in `monitoring/alerts/`. Every alert has labels, a runbook
+and a promtool test. Alertmanager routes notifications by severity and team.
 
 ```bash
-# Start the full stack (includes Prometheus + Grafana)
-docker compose up -d --build
+docker compose logs -f alert-sink
+python3 monitoring/scripts/check_alert_rules.py
 ```
 
-**Prometheus** — http://localhost:9091
+### Elasticsearch
 
-Check targets status at [/targets](http://localhost:9091/targets) — backend should show as `UP`.
+User search uses the `users` index. Startup seeds up to 1000 users and async
+events keep the index updated. If Elasticsearch is unavailable, search falls
+back to SQL `ILIKE`.
 
-Example queries to try in [/graph](http://localhost:9091/graph):
+### Distributed tracing
 
-```promql
-# HTTP request rate per endpoint
-rate(http_server_requests_seconds_count[1m])
+Micrometer and OpenTelemetry export HTTP, JDBC, async and manual observations to
+Jaeger over OTLP. Sampling is 100 percent in development and 10 percent in
+production. Configure another collector with `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-# Response time (p95)
-histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))
+### Structured logging
 
-# JVM heap memory usage
-jvm_memory_used_bytes{area="heap"}
+The `dev` profile uses readable console logs with trace IDs. The `prod` profile
+uses JSON logs for aggregation.
 
-# CPU usage
-process_cpu_usage
+### Rate limiting
 
-# HikariCP active connections
-hikaricp_connections_active
+Login allows 10 requests per IP per minute. Registration allows 5. Exceeding a
+limit returns HTTP 429.
 
-# GC pause duration
-rate(jvm_gc_pause_seconds_sum[1m])
-```
+## Operations and quality
 
-**Grafana** — http://localhost:3003 (login: `admin` / `admin`)
+| Area | Included |
+|---|---|
+| CI | backend and frontend tests, JaCoCo, ArchUnit and PostgreSQL migrations |
+| Security | CodeQL, Trivy, Dependabot and auth rate limits |
+| Alerts | tested Prometheus rules, owners, runbooks and Alertmanager |
+| SLOs | availability, latency, AI reliability and burn-rate alerts |
+| AI safety | prompt checks, PII masking, rate limits, failover and evals |
+| Cost | service and model attribution, dashboards and spend alerts |
+| Verification | smoke tests and nightly Playwright E2E tests |
+| Decisions | ADRs, runbooks and post-mortems |
 
-Go to **Dashboards → Stride — JVM & Spring Boot (monolith)** (`stride-jvm`) to see:
-- HTTP request rate, p95 latency, error rates (4xx/5xx)
-- JVM heap & non-heap memory
-- GC pause duration
-- Thread counts (live, daemon, peak)
-- System & process CPU usage
-- HikariCP connection pool (active, idle, pending, total)
-
-Two more provisioned dashboards: **`stride-slo`** (error ratio and slow-request
-ratio per window, burn rate, 30-day error budget) and **`stride-cost`**
-(modelled infra USD/h by team, AI spend by provider/model).
-
-### Alerting (Prometheus rules + Alertmanager)
-
-Rules live in [`monitoring/alerts/`](monitoring/alerts) (one file per concern:
-platform, services, slo, ai, cost, self-observability) and are mounted into
-Prometheus; Alertmanager (`:9093`) routes by `severity` and `team` and, locally,
-delivers every notification to the `alert-sink` echo container:
+Useful checks:
 
 ```bash
-docker compose logs -f alert-sink          # what a pager / Teams channel would receive
-curl -X POST localhost:9091/-/reload       # reload rules after editing them
-docker run --rm -v "$PWD/monitoring:/m" --entrypoint sh prom/prometheus:v2.55.0 \
-  -c 'promtool test rules /m/alerts/tests/*.test.yml'
+./mvnw verify
+python3 monitoring/scripts/check_alert_rules.py
+make smoke
 ```
 
-Every alert carries `severity`, `team`, `tier`, `service`, a `runbook_url` into
-[`docs/runbooks/`](docs/runbooks) and has a firing test case; CI rejects the
-rest (`monitoring/scripts/check_alert_rules.py`). The SLO targets and the
-burn-rate maths are in [`docs/slo.md`](docs/slo.md).
+Details are in [`CHANGELOG.md`](CHANGELOG.md), [`docs/slo.md`](docs/slo.md),
+[`docs/runbooks/`](docs/runbooks), [`docs/ai-guardrails.md`](docs/ai-guardrails.md)
+and [`docs/cost-attribution.md`](docs/cost-attribution.md).
 
-### Elasticsearch (user search)
+## Recent features - configuration and testing
 
-Full-text user search (`GET /api/v1/users/search?query=...`) is backed by an
-Elasticsearch 8 index synced from PostgreSQL via an async event listener
-(`UserSearchIndexSyncListener`). If Elasticsearch is unreachable the controller
-falls back to the legacy SQL `ILIKE` implementation so search keeps working
-(possibly with lower quality) during an outage.
+| Feature | Configuration or verification |
+|---|---|
+| Flyway order | V12 elevation, V13 gear, V14 Strava; recreate stale dev databases if history differs |
+| Per-km splits | open an activity with distance and duration |
+| Kotlin PR service | run `./mvnw test -Dtest=PersonalRecordServiceImplTest` |
+| Elevation chart | open seeded activity 2 or import a file with elevation |
+| Gear tracking | add gear in Settings, assign it to an activity and verify totals |
+| OpenTelemetry | start Jaeger, call an endpoint and inspect `stride-backend` |
+| Strava import | provide client ID, secret and exact callback URI |
+| Elasticsearch | start the container and query `/api/v1/users/search` |
 
-The index is named `users` and is seeded on startup from the database (capped at
-1000 users) whenever it's missing or empty, so fresh clones / docker volumes
-don't need manual backfill.
-
-Manual queries:
-
-```bash
-# List everything in the index
-curl http://localhost:9200/users/_search?q=*
-
-# Match users by bio / city / name (multi_match with fullName boosted)
-curl 'http://localhost:9200/users/_search' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": {
-      "multi_match": {
-        "query": "marathon",
-        "fields": ["fullName^3", "firstName^2", "lastName^2", "bio", "city"]
-      }
-    }
-  }'
-
-# Check the mapping produced from UserDocument
-curl http://localhost:9200/users/_mapping
-```
-
-### Distributed Tracing (OpenTelemetry + Jaeger)
-
-The backend emits OpenTelemetry spans via the Micrometer tracing bridge and exports them with the OTLP HTTP protocol to a Jaeger all-in-one container. 100% sampling in dev, 10% in prod.
-
-Automatic instrumentation covers:
-- HTTP server spans (every REST/GraphQL controller call)
-- JDBC spans (via Spring Boot's DataSource auto-config)
-- Outgoing RestTemplate/WebClient calls
-- Async execution: `@Async` methods propagate the parent trace context via a Micrometer `ContextExecutorService` wired through `AsyncConfiguration` (otherwise the `NotificationEventListener` spans would start as new roots)
-
-Manual instrumentation via Micrometer `Observation` API:
-- `PersonalRecordServiceImpl.recalculateAllPRs` opens a parent observation and two child observations (`personal-record.delete-existing` and `personal-record.recompute-loop`), so a trace in Jaeger clearly shows which phase dominated the overall call. The per-activity `checkAndUpdatePRs` calls then emit JDBC child spans via auto-instrumentation.
-
-**Jaeger UI** — http://localhost:16686
-
-Quick walkthrough:
-
-```bash
-# Generate some traffic
-curl -s http://localhost:8081/actuator/health
-curl -s http://localhost:8081/api/v1/activities
-
-# Confirm Jaeger has registered the backend as a service
-curl -s http://localhost:16686/api/services | jq
-# => { "data": ["stride-backend", "jaeger-query"], ... }
-```
-
-Then open http://localhost:16686, pick `service=stride-backend`, find the span for `GET /api/v1/activities`, and inspect the nested JDBC children. For the PR recalculation, hit `POST /api/v1/personal-records/recalculate` and you'll see the `recalculateAllPRs → deleteExistingPRsForUser → recomputePRsForActivities → checkAndUpdatePRs → JDBC` nested trace.
-
-Log lines in the `dev` profile now carry `[service,traceId,spanId]` so Jaeger traces can be cross-referenced with application logs. Prod JSON logs include `traceId` / `spanId` as top-level fields for log-aggregation platforms.
-
-**Config override:** The OTLP endpoint is exposed via the `OTEL_EXPORTER_OTLP_ENDPOINT` env var (default `http://localhost:4318/v1/traces`) — set it to your collector if you prefer Tempo, Honeycomb, etc.
-
-Grafana also has Jaeger wired as a datasource, so traces can be queried from Grafana dashboards alongside Prometheus metrics.
-
-### Structured Logging
-
-Logging format depends on the active Spring profile:
-
-| Profile | Format | Use case |
-|---------|--------|----------|
-| `dev` (default) | Colored console | Local development |
-| `prod` | JSON (Logstash encoder) | Production / log aggregation |
-
-```bash
-# View backend logs (dev - human readable)
-docker compose logs -f backend
-
-# Test JSON output with prod profile
-SPRING_PROFILES_ACTIVE=prod docker compose up backend
-```
-
-Example JSON log line (prod):
-```json
-{
-  "@timestamp": "2026-03-10T16:40:12.345Z",
-  "level": "INFO",
-  "logger_name": "c.s.b.StravaApplication",
-  "message": "Started StravaApplication in 4.2 seconds",
-  "thread_name": "main"
-}
-```
-
-### Rate Limiting
-
-Auth endpoints are protected against brute-force attacks with a per-IP sliding window rate limiter:
-
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| `POST /api/v1/auth/login` | 10 requests | 1 minute |
-| `POST /api/v1/auth/register` | 5 requests | 1 minute |
-
-When the limit is exceeded, the API returns `429 Too Many Requests`:
-
-```json
-{"error": "Too many requests. Please try again later."}
-```
-
-Test it:
-
-```bash
-# Send 12 login requests — the last 2 should return 429
-for i in $(seq 1 12); do
-  echo "Request $i: $(curl -s -o /dev/null -w '%{http_code}' \
-    -X POST http://localhost:8081/api/v1/auth/login \
-    -H 'Content-Type: application/json' \
-    -d '{"email":"test@test.com","password":"wrong"}')"
-done
-```
-
-Expected output:
-```
-Request 1: 401
-...
-Request 10: 401
-Request 11: 429
-Request 12: 429
-```
-
----
-
-## Recent Features — Configuration & Testing
-
-Seven features landed together in PRs #97–#103. Four of them work out of the box; three need either external services (Jaeger, Elasticsearch) or third-party credentials (Strava).
-
-### Flyway migration order
-
-Added in this batch:
-
-| Version | File | Feature |
-|---|---|---|
-| `V12` | `add_activity_elevation_profile.sql` | Elevation profile (#99) |
-| `V13` | `add_gear.sql` | Gear tracking (#100) |
-| `V14` | `add_strava_integration.sql` | Strava import (#102) |
-
-All three originally claimed V12 during parallel development; commit `6931e5e` renumbered them. If your local DB was boot-tested between the partial merges and its `flyway_schema_history` disagrees with this order, either `flyway repair` or drop/recreate the dev database.
-
-### Per-km splits table (#97)
-Pure frontend, no configuration. Open any activity detail page with both a distance and duration — the **Splits** section appears below the Route Map. Uniform pace per km/mi (respects the `UnitsContext` imperial toggle).
-
-### Kotlin migration — `PersonalRecordService` (#98)
-No configuration. Kotlin `1.9.25` pinned in `pom.xml`. Verify with:
-
-```bash
-./mvnw test -Dtest=PersonalRecordServiceImplTest   # 14/14 green
-```
-
-Or just boot the app and hit any PR endpoint — interop with the Java mapper/controller/repository is transparent.
-
-### Elevation profile chart (#99)
-No configuration. Existing activities without a stored altitude series render nothing (graceful fallback). To see it:
-
-- Open sample activity `id=2` — the V12 migration seeds a 20-point hill profile, so `/activities/2` shows the chart.
-- Or import a GPX/TCX file that contains `<ele>` tags — all three parsers (GPX, TCX, FIT) now capture the per-point altitude list.
-
-### Gear tracking (#100)
-No configuration. End-to-end flow:
-
-1. **Settings → Gear** (new tab) → **Add gear** → create e.g. "Saucony Endorphin Pro 3" / SHOES / `activityTypes=RUN`.
-2. **Record Activity** → select RUN → pick the gear in the new dropdown → save.
-3. Open the activity detail — the gear name is shown next to Avg HR.
-4. Back on the Gear tab — `distance_km_total` has bumped by the activity's distance, `activityCount` incremented.
-5. Delete the activity — the totals decrement (clamped at zero).
-
-### OpenTelemetry + Jaeger distributed tracing (#101)
-
-**Default behaviour:** tracing is enabled with sampling 1.0, exporting OTLP HTTP to `localhost:4318/v1/traces`. When no Jaeger is running, the app still boots cleanly but the BatchSpanProcessor retries the export every 30 s. The `dev` profile silences that retry log to ERROR-only.
-
-**To see traces end-to-end:**
-
-```bash
-docker compose up -d jaeger
-```
-
-Then:
-
-- Hit any endpoint, e.g. `curl http://localhost:8080/actuator/health`.
-- Open **Jaeger UI → http://localhost:16686**, pick `service = stride-backend`, find your span.
-
-**Showing off nested spans:** `POST /api/v1/personal-records/recalculate` emits three nested Observations — `personal-record.recalculateAllPRs → delete-existing → recompute-loop`. The Jaeger timeline view makes it obvious which phase dominated.
-
-**Pointing at a different collector (Tempo, Honeycomb, …):**
-
-```bash
-export OTEL_EXPORTER_OTLP_ENDPOINT=https://your-collector/v1/traces
-```
-
-### Strava OAuth import (#102)
-
-This feature **requires real Strava API credentials.** Without them the backend logs a WARN at startup and every `/api/v1/integrations/strava/*` endpoint returns 503; the Settings UI shows the "Connect to Strava" row as disabled.
-
-**Getting credentials (~2 minutes):**
-
-1. Go to https://www.strava.com/settings/api, create an application.
-2. Note the `Client ID` and `Client Secret`.
-3. Set the Authorization Callback Domain to `localhost` (or your real domain in production).
-
-**Configure (in `application-local.yml`, which is gitignored — safe for secrets):**
+Optional Strava configuration belongs in ignored
+`src/main/resources/application-local.yml`:
 
 ```yaml
 app:
   strava:
     client-id: "1234567"
-    client-secret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    client-secret: "replace-me"
     redirect-uri: "http://localhost:8080/api/v1/integrations/strava/callback"
 ```
 
-The `redirect-uri` must match exactly what's registered on developer.strava.com.
+Without Strava credentials the integration returns HTTP 503. Without
+Elasticsearch, user search continues through SQL.
 
-**End-to-end test:**
+## Running tests
 
-1. Restart the backend so the new env vars are picked up.
-2. Open **Settings → Account → Connected services**, click **Connect to Strava**.
-3. Strava's OAuth consent page appears → approve → browser redirects back to `/settings?stravaConnected=true`.
-4. Hit **Import from Strava**. An async job runs; rate-limited to 100 req / 15 min (sliding window).
-5. Your real Strava activities appear in the feed with titles, GPS tracks, HR, etc.
-
-Token refresh is handled automatically — the next import after expiry hits `POST /oauth/token` transparently.
-
-### Elasticsearch user search (#103)
-
-**Default behaviour:** the app boots without Elasticsearch — you'll see one WARN at startup and user search falls back to SQL `ILIKE`. Search still works, just without fuzzy matching or field boosts.
-
-**Enable full ES-backed search:**
+### Backend
 
 ```bash
-docker compose up -d elasticsearch
+./mvnw verify
+./mvnw test
 ```
 
-On the next app start, `UserSearchIndexInitializer` seeds the index from the DB (capped at 1000 users). After that, every user save / update / delete fires an async event that upserts/removes the ES document.
+`verify` runs unit and integration tests, ArchUnit, JaCoCo and the AI prompt
+guard golden set. Tests requiring Docker skip when Docker is unavailable. Live
+AI evals require provider keys and the `live-eval` group.
 
-**Verify the index directly:**
+### Frontend unit and component tests
 
-```bash
-# List everything
-curl 'http://localhost:9200/users/_search?q=*'
-
-# Multi-match query: fullName^3, firstName^2, lastName^2, bio, city
-curl 'http://localhost:9200/users/_search' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": {
-      "multi_match": {
-        "query": "marathon",
-        "fields": ["fullName^3", "firstName^2", "lastName^2", "bio", "city"]
-      }
-    }
-  }'
-
-# Confirm the mapping
-curl 'http://localhost:9200/users/_mapping'
-```
-
-Or use the UI search bar — results come from the ES-backed endpoint first; on any exception the controller swallows it and retries via SQL, so a flaky cluster never breaks search for end users.
-
-**Test through the app's own endpoint** (`GET /api/v1/users/search`) — this is the path the UI uses, ES-backed with the SQL fallback:
-
-```bash
-# Needs a JWT — grab one from the login response first
-TOKEN=...
-
-# Normal query
-curl -H "Authorization: Bearer $TOKEN" \
-  'http://localhost:8080/api/v1/users/search?query=marathon'
-
-# Fuzzy match — ES tolerates the typo, plain SQL ILIKE would not
-curl -H "Authorization: Bearer $TOKEN" \
-  'http://localhost:8080/api/v1/users/search?query=marathn'
-```
-
-**Prove the fallback works:** with the app running, stop Elasticsearch (`docker compose stop elasticsearch`) and hit the endpoint again. It still returns results, and the log shows `Elasticsearch user search failed, falling back to SQL ILIKE` — the fuzzy match just stops working until ES is back.
-
-### Full local stack in one command
-
-```bash
-# Postgres + Elasticsearch + Jaeger + Grafana + Prometheus
-docker compose up -d
-
-# Backend with dev + local profiles
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local
-
-# Frontend
-cd frontend && npm install && npm start
-```
-
-### URLs cheat-sheet
-
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| GraphQL | http://localhost:8080/graphql |
-| Actuator | http://localhost:8080/actuator |
-| Jaeger UI | http://localhost:16686 |
-| Elasticsearch | http://localhost:9200 |
-| Prometheus | http://localhost:9091 |
-| Grafana | http://localhost:3003 (admin/admin) |
-
----
-
-## Running Tests
-
-The project has a three-layer test pyramid covering backend, frontend unit/component, and frontend end-to-end.
-
-### Backend (JUnit 5 + Mockito + Testcontainers)
-```bash
-./mvnw verify      # unit + integration tests, ArchUnit rules, JaCoCo gate (60 % / 40 %), guard golden eval
-./mvnw test        # tests only
-```
-
-`verify` is what CI runs: 840 tests (Testcontainers ones skip without Docker),
-the architecture rules in `ArchitectureTest`, the coverage floor, and the
-42-case prompt-guard golden set. Live evals against the real providers are
-tagged `live-eval` and run only with `ANTHROPIC_API_KEY` / `GROQ_API_KEY`
-(weekly `ai-eval` workflow, or `./mvnw test -Dgroups=live-eval`).
-
-Key suites for recently added features:
-- `GeoUtilsTest` — polyline format detection (legacy JSON vs Google Encoded), Haversine, encode/decode round-trip
-- `FitParserTest` — hand-crafted byte-stream fixtures covering little-endian header parsing, developer fields, compressed timestamps, signature validation
-- `PersonalRecordServiceImplTest` — PR detection thresholds, sliding-window algorithm, recalculate delete-before-fetch ordering
-- `ImportServiceImplTest` — parser selection, validation, sample listing, path-traversal rejection
-- `FitParserDebugTest` — opt-in regression test that runs the parser against a real `.fit` file passed via `-Dfit.debug.file=/path/to/file.fit`
-
-### Frontend unit + component (Jest + React Testing Library)
 ```bash
 cd frontend
 npm test
 ```
 
-Covers `utils/polyline`, `utils/formatters`, API services (`ImportService`, `PersonalRecordService`), and the `PersonalRecords` component (loading/empty/data states, Recalculate flow, improvement badge, date-as-link).
+### Frontend end-to-end tests
 
-### Frontend end-to-end (Playwright)
 ```bash
-make e2e-up                 # compose stack with the backend also on :8080
-make smoke                  # API + monitoring pipeline against the running stack
-cd frontend && npm start    # SPA on :3000, proxies /api to :8080
-cd frontend && npm run e2e  # Playwright
+make e2e-up
+make smoke
+cd frontend && npm start
+cd frontend && npm run e2e
 ```
 
-The nightly `E2E` workflow does the same on a runner (`.github/workflows/e2e.yml`).
-
-Suites in `frontend/e2e/`:
-- `auth.spec.ts` — login / logout flow
-- `activities.spec.ts` — create, view, like/unlike
-- `notifications.spec.ts` — real-time notification delivery
-- `import.spec.ts` — mode toggle, dropzone, sample download, GPX upload + clean-up, client-side validation rejection
-- `personal-records.spec.ts` — PR tab on own and public profiles, Recalculate network roundtrip, seeded activity → grouped PR row
+Playwright covers authentication, activities, notifications, imports and
+personal records. CI runs the full flow nightly.
 
 ## Documentation
 
-| Document | What it answers |
+| Document | Topic |
 |---|---|
-| [`docs/slo.md`](docs/slo.md) | the three objectives, burn-rate alerting, error-budget policy |
-| [`docs/runbooks/`](docs/runbooks) · [`docs/postmortems/`](docs/postmortems) | what to do when it pages; how incidents are written up |
-| [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | rate limits, prompt guard, PII masking, failover, cost telemetry, evals |
-| [`docs/cost-attribution.md`](docs/cost-attribution.md) | who pays for what, and how the model is built |
-| [`docs/observability.md`](docs/observability.md) | metrics, tracing, logs, alerting — and the known gaps |
-| [`docs/adr/`](docs/adr) | the decisions, their alternatives and their known gaps |
-| [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) · [`docs/GRAPHQL_DOCUMENTATION.md`](docs/GRAPHQL_DOCUMENTATION.md) | the public contract |
-| [`AGENTS.md`](AGENTS.md) | commands, invariants and definition of done for humans and coding agents |
-| [`CHANGELOG.md`](CHANGELOG.md) | what changed, release by release |
+| [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | REST API |
+| [`docs/GRAPHQL_DOCUMENTATION.md`](docs/GRAPHQL_DOCUMENTATION.md) | GraphQL API |
+| [`docs/observability.md`](docs/observability.md) | metrics, traces, logs and alerts |
+| [`docs/slo.md`](docs/slo.md) | SLOs, burn rates and error budgets |
+| [`docs/runbooks/`](docs/runbooks) | incident response |
+| [`docs/postmortems/`](docs/postmortems) | incident analysis |
+| [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | AI safety, privacy and evals |
+| [`docs/cost-attribution.md`](docs/cost-attribution.md) | infrastructure and AI costs |
+| [`docs/adr/`](docs/adr) | architecture decisions |
+| [`CHANGELOG.md`](CHANGELOG.md) | release history |
+| [`AGENTS.md`](AGENTS.md) | repository rules and commands |
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Fork the repository.
+2. Create a focused branch.
+3. Add code, tests and documentation.
+4. Use a Conventional Commit message.
+5. Open a pull request and include the commands actually verified.
 
 ## License
 
-Copyright © 2026 Eryk Szczęśniak. Licensed under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
-
-The source is published for portfolio review and personal / educational use only. Commercial use, redistribution, sublicensing, or use as part of any product or service offered for compensation is prohibited without prior written permission from the copyright holder.
+Copyright (c) 2026 Eryk Szczesniak. Licensed under the
+[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
+Portfolio review and personal or educational use are allowed. Commercial use
+requires written permission from the copyright holder.
 
 ## Acknowledgments
 
-- Inspired by [Strava](https://www.strava.com/)
-- Icons by [React Icons](https://react-icons.github.io/react-icons/)
-- Charts by [Recharts](https://recharts.org/)
+- inspired by [Strava](https://www.strava.com/)
+- icons by [React Icons](https://react-icons.github.io/react-icons/)
+- charts by [Recharts](https://recharts.org/)
