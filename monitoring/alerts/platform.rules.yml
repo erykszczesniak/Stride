@@ -1,0 +1,131 @@
+# Edge and availability alerts: is the platform up, and are users getting
+# errors at the gateway. Every rule carries the label contract described in
+# .github/instructions/alert-rules.instructions.md and has cases in
+# tests/platform.test.yml.
+groups:
+  - name: stride-platform
+    rules:
+
+      # ------------------------------------------------------------------
+      # Availability. Two complementary signals: `up == 0` catches a target
+      # Prometheus still knows about (static jobs, or a service Eureka has not
+      # yet expired); absent() catches the Eureka case, where a dead service
+      # is deregistered after 30 s and its `up` series simply vanishes.
+      # ------------------------------------------------------------------
+      - alert: ServiceDown
+        expr: up{job=~"stride-services|discovery-server|config-server"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} scrape failing ({{ $labels.instance }})"
+          description: "Prometheus cannot scrape {{ $labels.app }} at {{ $labels.instance }} for 2 minutes. The instance is down or its /actuator/prometheus endpoint is unreachable."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/service-down.md
+          dashboard_url: http://localhost:3001/d/stride-jvm
+
+      - alert: ServiceMissing
+        expr: |
+          absent(up{app="api-gateway"}) or absent(up{app="user-service"})
+            or absent(up{app="activity-service"}) or absent(up{app="social-service"})
+            or absent(up{app="notification-service"}) or absent(up{app="club-event-service"})
+            or absent(up{app="challenge-goal-service"}) or absent(up{app="ai-service"})
+            or absent(up{app="web-bff"}) or absent(up{app="pipeline-service"})
+        for: 3m
+        labels:
+          severity: critical
+          team: platform
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} has no instances registered"
+          description: "No {{ $labels.app }} instance is registered in Eureka, so Prometheus has no target for it. Either every replica is down or the service never registered after a deploy."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/service-down.md
+
+      # ------------------------------------------------------------------
+      # Edge error rate — a ratio, never a count. Actuator is excluded so
+      # probe traffic neither hides nor causes an alert.
+      # ------------------------------------------------------------------
+      - alert: GatewayHighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="api-gateway",status=~"5..",uri!~"/actuator.*"}[5m]))
+            /
+          sum(rate(http_server_requests_seconds_count{app="api-gateway",uri!~"/actuator.*"}[5m]))
+            > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          tier: "2"
+          service: api-gateway
+          app: api-gateway
+        annotations:
+          summary: "Gateway 5xx ratio {{ $value | humanizePercentage }} over 5m"
+          description: "More than 5% of requests through the API gateway end in 5xx. Users are seeing errors. Check which route (routeId) and which downstream service is failing before touching the gateway."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/gateway-high-error-rate.md
+          dashboard_url: http://localhost:3001/d/stride-slo
+
+      - alert: GatewayElevatedErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="api-gateway",status=~"5..",uri!~"/actuator.*"}[10m]))
+            /
+          sum(rate(http_server_requests_seconds_count{app="api-gateway",uri!~"/actuator.*"}[10m]))
+            > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          tier: "1"
+          service: api-gateway
+          app: api-gateway
+        annotations:
+          summary: "Gateway 5xx ratio {{ $value | humanizePercentage }} over 10m"
+          description: "Between 1% and 5% of edge requests fail. Not paging yet, but the error budget is burning — see the SLO dashboard."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/gateway-high-error-rate.md
+          dashboard_url: http://localhost:3001/d/stride-slo
+
+      # ------------------------------------------------------------------
+      # Silence is a failure too: traffic that collapses to ~zero while the
+      # gateway reports healthy usually means DNS, ingress, or a broken
+      # frontend deploy — nothing a 5xx ratio would ever show.
+      # ------------------------------------------------------------------
+      - alert: GatewayTrafficCollapse
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="api-gateway",uri!~"/actuator.*"}[10m])) < 0.05
+            and
+          sum(rate(http_server_requests_seconds_count{app="api-gateway",uri!~"/actuator.*"}[1h] offset 1h)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: api-gateway
+          app: api-gateway
+        annotations:
+          summary: "Edge traffic collapsed to {{ $value | humanize }} req/s"
+          description: "Requests through the gateway dropped below 0.05 req/s for 10 minutes although the previous hour averaged above 0.5 req/s. The gateway is reachable by Prometheus but users are not arriving."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/gateway-traffic-collapse.md
+
+      # ------------------------------------------------------------------
+      # Edge latency. p95 over 1 s for 10 minutes; the per-service latency
+      # alert in services.rules.yml tells you which hop is slow.
+      # ------------------------------------------------------------------
+      - alert: GatewayHighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{app="api-gateway",uri!~"/actuator.*"}[5m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          tier: "1"
+          service: api-gateway
+          app: api-gateway
+        annotations:
+          summary: "Gateway p95 latency {{ $value | humanizeDuration }}"
+          description: "95th percentile of edge request latency is above 1 s for 10 minutes."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/high-latency.md
+          dashboard_url: http://localhost:3001/d/stride-slo

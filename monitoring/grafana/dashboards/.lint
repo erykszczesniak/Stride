@@ -1,0 +1,16 @@
+# grafana/dashboard-linter configuration for the provisioned dashboards.
+#
+# The strict ruleset assumes the kube-prometheus mixin conventions (every
+# query filtered by $job and $instance). Stride is a single-cluster stack
+# whose SLO panels read recording rules that aggregate job/instance away,
+# so those four rules are excluded with a reason; everything else (valid
+# PromQL, $__rate_interval, templated datasource, not editable) is enforced.
+exclusions:
+  target-job-rule:
+    reason: "single-cluster stack; the app label identifies the service, recording rules drop job"
+  target-instance-rule:
+    reason: "panels are per service (app), not per replica; instance is a legend dimension"
+  template-job-rule:
+    reason: "one scrape job (stride-services) for every service"
+  template-instance-rule:
+    reason: "replica selection is not a dashboard concern here"

@@ -8,6 +8,11 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Added
+- Alerts as code: 30 Prometheus rules in five groups (platform, services,
+  kafka, ai, self-observability) with promtool unit tests, a label/runbook
+  contract enforced in CI, Alertmanager routing with inhibition, an alert
+  echo receiver in compose, latency histograms enabled for every service,
+  and the JVM dashboard fixed for the microservices `app` label.
 - CI quality gates: JaCoCo per-module coverage floor (60 % lines / 40 % branches,
   lowest module today 68 % / 56 %), ArchUnit rules in activity-service and
   ai-service, a Testcontainers test running the production PostgreSQL

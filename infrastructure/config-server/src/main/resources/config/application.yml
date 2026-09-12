@@ -22,6 +22,21 @@ management:
       probes:
         enabled: true
       show-details: when-authorized
+  metrics:
+    # Latency histograms for every HTTP server timer. Without this only
+    # count/sum are exported and histogram_quantile() in the SLO/latency
+    # alerts and dashboards returns nothing. The extra SLO boundaries make the
+    # "requests faster than 500 ms" ratio in monitoring/alerts/slo.rules.yml
+    # exact instead of interpolated.
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 100ms,250ms,500ms,1s,2500ms
+    tags:
+      # Stable identity for every metric regardless of how it was scraped
+      # (Eureka SD adds `app`; this survives a static scrape too).
+      application: ${spring.application.name}
   tracing:
     sampling:
       probability: 1.0

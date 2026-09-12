@@ -127,10 +127,41 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle          # `curl -X POST :9090/-/reload` after editing rules
+    networks: [stride-net]
+
+  # Alert routing. Rules come from Prometheus; Alertmanager groups, inhibits
+  # and delivers. Locally every notification lands in `alert-sink`, an HTTP
+  # echo container, so `docker compose logs -f alert-sink` shows exactly what a
+  # pager or Teams channel would receive. Point receivers at real webhooks via
+  # monitoring/alertmanager/alertmanager.yml.
+  alertmanager:
+    profiles: ["observability"]
+    image: prom/alertmanager:v0.27.0
+    container_name: stride-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    networks: [stride-net]
+
+  alert-sink:
+    profiles: ["observability"]
+    image: mendhak/http-https-echo:35
+    container_name: stride-alert-sink
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: "8000"
+      ECHO_BACK_TO_CLIENT: "false"
     networks: [stride-net]
 
   grafana:

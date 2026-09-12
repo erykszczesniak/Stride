@@ -2,23 +2,33 @@
   "annotations": {
     "list": []
   },
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "links": [],
   "panels": [
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "id": 100,
       "title": "HTTP Requests",
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
@@ -26,28 +36,50 @@
             "lineWidth": 2,
             "pointSize": 5,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "reqps"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
       "id": 1,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "HTTP Request Rate",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(http_server_requests_seconds_count{application=\"strava-backend\"}[1m])",
-          "legendFormat": "{{method}} {{uri}} [{{status}}]"
+          "expr": "rate(http_server_requests_seconds_count{app=~\"$app\"}[$__rate_interval])",
+          "legendFormat": "{{method}} {{uri}} [{{status}}]",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "Requests per second per method, uri and status for the selected service(s). Actuator probes are included here; the SLO dashboard excludes them."
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
@@ -55,284 +87,557 @@
             "lineWidth": 2,
             "pointSize": 5,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
       "id": 2,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "HTTP Response Time (p95)",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{application=\"strava-backend\"}[5m]))",
-          "legendFormat": "{{method}} {{uri}}"
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{app=~\"$app\"}[$__rate_interval]))",
+          "legendFormat": "{{method}} {{uri}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "95th percentile HTTP latency per method and uri, from the http_server_requests histogram (enabled via Config Server's percentiles-histogram setting)."
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "bars",
             "fillOpacity": 50,
             "lineWidth": 1,
-            "stacking": { "mode": "normal" }
+            "stacking": {
+              "mode": "normal"
+            }
           },
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
       "id": 3,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "HTTP Errors (4xx / 5xx)",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "increase(http_server_requests_seconds_count{application=\"strava-backend\", status=~\"4..\"}[5m])",
-          "legendFormat": "4xx - {{method}} {{uri}}"
+          "expr": "increase(http_server_requests_seconds_count{app=~\"$app\", status=~\"4..\"}[$__rate_interval])",
+          "legendFormat": "4xx - {{method}} {{uri}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "increase(http_server_requests_seconds_count{application=\"strava-backend\", status=~\"5..\"}[5m])",
-          "legendFormat": "5xx - {{method}} {{uri}}"
+          "expr": "increase(http_server_requests_seconds_count{app=~\"$app\", status=~\"5..\"}[$__rate_interval])",
+          "legendFormat": "5xx - {{method}} {{uri}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "4xx and 5xx responses per rate interval. 5xx above 5 % of traffic for 5 minutes fires ServiceHighErrorRate; 4xx bursts usually mean a client problem."
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
       "id": 101,
       "title": "JVM Memory",
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
             "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "bytes"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
       "id": 4,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "JVM Heap Memory",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{application=\"strava-backend\", area=\"heap\"}",
-          "legendFormat": "Used - {{id}}"
+          "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"heap\"}",
+          "legendFormat": "Used - {{id}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "jvm_memory_max_bytes{application=\"strava-backend\", area=\"heap\"}",
-          "legendFormat": "Max - {{id}}"
+          "expr": "jvm_memory_max_bytes{app=~\"$app\", area=\"heap\"}",
+          "legendFormat": "Max - {{id}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "Heap used vs max. Each JVM sizes its heap from the container limit (MaxRAMPercentage=75). Used above 90 % of max for 10 minutes fires JvmHeapHigh."
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
             "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "bytes"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
       "id": 5,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "JVM Non-Heap Memory",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{application=\"strava-backend\", area=\"nonheap\"}",
-          "legendFormat": "Used - {{id}}"
+          "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"nonheap\"}",
+          "legendFormat": "Used - {{id}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "jvm_memory_max_bytes{application=\"strava-backend\", area=\"nonheap\"}",
-          "legendFormat": "Max - {{id}}"
+          "expr": "jvm_memory_max_bytes{app=~\"$app\", area=\"nonheap\"}",
+          "legendFormat": "Max - {{id}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "Non-heap (metaspace, code cache, compressed class space). Steady growth here usually means class-loading leaks from hot reload or dynamic proxies."
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
       "id": 102,
       "title": "JVM GC & Threads",
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
             "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
       "id": 6,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "GC Pause Duration",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{application=\"strava-backend\"}[1m])",
-          "legendFormat": "{{action}} - {{cause}}"
+          "expr": "rate(jvm_gc_pause_seconds_sum{app=~\"$app\"}[$__rate_interval])",
+          "legendFormat": "{{action}} - {{cause}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "Seconds spent in GC pauses per second of wall time. Above 0.25 (25 %) for 10 minutes fires JvmGcPressure; latency alerts usually follow."
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
             "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
       "id": 7,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "JVM Threads",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{application=\"strava-backend\"}",
-          "legendFormat": "Live"
+          "expr": "jvm_threads_live_threads{app=~\"$app\"}",
+          "legendFormat": "Live",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "jvm_threads_daemon_threads{application=\"strava-backend\"}",
-          "legendFormat": "Daemon"
+          "expr": "jvm_threads_daemon_threads{app=~\"$app\"}",
+          "legendFormat": "Daemon",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "jvm_threads_peak_threads{application=\"strava-backend\"}",
-          "legendFormat": "Peak"
+          "expr": "jvm_threads_peak_threads{app=~\"$app\"}",
+          "legendFormat": "Peak",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "Live, daemon and peak thread counts. A climbing live count with flat traffic points at a thread leak (unbounded executor, blocked consumers)."
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
       "id": 103,
       "title": "System & Connection Pool",
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
             "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "percentunit",
           "max": 1
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
       "id": 8,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "System CPU Usage",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "system_cpu_usage{application=\"strava-backend\"}",
-          "legendFormat": "System CPU"
+          "expr": "system_cpu_usage{app=~\"$app\"}",
+          "legendFormat": "System CPU",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "process_cpu_usage{application=\"strava-backend\"}",
-          "legendFormat": "Process CPU"
+          "expr": "process_cpu_usage{app=~\"$app\"}",
+          "legendFormat": "Process CPU",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "system_cpu_usage is the host/container CPU as seen by the JVM; process_cpu_usage is this JVM's share. Compare with docker stats when the host is saturated."
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "drawStyle": "line",
             "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": false,
-            "stacking": { "mode": "none" }
+            "stacking": {
+              "mode": "none"
+            }
           },
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 36
+      },
       "id": 9,
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
       "title": "HikariCP Connection Pool",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "hikaricp_connections_active{application=\"strava-backend\"}",
-          "legendFormat": "Active"
+          "expr": "hikaricp_connections_active{app=~\"$app\"}",
+          "legendFormat": "Active",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "hikaricp_connections_idle{application=\"strava-backend\"}",
-          "legendFormat": "Idle"
+          "expr": "hikaricp_connections_idle{app=~\"$app\"}",
+          "legendFormat": "Idle",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "hikaricp_connections_pending{application=\"strava-backend\"}",
-          "legendFormat": "Pending"
+          "expr": "hikaricp_connections_pending{app=~\"$app\"}",
+          "legendFormat": "Pending",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
-          "expr": "hikaricp_connections{application=\"strava-backend\"}",
-          "legendFormat": "Total"
+          "expr": "hikaricp_connections{app=~\"$app\"}",
+          "legendFormat": "Total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
-      ]
+      ],
+      "description": "HikariCP pool: active, idle, pending and total. Pending above 0 means requests are waiting for a connection (DbPoolSaturated); timeouts fire DbPoolExhausted."
     }
   ],
   "schemaVersion": 39,
-  "tags": ["spring-boot", "jvm", "strava"],
-  "templating": { "list": [] },
-  "time": { "from": "now-1h", "to": "now" },
+  "tags": [
+    "stride",
+    "jvm",
+    "spring-boot"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Data source",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "selected": false,
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
+        "hide": 0,
+        "refresh": 1
+      },
+      {
+        "name": "app",
+        "label": "Service",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(up{job=\"stride-services\"}, app)",
+        "query": {
+          "query": "label_values(up{job=\"stride-services\"}, app)",
+          "refId": "app"
+        },
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Strava Backend - JVM & Spring Boot",
-  "uid": "strava-jvm",
+  "title": "Stride — JVM & Spring Boot (per service)",
+  "uid": "stride-jvm",
   "version": 1
 }

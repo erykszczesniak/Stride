@@ -1,0 +1,54 @@
+# ai-service: two external LLM providers (Anthropic for chat, Groq for
+# goal/plan generation) behind Resilience4j. Provider trouble must show up as
+# "the provider", not as a generic 5xx on a Kotlin service.
+groups:
+  - name: stride-ai
+    rules:
+
+      - alert: AiProviderCircuitOpen
+        expr: resilience4j_circuitbreaker_state{app="ai-service",state="open"} == 1
+        for: 2m
+        labels:
+          severity: warning
+          team: ai
+          tier: "2"
+          service: ai-service
+        annotations:
+          summary: "ai-service breaker '{{ $labels.name }}' open — provider is being skipped"
+          description: "Calls to '{{ $labels.name }}' are short-circuited. Chat/goal requests fail fast (502/503) until the provider recovers or the failover path takes over."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md
+
+      - alert: AiChatErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="ai-service",uri=~"/api/v1/ai.*",status=~"5.."}[10m]))
+            /
+          sum(rate(http_server_requests_seconds_count{app="ai-service",uri=~"/api/v1/ai.*"}[10m]))
+            > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+          tier: "2"
+          service: ai-service
+          app: ai-service
+        annotations:
+          summary: "AI endpoints failing: {{ $value | humanizePercentage }} 5xx"
+          description: "More than 10% of /api/v1/ai requests fail. 502 = provider error, 503 = not configured or breaker open; the runbook maps each to an action."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md
+
+      - alert: AiChatLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{app="ai-service",uri=~"/api/v1/ai.*"}[10m]))
+          ) > 15
+        for: 10m
+        labels:
+          severity: warning
+          team: ai
+          tier: "1"
+          service: ai-service
+          app: ai-service
+        annotations:
+          summary: "AI p95 latency {{ $value | humanizeDuration }}"
+          description: "95th percentile of AI request latency is above 15 s. The provider is slow or the prompt (recent-history block) has grown; users hit the frontend timeout."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md

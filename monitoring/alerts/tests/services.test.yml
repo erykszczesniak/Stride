@@ -1,0 +1,225 @@
+rule_files:
+  - ../services.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ------------------------------------------------------- ServiceHighErrorRate
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{job="stride-services",app="user-service",status="500",uri="/api/v1/users/me",method="GET"}'
+        values: '0+10x30'
+      - series: 'http_server_requests_seconds_count{job="stride-services",app="user-service",status="200",uri="/api/v1/users/me",method="GET"}'
+        values: '0+90x30'
+      - series: 'http_server_requests_seconds_count{job="stride-services",app="social-service",status="200",uri="/api/v1/activities/feed",method="GET"}'
+        values: '0+90x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ServiceHighErrorRate
+        exp_alerts:
+          - exp_labels:
+              app: user-service
+              severity: critical
+              team: domain
+              tier: "2"
+              service: user-service
+            exp_annotations:
+              summary: "user-service 5xx ratio 10%"
+              description: "More than 5% of requests handled by user-service fail with 5xx for 5 minutes."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/service-high-error-rate.md
+              dashboard_url: http://localhost:3001/d/stride-jvm
+
+  # --------------------------------------------------------- CircuitBreakerOpen
+  - interval: 1m
+    input_series:
+      - series: 'resilience4j_circuitbreaker_state{app="challenge-goal-service",instance="cg:8086",name="activity-service",state="open"}'
+        values: '0 0 1 1 1 1 1 1'
+      - series: 'resilience4j_circuitbreaker_state{app="challenge-goal-service",instance="cg:8086",name="activity-service",state="closed"}'
+        values: '1 1 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: CircuitBreakerOpen
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: CircuitBreakerOpen
+        exp_alerts:
+          - exp_labels:
+              app: challenge-goal-service
+              instance: cg:8086
+              name: activity-service
+              state: open
+              severity: warning
+              team: domain
+              tier: "2"
+              service: challenge-goal-service
+            exp_annotations:
+              summary: "challenge-goal-service: circuit breaker 'activity-service' is open"
+              description: "challenge-goal-service has opened its breaker on 'activity-service' for 2 minutes: calls are short-circuited and users get the fallback path (degraded data or 5xx, depending on the caller). Fix the dependency, not the breaker."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/circuit-breaker-open.md
+
+  # ---------------------------------------------------------------- JvmHeapHigh
+  - interval: 1m
+    input_series:
+      - series: 'jvm_memory_used_bytes{app="user-service",instance="u:8081",area="heap",id="G1 Old Gen"}'
+        values: '950+0x20'
+      - series: 'jvm_memory_max_bytes{app="user-service",instance="u:8081",area="heap",id="G1 Old Gen"}'
+        values: '1000+0x20'
+      - series: 'jvm_memory_used_bytes{app="social-service",instance="s:8084",area="heap",id="G1 Old Gen"}'
+        values: '400+0x20'
+      - series: 'jvm_memory_max_bytes{app="social-service",instance="s:8084",area="heap",id="G1 Old Gen"}'
+        values: '1000+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: JvmHeapHigh
+        exp_alerts:
+          - exp_labels:
+              app: user-service
+              instance: u:8081
+              severity: warning
+              team: domain
+              tier: "1"
+              service: user-service
+            exp_annotations:
+              summary: "user-service heap at 95%"
+              description: "Heap usage on u:8081 stayed above 90% of max for 10 minutes. OOMKill or GC thrash is next; check for a leak (jvm dashboard: heap after GC trending up) before raising the limit."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/jvm-heap-high.md
+              dashboard_url: http://localhost:3001/d/stride-jvm
+
+  # ------------------------------------------------------------ DbPoolExhausted
+  - interval: 1m
+    input_series:
+      - series: 'hikaricp_connections_timeout_total{app="user-service",instance="u:8081",pool="HikariPool-1"}'
+        values: '0 0 0 1 2 3 3 3 3 3'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: DbPoolExhausted
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: DbPoolExhausted
+        exp_alerts:
+          - exp_labels:
+              app: user-service
+              instance: u:8081
+              severity: critical
+              team: domain
+              tier: "2"
+              service: user-service
+            exp_annotations:
+              summary: "user-service requests timed out waiting for a DB connection"
+              description: "Connection acquisitions timed out in the last 5 minutes on u:8081. Those requests failed. This fires immediately: every occurrence is a user-visible error."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/db-pool-exhausted.md
+
+  # ------------------------------------------------------------ DbPoolSaturated
+  - interval: 1m
+    input_series:
+      - series: 'hikaricp_connections_active{app="user-service",instance="u:8081",pool="HikariPool-1"}'
+        values: '19+0x20'
+      - series: 'hikaricp_connections_max{app="user-service",instance="u:8081",pool="HikariPool-1"}'
+        values: '20+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: DbPoolSaturated
+        exp_alerts:
+          - exp_labels:
+              app: user-service
+              instance: u:8081
+              severity: warning
+              team: domain
+              tier: "1"
+              service: user-service
+            exp_annotations:
+              summary: "user-service DB pool 95% in use"
+              description: "More than 90% of the connection pool is busy for 10 minutes. Look for slow queries or a transaction holding connections before growing the pool."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/db-pool-exhausted.md
+
+  # ------------------------------------------------------- ServiceHighLatencyP95
+  # Every request lands in the 2.5 s bucket → p95 interpolates to 2.425 s.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{job="stride-services",app="user-service",uri="/api/v1/users/me",le="0.5"}'
+        values: '0+0x30'
+      - series: 'http_server_requests_seconds_bucket{job="stride-services",app="user-service",uri="/api/v1/users/me",le="1.0"}'
+        values: '0+0x30'
+      - series: 'http_server_requests_seconds_bucket{job="stride-services",app="user-service",uri="/api/v1/users/me",le="2.5"}'
+        values: '0+60x30'
+      - series: 'http_server_requests_seconds_bucket{job="stride-services",app="user-service",uri="/api/v1/users/me",le="+Inf"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ServiceHighLatencyP95
+        exp_alerts:
+          - exp_labels:
+              app: user-service
+              severity: warning
+              team: domain
+              tier: "1"
+              service: user-service
+            exp_annotations:
+              summary: "user-service p95 latency 2.425s"
+              description: "95th percentile latency of user-service is above 500 ms for 10 minutes. Check the slowest `uri` on the JVM dashboard and the downstream circuit breakers before scaling."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/high-latency.md
+              dashboard_url: http://localhost:3001/d/stride-jvm
+
+  # ------------------------------------------------------- RetryBudgetExhausted
+  - interval: 1m
+    input_series:
+      - series: 'resilience4j_retry_calls_total{app="challenge-goal-service",instance="cg:8086",name="activity-service",kind="failed_with_retry"}'
+        values: '0+12x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: RetryBudgetExhausted
+        exp_alerts:
+          - exp_labels:
+              app: challenge-goal-service
+              name: activity-service
+              severity: warning
+              team: domain
+              tier: "1"
+              service: challenge-goal-service
+            exp_annotations:
+              summary: "challenge-goal-service: retries on 'activity-service' keep failing"
+              description: "More than 0.1 calls/s to 'activity-service' fail even after retries. The retry policy is amplifying load on a dependency that is not recovering."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/circuit-breaker-open.md
+
+  # ------------------------------------------------------------- JvmGcPressure
+  # 30 s of GC pause per minute = 50% of wall time.
+  - interval: 1m
+    input_series:
+      - series: 'jvm_gc_pause_seconds_sum{app="user-service",instance="u:8081",action="end of major GC",cause="G1 Evacuation Pause"}'
+        values: '0+30x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: JvmGcPressure
+        exp_alerts:
+          - exp_labels:
+              app: user-service
+              instance: u:8081
+              severity: warning
+              team: domain
+              tier: "1"
+              service: user-service
+            exp_annotations:
+              summary: "user-service spends 50% of wall time in GC"
+              description: "GC pauses consume more than 25% of time on u:8081. Latency alerts usually follow; treat as the same incident."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/jvm-heap-high.md
+
+  # -------------------------------------------------------------- ErrorLogSpike
+  - interval: 1m
+    input_series:
+      - series: 'logback_events_total{app="user-service",instance="u:8081",level="error"}'
+        values: '0+120x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: ErrorLogSpike
+        exp_alerts:
+          - exp_labels:
+              app: user-service
+              severity: warning
+              team: domain
+              tier: "1"
+              service: user-service
+            exp_annotations:
+              summary: "user-service logs 2 errors/s"
+              description: "More than one ERROR log line per second for 10 minutes. Read the logs before anything else: `docker compose logs --since 15m user-service`."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/service-high-error-rate.md

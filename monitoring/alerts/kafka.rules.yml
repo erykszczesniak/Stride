@@ -1,0 +1,96 @@
+# Event pipeline health. The saga in docs/saga.md is at-least-once and
+# choreographed: if a consumer stalls or a producer drops records, users see
+# stale feeds and missing notifications rather than errors. These alerts
+# watch the pipeline itself, not the HTTP surface.
+groups:
+  - name: stride-kafka
+    rules:
+
+      - alert: KafkaConsumerLagHigh
+        expr: max by (app, topic, client_id) (kafka_consumer_fetch_manager_records_lag_max) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          team: data
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} is {{ $value | humanize }} records behind on {{ $labels.topic }}"
+          description: "Consumer lag on {{ $labels.topic }} exceeded 1000 records for 10 minutes. Feeds, notifications and cache evictions driven by this topic are delayed."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+
+      - alert: KafkaConsumerLagCritical
+        expr: max by (app, topic, client_id) (kafka_consumer_fetch_manager_records_lag_max) > 10000
+        for: 5m
+        labels:
+          severity: critical
+          team: data
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} is {{ $value | humanize }} records behind on {{ $labels.topic }}"
+          description: "Consumer lag above 10k records for 5 minutes. At the current rate the consumer will not catch up on its own; see the runbook for the scale-out / skip-poison-pill decision."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+
+      # Lag that keeps growing means the consumer is stuck, even if the
+      # absolute number is still small.
+      - alert: KafkaConsumerStalled
+        expr: |
+          max by (app, topic, client_id) (deriv(kafka_consumer_fetch_manager_records_lag_max[15m])) > 0
+            and
+          max by (app, topic, client_id) (kafka_consumer_fetch_manager_records_lag_max) > 100
+        for: 15m
+        labels:
+          severity: warning
+          team: data
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} lag on {{ $labels.topic }} growing for 15m"
+          description: "Lag on {{ $labels.topic }} has been increasing for 15 minutes. Typical causes: a poison-pill record the listener keeps failing on, or a consumer thread blocked on a downstream call."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+
+      - alert: KafkaListenerFailures
+        expr: sum by (app) (rate(spring_kafka_listener_seconds_count{result="failure"}[5m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          team: data
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} listener failing ({{ $value | humanize }}/s)"
+          description: "A @KafkaListener in {{ $labels.app }} has thrown on every poll for 10 minutes. With the default error handler the same record is retried, so this is usually one bad message blocking the partition."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+
+      - alert: KafkaProducerErrors
+        expr: sum by (app) (rate(kafka_producer_record_error_total[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: data
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} is failing to publish events"
+          description: "The Kafka producer in {{ $labels.app }} reports record errors. Events are being lost, which breaks the saga downstream (no PR detection, no notifications, stale feeds)."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-producer-errors.md
+
+      # Silence check for the pipeline: activities are being created (2xx on
+      # POST /api/v1/activities) but nothing is leaving the producer.
+      - alert: KafkaNoEventsFlowing
+        expr: |
+          sum(rate(http_server_requests_seconds_count{app="activity-service",method="POST",uri=~"/api/v1/activities.*",status=~"2.."}[30m])) > 0
+            and
+          sum(rate(kafka_producer_record_send_total{app="activity-service"}[30m])) == 0
+        for: 15m
+        labels:
+          severity: critical
+          team: data
+          tier: "2"
+          service: activity-service
+          app: activity-service
+        annotations:
+          summary: "Activities are created but no events are published"
+          description: "activity-service accepted activity writes in the last 30 minutes but its Kafka producer sent nothing. Either the broker is unreachable (check KafkaProducerErrors) or publishing was disabled by config."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-producer-errors.md

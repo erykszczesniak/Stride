@@ -4,6 +4,17 @@ global:
   external_labels:
     stack: stride-microservices
 
+# Alerting rules + recording rules live in monitoring/alerts/*.rules.yml and
+# are unit-tested with `promtool test rules` (monitoring/alerts/tests/). CI
+# runs both before anything is merged — see .github/workflows/monitoring.yml.
+rule_files:
+  - /etc/prometheus/rules/*.rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
 scrape_configs:
 
   # ============================================
@@ -17,9 +28,13 @@ scrape_configs:
       - server: http://discovery-server:8761/eureka
         refresh_interval: 30s
     relabel_configs:
-      # Use the Eureka app name as the Prometheus 'app' label.
+      # Use the Eureka app name as the Prometheus 'app' label. Eureka stores
+      # application names upper-cased (ACTIVITY-SERVICE); every rule and
+      # dashboard in this repo matches on the lower-case service name, so the
+      # label is normalised here rather than in each query.
       - source_labels: [__meta_eureka_app_name]
         target_label: app
+        action: lowercase
       # Compose the scrape address from Eureka's IP + port metadata.
       - source_labels: [__meta_eureka_app_instance_ip_addr,
                         __meta_eureka_app_instance_port]
@@ -44,3 +59,17 @@ scrape_configs:
     static_configs:
       - targets: ['config-server:8888']
         labels: { app: config-server }
+
+  # ============================================
+  # Self-observability: the monitoring stack watches itself, so a broken
+  # alert pipeline is itself an alert (see self-observability.rules.yml).
+  # ============================================
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+        labels: { app: prometheus }
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels: { app: alertmanager }

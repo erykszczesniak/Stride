@@ -1,0 +1,157 @@
+# Per-service health: errors, latency, resilience state, JVM and connection
+# pools. Everything is grouped by `app` so one broken service produces one
+# alert per symptom instead of one alert for the whole stack.
+groups:
+  - name: stride-services
+    rules:
+
+      - alert: ServiceHighErrorRate
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="stride-services",status=~"5..",uri!~"/actuator.*"}[5m]))
+            /
+          sum by (app) (rate(http_server_requests_seconds_count{job="stride-services",uri!~"/actuator.*"}[5m]))
+            > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: domain
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} 5xx ratio {{ $value | humanizePercentage }}"
+          description: "More than 5% of requests handled by {{ $labels.app }} fail with 5xx for 5 minutes."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/service-high-error-rate.md
+          dashboard_url: http://localhost:3001/d/stride-jvm
+
+      - alert: ServiceHighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (app, le) (rate(http_server_requests_seconds_bucket{job="stride-services",uri!~"/actuator.*"}[5m]))
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} p95 latency {{ $value | humanizeDuration }}"
+          description: "95th percentile latency of {{ $labels.app }} is above 500 ms for 10 minutes. Check the slowest `uri` on the JVM dashboard and the downstream circuit breakers before scaling."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/high-latency.md
+          dashboard_url: http://localhost:3001/d/stride-jvm
+
+      # ------------------------------------------------------------------
+      # Resilience4j. State gauges are 1 for the current state; `open`
+      # means the dependency is being skipped and callers get fallbacks.
+      # ------------------------------------------------------------------
+      - alert: CircuitBreakerOpen
+        expr: resilience4j_circuitbreaker_state{state="open"} == 1
+        for: 2m
+        labels:
+          severity: warning
+          team: domain
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }}: circuit breaker '{{ $labels.name }}' is open"
+          description: "{{ $labels.app }} has opened its breaker on '{{ $labels.name }}' for 2 minutes: calls are short-circuited and users get the fallback path (degraded data or 5xx, depending on the caller). Fix the dependency, not the breaker."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/circuit-breaker-open.md
+
+      - alert: RetryBudgetExhausted
+        expr: sum by (app, name) (rate(resilience4j_retry_calls_total{kind="failed_with_retry"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }}: retries on '{{ $labels.name }}' keep failing"
+          description: "More than 0.1 calls/s to '{{ $labels.name }}' fail even after retries. The retry policy is amplifying load on a dependency that is not recovering."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/circuit-breaker-open.md
+
+      # ------------------------------------------------------------------
+      # JVM. Heap is compared with the container-derived max; every JVM in
+      # compose/k8s runs with MaxRAMPercentage=75 of its memory limit.
+      # ------------------------------------------------------------------
+      - alert: JvmHeapHigh
+        expr: |
+          sum by (app, instance) (jvm_memory_used_bytes{area="heap"})
+            /
+          sum by (app, instance) (jvm_memory_max_bytes{area="heap"})
+            > 0.90
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} heap at {{ $value | humanizePercentage }}"
+          description: "Heap usage on {{ $labels.instance }} stayed above 90% of max for 10 minutes. OOMKill or GC thrash is next; check for a leak (jvm dashboard: heap after GC trending up) before raising the limit."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/jvm-heap-high.md
+          dashboard_url: http://localhost:3001/d/stride-jvm
+
+      - alert: JvmGcPressure
+        expr: sum by (app, instance) (rate(jvm_gc_pause_seconds_sum[5m])) > 0.25
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} spends {{ $value | humanizePercentage }} of wall time in GC"
+          description: "GC pauses consume more than 25% of time on {{ $labels.instance }}. Latency alerts usually follow; treat as the same incident."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/jvm-heap-high.md
+
+      # ------------------------------------------------------------------
+      # HikariCP. Pending threads means requests are queueing for a
+      # connection; timeouts mean they gave up — that is user-visible.
+      # ------------------------------------------------------------------
+      - alert: DbPoolSaturated
+        expr: |
+          sum by (app, instance) (hikaricp_connections_active)
+            /
+          sum by (app, instance) (hikaricp_connections_max)
+            > 0.90
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} DB pool {{ $value | humanizePercentage }} in use"
+          description: "More than 90% of the connection pool is busy for 10 minutes. Look for slow queries or a transaction holding connections before growing the pool."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/db-pool-exhausted.md
+
+      - alert: DbPoolExhausted
+        expr: sum by (app, instance) (increase(hikaricp_connections_timeout_total[5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: domain
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} requests timed out waiting for a DB connection"
+          description: "Connection acquisitions timed out in the last 5 minutes on {{ $labels.instance }}. Those requests failed. This fires immediately: every occurrence is a user-visible error."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/db-pool-exhausted.md
+
+      # ------------------------------------------------------------------
+      # Log-based canary: a sustained stream of ERROR logs without a matching
+      # HTTP signal usually means a background job or consumer is failing.
+      # ------------------------------------------------------------------
+      - alert: ErrorLogSpike
+        expr: sum by (app) (rate(logback_events_total{level="error"}[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} logs {{ $value | humanize }} errors/s"
+          description: "More than one ERROR log line per second for 10 minutes. Read the logs before anything else: `docker compose logs --since 15m {{ $labels.app }}`."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/service-high-error-rate.md

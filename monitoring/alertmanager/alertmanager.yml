@@ -1,0 +1,90 @@
+# Alertmanager routing for the Stride stack.
+#
+# Routing model (mirrors the label contract in .github/instructions/alert-rules.instructions.md):
+#   severity: critical → page-style receiver, short group_wait, repeats hourly
+#   severity: warning  → ticket-style receiver, grouped per service, repeats every 4h
+#   severity: info     → log only (Watchdog and pre-promotion alerts)
+#   team               → picks the receiver family (platform / domain / ai / data)
+#
+# Locally every receiver is a webhook to the `alert-sink` echo container. Swap
+# the URLs for Teams / Slack / PagerDuty / ServiceNow; the routing stays.
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: warnings-domain
+  group_by: [alertname, app]
+  group_wait: 30s
+  group_interval: 2m
+  repeat_interval: 4h
+  routes:
+    # Dead-man switch: must always be delivered, never grouped with anything.
+    - matchers: [alertname = Watchdog]
+      receiver: watchdog
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 30m
+
+    - matchers: [severity = info]
+      receiver: info-log
+      repeat_interval: 24h
+
+    - matchers: [severity = critical]
+      receiver: pager
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 1h
+      continue: true          # critical also lands in the team's own channel below
+
+    - matchers: [team = platform]
+      receiver: warnings-platform
+    - matchers: [team = ai]
+      receiver: warnings-ai
+    - matchers: [team = data]
+      receiver: warnings-data
+
+# Suppress the consequences while the cause is firing. Both sides must agree on
+# `equal` labels, so every service-level rule carries `app`.
+inhibit_rules:
+  # A dead service explains its own error-rate, latency, pool and JVM alerts.
+  - source_matchers: [alertname =~ "ServiceDown|ServiceMissing"]
+    target_matchers: [severity =~ "warning|info"]
+    equal: [app]
+  # Fast burn implies slow burn on the same service.
+  - source_matchers: [alertname = SLOBurnRateFast]
+    target_matchers: [alertname = SLOBurnRateSlow]
+    equal: [app, slo]
+  # If Prometheus lost service discovery, per-service absence is noise.
+  - source_matchers: [alertname = PrometheusTargetsMissing]
+    target_matchers: [alertname = ServiceMissing]
+
+receivers:
+  - name: pager
+    webhook_configs:
+      - url: http://alert-sink:8000/pager
+        send_resolved: true
+  - name: warnings-domain
+    webhook_configs:
+      - url: http://alert-sink:8000/warnings/domain
+        send_resolved: true
+  - name: warnings-platform
+    webhook_configs:
+      - url: http://alert-sink:8000/warnings/platform
+        send_resolved: true
+  - name: warnings-ai
+    webhook_configs:
+      - url: http://alert-sink:8000/warnings/ai
+        send_resolved: true
+  - name: warnings-data
+    webhook_configs:
+      - url: http://alert-sink:8000/warnings/data
+        send_resolved: true
+  - name: info-log
+    webhook_configs:
+      - url: http://alert-sink:8000/info
+        send_resolved: false
+  - name: watchdog
+    webhook_configs:
+      - url: http://alert-sink:8000/watchdog
+        send_resolved: false

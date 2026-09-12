@@ -1,0 +1,156 @@
+rule_files:
+  - ../kafka.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ------------------------------------------------------- KafkaConsumerLagHigh
+  # 5000 records behind, steady: warning fires, critical (10k) and stalled
+  # (growing) stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'kafka_consumer_fetch_manager_records_lag_max{app="social-service",instance="s:8084",client_id="social-service-consumer-1",topic="activity.created",partition="0"}'
+        values: '5000+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: KafkaConsumerLagHigh
+        exp_alerts:
+          - exp_labels:
+              app: social-service
+              client_id: social-service-consumer-1
+              topic: activity.created
+              severity: warning
+              team: data
+              tier: "2"
+              service: social-service
+            exp_annotations:
+              summary: "social-service is 5k records behind on activity.created"
+              description: "Consumer lag on activity.created exceeded 1000 records for 10 minutes. Feeds, notifications and cache evictions driven by this topic are delayed."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+      - eval_time: 15m
+        alertname: KafkaConsumerLagCritical
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: KafkaConsumerStalled
+        exp_alerts: []
+
+  # --------------------------------------------------- KafkaConsumerLagCritical
+  - interval: 1m
+    input_series:
+      - series: 'kafka_consumer_fetch_manager_records_lag_max{app="social-service",instance="s:8084",client_id="social-service-consumer-1",topic="activity.created",partition="0"}'
+        values: '20000+0x20'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: KafkaConsumerLagCritical
+        exp_alerts:
+          - exp_labels:
+              app: social-service
+              client_id: social-service-consumer-1
+              topic: activity.created
+              severity: critical
+              team: data
+              tier: "2"
+              service: social-service
+            exp_annotations:
+              summary: "social-service is 20k records behind on activity.created"
+              description: "Consumer lag above 10k records for 5 minutes. At the current rate the consumer will not catch up on its own; see the runbook for the scale-out / skip-poison-pill decision."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+
+  # -------------------------------------------------------- KafkaConsumerStalled
+  # Lag small but climbing 50 records a minute — the consumer is not keeping up.
+  - interval: 1m
+    input_series:
+      - series: 'kafka_consumer_fetch_manager_records_lag_max{app="social-service",instance="s:8084",client_id="social-service-consumer-1",topic="activity.created",partition="0"}'
+        values: '200+50x40'
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: KafkaConsumerStalled
+        exp_alerts:
+          - exp_labels:
+              app: social-service
+              client_id: social-service-consumer-1
+              topic: activity.created
+              severity: warning
+              team: data
+              tier: "2"
+              service: social-service
+            exp_annotations:
+              summary: "social-service lag on activity.created growing for 15m"
+              description: "Lag on activity.created has been increasing for 15 minutes. Typical causes: a poison-pill record the listener keeps failing on, or a consumer thread blocked on a downstream call."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+
+  # ------------------------------------------------------- KafkaListenerFailures
+  - interval: 1m
+    input_series:
+      - series: 'spring_kafka_listener_seconds_count{app="notification-service",instance="n:8083",name="org.springframework.kafka.KafkaListenerEndpointContainer#0-0",result="failure",exception="JsonProcessingException"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: KafkaListenerFailures
+        exp_alerts:
+          - exp_labels:
+              app: notification-service
+              severity: warning
+              team: data
+              tier: "2"
+              service: notification-service
+            exp_annotations:
+              summary: "notification-service listener failing (1/s)"
+              description: "A @KafkaListener in notification-service has thrown on every poll for 10 minutes. With the default error handler the same record is retried, so this is usually one bad message blocking the partition."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-consumer-lag.md
+
+  # --------------------------------------------------------- KafkaProducerErrors
+  - interval: 1m
+    input_series:
+      - series: 'kafka_producer_record_error_total{app="activity-service",instance="a:8082",client_id="producer-1"}'
+        values: '0+1x20'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: KafkaProducerErrors
+        exp_alerts:
+          - exp_labels:
+              app: activity-service
+              severity: critical
+              team: data
+              tier: "2"
+              service: activity-service
+            exp_annotations:
+              summary: "activity-service is failing to publish events"
+              description: "The Kafka producer in activity-service reports record errors. Events are being lost, which breaks the saga downstream (no PR detection, no notifications, stale feeds)."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-producer-errors.md
+
+  # -------------------------------------------------------- KafkaNoEventsFlowing
+  # Activities are being created (POST 2xx) while the producer sends nothing.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{app="activity-service",method="POST",uri="/api/v1/activities",status="201"}'
+        values: '0+5x60'
+      - series: 'kafka_producer_record_send_total{app="activity-service",instance="a:8082",client_id="producer-1"}'
+        values: '0+0x60'
+    alert_rule_test:
+      - eval_time: 50m
+        alertname: KafkaNoEventsFlowing
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: data
+              tier: "2"
+              service: activity-service
+              app: activity-service
+            exp_annotations:
+              summary: "Activities are created but no events are published"
+              description: "activity-service accepted activity writes in the last 30 minutes but its Kafka producer sent nothing. Either the broker is unreachable (check KafkaProducerErrors) or publishing was disabled by config."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/kafka-producer-errors.md
+
+  # Healthy pipeline: writes and sends both flowing — quiet.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{app="activity-service",method="POST",uri="/api/v1/activities",status="201"}'
+        values: '0+5x60'
+      - series: 'kafka_producer_record_send_total{app="activity-service",instance="a:8082",client_id="producer-1"}'
+        values: '0+5x60'
+    alert_rule_test:
+      - eval_time: 50m
+        alertname: KafkaNoEventsFlowing
+        exp_alerts: []

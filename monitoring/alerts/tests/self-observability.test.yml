@@ -1,0 +1,131 @@
+rule_files:
+  - ../self-observability.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ------------------------------------------------------------------ Watchdog
+  - interval: 1m
+    input_series: []
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: Watchdog
+        exp_alerts:
+          - exp_labels:
+              severity: info
+              team: platform
+              tier: "1"
+              service: prometheus
+            exp_annotations:
+              summary: "Alerting pipeline heartbeat"
+              description: "This alert is meant to be always firing. Its absence at the receiver means Prometheus, Alertmanager or the delivery path is down."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/monitoring-pipeline.md
+
+  # ---------------------------------------------------- PrometheusTargetsMissing
+  # No `up` series for the SD job at all → discovery is broken.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="config-server",app="config-server",instance="config-server:8888"}'
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 7m
+        alertname: PrometheusTargetsMissing
+        exp_alerts:
+          - exp_labels:
+              job: stride-services
+              severity: critical
+              team: platform
+              tier: "2"
+              service: prometheus
+            exp_annotations:
+              summary: "Prometheus has no service targets"
+              description: "Eureka service discovery returned no targets for 5 minutes. Either discovery-server is down or the SD config broke; every per-service alert is blind until this is fixed."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/monitoring-pipeline.md
+
+  # ----------------------------------------------------------- AlertmanagerDown
+  - interval: 1m
+    input_series:
+      - series: 'up{job="alertmanager",app="alertmanager",instance="alertmanager:9093"}'
+        values: '1 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: AlertmanagerDown
+        exp_alerts:
+          - exp_labels:
+              job: alertmanager
+              app: alertmanager
+              instance: alertmanager:9093
+              severity: critical
+              team: platform
+              tier: "2"
+              service: alertmanager
+            exp_annotations:
+              summary: "Alertmanager is not being scraped"
+              description: "Prometheus cannot reach Alertmanager. Alerts are evaluated but nobody is notified."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/monitoring-pipeline.md
+
+  # ------------------------------------------- PrometheusRuleEvaluationFailures
+  - interval: 1m
+    input_series:
+      - series: 'prometheus_rule_evaluation_failures_total{job="prometheus",app="prometheus",instance="localhost:9090",rule_group="/etc/prometheus/rules/services.rules.yml;stride-services"}'
+        values: '0 0 0 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: PrometheusRuleEvaluationFailures
+        exp_alerts:
+          - exp_labels:
+              job: prometheus
+              app: prometheus
+              instance: localhost:9090
+              rule_group: /etc/prometheus/rules/services.rules.yml;stride-services
+              severity: warning
+              team: platform
+              tier: "2"
+              service: prometheus
+            exp_annotations:
+              summary: "Rule evaluations are failing in group /etc/prometheus/rules/services.rules.yml;stride-services"
+              description: "A recording or alerting rule fails to evaluate (typically a typo that promtool could not catch, or a metric with unexpected labels). The affected group is not alerting."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/monitoring-pipeline.md
+
+  # --------------------------------------------------- PrometheusHighCardinality
+  - interval: 1m
+    input_series:
+      - series: 'prometheus_tsdb_head_series{job="prometheus",app="prometheus",instance="localhost:9090"}'
+        values: '600000+0x25'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: PrometheusHighCardinality
+        exp_alerts:
+          - exp_labels:
+              job: prometheus
+              app: prometheus
+              instance: localhost:9090
+              severity: warning
+              team: platform
+              tier: "1"
+              service: prometheus
+            exp_annotations:
+              summary: "600k active series"
+              description: "Series count above 500k. Usual cause: a high-cardinality label (per-user id, unbounded uri) on a new metric. Find the metric with `topk(10, count by (__name__)({__name__=~\".+\"}))`."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/monitoring-pipeline.md
+
+  # --------------------------------------------- AlertmanagerNotificationsFailing
+  - interval: 1m
+    input_series:
+      - series: 'alertmanager_notifications_failed_total{job="alertmanager",app="alertmanager",instance="alertmanager:9093",integration="webhook",reason="clientError"}'
+        values: '0 0 0 1 2 2 2 2'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: AlertmanagerNotificationsFailing
+        exp_alerts:
+          - exp_labels:
+              integration: webhook
+              severity: critical
+              team: platform
+              tier: "2"
+              service: alertmanager
+            exp_annotations:
+              summary: "Alertmanager failed to deliver via webhook"
+              description: "Notifications through the webhook integration failed in the last 10 minutes. Alerts are firing but not arriving."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/monitoring-pipeline.md

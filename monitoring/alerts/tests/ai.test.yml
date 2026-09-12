@@ -1,0 +1,77 @@
+rule_files:
+  - ../ai.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  # ------------------------------------------------------ AiProviderCircuitOpen
+  - interval: 1m
+    input_series:
+      - series: 'resilience4j_circuitbreaker_state{app="ai-service",instance="ai:8087",name="groq",state="open"}'
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: AiProviderCircuitOpen
+        exp_alerts:
+          - exp_labels:
+              app: ai-service
+              instance: ai:8087
+              name: groq
+              state: open
+              severity: warning
+              team: ai
+              tier: "2"
+              service: ai-service
+            exp_annotations:
+              summary: "ai-service breaker 'groq' open — provider is being skipped"
+              description: "Calls to 'groq' are short-circuited. Chat/goal requests fail fast (502/503) until the provider recovers or the failover path takes over."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md
+
+  # ------------------------------------------------------------ AiChatErrorRate
+  # 502s from the provider on 20% of chat calls.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_count{app="ai-service",status="502",uri="/api/v1/ai/activities/{activityId}/chat",method="POST"}'
+        values: '0+2x30'
+      - series: 'http_server_requests_seconds_count{app="ai-service",status="200",uri="/api/v1/ai/activities/{activityId}/chat",method="POST"}'
+        values: '0+8x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: AiChatErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: ai
+              tier: "2"
+              service: ai-service
+              app: ai-service
+            exp_annotations:
+              summary: "AI endpoints failing: 20% 5xx"
+              description: "More than 10% of /api/v1/ai requests fail. 502 = provider error, 503 = not configured or breaker open; the runbook maps each to an action."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md
+
+  # ------------------------------------------------------------ AiChatLatencyP95
+  # Every chat call takes between 10 and 30 s → p95 interpolates to 29 s.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_seconds_bucket{app="ai-service",uri="/api/v1/ai/activities/{activityId}/chat",le="10.0"}'
+        values: '0+0x30'
+      - series: 'http_server_requests_seconds_bucket{app="ai-service",uri="/api/v1/ai/activities/{activityId}/chat",le="30.0"}'
+        values: '0+60x30'
+      - series: 'http_server_requests_seconds_bucket{app="ai-service",uri="/api/v1/ai/activities/{activityId}/chat",le="+Inf"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: AiChatLatencyP95
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: ai
+              tier: "1"
+              service: ai-service
+              app: ai-service
+            exp_annotations:
+              summary: "AI p95 latency 29s"
+              description: "95th percentile of AI request latency is above 15 s. The provider is slow or the prompt (recent-history block) has grown; users hit the frontend timeout."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md
