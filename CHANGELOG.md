@@ -8,6 +8,11 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Added
+- SLOs as code (`docs/slo.md`): edge availability 99.5 %, edge latency 95 %
+  under 500 ms, per-service availability 99.5 %, AI availability 98 %;
+  recording rules, multi-window burn-rate alerts (14.4× pages, 6× tickets),
+  `SLOErrorBudgetExhausted`, promtool tests and the `stride-slo` Grafana
+  dashboard with error-budget panels.
 - Alerts as code: 30 Prometheus rules in five groups (platform, services,
   kafka, ai, self-observability) with promtool unit tests, a label/runbook
   contract enforced in CI, Alertmanager routing with inhibition, an alert
