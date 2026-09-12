@@ -1,6 +1,8 @@
 package com.strava.aiservice.client
 
 import com.strava.aiservice.exception.ApiRequestException
+import com.strava.aiservice.telemetry.AiCallContext
+import com.strava.aiservice.telemetry.AiCallRecorder
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import io.github.resilience4j.retry.annotation.Retry
 import org.slf4j.LoggerFactory
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
+import java.time.Duration
 
 /**
  * Wraps the Groq Chat Completions endpoint. Error behavior mirrors the
@@ -26,9 +29,10 @@ import org.springframework.web.client.RestTemplate
  *                     CallNotPermittedException maps to the same generic 500
  *                     via GlobalExceptionHandler).
  *   @Retry          — short-burst retries absorb transient blips.
- * RestTemplate timeouts (3s connect / 7s read) bound each attempt — the old
- * @TimeLimiter was dropped because its Spring aspect only supports async
- * return types and would reject this synchronous call at runtime.
+ * RestTemplate timeouts (3s connect / 7s read) bound each attempt.
+ *
+ * Every attempt is recorded by AiCallRecorder (latency, tokens from the
+ * `usage` block, cost, outcome) against the caller in AiCallContext.
  */
 @Component
 @Profile("!standalone")
@@ -39,7 +43,8 @@ class GroqClient(
     @Value("\${groq.api-key:}")
     private val apiKey: String,
     @Value("\${groq.model:openai/gpt-oss-120b}")
-    private val model: String
+    private val model: String,
+    private val recorder: AiCallRecorder,
 ) : ChatCompletionClient {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -47,6 +52,9 @@ class GroqClient(
     @CircuitBreaker(name = "groq")
     @Retry(name = "groq")
     override fun complete(systemPrompt: String, userPrompt: String): String {
+        val started = System.nanoTime()
+        val ctx = AiCallContext.current()
+        val endpoint = if (systemPrompt.contains("training plans")) AiCallRecorder.Endpoint.PLAN else AiCallRecorder.Endpoint.GOAL
         try {
             val headers = HttpHeaders().apply {
                 contentType = MediaType.APPLICATION_JSON
@@ -60,12 +68,34 @@ class GroqClient(
                 )
             )
             val response = rest.postForObject(apiUrl, HttpEntity(body, headers), GroqResponse::class.java)
-            return response?.choices?.firstOrNull()?.message?.content
+            val content = response?.choices?.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("Groq returned an empty choices array")
+            recorder.record(
+                AiCallRecorder.Call(
+                    endpoint = endpoint, provider = PROVIDER, model = model,
+                    userId = ctx?.userId, activityId = ctx?.activityId,
+                    inputTokens = response.usage?.promptTokens, outputTokens = response.usage?.completionTokens,
+                    duration = Duration.ofNanos(System.nanoTime() - started), outcome = AiCallRecorder.Outcome.OK
+                )
+            )
+            return content
         } catch (e: Exception) {
+            recorder.record(
+                AiCallRecorder.Call(
+                    endpoint = endpoint, provider = PROVIDER, model = model,
+                    userId = ctx?.userId, activityId = ctx?.activityId,
+                    duration = Duration.ofNanos(System.nanoTime() - started),
+                    outcome = if (e is IllegalStateException) AiCallRecorder.Outcome.EMPTY_RESPONSE else AiCallRecorder.Outcome.PROVIDER_ERROR,
+                    error = e.javaClass.simpleName
+                )
+            )
             // Same passthrough as main: log the cause, surface one generic failure.
             log.error("Error calling Groq API: {}", e.message)
             throw ApiRequestException("Failed to generate AI response", HttpStatus.INTERNAL_SERVER_ERROR)
         }
+    }
+
+    companion object {
+        const val PROVIDER = "groq"
     }
 }

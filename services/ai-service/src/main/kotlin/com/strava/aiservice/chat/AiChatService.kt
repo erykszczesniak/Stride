@@ -8,6 +8,8 @@ import com.strava.aiservice.domain.AiConversation
 import com.strava.aiservice.domain.AiConversationRepository
 import com.strava.aiservice.domain.ChatRole
 import com.strava.aiservice.exception.ApiRequestException
+import com.strava.aiservice.guard.Guardrails
+import com.strava.aiservice.telemetry.AiCallContext
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,12 +22,18 @@ import kotlin.math.roundToInt
  * internal API instead of a local repository, and the conversation stores the
  * authenticated userId directly (no User lookup — identity comes verified from
  * the gateway, so main's USER_NOT_FOUND branch has no equivalent here).
+ *
+ * Guardrails run before anything else on every user turn: per-user rate
+ * limit (429), prompt guard (400), PII masking. The masked text is what the
+ * provider sees and what is persisted, so a leaked email never reaches
+ * either the model or the database.
  */
 @Service
 class AiChatService(
     private val conversationRepository: AiConversationRepository,
     private val activityClient: ActivityContextClient,
-    private val claudeClient: ClaudeChatClient
+    private val claudeClient: ClaudeChatClient,
+    private val guardrails: Guardrails,
 ) {
 
     @Transactional(readOnly = true)
@@ -39,6 +47,9 @@ class AiChatService(
 
     @Transactional
     fun sendMessage(userId: Long, activityId: Long, message: String): ConversationResponse {
+        // Rate limit → prompt guard → PII masking, before any remote call.
+        val safeMessage = guardrails.admit(userId, Guardrails.Endpoint.CHAT, message)
+
         val activity = requireOwnedActivity(userId, activityId)
 
         val conversation = conversationRepository.findByUserIdAndActivityId(userId, activityId)
@@ -47,15 +58,17 @@ class AiChatService(
         // Build the request from the stored history plus the new user turn.
         val request = mutableListOf<ChatMessage>()
         conversation.messages.forEach { request.add(ChatMessage(it.role, it.content)) }
-        request.add(ChatMessage(ChatRole.USER, message))
+        request.add(ChatMessage(ChatRole.USER, safeMessage))
 
         // If Claude fails the transaction rolls back, so neither turn is persisted.
         // Optional enrichment: recent history gives the coach training-load
         // context; the client degrades to an empty list when unavailable.
         val history = activityClient.recentActivities(userId, HISTORY_LIMIT)
-        val reply = claudeClient.chat(buildSystemPrompt(activity, history), request)
+        val reply = AiCallContext.with(userId, activityId) {
+            claudeClient.chat(buildSystemPrompt(activity, history), request)
+        }
 
-        conversation.addMessage(ChatRole.USER, message)
+        conversation.addMessage(ChatRole.USER, safeMessage)
         conversation.addMessage(ChatRole.ASSISTANT, reply)
         val saved = conversationRepository.save(conversation)
 

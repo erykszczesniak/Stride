@@ -8,6 +8,11 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Added
+- AI guardrails in ai-service: per-user rate limit (429), prompt guard
+  (400 with reason), PII masking before the provider and before persistence;
+  token, latency, cost and failover metrics plus a JSON audit line per
+  provider call; a 42-case golden eval that gates the build
+  (`docs/ai-guardrails.md`).
 - Architecture decision records (`docs/adr/`, 9 records): choreographed
   sagas, database per service, gRPC inside / REST at the edge, JWT at the
   gateway, what we deliberately do not run, alerts as code, SLO burn-rate

@@ -27,6 +27,32 @@ app:
     model: ${ANTHROPIC_MODEL:claude-opus-5}
     max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}
 
+  # Guardrails for every provider-billed endpoint (see docs/ai-guardrails.md):
+  # per-user rate limits (in-memory, per replica), prompt guard, PII masking,
+  # and the price table AiCallRecorder uses for the ai_request_cost_usd metric.
+  ai:
+    rate-limit:
+      chat-per-minute: ${AI_CHAT_PER_MINUTE:10}
+      generation-per-minute: ${AI_GENERATION_PER_MINUTE:5}
+    guard:
+      enabled: ${AI_GUARD_ENABLED:true}
+      max-repeated-chars: 40
+    pii:
+      enabled: ${AI_PII_MASKING_ENABLED:true}
+    # USD per million tokens. Placeholders taken from the public price lists at
+    # the time of writing — verify against the current lists before trusting
+    # the cost panel; an unlisted model is recorded with priced=false.
+    pricing:
+      "[claude-opus-5]":
+        input-per-mtok: 15.0
+        output-per-mtok: 75.0
+      "[claude-sonnet-5]":
+        input-per-mtok: 3.0
+        output-per-mtok: 15.0
+      "[openai/gpt-oss-120b]":
+        input-per-mtok: 0.15
+        output-per-mtok: 0.60
+
 # Cluster-internal gRPC client: the chat's activity context comes from
 # activity-service's ActivityInternalService (grpc.server.port 9082). The
 # channel resolves through Eureka via the discovery:/// scheme (the server

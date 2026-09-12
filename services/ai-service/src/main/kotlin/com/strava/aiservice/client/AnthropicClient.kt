@@ -5,10 +5,13 @@ import com.anthropic.models.messages.MessageCreateParams
 import com.strava.aiservice.config.ClaudeProperties
 import com.strava.aiservice.domain.ChatRole
 import com.strava.aiservice.exception.ApiRequestException
+import com.strava.aiservice.telemetry.AiCallContext
+import com.strava.aiservice.telemetry.AiCallRecorder
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import java.time.Duration
 import com.anthropic.client.AnthropicClient as AnthropicSdkClient
 
 /**
@@ -19,10 +22,17 @@ import com.anthropic.client.AnthropicClient as AnthropicSdkClient
  * when ANTHROPIC_API_KEY is unset — chat requests then fail fast with 503. The client is
  * settable so tests can inject a mock, mirroring how the project's other HTTP integrations
  * swap their RestTemplate in tests.
+ *
+ * Every call is recorded by AiCallRecorder: latency, input/output tokens from the
+ * response `usage`, the resulting cost, and the outcome, attributed to the caller in
+ * AiCallContext.
  */
 @Component
 @Profile("!standalone")
-class AnthropicClient(private val properties: ClaudeProperties) : ClaudeChatClient {
+class AnthropicClient(
+    private val properties: ClaudeProperties,
+    private val recorder: AiCallRecorder,
+) : ClaudeChatClient {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -35,6 +45,8 @@ class AnthropicClient(private val properties: ClaudeProperties) : ClaudeChatClie
         if (!isConfigured()) {
             throw ApiRequestException("AI chat is not configured", HttpStatus.SERVICE_UNAVAILABLE)
         }
+        val started = System.nanoTime()
+        val ctx = AiCallContext.current()
         try {
             val builder = MessageCreateParams.builder()
                 .model(properties.model)
@@ -57,16 +69,37 @@ class AnthropicClient(private val properties: ClaudeProperties) : ClaudeChatClie
                 .reduce("") { acc, part -> acc + part }
                 .trim()
 
+            val usage = runCatching { response.usage() }.getOrNull()
+            val inputTokens = usage?.let { runCatching { it.inputTokens() }.getOrNull() }
+            val outputTokens = usage?.let { runCatching { it.outputTokens() }.getOrNull() }
+
             if (text.isEmpty()) {
+                record(ctx, started, inputTokens, outputTokens, AiCallRecorder.Outcome.EMPTY_RESPONSE, null)
                 throw ApiRequestException("Claude returned an empty response", HttpStatus.BAD_GATEWAY)
             }
+            record(ctx, started, inputTokens, outputTokens, AiCallRecorder.Outcome.OK, null)
             return text
         } catch (e: ApiRequestException) {
             throw e
         } catch (e: Exception) {
+            record(ctx, started, null, null, AiCallRecorder.Outcome.PROVIDER_ERROR, e.javaClass.simpleName)
             log.error("Claude chat request failed: {}", e.message, e)
             throw ApiRequestException("Failed to generate AI response", HttpStatus.BAD_GATEWAY)
         }
+    }
+
+    private fun record(
+        ctx: AiCallContext.Ctx?, startedNanos: Long, inputTokens: Long?, outputTokens: Long?,
+        outcome: AiCallRecorder.Outcome, error: String?
+    ) {
+        recorder.record(
+            AiCallRecorder.Call(
+                endpoint = AiCallRecorder.Endpoint.CHAT, provider = PROVIDER, model = properties.model,
+                userId = ctx?.userId, activityId = ctx?.activityId,
+                inputTokens = inputTokens, outputTokens = outputTokens,
+                duration = Duration.ofNanos(System.nanoTime() - startedNanos), outcome = outcome, error = error
+            )
+        )
     }
 
     private fun anthropicClient(): AnthropicSdkClient {
@@ -88,5 +121,9 @@ class AnthropicClient(private val properties: ClaudeProperties) : ClaudeChatClie
     /** Test seam: inject a mock SDK client instead of hitting the real API. */
     internal fun setClient(client: AnthropicSdkClient) {
         this.client = client
+    }
+
+    companion object {
+        const val PROVIDER = "anthropic"
     }
 }

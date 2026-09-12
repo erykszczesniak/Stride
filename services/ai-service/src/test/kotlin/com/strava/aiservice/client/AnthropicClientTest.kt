@@ -2,6 +2,7 @@ package com.strava.aiservice.client
 
 import com.anthropic.models.messages.Message
 import com.anthropic.models.messages.MessageCreateParams
+import com.strava.aiservice.TestGuardrails
 import com.strava.aiservice.config.ClaudeProperties
 import com.strava.aiservice.domain.ChatRole
 import com.strava.aiservice.exception.ApiRequestException
@@ -27,7 +28,7 @@ class AnthropicClientTest {
     @BeforeEach
     fun setUp() {
         properties = ClaudeProperties()
-        client = AnthropicClient(properties)
+        client = AnthropicClient(properties, TestGuardrails.recorder())
     }
 
     @Test

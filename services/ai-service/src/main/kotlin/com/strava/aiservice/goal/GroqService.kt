@@ -1,6 +1,8 @@
 package com.strava.aiservice.goal
 
 import com.strava.aiservice.client.ChatCompletionClient
+import com.strava.aiservice.guard.Guardrails
+import com.strava.aiservice.telemetry.AiCallContext
 import org.springframework.stereotype.Service
 
 /**
@@ -8,14 +10,24 @@ import org.springframework.stereotype.Service
  * monolith's GroqServiceImpl verbatim (they define the JSON contract the
  * frontend parses). Transport lives behind ChatCompletionClient (GroqClient in
  * prod, MockChatCompletionClient in standalone).
+ *
+ * Every request passes Guardrails first: per-user rate limit, prompt guard on
+ * the free text the athlete typed, PII masking of that text before it is
+ * interpolated into the prompt.
  */
 @Service
-class GroqService(private val chat: ChatCompletionClient) {
+class GroqService(
+    private val chat: ChatCompletionClient,
+    private val guardrails: Guardrails,
+) {
 
     fun generateCompletion(systemPrompt: String, userPrompt: String): String =
         chat.complete(systemPrompt, userPrompt)
 
-    fun generateGoal(goalType: String, timeframe: String, description: String): String {
+    fun generateGoal(userId: Long, goalType: String, timeframe: String, description: String): String {
+        val safeDescription = guardrails.admit(userId, Guardrails.Endpoint.GENERATION, description.ifBlank { "-" })
+            .let { if (it == "-") "" else it }
+
         val systemPrompt = """
             You are a fitness coach AI that helps athletes create SMART goals.
             Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
@@ -36,18 +48,23 @@ class GroqService(private val chat: ChatCompletionClient) {
 
             Make it specific, achievable, and motivating.
             """.trimIndent() + "\n",
-            goalType, timeframe, description
+            goalType, timeframe, safeDescription
         )
 
-        return generateCompletion(systemPrompt, userPrompt)
+        return AiCallContext.with(userId) { generateCompletion(systemPrompt, userPrompt) }
     }
 
     fun generateTrainingPlan(
+        userId: Long,
         activityType: String,
         experienceLevel: String,
         targetDistance: Int,
         weeks: Int
     ): String {
+        // No free text here, but the call is provider-billed: rate limit and guard the
+        // two client-supplied strings, which the frontend normally restricts to enums.
+        guardrails.admit(userId, Guardrails.Endpoint.GENERATION, "$activityType $experienceLevel")
+
         val systemPrompt = """
             You are a professional fitness coach AI that creates personalized training plans.
             Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
@@ -87,6 +104,6 @@ class GroqService(private val chat: ChatCompletionClient) {
             weeks, activityType, experienceLevel, targetDistance
         )
 
-        return generateCompletion(systemPrompt, userPrompt)
+        return AiCallContext.with(userId) { generateCompletion(systemPrompt, userPrompt) }
     }
 }

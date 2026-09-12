@@ -1,6 +1,8 @@
 package com.strava.aiservice.client
 
+import com.strava.aiservice.TestGuardrails
 import com.strava.aiservice.exception.ApiRequestException
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
@@ -19,11 +21,13 @@ import org.springframework.web.client.RestTemplate
 class GroqClientTest {
 
     private val rest: RestTemplate = mock()
+    private val registry = SimpleMeterRegistry()
     private val client = GroqClient(
         rest = rest,
         apiUrl = "https://api.groq.com/openai/v1/chat/completions",
         apiKey = "test-api-key",
-        model = "test-model"
+        model = "test-model",
+        recorder = TestGuardrails.recorder(registry = registry)
     )
 
     @Test
@@ -75,5 +79,29 @@ class GroqClientTest {
         assertThatThrownBy { client.complete("s", "u") }
             .isInstanceOf(ApiRequestException::class.java)
             .hasMessage("Failed to generate AI response")
+    }
+
+    @Test
+    @DisplayName("records tokens from the usage block and the outcome as metrics")
+    fun recordsUsageMetrics() {
+        whenever(rest.postForObject(any<String>(), any(), eq(GroqResponse::class.java)))
+            .thenReturn(GroqResponse(listOf(GroqResponse.Choice(GroqRequest.Message("assistant", "ok"))), GroqResponse.Usage(120, 30)))
+
+        client.complete("System prompt", "User prompt")
+
+        assertThat(registry.counter("ai.tokens", "provider", "groq", "model", "test-model", "direction", "input").count()).isEqualTo(120.0)
+        assertThat(registry.counter("ai.tokens", "provider", "groq", "model", "test-model", "direction", "output").count()).isEqualTo(30.0)
+        assertThat(registry.counter("ai.requests", "endpoint", "goal", "provider", "groq", "model", "test-model", "outcome", "ok").count()).isEqualTo(1.0)
+    }
+
+    @Test
+    @DisplayName("a transport failure is recorded as provider_error before the generic 500 surfaces")
+    fun recordsFailureOutcome() {
+        whenever(rest.postForObject(any<String>(), any(), eq(GroqResponse::class.java)))
+            .thenThrow(ResourceAccessException("connection refused"))
+
+        assertThatThrownBy { client.complete("s", "u") }.isInstanceOf(ApiRequestException::class.java)
+
+        assertThat(registry.counter("ai.requests", "endpoint", "goal", "provider", "groq", "model", "test-model", "outcome", "provider_error").count()).isEqualTo(1.0)
     }
 }
