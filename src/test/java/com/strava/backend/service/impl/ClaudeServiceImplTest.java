@@ -2,6 +2,7 @@ package com.strava.backend.service.impl;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.models.messages.MessageCreateParams;
+import com.strava.backend.TestGuardrails;
 import com.strava.backend.configuration.ClaudeProperties;
 import com.strava.backend.enums.ChatRole;
 import com.strava.backend.exception.ApiRequestException;
@@ -27,7 +28,7 @@ class ClaudeServiceImplTest {
     @BeforeEach
     void setUp() {
         properties = new ClaudeProperties();
-        service = new ClaudeServiceImpl(properties);
+        service = new ClaudeServiceImpl(properties, TestGuardrails.recorder());
     }
 
     @Test

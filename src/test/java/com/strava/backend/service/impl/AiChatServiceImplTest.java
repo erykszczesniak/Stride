@@ -1,5 +1,6 @@
 package com.strava.backend.service.impl;
 
+import com.strava.backend.ai.guard.Guardrails;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.AiConversation;
 import com.strava.backend.domain.User;
@@ -44,6 +45,8 @@ class AiChatServiceImplTest {
     private UserRepository userRepository;
     @Mock
     private ClaudeService claudeService;
+    @Mock
+    private Guardrails guardrails;
 
     @InjectMocks
     private AiChatServiceImpl service;
@@ -68,9 +71,15 @@ class AiChatServiceImplTest {
                 .build();
     }
 
+    /** Real guard behaviour is covered in GuardrailsTest; here it admits the text unchanged. */
+    private void guardrailsPassThrough() {
+        when(guardrails.admit(any(), any(), anyString())).thenAnswer(inv -> inv.getArgument(2));
+    }
+
     @Test
     @DisplayName("sendMessage persists the user turn and Claude's reply, returning both")
     void sendMessagePersistsBothTurns() {
+        guardrailsPassThrough();
         when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
         when(conversationRepository.findByUserIdAndActivityId(1L, 100L)).thenReturn(Optional.empty());
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
@@ -96,6 +105,7 @@ class AiChatServiceImplTest {
         existing.addMessage(ChatRole.USER, "Hi");
         existing.addMessage(ChatRole.ASSISTANT, "Hello, how can I help?");
 
+        guardrailsPassThrough();
         when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
         when(conversationRepository.findByUserIdAndActivityId(1L, 100L)).thenReturn(Optional.of(existing));
         when(claudeService.chat(anyString(), any())).thenReturn("Sure.");
@@ -125,12 +135,50 @@ class AiChatServiceImplTest {
                 .extracting(e -> ((ApiRequestException) e).getStatus())
                 .isEqualTo(HttpStatus.NOT_FOUND);
 
+        verifyNoInteractions(claudeService, guardrails);
+    }
+
+    @Test
+    @DisplayName("sendMessage stores and sends the guardrail-admitted (masked) text, not the raw message")
+    void sendMessageUsesAdmittedText() {
+        when(guardrails.admit(1L, Guardrails.Endpoint.CHAT, "mail me at me@example.com"))
+                .thenReturn("mail me at [email]");
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(conversationRepository.findByUserIdAndActivityId(1L, 100L)).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(claudeService.chat(anyString(), any())).thenReturn("Sure.");
+        when(conversationRepository.save(any(AiConversation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ConversationResponse response = service.sendMessage(1L, 100L, "mail me at me@example.com");
+
+        assertThat(response.messages().get(0).content()).isEqualTo("mail me at [email]");
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<ClaudeMessage>> captor = ArgumentCaptor.forClass(List.class);
+        verify(claudeService).chat(anyString(), captor.capture());
+        assertThat(captor.getValue().get(0).content()).isEqualTo("mail me at [email]");
+    }
+
+    @Test
+    @DisplayName("a guardrail rejection (429/400) reaches the caller before any provider call")
+    void sendMessageStopsOnGuardrailRejection() {
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(guardrails.admit(any(), any(), anyString()))
+                .thenThrow(new ApiRequestException("Too many AI requests", HttpStatus.TOO_MANY_REQUESTS));
+
+        assertThatThrownBy(() -> service.sendMessage(1L, 100L, "hi"))
+                .isInstanceOf(ApiRequestException.class)
+                .extracting(e -> ((ApiRequestException) e).getStatus())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+
         verifyNoInteractions(claudeService);
+        verify(conversationRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("does not persist anything when Claude fails")
     void doesNotPersistWhenClaudeFails() {
+        guardrailsPassThrough();
         when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
         when(conversationRepository.findByUserIdAndActivityId(1L, 100L)).thenReturn(Optional.empty());
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));

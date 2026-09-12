@@ -1,0 +1,54 @@
+# Live evaluation of the AI features against the real providers. Not part of
+# the per-PR build (costs money, needs keys): weekly and on demand, and only
+# when the secrets exist. The deterministic half of the eval suite (the
+# prompt-guard golden set) runs in every build via ci.yml.
+name: AI live eval
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 6 * * 1"   # Mondays 06:15 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  live-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      ANTHROPIC_EVAL_MODEL: ${{ vars.ANTHROPIC_EVAL_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$GROQ_API_KEY" ]; then
+            echo "::warning::No provider keys configured (secrets ANTHROPIC_API_KEY / GROQ_API_KEY); nothing to evaluate."
+            echo "skip=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up Java 21
+        if: env.skip != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run live evals (JUnit tag live-eval)
+        if: env.skip != 'true'
+        run: |
+          ./mvnw -B test \
+            -Dgroups=live-eval -Dsurefire.failIfNoSpecifiedTests=false -Djacoco.check.skip=true
+
+      - name: Upload reports
+        if: always() && env.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-live-eval-reports
+          path: target/surefire-reports/
+          retention-days: 30
+          if-no-files-found: ignore

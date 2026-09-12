@@ -9,6 +9,9 @@ changelog.
 ## [Unreleased]
 
 ### Added
+- AI guardrails and telemetry: per-user rate limits (429), prompt guard (400),
+  PII masking before text leaves the app, cost/tokens/latency per provider call
+  with an `ai.audit` trail, Anthropic→Groq chat failover, golden-set and live evals.
 - Alerts as code: 30 unit-tested Prometheus rules (availability, per-endpoint
   errors/latency, JVM, DB pool, SLO burn-rate, AI provider, cost, self-observability),
   Alertmanager routing with inhibition, JVM / SLO / cost Grafana dashboards,

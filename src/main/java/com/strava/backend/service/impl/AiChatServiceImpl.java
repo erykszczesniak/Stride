@@ -1,5 +1,7 @@
 package com.strava.backend.service.impl;
 
+import com.strava.backend.ai.guard.Guardrails;
+import com.strava.backend.ai.telemetry.AiCallContext;
 import com.strava.backend.domain.Activity;
 import com.strava.backend.domain.AiConversation;
 import com.strava.backend.domain.User;
@@ -40,6 +42,7 @@ public class AiChatServiceImpl implements AiChatService {
     private final ActivityRepository activityRepository;
     private final UserRepository userRepository;
     private final ClaudeService claudeService;
+    private final Guardrails guardrails;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,6 +58,8 @@ public class AiChatServiceImpl implements AiChatService {
     @Transactional
     public ConversationResponse sendMessage(Long userId, Long activityId, String message) {
         Activity activity = requireOwnedActivity(userId, activityId);
+        // Rate limit → prompt guard → PII masking; the admitted text is what gets sent and stored.
+        String admitted = guardrails.admit(userId, Guardrails.Endpoint.CHAT, message);
 
         AiConversation conversation = conversationRepository.findByUserIdAndActivityId(userId, activityId)
                 .orElseGet(() -> newConversation(userId, activity));
@@ -63,14 +68,15 @@ public class AiChatServiceImpl implements AiChatService {
         List<ClaudeMessage> request = new ArrayList<>();
         conversation.getMessages()
                 .forEach(m -> request.add(new ClaudeMessage(m.getRole(), m.getContent())));
-        request.add(new ClaudeMessage(ChatRole.USER, message));
+        request.add(new ClaudeMessage(ChatRole.USER, admitted));
 
         // Optional enrichment: recent history gives the coach training-load context.
         List<Activity> history = recentHistory(userId);
         // If Claude fails the transaction rolls back, so neither turn is persisted.
-        String reply = claudeService.chat(buildSystemPrompt(activity, history), request);
+        String systemPrompt = buildSystemPrompt(activity, history);
+        String reply = AiCallContext.with(userId, activityId, () -> claudeService.chat(systemPrompt, request));
 
-        conversation.addMessage(ChatRole.USER, message);
+        conversation.addMessage(ChatRole.USER, admitted);
         conversation.addMessage(ChatRole.ASSISTANT, reply);
         AiConversation saved = conversationRepository.save(conversation);
 
@@ -130,11 +136,11 @@ public class AiChatServiceImpl implements AiChatService {
      * listed so the model never reasons about absent data, and it's told to stick to what's
      * provided rather than inventing numbers.
      */
-    String buildSystemPrompt(Activity activity) {
+    public String buildSystemPrompt(Activity activity) {
         return buildSystemPrompt(activity, List.of());
     }
 
-    String buildSystemPrompt(Activity activity, List<Activity> history) {
+    public String buildSystemPrompt(Activity activity, List<Activity> history) {
         StringBuilder facts = new StringBuilder();
         facts.append("- Type: ").append(activity.getActivityType()).append('\n');
         facts.append("- Title: ").append(activity.getTitle()).append('\n');

@@ -90,12 +90,48 @@ app:
     model: ${ANTHROPIC_MODEL:claude-opus-4-8}
     max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}
 
+  # Guardrails for every provider-billed endpoint (see docs/ai-guardrails.md):
+  # per-user rate limits (in-memory, per replica), prompt guard, PII masking,
+  # and the price table AiCallRecorder uses for the ai_request_cost_usd metric.
+  # Same keys as the microservices branch.
+  ai:
+    rate-limit:
+      chat-per-minute: ${AI_CHAT_PER_MINUTE:10}
+      generation-per-minute: ${AI_GENERATION_PER_MINUTE:5}
+    guard:
+      enabled: ${AI_GUARD_ENABLED:true}
+      max-repeated-chars: 40
+    pii:
+      enabled: ${AI_PII_MASKING_ENABLED:true}
+    # Chat failover: Anthropic first, Groq (multi-turn) when Anthropic answers
+    # 502/503 or no key is configured. Degraded answers beat no answers during
+    # a provider incident; every switch is counted (ai_failover_total).
+    failover:
+      enabled: ${AI_CHAT_FAILOVER_ENABLED:true}
+    # USD per million tokens. Placeholders taken from the public price lists at
+    # the time of writing — verify against the current lists before trusting
+    # the cost panel; an unlisted model is recorded with priced=false.
+    pricing:
+      "[claude-opus-4-8]":
+        input-per-mtok: 15.0
+        output-per-mtok: 75.0
+      "[claude-opus-5]":
+        input-per-mtok: 15.0
+        output-per-mtok: 75.0
+      "[claude-sonnet-5]":
+        input-per-mtok: 3.0
+        output-per-mtok: 15.0
+      "[openai/gpt-oss-120b]":
+        input-per-mtok: 0.15
+        output-per-mtok: 0.60
+
 google:
   client-id: ${GOOGLE_CLIENT_ID:}
 
 groq:
   api-key: ${GROQ_API_KEY:}
   model: ${GROQ_MODEL:openai/gpt-oss-120b}
+  api-url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
 
 logging:
   level:

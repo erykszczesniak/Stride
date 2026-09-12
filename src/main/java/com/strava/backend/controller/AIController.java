@@ -13,7 +13,7 @@ import static com.strava.backend.constants.PathConstants.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(API_V1_AI)
-public class AIController {
+public class AIController extends BaseController {
 
     private final GroqService groqService;
 
@@ -23,7 +23,7 @@ public class AIController {
         String timeframe = request.getOrDefault("timeframe", "month");
         String description = request.getOrDefault("description", "");
 
-        String result = groqService.generateGoal(goalType, timeframe, description);
+        String result = groqService.generateGoal(getAuthenticatedUserId(), goalType, timeframe, description);
         return ResponseEntity.ok(result);
     }
 
@@ -38,7 +38,7 @@ public class AIController {
             ? Integer.parseInt(request.get("weeks").toString())
             : 4;
 
-        String result = groqService.generateTrainingPlan(activityType, experienceLevel, targetDistance, weeks);
+        String result = groqService.generateTrainingPlan(getAuthenticatedUserId(), activityType, experienceLevel, targetDistance, weeks);
         return ResponseEntity.ok(result);
     }
 }

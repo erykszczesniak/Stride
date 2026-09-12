@@ -54,7 +54,7 @@ class AIControllerTest {
                 }
                 """;
 
-            when(groqService.generateGoal(anyString(), anyString(), anyString()))
+            when(groqService.generateGoal(any(), anyString(), anyString(), anyString()))
                     .thenReturn(expectedResponse);
 
             Map<String, String> request = Map.of(
@@ -89,7 +89,7 @@ class AIControllerTest {
                 }
                 """;
 
-            when(groqService.generateGoal(eq("distance"), eq("month"), eq("")))
+            when(groqService.generateGoal(any(), eq("distance"), eq("month"), eq("")))
                     .thenReturn(expectedResponse);
 
             // When & Then
@@ -148,7 +148,7 @@ class AIControllerTest {
                 }
                 """;
 
-            when(groqService.generateTrainingPlan(anyString(), anyString(), anyInt(), anyInt()))
+            when(groqService.generateTrainingPlan(any(), anyString(), anyString(), anyInt(), anyInt()))
                     .thenReturn(expectedResponse);
 
             Map<String, Object> request = Map.of(
@@ -182,7 +182,7 @@ class AIControllerTest {
                 }
                 """;
 
-            when(groqService.generateTrainingPlan(eq("running"), eq("intermediate"), eq(10), eq(4)))
+            when(groqService.generateTrainingPlan(any(), eq("running"), eq("intermediate"), eq(10), eq(4)))
                     .thenReturn(expectedResponse);
 
             // When & Then
@@ -204,7 +204,7 @@ class AIControllerTest {
                 }
                 """;
 
-            when(groqService.generateTrainingPlan(anyString(), anyString(), eq(15), eq(8)))
+            when(groqService.generateTrainingPlan(any(), anyString(), anyString(), eq(15), eq(8)))
                     .thenReturn(expectedResponse);
 
             String requestJson = """

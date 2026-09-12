@@ -4,6 +4,8 @@ import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
+import com.strava.backend.ai.telemetry.AiCallContext;
+import com.strava.backend.ai.telemetry.AiCallRecorder;
 import com.strava.backend.configuration.ClaudeProperties;
 import com.strava.backend.enums.ChatRole;
 import com.strava.backend.exception.ApiRequestException;
@@ -12,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,16 +25,24 @@ import java.util.stream.Collectors;
  * when {@code ANTHROPIC_API_KEY} is unset — chat requests then fail fast with 503. The client is
  * settable so tests can inject a mock, mirroring how the project's other HTTP integrations swap
  * their {@code RestTemplate} in tests.
+ *
+ * <p>Every call is recorded by {@link AiCallRecorder}: latency, input/output tokens from the
+ * response {@code usage}, the resulting cost and the outcome, attributed to the caller in
+ * {@link AiCallContext}. {@link FailoverClaudeService} wraps this bean; inject the interface.
  */
 @Service
 @Slf4j
 public class ClaudeServiceImpl implements ClaudeService {
 
+    public static final String PROVIDER = "anthropic";
+
     private final ClaudeProperties properties;
+    private final AiCallRecorder recorder;
     private volatile AnthropicClient client;
 
-    public ClaudeServiceImpl(ClaudeProperties properties) {
+    public ClaudeServiceImpl(ClaudeProperties properties, AiCallRecorder recorder) {
         this.properties = properties;
+        this.recorder = recorder;
     }
 
     @Override
@@ -44,6 +55,8 @@ public class ClaudeServiceImpl implements ClaudeService {
         if (!isConfigured()) {
             throw new ApiRequestException("AI chat is not configured", HttpStatus.SERVICE_UNAVAILABLE);
         }
+        long started = System.nanoTime();
+        AiCallContext.Ctx ctx = AiCallContext.current();
         try {
             MessageCreateParams.Builder builder = MessageCreateParams.builder()
                     .model(properties.getModel())
@@ -66,16 +79,46 @@ public class ClaudeServiceImpl implements ClaudeService {
                     .collect(Collectors.joining())
                     .trim();
 
+            Long inputTokens = null;
+            Long outputTokens = null;
+            try {
+                if (response.usage() != null) {
+                    inputTokens = response.usage().inputTokens();
+                    outputTokens = response.usage().outputTokens();
+                }
+            } catch (RuntimeException ignored) {
+                // usage is informational; a missing block must not fail the chat
+            }
+
             if (text.isEmpty()) {
+                record(ctx, started, inputTokens, outputTokens, AiCallRecorder.Outcome.EMPTY_RESPONSE, null);
                 throw new ApiRequestException("Claude returned an empty response", HttpStatus.BAD_GATEWAY);
             }
+            record(ctx, started, inputTokens, outputTokens, AiCallRecorder.Outcome.OK, null);
             return text;
         } catch (ApiRequestException e) {
             throw e;
         } catch (Exception e) {
+            record(ctx, started, null, null, AiCallRecorder.Outcome.PROVIDER_ERROR, e.getClass().getSimpleName());
             log.error("Claude chat request failed: {}", e.getMessage(), e);
             throw new ApiRequestException("Failed to generate AI response", HttpStatus.BAD_GATEWAY);
         }
+    }
+
+    private void record(AiCallContext.Ctx ctx, long startedNanos, Long inputTokens, Long outputTokens,
+                        AiCallRecorder.Outcome outcome, String error) {
+        recorder.record(AiCallRecorder.Call.builder()
+                .endpoint(AiCallRecorder.Endpoint.CHAT)
+                .provider(PROVIDER)
+                .model(properties.getModel())
+                .userId(ctx == null ? null : ctx.userId())
+                .activityId(ctx == null ? null : ctx.activityId())
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
+                .duration(Duration.ofNanos(System.nanoTime() - startedNanos))
+                .outcome(outcome)
+                .error(error)
+                .build());
     }
 
     private AnthropicClient anthropicClient() {
