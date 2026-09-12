@@ -1,0 +1,12 @@
+# Overlay for the end-to-end run (.github/workflows/e2e.yml and `make e2e`):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+#
+# The SPA dev server (frontend/package.json "proxy") and the Playwright
+# helpers talk to the backend on :8080, while the default compose file
+# publishes it on :8081 to leave :8080 free for `./mvnw spring-boot:run`.
+# This overlay adds the :8080 mapping for the e2e run only.
+services:
+  backend:
+    ports:
+      - "8080:8080"

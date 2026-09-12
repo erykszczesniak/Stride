@@ -9,6 +9,9 @@ changelog.
 ## [Unreleased]
 
 ### Added
+- `scripts/smoke.sh` (API, one request per feature area, AI guard, Prometheus
+  target and rules, Watchdog, no critical alert) and a nightly Playwright e2e
+  workflow on the composed stack; `make smoke` / `make e2e-up`.
 - AI guardrails and telemetry: per-user rate limits (429), prompt guard (400),
   PII masking before text leaves the app, cost/tokens/latency per provider call
   with an `ai.audit` trail, Anthropic→Groq chat failover, golden-set and live evals.

@@ -2,7 +2,7 @@
 # Strava Clone - Makefile
 # ============================================
 
-.PHONY: help build up down logs clean test backend frontend
+.PHONY: help build up down logs clean test backend frontend smoke e2e-up e2e-down
 
 # Default target
 help:
@@ -10,6 +10,8 @@ help:
 	@echo ""
 	@echo "  make build         - Build all Docker images"
 	@echo "  make up            - Start all services"
+	@echo "  make smoke         - Post-deploy smoke test (API + monitoring pipeline)"
+	@echo "  make e2e-up        - Stack with the backend also on :8080 (SPA proxy + Playwright)"
 	@echo "  make down          - Stop all services"
 	@echo "  make logs          - View logs (all services)"
 	@echo "  make logs-backend  - View backend logs"
@@ -100,6 +102,18 @@ prod-logs:
 # Check container status
 ps:
 	docker compose ps
+
+# Post-deploy smoke test against the running stack (override BASE_URL / PROM_URL / ALERTMANAGER_URL)
+smoke:
+	scripts/smoke.sh
+
+# Stack for the end-to-end run: backend also published on :8080, where the SPA dev
+# proxy and the Playwright helpers expect it. Then: cd frontend && npm start / npm run e2e
+e2e-up:
+	docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+
+e2e-down:
+	docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v --remove-orphans
 
 # Check health endpoints
 health:
