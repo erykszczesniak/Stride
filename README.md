@@ -10,6 +10,30 @@ A full-stack fitness activity tracking application inspired by Strava. Track you
 
 ![Dashboard Preview](docs/screenshots/dashboard.png)
 
+> This is the **`main` branch**: one Spring Boot monolith. The same product also
+> exists as 12 services on
+> [`microservices`](https://github.com/erykszczesniak/Stride/tree/microservices);
+> both branches carry the same operational tooling — see
+> [Operations & quality](#operations--quality).
+
+## Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Tech Stack](#tech-stack)
+- [Operations & quality](#operations--quality)
+- [Getting Started](#getting-started)
+- [AWS Deployment (Terraform)](#aws-deployment-terraform)
+- [API Documentation](#api-documentation)
+- [Project Structure](#project-structure)
+- [Observability & Security](#observability--security)
+- [Recent Features — Configuration & Testing](#recent-features--configuration--testing)
+- [Running Tests](#running-tests)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
 ## Features
 
 ### Native iOS client
@@ -280,10 +304,42 @@ Automatic detection and tracking of personal best times for standard distances a
 - **Kubernetes** manifests (Deployments, Services, Ingress, Secrets, ConfigMaps)
 - **PostgreSQL 16**
 - **Nginx** (production)
-- **Prometheus** + **Grafana** for metrics & dashboards
+- **Prometheus** + **Grafana** for metrics & dashboards (`stride-jvm`, `stride-slo`, `stride-cost`)
+- **Alertmanager** with 30 unit-tested alert rules, SLO burn-rate alerting and cost attribution ([Operations & quality](#operations--quality))
 - **OpenTelemetry** distributed tracing exported via OTLP to **Jaeger**
 - **Structured logging** (JSON in prod via Logstash encoder) with `traceId` correlation
 - **Rate limiting** on auth endpoints
+
+## Operations & quality
+
+Everything an on-call engineer, a reviewer or a finance question needs is
+code in this repository and checked in CI. The series landed on
+`microservices` first (#156–#166) and was ported here in #167–#181; details
+in [`CHANGELOG.md`](CHANGELOG.md).
+
+| Area | What is there | Where |
+|---|---|---|
+| **CI gates** | JaCoCo floor 60 % lines / 40 % branches (69 % / 48 % today), ArchUnit layer rules with a frozen store for the three legacy controllers that still touch repositories, Testcontainers on real PostgreSQL, frontend Jest (141 tests) in CI, CodeQL, Trivy filesystem + image | `pom.xml`, `src/test/java/.../ArchitectureTest.java`, `.github/workflows/{ci,codeql,security-scan}.yml` |
+| **Alerts as code** | 30 Prometheus rules in 8 groups, a promtool test case per alert, a label/runbook/test contract enforced by CI, Alertmanager routing with inhibition, an echo receiver so deliveries are visible locally | [`monitoring/alerts/`](monitoring/alerts), [`monitoring/alertmanager/`](monitoring/alertmanager), `.github/workflows/monitoring.yml` |
+| **SLOs** | 3 objectives (availability 99.5 %, latency 95 % < 500 ms, AI 98 %), recording rules, multi-window burn-rate alerts (14.4× pages, 6× tickets), 30-day error budget and policy, `stride-slo` dashboard | [`docs/slo.md`](docs/slo.md), [`monitoring/alerts/slo.rules.yml`](monitoring/alerts/slo.rules.yml) |
+| **Runbooks & post-mortems** | 9 runbooks in one format (every one of the 30 alerts links to one, with the stack's real commands), post-mortem index + template and the duplicate-Flyway-version write-up reconstructed from git | [`docs/runbooks/`](docs/runbooks), [`docs/postmortems/`](docs/postmortems) |
+| **AI guardrails** | per-user rate limit, prompt guard with a 42-case golden eval that gates the build, PII masking before the provider *and* before persistence, token/latency/cost metrics + JSON audit line per call, Anthropic → Groq chat failover, live rubric evals (weekly, keys required) | [`docs/ai-guardrails.md`](docs/ai-guardrails.md), `src/main/java/com/strava/backend/ai/`, `.github/workflows/ai-eval.yml` |
+| **Cost attribution** | `team` / `cost_center` on every metric, modelled infra USD/hour from CPU consumed and memory reserved, real AI spend from tokens, `stride-cost` dashboard, spend-spike alerts | [`docs/cost-attribution.md`](docs/cost-attribution.md), [`monitoring/alerts/cost.rules.yml`](monitoring/alerts/cost.rules.yml) |
+| **E2E & smoke** | `scripts/smoke.sh` (API per feature area, AI guard, Prometheus target and rules, Alertmanager Watchdog, no critical alert) usable against compose, k8s or prod; nightly Playwright run on the composed stack | [`scripts/smoke.sh`](scripts/smoke.sh), `.github/workflows/e2e.yml`, `docker-compose.e2e.yml` |
+| **Decisions** | 10 ADRs with the alternatives that were on the table and the known gaps | [`docs/adr/`](docs/adr) |
+| **Repo standards** | CODEOWNERS, PR template with a mandatory verification section, Dependabot, release-please from Conventional Commit titles, `AGENTS.md` + path-scoped Copilot instructions | [`AGENTS.md`](AGENTS.md), `.github/` |
+
+```bash
+./mvnw verify                                   # tests + ArchUnit + JaCoCo gate + guard golden eval
+docker run --rm -v "$PWD/monitoring:/m" --entrypoint sh prom/prometheus:v2.55.0 \
+  -c 'promtool test rules /m/alerts/tests/*.test.yml'   # alert rule unit tests
+python3 monitoring/scripts/check_alert_rules.py         # label / runbook / test contract
+make smoke                                              # against the running stack
+```
+
+Grafana dashboards (`:3003`): **`stride-jvm`** (JVM & HTTP per endpoint),
+**`stride-slo`** (SLIs, burn rate, error budget), **`stride-cost`** (spend by
+team and model). Alert deliveries locally: `docker compose logs -f alert-sink`.
 
 ## Getting Started
 
@@ -768,13 +824,36 @@ rate(jvm_gc_pause_seconds_sum[1m])
 
 **Grafana** — http://localhost:3003 (login: `admin` / `admin`)
 
-Go to **Dashboards → Strava Backend - JVM & Spring Boot** to see:
+Go to **Dashboards → Stride — JVM & Spring Boot (monolith)** (`stride-jvm`) to see:
 - HTTP request rate, p95 latency, error rates (4xx/5xx)
 - JVM heap & non-heap memory
 - GC pause duration
 - Thread counts (live, daemon, peak)
 - System & process CPU usage
 - HikariCP connection pool (active, idle, pending, total)
+
+Two more provisioned dashboards: **`stride-slo`** (error ratio and slow-request
+ratio per window, burn rate, 30-day error budget) and **`stride-cost`**
+(modelled infra USD/h by team, AI spend by provider/model).
+
+### Alerting (Prometheus rules + Alertmanager)
+
+Rules live in [`monitoring/alerts/`](monitoring/alerts) (one file per concern:
+platform, services, slo, ai, cost, self-observability) and are mounted into
+Prometheus; Alertmanager (`:9093`) routes by `severity` and `team` and, locally,
+delivers every notification to the `alert-sink` echo container:
+
+```bash
+docker compose logs -f alert-sink          # what a pager / Teams channel would receive
+curl -X POST localhost:9091/-/reload       # reload rules after editing them
+docker run --rm -v "$PWD/monitoring:/m" --entrypoint sh prom/prometheus:v2.55.0 \
+  -c 'promtool test rules /m/alerts/tests/*.test.yml'
+```
+
+Every alert carries `severity`, `team`, `tier`, `service`, a `runbook_url` into
+[`docs/runbooks/`](docs/runbooks) and has a firing test case; CI rejects the
+rest (`monitoring/scripts/check_alert_rules.py`). The SLO targets and the
+burn-rate maths are in [`docs/slo.md`](docs/slo.md).
 
 ### Elasticsearch (user search)
 
@@ -1097,8 +1176,15 @@ The project has a three-layer test pyramid covering backend, frontend unit/compo
 
 ### Backend (JUnit 5 + Mockito + Testcontainers)
 ```bash
-./mvnw test
+./mvnw verify      # unit + integration tests, ArchUnit rules, JaCoCo gate (60 % / 40 %), guard golden eval
+./mvnw test        # tests only
 ```
+
+`verify` is what CI runs: 840 tests (Testcontainers ones skip without Docker),
+the architecture rules in `ArchitectureTest`, the coverage floor, and the
+42-case prompt-guard golden set. Live evals against the real providers are
+tagged `live-eval` and run only with `ANTHROPIC_API_KEY` / `GROQ_API_KEY`
+(weekly `ai-eval` workflow, or `./mvnw test -Dgroups=live-eval`).
 
 Key suites for recently added features:
 - `GeoUtilsTest` — polyline format detection (legacy JSON vs Google Encoded), Haversine, encode/decode round-trip
@@ -1117,10 +1203,13 @@ Covers `utils/polyline`, `utils/formatters`, API services (`ImportService`, `Per
 
 ### Frontend end-to-end (Playwright)
 ```bash
-# Requires backend on :8080 and frontend on :3000
-cd frontend
-npx playwright test
+make e2e-up                 # compose stack with the backend also on :8080
+make smoke                  # API + monitoring pipeline against the running stack
+cd frontend && npm start    # SPA on :3000, proxies /api to :8080
+cd frontend && npm run e2e  # Playwright
 ```
+
+The nightly `E2E` workflow does the same on a runner (`.github/workflows/e2e.yml`).
 
 Suites in `frontend/e2e/`:
 - `auth.spec.ts` — login / logout flow
@@ -1128,6 +1217,20 @@ Suites in `frontend/e2e/`:
 - `notifications.spec.ts` — real-time notification delivery
 - `import.spec.ts` — mode toggle, dropzone, sample download, GPX upload + clean-up, client-side validation rejection
 - `personal-records.spec.ts` — PR tab on own and public profiles, Recalculate network roundtrip, seeded activity → grouped PR row
+
+## Documentation
+
+| Document | What it answers |
+|---|---|
+| [`docs/slo.md`](docs/slo.md) | the three objectives, burn-rate alerting, error-budget policy |
+| [`docs/runbooks/`](docs/runbooks) · [`docs/postmortems/`](docs/postmortems) | what to do when it pages; how incidents are written up |
+| [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | rate limits, prompt guard, PII masking, failover, cost telemetry, evals |
+| [`docs/cost-attribution.md`](docs/cost-attribution.md) | who pays for what, and how the model is built |
+| [`docs/observability.md`](docs/observability.md) | metrics, tracing, logs, alerting — and the known gaps |
+| [`docs/adr/`](docs/adr) | the decisions, their alternatives and their known gaps |
+| [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) · [`docs/GRAPHQL_DOCUMENTATION.md`](docs/GRAPHQL_DOCUMENTATION.md) | the public contract |
+| [`AGENTS.md`](AGENTS.md) | commands, invariants and definition of done for humans and coding agents |
+| [`CHANGELOG.md`](CHANGELOG.md) | what changed, release by release |
 
 ## Contributing
 

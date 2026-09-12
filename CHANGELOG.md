@@ -9,6 +9,9 @@ changelog.
 ## [Unreleased]
 
 ### Added
+- README: table of contents, `Operations & quality` overview with the local
+  verification commands, alerting section, `verify`-based test instructions and a
+  documentation index.
 - Documentation: 9 runbooks (one per alert), post-mortem index and the
   2026-07-11 duplicate-Flyway-version write-up, 10 ADRs, SLO, cost-attribution,
   AI-guardrails and observability docs for the monolith.
