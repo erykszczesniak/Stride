@@ -125,8 +125,7 @@ probes wait that long before checking.
   the Kafka producer/consumer record headers. Spring Cloud Sleuth and
   Micrometer Tracing both support this; needs enabling in
   `KafkaTemplate` config. (Phase 9b follow-up.)
-- **SLO dashboards** — Grafana dashboards for service availability,
-  P95 latency budget burn, error budget tracking. Templates exist in
-  the prometheus-community ecosystem; not auto-provisioned here.
-- **Alertmanager** — no alert rules wired. The metrics they'd be built
-  off (CB state, consumer lag, P95 burn) all exist.
+
+Closed since this list was written: SLO dashboards and burn-rate alerting
+([`docs/slo.md`](slo.md), `stride-slo`), Alertmanager with 41 tested rules
+([`monitoring/alerts/`](../monitoring/alerts), [`docs/runbooks/`](runbooks)).

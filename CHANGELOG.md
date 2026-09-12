@@ -13,6 +13,9 @@ Conventional Commit PR titles.
   live rubric evals for chat and generation (JUnit tag `live-eval`, weekly
   `AI live eval` workflow, keys required) alongside the deterministic guard
   golden set.
+- README: table of contents, an "Operations & quality" section mapping every
+  area to its files, a documentation index; `docs/observability.md` gap list
+  updated (SLOs and Alertmanager are done).
 - `scripts/smoke.sh` (gateway health, login, one request per service, guard
   check, Eureka registrations, Prometheus targets and rule groups, Watchdog in
   Alertmanager, no critical alert firing) and a nightly / on-demand `E2E`

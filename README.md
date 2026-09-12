@@ -16,7 +16,24 @@
 contract, same DTOs, same behavior, served by 9 domain services behind the
 gateway instead of one monolith. The parity work (Phases 10–22) is tracked
 in [docs/parity-plan.md](docs/parity-plan.md); every service module ships
-with tests (830+ across the reactor).
+with tests (about 950 across the reactor plus 141 in the frontend), and
+the reactor build is gated on coverage, architecture rules and a real-
+PostgreSQL migration test — see [Operations & quality](#operations--quality).
+
+## Contents
+
+- [Phases](#phases)
+- [Architecture at a glance](#architecture-at-a-glance)
+- [Service inventory](#service-inventory)
+- [Patterns demonstrated](#patterns-demonstrated)
+- [Operations & quality](#operations--quality)
+- [Run it locally](#run-it-locally)
+- [Run it on AWS (free tier)](#run-it-on-aws-free-tier)
+- [Repository layout](#repository-layout)
+- [Tech stack](#tech-stack)
+- [What's intentionally not here](#whats-intentionally-not-here)
+- [Documentation](#documentation)
+- [License](#license)
 
 ## Phases
 
@@ -133,14 +150,36 @@ whole stack.
 | **API composition with identity forwarding** | BFFs call domain services with the caller's verified `X-User-*` headers over the public REST contract |
 | **gRPC inside, REST at the edge** | Cluster-internal calls use typed proto contracts (`shared/grpc-contracts`) over Eureka-discovered gRPC channels with per-call deadlines; the browser/iOS contract stays REST at the gateway |
 
+## Operations & quality
+
+Everything an on-call engineer, a reviewer or a finance question needs is
+code in this repository and checked in CI. Added in the September 2026
+series (#156–#165); details in [`CHANGELOG.md`](CHANGELOG.md).
+
+| Area | What is there | Where |
+|---|---|---|
+| **CI gates** | JaCoCo floor per module (60 % lines / 40 % branches; lowest module today 68 %), ArchUnit rules (found and fixed a controller bypassing the service layer), Testcontainers test on real PostgreSQL with the production migration set, frontend Jest in CI, CodeQL, Trivy filesystem + image | `pom.xml`, `*/ArchitectureTest`, `.github/workflows/{ci,codeql,security-scan}.yml` |
+| **Alerts as code** | 41 Prometheus rules in 7 groups, 50+ promtool unit-test cases, a label/runbook/test contract enforced by CI, Alertmanager routing with inhibition, an echo receiver so deliveries are visible locally, Eureka label normalised at scrape | [`monitoring/alerts/`](monitoring/alerts), [`monitoring/alertmanager/`](monitoring/alertmanager), `.github/workflows/monitoring.yml` |
+| **SLOs** | 4 objectives (edge 99.5 % / 95 % < 500 ms, per-service 99.5 %, AI 98 %), recording rules, multi-window burn-rate alerts (14.4× pages, 6× tickets), error-budget policy, `stride-slo` dashboard | [`docs/slo.md`](docs/slo.md), [`monitoring/alerts/slo.rules.yml`](monitoring/alerts/slo.rules.yml) |
+| **Runbooks & post-mortems** | 13 runbooks in one format (front matter for agents, investigation steps with the stack's real commands), 2 post-mortems reconstructed from merged PRs | [`docs/runbooks/`](docs/runbooks), [`docs/postmortems/`](docs/postmortems) |
+| **AI guardrails** | per-user rate limit, prompt guard with a 42-case golden eval that gates the build, PII masking before the provider *and* before persistence, token/latency/cost metrics + JSON audit line per call, Anthropic → Groq failover, live rubric evals (weekly, keys required) | [`docs/ai-guardrails.md`](docs/ai-guardrails.md), `services/ai-service/.../{guard,telemetry}`, `.github/workflows/ai-eval.yml` |
+| **Cost attribution** | `team` / `cost_center` on every metric (set per service in Config Server), modelled infra USD/hour from CPU consumed and memory reserved, real AI spend from tokens, `stride-cost` dashboard, spend-spike alerts | [`docs/cost-attribution.md`](docs/cost-attribution.md), [`monitoring/alerts/cost.rules.yml`](monitoring/alerts/cost.rules.yml) |
+| **E2E & smoke** | `scripts/smoke.sh` (gateway, one request per service, guard, Eureka, Prometheus targets and rules, Watchdog, no critical alert) usable against compose, kind or prod; nightly Playwright run on the composed stack | [`scripts/smoke.sh`](scripts/smoke.sh), `.github/workflows/e2e.yml` |
+| **Decisions** | 10 ADRs with the alternatives that were on the table and the known gaps | [`docs/adr/`](docs/adr) |
+| **Repo standards** | CODEOWNERS, PR template with a mandatory verification section, Dependabot, release-please from Conventional Commit titles, `AGENTS.md` + path-scoped Copilot instructions | [`AGENTS.md`](AGENTS.md), `.github/` |
+
+Grafana dashboards (`:3001`): **`stride-jvm`** (per-service JVM & HTTP), **`stride-slo`** (SLIs, burn rate, error budget), **`stride-cost`** (spend by team/service/model). Alert deliveries locally: `docker compose logs -f alert-sink`.
+
 ## Run it locally
 
 ### Option A — docker-compose (full stack)
 
 ```bash
-cp .env.example .env       # adjust JWT_SECRET, GROQ_API_KEY if you want real Groq
+cp .env.example .env       # adjust JWT_SECRET, GROQ_API_KEY / ANTHROPIC_API_KEY for real AI
 ./mvnw clean package -DskipTests
-docker compose up -d
+docker compose up -d                                   # lean core (12 services + Kafka/Redis/Postgres)
+docker compose --profile observability --profile search up -d   # + Prometheus, Alertmanager, Grafana, Jaeger, Kafka UI, Elasticsearch
+scripts/smoke.sh                                       # gateway, every service, guard, Eureka, monitoring pipeline
 ```
 
 Endpoints:
@@ -152,8 +191,9 @@ Endpoints:
 | http://localhost:8888  | Config Server                 |
 | http://localhost:8090  | Kafka UI                      |
 | http://localhost:16686 | Jaeger UI                     |
-| http://localhost:9090  | Prometheus                    |
-| http://localhost:3001  | Grafana (admin/admin)         |
+| http://localhost:9090  | Prometheus (rules, targets)   |
+| http://localhost:9093  | Alertmanager                  |
+| http://localhost:3001  | Grafana (admin/admin): `stride-jvm`, `stride-slo`, `stride-cost` |
 
 ### Option B — kind (Kubernetes locally)
 
@@ -214,9 +254,19 @@ full stack.
 │   └── pipeline-service/           # Phase 21 (iOS BFF: /pipeline/v1 + tri_ tokens)
 ├── k8s/                            # Kubernetes manifests (Phase 9)
 ├── terraform/aws/                  # AWS free-tier deployment skeleton
-├── monitoring/                     # Prometheus + Grafana provisioning
-├── docs/                           # architecture, saga, observability
-└── frontend/                       # React SPA (unchanged from monolith)
+├── monitoring/
+│   ├── alerts/                     # Prometheus rules (7 groups) + promtool unit tests
+│   ├── alertmanager/               # routing, inhibition, receivers
+│   ├── grafana/dashboards/         # stride-jvm, stride-slo, stride-cost (linted in CI)
+│   └── scripts/                    # alert contract check
+├── scripts/smoke.sh                # post-deploy smoke test (compose / kind / prod)
+├── docs/
+│   ├── adr/                        # architecture decision records
+│   ├── runbooks/ · postmortems/    # one runbook per alert family, blameless post-mortems
+│   ├── slo.md · ai-guardrails.md · cost-attribution.md
+│   └── architecture.md · saga.md · observability.md
+├── AGENTS.md · CHANGELOG.md        # working conventions, release notes (release-please)
+└── frontend/                       # React SPA (unchanged from monolith) + Playwright e2e
 ```
 
 ## Tech stack
@@ -224,7 +274,9 @@ full stack.
 - **Spring Boot 3.4** · **Spring Cloud 2024.0.0** · **Java 21** · **Kotlin 1.9**
 - **Postgres 16** · **Kafka 3.7 (KRaft)** · **Redis 7**
 - **Resilience4j 2.2** · **Flyway 10** · **JJWT 0.12**
-- **Jaeger 1.62** · **Prometheus 2.55** · **Grafana 11**
+- **Jaeger 1.71** · **Prometheus 2.55** · **Alertmanager 0.27** · **Grafana 11**
+- **JaCoCo** · **ArchUnit** · **Testcontainers** · **Playwright** · **promtool** · **grafana/dashboard-linter**
+- **CodeQL** · **Trivy** · **Dependabot** · **release-please**
 - **Maven 3.9** · **Docker** · **Kubernetes 1.30+**
 - **Terraform 1.6+** (AWS provider 5.x)
 
@@ -237,6 +289,22 @@ Documented decisions, not gaps:
 - **Full event sourcing** — only the social feed is event-sourced; everything else is conventional CRUD
 - **Saga orchestrator** — choreographed sagas (Kafka fan-out) are the right shape for this domain; documented in `docs/saga.md`
 - **EKS in Terraform** — control plane is ~$73/mo, breaks the "free-tier demo" frame
+
+## Documentation
+
+| Document | What it answers |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | how the services fit together, the five pillars |
+| [`docs/saga.md`](docs/saga.md) | the event chain from activity created to notification, why choreography |
+| [`docs/observability.md`](docs/observability.md) | tracing, metrics, logs, health |
+| [`docs/slo.md`](docs/slo.md) | the four objectives, burn-rate alerting, error-budget policy |
+| [`docs/runbooks/`](docs/runbooks) · [`docs/postmortems/`](docs/postmortems) | what to do when it pages; what happened last time |
+| [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | rate limits, prompt guard, PII masking, failover, cost telemetry, evals |
+| [`docs/cost-attribution.md`](docs/cost-attribution.md) | who pays for what, and how the model is built |
+| [`docs/adr/`](docs/adr) | the decisions, their alternatives and their known gaps |
+| [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) · [`docs/GRAPHQL_DOCUMENTATION.md`](docs/GRAPHQL_DOCUMENTATION.md) | the public contract |
+| [`docs/parity-plan.md`](docs/parity-plan.md) | the monolith → microservices migration, phase by phase |
+| [`AGENTS.md`](AGENTS.md) | commands, invariants and definition of done for humans and coding agents |
 
 ## License
 
