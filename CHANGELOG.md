@@ -8,6 +8,11 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Added
+- CI quality gates: JaCoCo per-module coverage floor (60 % lines / 40 % branches,
+  lowest module today 68 % / 56 %), ArchUnit rules in activity-service and
+  ai-service, a Testcontainers test running the production PostgreSQL
+  migration set, frontend unit tests in CI, CodeQL and Trivy (filesystem +
+  image) workflows.
 - Repository standards: `CODEOWNERS`, PR template with a mandatory
   verification section, Dependabot (Maven, npm, Actions, Docker), release-please,
   `AGENTS.md` and per-path Copilot instructions.

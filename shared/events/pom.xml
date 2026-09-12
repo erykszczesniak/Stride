@@ -15,6 +15,11 @@
     <name>Stride :: Shared :: Kafka Events</name>
     <description>Event DTOs published/consumed across Stride microservices via Kafka</description>
 
+    <properties>
+        <!-- No executable logic of its own (DTOs / generated stubs / Boot entry point): coverage gate off. -->
+        <jacoco.check.skip>true</jacoco.check.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

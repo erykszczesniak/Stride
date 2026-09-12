@@ -75,6 +75,26 @@ public class ActivityService {
         return activityRepository.findByUserId(userId, pageable);
     }
 
+    /**
+     * Admin listing across all users: newest first, or a title search when
+     * {@code search} is non-blank. Lives here (not in the controller) so the
+     * admin surface goes through the same layer as everything else — the
+     * ArchitectureTest forbids controllers from touching repositories.
+     */
+    @Transactional(readOnly = true)
+    public Page<Activity> listForAdmin(String search, Pageable pageable) {
+        return (search != null && !search.isBlank())
+                ? activityRepository.searchByTitle(search, pageable)
+                : activityRepository.findAllByOrderByCreatedAtDesc(pageable);
+    }
+
+    /** Admin delete: no ownership check, cascades to personal records. 404 when unknown. */
+    @Transactional
+    public void deleteAsAdmin(Long activityId) {
+        Activity activity = getActivityById(activityId);
+        deleteWithPersonalRecords(activity);
+    }
+
     @Transactional
     public Activity createActivity(Long userId, ActivityRequest request) {
         validateStreamAlignment(request);

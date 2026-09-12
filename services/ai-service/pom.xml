@@ -162,6 +162,13 @@
             <version>5.4.0</version>
             <scope>test</scope>
         </dependency>
+        <!-- Package-dependency rules (ArchitectureTest): only client/ talks to
+             providers, controllers never reach client/, domain stays framework-free. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- In-process gRPC transport. Tests run real stubs against a fake
              service implementation (no sockets, no Mockito on generated
              types), but the scope must be RUNTIME, not test: net.devh 3.1.0's

@@ -3,7 +3,7 @@ package com.strava.activityservice.admin;
 import com.strava.activityservice.activity.ActivityService;
 import com.strava.activityservice.config.SecurityConfig;
 import com.strava.activityservice.domain.Activity;
-import com.strava.activityservice.domain.ActivityRepository;
+import com.strava.activityservice.exception.ApiRequestException;
 import com.strava.activityservice.user.BaseUserResponse;
 import com.strava.activityservice.user.UserCacheService;
 import com.strava.activityservice.util.TestDataFactory;
@@ -14,17 +14,19 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static com.strava.activityservice.constants.ErrorMessage.ACTIVITY_NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -39,9 +41,6 @@ class AdminActivityControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
-    private ActivityRepository activityRepository;
 
     @MockitoBean
     private ActivityService activityService;
@@ -67,7 +66,7 @@ class AdminActivityControllerTest {
     @DisplayName("GET /api/v1/admin/activities ships the HeaderResponse envelope as the body")
     void listShipsEnvelopeBody() throws Exception {
         Activity activity = TestDataFactory.createActivity(1L, 5L);
-        when(activityRepository.findAllByOrderByCreatedAtDesc(any(Pageable.class)))
+        when(activityService.listForAdmin(isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(activity), Pageable.ofSize(20), 1));
         BaseUserResponse author = new BaseUserResponse();
         author.setId(5L);
@@ -87,9 +86,9 @@ class AdminActivityControllerTest {
     }
 
     @Test
-    @DisplayName("search delegates to the title search query")
+    @DisplayName("search is passed through to the service")
     void searchDelegates() throws Exception {
-        when(activityRepository.searchByTitle(eq("run"), any(Pageable.class)))
+        when(activityService.listForAdmin(eq("run"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(userCacheService.usersFor(anyCollection())).thenReturn(Map.of());
 
@@ -99,29 +98,26 @@ class AdminActivityControllerTest {
                         .header("X-User-Roles", "ADMIN"))
                 .andExpect(status().isOk());
 
-        verify(activityRepository).searchByTitle(eq("run"), any(Pageable.class));
-        verify(activityRepository, never()).findAllByOrderByCreatedAtDesc(any());
+        verify(activityService).listForAdmin(eq("run"), any(Pageable.class));
     }
 
     @Test
     @DisplayName("DELETE removes the activity (with PRs) and answers with main's message body")
     void deleteActivity() throws Exception {
-        Activity activity = TestDataFactory.createActivity(1L, 5L);
-        when(activityRepository.findById(1L)).thenReturn(Optional.of(activity));
-
         mockMvc.perform(delete("/api/v1/admin/activities/1")
                         .header("X-User-Id", "4")
                         .header("X-User-Roles", "ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Activity deleted"));
 
-        verify(activityService).deleteWithPersonalRecords(activity);
+        verify(activityService).deleteAsAdmin(1L);
     }
 
     @Test
     @DisplayName("DELETE of a missing activity is a 404 ProblemDetail")
     void deleteMissingActivity() throws Exception {
-        when(activityRepository.findById(999L)).thenReturn(Optional.empty());
+        doThrow(new ApiRequestException(ACTIVITY_NOT_FOUND, HttpStatus.NOT_FOUND))
+                .when(activityService).deleteAsAdmin(999L);
 
         mockMvc.perform(delete("/api/v1/admin/activities/999")
                         .header("X-User-Id", "4")

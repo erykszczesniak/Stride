@@ -15,6 +15,11 @@
     <name>Stride :: Shared :: gRPC Contracts</name>
     <description>Protobuf definitions + generated stubs for cluster-internal service-to-service APIs</description>
 
+    <properties>
+        <!-- No executable logic of its own (DTOs / generated stubs / Boot entry point): coverage gate off. -->
+        <jacoco.check.skip>true</jacoco.check.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.grpc</groupId>
