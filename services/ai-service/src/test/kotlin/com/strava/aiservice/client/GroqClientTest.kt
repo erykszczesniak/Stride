@@ -1,6 +1,7 @@
 package com.strava.aiservice.client
 
 import com.strava.aiservice.TestGuardrails
+import com.strava.aiservice.domain.ChatRole
 import com.strava.aiservice.exception.ApiRequestException
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.assertj.core.api.Assertions.assertThat
@@ -103,5 +104,36 @@ class GroqClientTest {
         assertThatThrownBy { client.complete("s", "u") }.isInstanceOf(ApiRequestException::class.java)
 
         assertThat(registry.counter("ai.requests", "endpoint", "goal", "provider", "groq", "model", "test-model", "outcome", "provider_error").count()).isEqualTo(1.0)
+    }
+
+    @Test
+    @DisplayName("chatCompletion replays the conversation as OpenAI-style roles behind the system prompt")
+    fun chatCompletionMapsRoles() {
+        whenever(rest.postForObject(any<String>(), any(), eq(GroqResponse::class.java)))
+            .thenReturn(GroqResponse(listOf(GroqResponse.Choice(GroqRequest.Message("assistant", "degraded but present")))))
+
+        val reply = client.chatCompletion("coach", listOf(
+            ChatMessage(ChatRole.USER, "hi"),
+            ChatMessage(ChatRole.ASSISTANT, "hello"),
+            ChatMessage(ChatRole.USER, "how was my run?")
+        ))
+
+        assertThat(reply).isEqualTo("degraded but present")
+        val entityCaptor = argumentCaptor<HttpEntity<GroqRequest>>()
+        org.mockito.kotlin.verify(rest).postForObject(any<String>(), entityCaptor.capture(), eq(GroqResponse::class.java))
+        assertThat(entityCaptor.firstValue.body!!.messages).containsExactly(
+            GroqRequest.Message("system", "coach"),
+            GroqRequest.Message("user", "hi"),
+            GroqRequest.Message("assistant", "hello"),
+            GroqRequest.Message("user", "how was my run?")
+        )
+        assertThat(registry.counter("ai.requests", "endpoint", "chat", "provider", "groq", "model", "test-model", "outcome", "ok").count()).isEqualTo(1.0)
+    }
+
+    @Test
+    @DisplayName("isConfigured reflects the api key")
+    fun isConfiguredReflectsKey() {
+        assertThat(client.isConfigured()).isTrue()
+        assertThat(GroqClient(rest, "u", "", "m", TestGuardrails.recorder()).isConfigured()).isFalse()
     }
 }

@@ -5,6 +5,24 @@ groups:
   - name: stride-ai
     rules:
 
+      # The chat is being served by the secondary provider. Users get answers,
+      # but degraded ones, and Groq spend appears on the chat endpoint — worth a
+      # ticket even though nothing is "down".
+      - alert: AiProviderFailoverActive
+        expr: sum(rate(ai_failover_total[15m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          team: ai
+          tier: "2"
+          service: ai-service
+          app: ai-service
+        annotations:
+          summary: "Chat is failing over to the secondary provider"
+          description: "FailoverChatClient has routed chat turns from Anthropic to Groq for 10 minutes. Check AiProviderCircuitOpen (breaker 'anthropic') and the Anthropic status page; answers are degraded until the primary recovers."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md
+          dashboard_url: http://localhost:3001/d/stride-cost
+
       - alert: AiProviderCircuitOpen
         expr: resilience4j_circuitbreaker_state{app="ai-service",state="open"} == 1
         for: 2m

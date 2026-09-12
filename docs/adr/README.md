@@ -16,6 +16,7 @@ of mind is a new ADR that supersedes the old one.
 | [007](007-slo-burn-rate-alerting.md) | SLOs with multi-window burn-rate alerting | Accepted |
 | [008](008-quality-gates-in-the-build.md) | Coverage floors, ArchUnit rules and a real-database test in `verify` | Accepted |
 | [009](009-ai-guardrails.md) | LLM guardrails and cost telemetry in the service layer | Accepted |
+| [010](010-chat-provider-failover.md) | Chat failover Anthropic → Groq, and live evals outside the per-PR build | Accepted |
 
 ## Format
 

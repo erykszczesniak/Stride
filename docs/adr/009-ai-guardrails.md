@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Accepted |
-| **Date** | 2026-09-12 (#161) |
+| **Date** | 2026-09-12 (#162) |
 | **Deciders** | ai, platform |
 
 ## Context

@@ -39,6 +39,11 @@ app:
       max-repeated-chars: 40
     pii:
       enabled: ${AI_PII_MASKING_ENABLED:true}
+    # Chat failover: Anthropic first, Groq (multi-turn) when Anthropic answers
+    # 502/503, its breaker is open, or no key is configured. Degraded answers
+    # beat no answers during a provider incident; every switch is counted.
+    failover:
+      enabled: ${AI_CHAT_FAILOVER_ENABLED:true}
     # USD per million tokens. Placeholders taken from the public price lists at
     # the time of writing — verify against the current lists before trusting
     # the cost panel; an unlisted model is recorded with priced=false.
@@ -77,6 +82,15 @@ resilience4j:
         minimumNumberOfCalls: 3
         permittedNumberOfCallsInHalfOpenState: 2
         waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+      # Anthropic chat: every ApiRequestException from the client counts as a
+      # failure (502 provider error, 503 unconfigured); an open breaker sends
+      # chat to Groq through FailoverChatClient instead of waiting on timeouts.
+      anthropic:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 60s
         failureRateThreshold: 50
       activity-service:
         slidingWindowSize: 10

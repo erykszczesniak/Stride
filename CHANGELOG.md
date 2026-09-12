@@ -8,6 +8,11 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Added
+- Chat provider failover (Anthropic → Groq on 502/503, open breaker or no
+  key) with `ai_failover_total` and the `AiProviderFailoverActive` alert;
+  live rubric evals for chat and generation (JUnit tag `live-eval`, weekly
+  `AI live eval` workflow, keys required) alongside the deterministic guard
+  golden set.
 - `scripts/smoke.sh` (gateway health, login, one request per service, guard
   check, Eureka registrations, Prometheus targets and rule groups, Watchdog in
   Alertmanager, no critical alert firing) and a nightly / on-demand `E2E`

@@ -5,6 +5,27 @@ evaluation_interval: 1m
 
 tests:
 
+  # --------------------------------------------------- AiProviderFailoverActive
+  - interval: 1m
+    input_series:
+      - series: 'ai_failover_total{app="ai-service",instance="ai:8087",endpoint="chat",to="groq"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: AiProviderFailoverActive
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: ai
+              tier: "2"
+              service: ai-service
+              app: ai-service
+            exp_annotations:
+              summary: "Chat is failing over to the secondary provider"
+              description: "FailoverChatClient has routed chat turns from Anthropic to Groq for 10 minutes. Check AiProviderCircuitOpen (breaker 'anthropic') and the Anthropic status page; answers are degraded until the primary recovers."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/microservices/docs/runbooks/ai-provider-degraded.md
+              dashboard_url: http://localhost:3001/d/stride-cost
+
   # ------------------------------------------------------ AiProviderCircuitOpen
   - interval: 1m
     input_series:

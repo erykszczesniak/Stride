@@ -1,5 +1,6 @@
 package com.strava.aiservice.client
 
+import com.strava.aiservice.domain.ChatRole
 import com.strava.aiservice.exception.ApiRequestException
 import com.strava.aiservice.telemetry.AiCallContext
 import com.strava.aiservice.telemetry.AiCallRecorder
@@ -31,8 +32,10 @@ import java.time.Duration
  *   @Retry          — short-burst retries absorb transient blips.
  * RestTemplate timeouts (3s connect / 7s read) bound each attempt.
  *
- * Every attempt is recorded by AiCallRecorder (latency, tokens from the
- * `usage` block, cost, outcome) against the caller in AiCallContext.
+ * Two entry points share one transport: [complete] (single-turn goal/plan
+ * generation, the monolith contract) and [chatCompletion] (multi-turn, used
+ * by FailoverChatClient when Anthropic is unavailable). Every attempt is
+ * recorded by AiCallRecorder against the caller in AiCallContext.
  */
 @Component
 @Profile("!standalone")
@@ -49,24 +52,46 @@ class GroqClient(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    /** True when an API key is present; the failover client checks this before routing chat here. */
+    fun isConfigured(): Boolean = apiKey.isNotBlank()
+
     @CircuitBreaker(name = "groq")
     @Retry(name = "groq")
     override fun complete(systemPrompt: String, userPrompt: String): String {
+        val endpoint = if (systemPrompt.contains("training plans")) AiCallRecorder.Endpoint.PLAN else AiCallRecorder.Endpoint.GOAL
+        return send(
+            listOf(
+                GroqRequest.Message("system", systemPrompt),
+                GroqRequest.Message("user", userPrompt)
+            ),
+            endpoint
+        )
+    }
+
+    /**
+     * Multi-turn variant for the persisted activity chat: the whole
+     * conversation is replayed as OpenAI-style messages. Same resilience and
+     * the same generic failure mapping as [complete].
+     */
+    @CircuitBreaker(name = "groq")
+    @Retry(name = "groq")
+    fun chatCompletion(systemPrompt: String, conversation: List<ChatMessage>): String {
+        val messages = mutableListOf(GroqRequest.Message("system", systemPrompt))
+        conversation.forEach { m ->
+            messages.add(GroqRequest.Message(if (m.role == ChatRole.ASSISTANT) "assistant" else "user", m.content))
+        }
+        return send(messages, AiCallRecorder.Endpoint.CHAT)
+    }
+
+    private fun send(messages: List<GroqRequest.Message>, endpoint: AiCallRecorder.Endpoint): String {
         val started = System.nanoTime()
         val ctx = AiCallContext.current()
-        val endpoint = if (systemPrompt.contains("training plans")) AiCallRecorder.Endpoint.PLAN else AiCallRecorder.Endpoint.GOAL
         try {
             val headers = HttpHeaders().apply {
                 contentType = MediaType.APPLICATION_JSON
                 setBearerAuth(apiKey)
             }
-            val body = GroqRequest(
-                model = model,
-                messages = listOf(
-                    GroqRequest.Message("system", systemPrompt),
-                    GroqRequest.Message("user", userPrompt)
-                )
-            )
+            val body = GroqRequest(model = model, messages = messages)
             val response = rest.postForObject(apiUrl, HttpEntity(body, headers), GroqResponse::class.java)
             val content = response?.choices?.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("Groq returned an empty choices array")

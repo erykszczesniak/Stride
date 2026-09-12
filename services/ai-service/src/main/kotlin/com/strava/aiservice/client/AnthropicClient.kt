@@ -7,6 +7,7 @@ import com.strava.aiservice.domain.ChatRole
 import com.strava.aiservice.exception.ApiRequestException
 import com.strava.aiservice.telemetry.AiCallContext
 import com.strava.aiservice.telemetry.AiCallRecorder
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
@@ -41,6 +42,12 @@ class AnthropicClient(
 
     override fun isConfigured(): Boolean = properties.isConfigured()
 
+    /**
+     * The breaker opens after sustained provider failures so a dead Anthropic
+     * does not cost a full timeout per chat turn; while open, calls throw
+     * CallNotPermittedException and FailoverChatClient routes to Groq.
+     */
+    @CircuitBreaker(name = "anthropic")
     override fun chat(systemPrompt: String, conversation: List<ChatMessage>): String {
         if (!isConfigured()) {
             throw ApiRequestException("AI chat is not configured", HttpStatus.SERVICE_UNAVAILABLE)

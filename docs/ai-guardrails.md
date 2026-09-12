@@ -119,6 +119,32 @@ histogram_quantile(0.95, sum by (provider, le) (rate(ai_request_duration_seconds
 sum by (reason) (increase(ai_guard_decisions_total{decision="blocked"}[7d]))
 ```
 
+## Provider failover (chat)
+
+`FailoverChatClient` is the `ClaudeChatClient` the service layer gets:
+Anthropic first, Groq (multi-turn `chatCompletion`) when Anthropic returns
+502/503, its breaker (`resilience4j.circuitbreaker.instances.anthropic`) is
+open, or no key is configured. Caller errors (404 activity not found) are
+never retried on the secondary. Each switch increments `ai_failover_total`
+and writes an `ai.failover` audit line; `AiProviderFailoverActive` opens a
+ticket after 10 minutes of failovers, and the Groq spend shows on the cost
+dashboard under the chat endpoint. Off switch: `AI_CHAT_FAILOVER_ENABLED=false`.
+
+## Evals
+
+Two halves:
+
+- **Deterministic, every build** — `GuardGoldenEvalTest` against
+  `evals/guard-golden.json` (see above).
+- **Live, weekly / on demand** — `LiveChatEvalTest` (Anthropic) and
+  `LiveGenerationEvalTest` (Groq), JUnit tag `live-eval`, enabled only when
+  `ANTHROPIC_API_KEY` / `GROQ_API_KEY` are set. Rubric-style checks on real
+  replies: the chat cites figures from the activity and invents none, admits
+  missing data, survives an in-conversation injection without leaking the
+  system prompt, uses the training history; goal/plan generation returns
+  the exact JSON contract with allowed workout types. The `AI live eval`
+  workflow runs them with the repository secrets and uploads the reports.
+
 ## Switches
 
 | Property | Default | Effect |
@@ -126,5 +152,6 @@ sum by (reason) (increase(ai_guard_decisions_total{decision="blocked"}[7d]))
 | `app.ai.guard.enabled` | true | prompt guard on/off |
 | `app.ai.pii.enabled` | true | masking on/off |
 | `app.ai.guard.max-repeated-chars` | 40 | noise threshold |
+| `app.ai.failover.enabled` | true | chat failover Anthropic → Groq |
 
 Turning either off is a change-reviewed action, not a hotfix.

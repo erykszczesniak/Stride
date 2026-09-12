@@ -45,6 +45,12 @@ class AiCallRecorder(
 
     private val audit = LoggerFactory.getLogger("ai.audit")
 
+    /** One failover decision (primary unavailable, secondary about to be called). */
+    fun recordFailover(endpoint: Endpoint, to: String) {
+        meterRegistry.counter("ai.failover", "endpoint", endpoint.name.lowercase(), "to", to).increment()
+        audit.info(objectMapper.writeValueAsString(mapOf("event" to "ai.failover", "endpoint" to endpoint.name.lowercase(), "to" to to)))
+    }
+
     fun record(call: Call): Double {
         val price = properties.priceFor(call.model)
         val cost = if (price != null) {

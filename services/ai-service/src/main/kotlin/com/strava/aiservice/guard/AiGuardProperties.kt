@@ -15,9 +15,15 @@ class AiGuardProperties {
     var rateLimit: RateLimit = RateLimit()
     var guard: Guard = Guard()
     var pii: Pii = Pii()
+    var failover: Failover = Failover()
 
     /** USD per million tokens, keyed by model id as the provider reports it. */
     var pricing: MutableMap<String, ModelPrice> = mutableMapOf()
+
+    class Failover {
+        /** Route chat to Groq when Anthropic is unavailable (502/503, breaker open, no key). */
+        var enabled: Boolean = true
+    }
 
     class RateLimit {
         /** Chat turns one user may send per minute (persisted, provider-billed). */
