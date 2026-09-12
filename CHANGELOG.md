@@ -11,6 +11,9 @@ Conventional Commit PR titles.
 - Repository standards: `CODEOWNERS`, PR template with a mandatory
   verification section, Dependabot (Maven, npm, Actions, Docker), release-please,
   `AGENTS.md` and per-path Copilot instructions.
+- Runbooks for every alert family (`docs/runbooks/`, 13 documents with
+  front matter and step-by-step investigation usable by people and agents)
+  and two post-mortems reconstructed from #145 and #151 (`docs/postmortems/`).
 
 ## [1.0.0] - 2026-08-17
 
