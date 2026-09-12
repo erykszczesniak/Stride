@@ -8,6 +8,11 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Added
+- `scripts/smoke.sh` (gateway health, login, one request per service, guard
+  check, Eureka registrations, Prometheus targets and rule groups, Watchdog in
+  Alertmanager, no critical alert firing) and a nightly / on-demand `E2E`
+  workflow that boots the composed stack, runs the smoke test and the
+  Playwright suite against the SPA.
 - AI guardrails in ai-service: per-user rate limit (429), prompt guard
   (400 with reason), PII masking before the provider and before persistence;
   token, latency, cost and failover metrics plus a JSON audit line per

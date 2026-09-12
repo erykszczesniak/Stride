@@ -55,6 +55,10 @@ kubectl apply -f k8s/
 
 # 5. /etc/hosts → "127.0.0.1 stride.local"
 # Visit http://stride.local
+
+# 6. Smoke test through the ingress + port-forwarded monitoring
+#    (kubectl -n monitoring port-forward svc/prometheus 9090 & svc/alertmanager 9093)
+BASE_URL=http://stride.local EUREKA_URL=http://stride.local:8761 scripts/smoke.sh
 ```
 
 ## Resource budget (per-pod requests)
