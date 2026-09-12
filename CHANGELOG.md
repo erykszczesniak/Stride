@@ -8,6 +8,10 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Added
+- Architecture decision records (`docs/adr/`, 9 records): choreographed
+  sagas, database per service, gRPC inside / REST at the edge, JWT at the
+  gateway, what we deliberately do not run, alerts as code, SLO burn-rate
+  alerting, quality gates in the build, AI guardrails.
 - SLOs as code (`docs/slo.md`): edge availability 99.5 %, edge latency 95 %
   under 500 ms, per-service availability 99.5 %, AI availability 98 %;
   recording rules, multi-window burn-rate alerts (14.4× pages, 6× tickets),
