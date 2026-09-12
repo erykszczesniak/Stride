@@ -1,0 +1,61 @@
+# Dependency updates, grouped so a weekly run produces a handful of PRs rather
+# than one per artifact. Security updates are always opened immediately.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 5
+    groups:
+      spring:
+        patterns: ["org.springframework*", "io.micrometer*", "io.opentelemetry*"]
+      test:
+        patterns: ["org.junit*", "org.mockito*", "org.assertj*", "org.testcontainers*", "com.tngtech.archunit*"]
+      other-maven:
+        patterns: ["*"]
+    commit-message:
+      prefix: "build(deps)"
+
+  - package-ecosystem: npm
+    directory: /frontend
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 3
+    groups:
+      frontend:
+        patterns: ["*"]
+    commit-message:
+      prefix: "build(deps)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: main
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci(deps)"
+
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /frontend
+    target-branch: main
+    schedule:
+      interval: monthly
+    groups:
+      base-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: "build(deps)"

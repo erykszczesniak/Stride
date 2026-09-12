@@ -1,0 +1,20 @@
+# Review routing. GitHub requests a review from the matching owner on every PR.
+# Later rules win over earlier ones.
+
+*                                                   @erykszczesniak
+
+# Operational surface — alert rules, dashboards, runbooks, SLOs.
+/monitoring/                                        @erykszczesniak
+/docs/runbooks/                                     @erykszczesniak
+/docs/slo.md                                        @erykszczesniak
+
+# Security-sensitive: JWT, filters, security configuration.
+/src/main/java/com/strava/backend/security/         @erykszczesniak
+/src/main/java/com/strava/backend/configuration/SecurityConfiguration.java  @erykszczesniak
+
+# Schema: Flyway migrations are append-only and reviewed with the entities.
+/src/main/resources/db/migration/                   @erykszczesniak
+/src/main/java/com/strava/backend/domain/           @erykszczesniak
+
+# CI / supply chain
+/.github/                                           @erykszczesniak
