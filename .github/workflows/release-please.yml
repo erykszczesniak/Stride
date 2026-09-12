@@ -1,0 +1,23 @@
+# Cuts releases from Conventional Commit PR titles: maintains a release PR that
+# bumps the version and rewrites CHANGELOG.md; merging that PR creates the tag
+# and GitHub release. Nothing is published to a registry here — the docker job
+# in ci.yml tags images by sha.
+name: release-please
+
+on:
+  push:
+    branches: [microservices]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          target-branch: microservices
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

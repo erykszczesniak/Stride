@@ -1,0 +1,22 @@
+# Review routing. GitHub requests a review from the matching owner on every PR.
+# Later rules win over earlier ones.
+
+*                                   @erykszczesniak
+
+# Operational surface — alert rules, dashboards, runbooks, SLOs. Changes here
+# affect what pages, what a responder reads at 3 AM, and what "healthy" means.
+/monitoring/                        @erykszczesniak
+/docs/runbooks/                     @erykszczesniak
+/docs/slo.md                        @erykszczesniak
+
+# Public contracts — the gateway routes and the shared event / gRPC schemas.
+/infrastructure/config-server/src/main/resources/config/api-gateway.yml  @erykszczesniak
+/shared/events/                     @erykszczesniak
+/shared/grpc-contracts/             @erykszczesniak
+
+# Security-sensitive: JWT handling at the edge and the identity-header filter.
+/infrastructure/api-gateway/        @erykszczesniak
+/shared/security/                   @erykszczesniak
+
+# CI / supply chain
+/.github/                           @erykszczesniak
