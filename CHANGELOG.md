@@ -8,6 +8,17 @@ changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Frontend: `jspdf` 2.5 → 4.2 and `jspdf-autotable` 3.8 → 5.0 (CVE-2025-68428,
+  CVE-2026-31938), `shell-quote` and `websocket-driver` bumped in the lockfile
+  (CVE-2026-9277, CVE-2026-54466); the training-plan PDF export calls
+  `autoTable(doc, …)` like the other pages. Trivy: 0 fixable CRITICAL.
+- First real GitHub Actions run: `aquasecurity/trivy-action` pinned to an existing
+  tag (`v0.36.0`), promtool globs expanded inside the container in the Monitoring
+  workflow, and the Elasticsearch integration test loads the context with the MVC
+  infrastructure the security filter chains require (it only ever ran where Docker
+  was available, i.e. on the runner).
+
 ### Added
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a

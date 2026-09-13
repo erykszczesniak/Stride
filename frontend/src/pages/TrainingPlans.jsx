@@ -8,7 +8,7 @@ import { useToast } from "../context/ToastContext";
 import { useUnits } from "../context/UnitsContext";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import {
   PageHeader,
   HeaderLeft,
@@ -322,7 +322,7 @@ const TrainingPlans = () => {
         w.description
       ]);
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [["Day", "Type", "Distance", "Duration", "Description"]],
         body: tableData,
@@ -457,7 +457,7 @@ const TrainingPlans = () => {
         w.description
       ]);
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [["Day", "Type", "Duration", "Description"]],
         body: tableData,
