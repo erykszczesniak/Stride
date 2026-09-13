@@ -9,6 +9,9 @@ changelog.
 ## [Unreleased]
 
 ### Fixed
+- Frontend container health check: `127.0.0.1` instead of `localhost` (BusyBox
+  wget tries `::1` first, where nginx did not listen), nginx also listens on IPv6,
+  and the compose check gets a start period. The E2E stack timed out on this.
 - Frontend: `jspdf` 2.5 → 4.2 and `jspdf-autotable` 3.8 → 5.0 (CVE-2025-68428,
   CVE-2026-31938), `shell-quote` and `websocket-driver` bumped in the lockfile
   (CVE-2026-9277, CVE-2026-54466); the training-plan PDF export calls
