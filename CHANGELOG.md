@@ -18,6 +18,10 @@ changelog.
   workflow, and the Elasticsearch integration test loads the context with the MVC
   infrastructure the security filter chains require (it only ever ran where Docker
   was available, i.e. on the runner).
+### Changed
+- ADR 006 and 007 cite the current commit of the alerts-as-code change
+  (`98f7b97`); the previous SHA no longer exists on `main` after the history
+  rewrite of 12 September.
 
 ### Added
 - README: table of contents, `Operations & quality` overview with the local
