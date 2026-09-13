@@ -8,6 +8,13 @@ changelog.
 
 ## [Unreleased]
 
+### Fixed
+- First real GitHub Actions run: `aquasecurity/trivy-action` pinned to an existing
+  tag (`v0.36.0`), promtool globs expanded inside the container in the Monitoring
+  workflow, and the Elasticsearch integration test loads the context with the MVC
+  infrastructure the security filter chains require (it only ever ran where Docker
+  was available, i.e. on the runner).
+
 ### Added
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a

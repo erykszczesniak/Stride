@@ -43,7 +43,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * via {@link EnabledIf}. If Testcontainers cannot even locate Docker, the class
  * falls back to {@link Disabled}.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+// MOCK (not NONE): the security filter chains use MvcRequestMatcher, which needs the
+// Spring MVC infrastructure in the context even though this test never issues a request.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @Testcontainers
 @ActiveProfiles("test")
 @EnabledIf("isDockerAvailable")

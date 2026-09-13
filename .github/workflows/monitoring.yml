@@ -29,13 +29,14 @@ jobs:
 
       - name: promtool check rules
         run: |
-          docker run --rm -v "$PWD/monitoring:/m" --entrypoint promtool "$PROMETHEUS_IMAGE" \
-            check rules /m/alerts/*.rules.yml
+          # the glob must expand inside the container, where /m exists
+          docker run --rm -v "$PWD/monitoring:/m" --entrypoint sh "$PROMETHEUS_IMAGE" \
+            -c 'promtool check rules /m/alerts/*.rules.yml'
 
       - name: promtool test rules
         run: |
-          docker run --rm -v "$PWD/monitoring:/m" --entrypoint promtool "$PROMETHEUS_IMAGE" \
-            test rules /m/alerts/tests/*.test.yml
+          docker run --rm -v "$PWD/monitoring:/m" --entrypoint sh "$PROMETHEUS_IMAGE" \
+            -c 'promtool test rules /m/alerts/tests/*.test.yml'
 
       - name: promtool check config
         run: |
