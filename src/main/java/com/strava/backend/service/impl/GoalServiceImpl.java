@@ -61,7 +61,8 @@ public class GoalServiceImpl implements GoalService {
     @Override
     @Transactional(readOnly = true)
     public Optional<Goal> getActiveGoalByPeriod(Long userId, GoalPeriod period) {
-        return goalRepository.findActiveGoalByUserIdAndPeriod(userId, period, LocalDateTime.now());
+        return goalRepository.findActiveGoalsByUserIdAndPeriod(userId, period, LocalDateTime.now())
+                .stream().findFirst();
     }
 
     @Override

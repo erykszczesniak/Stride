@@ -142,8 +142,8 @@ class GoalServiceImplTest {
         @Test
         @DisplayName("Should return active goal for period")
         void shouldReturnActiveGoalForPeriod() {
-            when(goalRepository.findActiveGoalByUserIdAndPeriod(eq(1L), eq(GoalPeriod.WEEKLY), any(LocalDateTime.class)))
-                    .thenReturn(Optional.of(testGoal));
+            when(goalRepository.findActiveGoalsByUserIdAndPeriod(eq(1L), eq(GoalPeriod.WEEKLY), any(LocalDateTime.class)))
+                    .thenReturn(List.of(testGoal));
 
             Optional<Goal> result = goalService.getActiveGoalByPeriod(1L, GoalPeriod.WEEKLY);
 
@@ -154,8 +154,8 @@ class GoalServiceImplTest {
         @Test
         @DisplayName("Should return empty when no active goal for period")
         void shouldReturnEmptyWhenNoActiveGoalForPeriod() {
-            when(goalRepository.findActiveGoalByUserIdAndPeriod(eq(1L), eq(GoalPeriod.MONTHLY), any(LocalDateTime.class)))
-                    .thenReturn(Optional.empty());
+            when(goalRepository.findActiveGoalsByUserIdAndPeriod(eq(1L), eq(GoalPeriod.MONTHLY), any(LocalDateTime.class)))
+                    .thenReturn(List.of());
 
             Optional<Goal> result = goalService.getActiveGoalByPeriod(1L, GoalPeriod.MONTHLY);
 

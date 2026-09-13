@@ -186,20 +186,20 @@ class GoalRepositoryTest {
     }
 
     @Nested
-    @DisplayName("findActiveGoalByUserIdAndPeriod Tests")
-    class FindActiveGoalByUserIdAndPeriodTests {
+    @DisplayName("findActiveGoalsByUserIdAndPeriod Tests")
+    class FindActiveGoalsByUserIdAndPeriodTests {
 
         @Test
         @DisplayName("Should find active weekly goal")
         void shouldFindActiveWeeklyGoal() {
             LocalDateTime now = LocalDateTime.now();
 
-            Optional<Goal> goal = goalRepository.findActiveGoalByUserIdAndPeriod(
+            List<Goal> goals = goalRepository.findActiveGoalsByUserIdAndPeriod(
                     testUser.getId(), GoalPeriod.WEEKLY, now);
 
-            assertThat(goal).isPresent();
-            assertThat(goal.get().getPeriod()).isEqualTo(GoalPeriod.WEEKLY);
-            assertThat(goal.get().getGoalType()).isEqualTo(GoalType.DISTANCE);
+            assertThat(goals).isNotEmpty();
+            assertThat(goals.getFirst().getPeriod()).isEqualTo(GoalPeriod.WEEKLY);
+            assertThat(goals.getFirst().getGoalType()).isEqualTo(GoalType.DISTANCE);
         }
 
         @Test
@@ -207,11 +207,11 @@ class GoalRepositoryTest {
         void shouldFindActiveMonthlyGoal() {
             LocalDateTime now = LocalDateTime.now();
 
-            Optional<Goal> goal = goalRepository.findActiveGoalByUserIdAndPeriod(
+            List<Goal> goals = goalRepository.findActiveGoalsByUserIdAndPeriod(
                     testUser.getId(), GoalPeriod.MONTHLY, now);
 
-            assertThat(goal).isPresent();
-            assertThat(goal.get().getPeriod()).isEqualTo(GoalPeriod.MONTHLY);
+            assertThat(goals).isNotEmpty();
+            assertThat(goals.getFirst().getPeriod()).isEqualTo(GoalPeriod.MONTHLY);
         }
 
         @Test
@@ -219,10 +219,10 @@ class GoalRepositoryTest {
         void shouldReturnEmptyForPeriodWithNoActiveGoal() {
             LocalDateTime now = LocalDateTime.now();
 
-            Optional<Goal> goal = goalRepository.findActiveGoalByUserIdAndPeriod(
+            List<Goal> goals = goalRepository.findActiveGoalsByUserIdAndPeriod(
                     testUser.getId(), GoalPeriod.YEARLY, now);
 
-            assertThat(goal).isEmpty();
+            assertThat(goals).isEmpty();
         }
 
         @Test
@@ -230,10 +230,34 @@ class GoalRepositoryTest {
         void shouldNotFindGoalsOutsideCurrentDateRange() {
             LocalDateTime futureDate = LocalDateTime.now().plusMonths(6);
 
-            Optional<Goal> goal = goalRepository.findActiveGoalByUserIdAndPeriod(
+            List<Goal> goals = goalRepository.findActiveGoalsByUserIdAndPeriod(
                     testUser.getId(), GoalPeriod.WEEKLY, futureDate);
 
-            assertThat(goal).isEmpty();
+            assertThat(goals).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should return every active goal of the period, not blow up on the second")
+        void shouldReturnAllActiveGoalsOfThePeriod() {
+            LocalDateTime now = LocalDateTime.now();
+            Goal second = Goal.builder()
+                    .goalType(GoalType.DISTANCE)
+                    .period(GoalPeriod.WEEKLY)
+                    .activityType(ActivityType.RIDE)
+                    .targetValue(100.0)
+                    .currentValue(10.0)
+                    .startDate(now.minusDays(1))
+                    .endDate(now.plusDays(3))
+                    .isActive(true)
+                    .user(testUser)
+                    .build();
+            entityManager.persistAndFlush(second);
+
+            List<Goal> goals = goalRepository.findActiveGoalsByUserIdAndPeriod(
+                    testUser.getId(), GoalPeriod.WEEKLY, now);
+
+            assertThat(goals).hasSizeGreaterThanOrEqualTo(2);
+            assertThat(goals).allMatch(g -> g.getPeriod() == GoalPeriod.WEEKLY && g.isActive());
         }
     }
 
