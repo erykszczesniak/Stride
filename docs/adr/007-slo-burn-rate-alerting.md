@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Accepted |
-| **Date** | 2026-09-12 (`42fd577`) |
+| **Date** | 2026-09-12 (`98f7b97`) |
 | **Deciders** | platform |
 
 ## Context
