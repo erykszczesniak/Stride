@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      JWT_SECRET: e2e-secret-min-32-chars-this-is-only-for-ci-runs-not-prod
+      # base64: the signing key is Decoders.BASE64.decode(JWT_SECRET)
+      JWT_SECRET: ZTJlLXNlY3JldC1taW4tMzItY2hhcnMtdGhpcy1pcy1vbmx5LWZvci1jaS1ydW5z
       POSTGRES_PASSWORD: strava
     steps:
       - uses: actions/checkout@v4
