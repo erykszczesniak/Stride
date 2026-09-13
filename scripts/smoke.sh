@@ -45,7 +45,7 @@ AUTH=(-H "Authorization: Bearer $TOKEN")
 
 echo "== One request per feature area"
 check_status "users          /api/v1/users/me"                  "$BASE_URL/api/v1/users/me" 200 "${AUTH[@]}"
-check_status "activities     /api/v1/activities"                "$BASE_URL/api/v1/activities?page=0&size=1" 200 "${AUTH[@]}"
+check_status "activities     /api/v1/activities/my"             "$BASE_URL/api/v1/activities/my?page=0&size=1" 200 "${AUTH[@]}"
 check_status "feed           /api/v1/activities/feed"           "$BASE_URL/api/v1/activities/feed?page=0&size=1" 200 "${AUTH[@]}"
 check_status "notifications  /api/v1/notifications"             "$BASE_URL/api/v1/notifications?page=0&size=1" 200 "${AUTH[@]}"
 check_status "clubs          /api/v1/clubs"                     "$BASE_URL/api/v1/clubs?page=0&size=1" 200 "${AUTH[@]}"

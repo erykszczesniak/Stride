@@ -20,9 +20,15 @@ public interface GoalRepository extends JpaRepository<Goal, Long> {
     @Query("SELECT g FROM Goal g WHERE g.user.id = :userId ORDER BY g.createdAt DESC")
     List<Goal> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
 
+    /**
+     * A user may well have several active goals for the same period (a weekly run
+     * goal and a weekly ride goal, say), so this returns them ordered and the
+     * caller takes the first; returning an Optional here threw
+     * NonUniqueResultException and turned the dashboard into a 500.
+     */
     @Query("SELECT g FROM Goal g WHERE g.user.id = :userId AND g.period = :period AND g.isActive = true " +
-           "AND g.startDate <= :currentDate AND g.endDate >= :currentDate")
-    Optional<Goal> findActiveGoalByUserIdAndPeriod(
+           "AND g.startDate <= :currentDate AND g.endDate >= :currentDate ORDER BY g.endDate ASC, g.id ASC")
+    List<Goal> findActiveGoalsByUserIdAndPeriod(
             @Param("userId") Long userId,
             @Param("period") GoalPeriod period,
             @Param("currentDate") LocalDateTime currentDate);

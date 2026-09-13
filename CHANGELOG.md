@@ -9,6 +9,12 @@ changelog.
 ## [Unreleased]
 
 ### Fixed
+- Dashboard returned 500 for anyone with more than one active goal in a period
+  (a weekly run goal and a weekly ride goal, as the sample data has): the query
+  returned an `Optional` and threw `NonUniqueResultException`. It returns the
+  active goals ordered now and the service takes the first.
+- Smoke test: the activities check called `/api/v1/activities`, which no endpoint
+  serves; it checks `/api/v1/activities/my`.
 - E2E on a fresh host: the sample `JWT_SECRET` is base64 (the signing key is
   base64-decoded, so the placeholder made every login fail with 500), and the
   smoke test waits up to a minute for the first scrape and the Watchdog after a
