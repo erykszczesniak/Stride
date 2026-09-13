@@ -40,6 +40,11 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 900
           docker compose ps
 
+      - name: Monitoring pipeline state (targets, alertmanagers, alerts)
+        run: |
+          curl -s localhost:9091/api/v1/targets | head -c 1200; echo
+          curl -s localhost:9093/api/v2/alerts | head -c 400; echo
+
       - name: Smoke test the API and the monitoring pipeline
         run: scripts/smoke.sh
 

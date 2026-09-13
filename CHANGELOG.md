@@ -9,6 +9,10 @@ changelog.
 ## [Unreleased]
 
 ### Fixed
+- E2E on a fresh host: the sample `JWT_SECRET` is base64 (the signing key is
+  base64-decoded, so the placeholder made every login fail with 500), and the
+  smoke test waits up to a minute for the first scrape and the Watchdog after a
+  cold start.
 - Frontend container health check: `127.0.0.1` instead of `localhost` (BusyBox
   wget tries `::1` first, where nginx did not listen), nginx also listens on IPv6,
   and the compose check gets a start period. The E2E stack timed out on this.
