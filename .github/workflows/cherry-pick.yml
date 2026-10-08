@@ -1,0 +1,130 @@
+# Backports a merged PR to another branch (typically a release/ms-vX.Y maintenance
+# branch) as a new PR, so the hotfix goes through the same review and CI as
+# everything else. The cherry-pick keeps `-x` provenance and the new PR links
+# the original. See docs/release.md.
+#
+# Note: PRs opened with the default GITHUB_TOKEN do not trigger other
+# workflows. Set the RELEASE_BOT_TOKEN secret (a fine-grained PAT with
+# contents + pull-requests write) if the hotfix PR should run CI on its own;
+# otherwise close and reopen it, or push an empty commit, to start the checks.
+name: Cherry-pick a merged PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Number of the merged PR to backport"
+        required: true
+        type: number
+      target_branch:
+        description: "Branch that receives the backport, e.g. release/ms-v1.1"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  cherry-pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Look up the merged PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+          PR: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          json=$(gh pr view "$PR" --json number,title,state,mergeCommit,baseRefName,url)
+          state=$(jq -r .state <<<"$json")
+          [[ "$state" == "MERGED" ]] || { echo "::error::PR #$PR is $state, only merged PRs can be backported"; exit 1; }
+          {
+            echo "sha=$(jq -r .mergeCommit.oid <<<"$json")"
+            echo "title=$(jq -r .title <<<"$json")"
+            echo "url=$(jq -r .url <<<"$json")"
+            echo "from=$(jq -r .baseRefName <<<"$json")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Cherry-pick onto a hotfix branch
+        id: pick
+        env:
+          SHA: ${{ steps.pr.outputs.sha }}
+          PR: ${{ inputs.pr_number }}
+          TARGET: ${{ inputs.target_branch }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          safe=$(tr '/' '-' <<<"$TARGET")
+          branch="hotfix/${PR}-to-${safe}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "::error::$branch already exists; delete it or finish the open backport first"; exit 1
+          fi
+          git switch -c "$branch"
+          if ! git cherry-pick -x "$SHA"; then
+            conflicts=$(git diff --name-only --diff-filter=U | sed 's/^/- /')
+            git cherry-pick --abort
+            {
+              echo "## Cherry-pick of #$PR onto \`$TARGET\` needs a human"
+              echo
+              echo "Conflicting files:"
+              echo "$conflicts"
+              echo
+              echo "Resolve locally:"
+              echo '```bash'
+              echo "git fetch origin"
+              echo "git switch -c $branch origin/$TARGET"
+              echo "git cherry-pick -x $SHA   # fix conflicts, git add, git cherry-pick --continue"
+              echo "git push -u origin $branch"
+              echo "gh pr create --base $TARGET --title \"<original title> (#$PR to $TARGET)\""
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::conflicts in: $(tr '\n' ' ' <<<"$conflicts")"
+            exit 1
+          fi
+          git push -u origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open the backport PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.pick.outputs.branch }}
+          TARGET: ${{ inputs.target_branch }}
+          TITLE: ${{ steps.pr.outputs.title }}
+          PR: ${{ inputs.pr_number }}
+          URL: ${{ steps.pr.outputs.url }}
+          FROM: ${{ steps.pr.outputs.from }}
+          SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          set -euo pipefail
+          body=$(cat <<MD
+          ## What / why
+
+          Backport of #${PR} (\`${FROM}\` → \`${TARGET}\`), cherry-picked from ${SHA} with \`-x\`. See ${URL} for the discussion.
+
+          ## Changes
+
+          - Same diff as #${PR}; nothing else.
+
+          ## Verification
+
+          - Cherry-pick applied cleanly in the *Cherry-pick a merged PR* workflow; CI on this PR is the verification for \`${TARGET}\`.
+
+          ## Checklist
+
+          - [x] Tests added or updated for the behavior in this PR (as in #${PR})
+          - [ ] \`CHANGELOG.md\` → \`Unreleased\` on \`${TARGET}\` updated (release-please does this from the title when the release PR is cut)
+          - [x] No secrets, tokens, or real user data in the diff
+          MD
+          )
+          url=$(gh pr create --base "$TARGET" --head "$BRANCH" --title "${TITLE} (#${PR} to ${TARGET})" --body "$body")
+          echo "## Backport PR opened" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
