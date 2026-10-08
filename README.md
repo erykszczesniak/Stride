@@ -8,6 +8,9 @@ provides the same features as a monolith.
 **Built with:** Java 21, Kotlin, Spring Boot, React, PostgreSQL, Kafka, gRPC,
 Redis, Elasticsearch, Docker and Kubernetes.
 
+[![Quality gate](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride_microservices&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride_microservices)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride_microservices&metric=coverage)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride_microservices)
+
 The React frontend and iOS `/pipeline/v1` client use the same public contract on
 both branches: `/api/v1`, `/graphql` and `/pipeline/v1`.
 
@@ -228,7 +231,7 @@ The repository keeps operational checks close to the code.
 
 | Area | Included |
 |---|---|
-| CI | reactor and frontend tests, JaCoCo, ArchUnit and PostgreSQL migrations |
+| CI | reactor and frontend tests, JaCoCo, ArchUnit, PostgreSQL migrations and a SonarCloud quality gate |
 | Security | CodeQL, Trivy, Dependabot and gateway identity checks |
 | Alerts | Prometheus rules, promtool tests, owners, runbooks and Alertmanager |
 | SLOs | availability, latency, burn-rate and error-budget rules |
@@ -283,6 +286,7 @@ These are deliberate scope choices:
 | [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | AI privacy, telemetry and evals |
 | [`docs/cost-attribution.md`](docs/cost-attribution.md) | infrastructure and AI cost model |
 | [`docs/adr/`](docs/adr) | architecture decisions and alternatives |
+| [`docs/sonar.md`](docs/sonar.md) | SonarCloud setup and what the gate checks |
 | [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | REST contract |
 | [`docs/GRAPHQL_DOCUMENTATION.md`](docs/GRAPHQL_DOCUMENTATION.md) | GraphQL contract |
 | [`docs/parity-plan.md`](docs/parity-plan.md) | monolith to microservices migration |
