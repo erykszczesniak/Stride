@@ -356,7 +356,7 @@ limit returns HTTP 429.
 | Area | Included |
 |---|---|
 | CI | backend and frontend tests, JaCoCo, ArchUnit and PostgreSQL migrations |
-| Security | CodeQL, Trivy, Dependabot and auth rate limits |
+| Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and auth rate limits |
 | Alerts | tested Prometheus rules, owners, runbooks and Alertmanager |
 | SLOs | availability, latency, AI reliability and burn-rate alerts |
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
