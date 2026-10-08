@@ -1,0 +1,64 @@
+# PR policy: the checks a reviewer should never have to make by hand.
+#   1. Title is a Conventional Commit (the squash commit reuses it and
+#      release-please builds CHANGELOG + tags from it).
+#   2. Branch name follows AGENTS.md; release branches only take hotfixes
+#      and reverts.
+#   3. The body keeps the mandatory "Verification" section from the template.
+# Bots (Dependabot, release-please) are exempt from the branch and body rules.
+name: PR policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  policy:
+    name: title, branch and body
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const bot = pr.user.type === 'Bot' || /^(dependabot|github-actions)/.test(pr.user.login);
+            const head = pr.head.ref, base = pr.base.ref;
+            const problems = [];
+
+            const title = /^(feat|fix|perf|refactor|docs|ci|build|chore|test|revert)(\([a-z0-9-]+\))?!?: .+/;
+            if (!title.test(pr.title)) {
+              problems.push(`Title \`${pr.title}\` is not a Conventional Commit (e.g. \`feat(activity): ...\`, \`fix(gateway): ...\`, \`ci: ...\`).`);
+            }
+
+            const branch = /^(feat|fix|perf|docs|ci|chore|refactor|test|build)\/[a-z0-9._-]+$|^hotfix\/[a-z0-9._-]+$|^revert-|^release\/v\d+\.\d+$|^release-please--/;
+            if (!bot && !branch.test(head)) {
+              problems.push(`Branch \`${head}\` does not follow AGENTS.md (\`feat/*\`, \`fix/*\`, \`perf/*\`, \`docs/*\`, \`ci/*\`, \`chore/*\`; \`hotfix/*\` and \`revert-*\` for release branches).`);
+            }
+
+            if (/^release\/v\d+\.\d+$/.test(base) && !/^(hotfix\/|revert-|release-please--)/.test(head)) {
+              problems.push(`PRs into \`${base}\` must come from \`hotfix/*\` (use the *Cherry-pick a merged PR* workflow) or \`revert-*\`; new work goes to the default branch first.`);
+            }
+
+            const body = pr.body || '';
+            const section = body.split(/^## Verification\s*$/m)[1];
+            const content = section ? section.split(/^## /m)[0].replace(/<!--[\s\S]*?-->/g, '') : '';
+            const hasVerification = /^\s*[-*]\s+\S/m.test(content);
+            if (!bot && !hasVerification) {
+              problems.push('The body needs a `## Verification` section with at least one bullet saying what was run and what was seen.');
+            }
+
+            const marker = '<!-- pr-policy -->';
+            const { data: comments } = await github.rest.issues.listComments({ ...context.repo, issue_number: pr.number, per_page: 100 });
+            const mine = comments.find(c => c.body && c.body.startsWith(marker));
+
+            if (problems.length) {
+              const text = `${marker}\n**PR policy** found ${problems.length} problem(s):\n\n${problems.map(p => `- ${p}`).join('\n')}\n\nFix the title, branch or body and this check re-runs on its own.`;
+              if (mine) await github.rest.issues.updateComment({ ...context.repo, comment_id: mine.id, body: text });
+              else await github.rest.issues.createComment({ ...context.repo, issue_number: pr.number, body: text });
+              core.setFailed(problems.join(' | '));
+            } else if (mine) {
+              await github.rest.issues.deleteComment({ ...context.repo, comment_id: mine.id });
+            }
