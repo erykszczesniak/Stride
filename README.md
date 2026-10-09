@@ -9,6 +9,9 @@ branch provides the same product as 12 services.
 **Built with:** Java 21, Kotlin, Spring Boot, React, PostgreSQL, Elasticsearch,
 Docker, Kubernetes and Terraform.
 
+[![Quality gate](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride&metric=coverage)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride)
+
 <img width="1985" height="1239" alt="Stride dashboard" src="https://github.com/user-attachments/assets/eb45b949-40b1-4a08-b218-1cc0d3e0896c" />
 
 > The project is under active development. Features and UI may change.
@@ -355,7 +358,7 @@ limit returns HTTP 429.
 
 | Area | Included |
 |---|---|
-| CI | backend and frontend tests, JaCoCo, ArchUnit and PostgreSQL migrations |
+| CI | backend and frontend tests, JaCoCo, ArchUnit, PostgreSQL migrations and a SonarCloud quality gate |
 | Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and auth rate limits |
 | Alerts | tested Prometheus rules, owners, runbooks and Alertmanager |
 | SLOs | availability, latency, AI reliability and burn-rate alerts |
@@ -450,6 +453,7 @@ personal records. CI runs the full flow nightly.
 | [`docs/cost-attribution.md`](docs/cost-attribution.md) | infrastructure and AI costs |
 | [`docs/adr/`](docs/adr) | architecture decisions |
 | [`docs/release.md`](docs/release.md) | release lifecycle, hotfixes and PR policy |
+| [`docs/sonar.md`](docs/sonar.md) | SonarCloud setup and what the gate checks |
 | [`CHANGELOG.md`](CHANGELOG.md) | release history |
 | [`AGENTS.md`](AGENTS.md) | repository rules and commands |
 
