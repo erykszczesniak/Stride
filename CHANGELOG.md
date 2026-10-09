@@ -7,6 +7,14 @@ Conventional Commit PR titles.
 
 ## [Unreleased]
 
+### Fixed
+- Frontend: the fixable CRITICAL findings Trivy reports in the lockfile, the
+  same set `main` patched in `bbc96d5`: `jspdf` 2.5 → 4.2 and `jspdf-autotable`
+  3.8 → 5.0 (CVE-2025-68428, CVE-2026-31938), `proxy-addr` 2.0.8
+  (CVE-2026-90711), `shell-quote` 1.8 → 1.12 (CVE-2026-9277) and
+  `websocket-driver` 0.7.5 (CVE-2026-54466). The training-plan PDF export calls
+  `autoTable(doc, …)` like the other pages.
+
 ### Added
 - Chat provider failover (Anthropic → Groq on 502/503, open breaker or no
   key) with `ai_failover_total` and the `AiProviderFailoverActive` alert;
