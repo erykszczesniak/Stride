@@ -51,7 +51,7 @@ Standalone profile boots any service alone with H2 and mocks:
 
 ## Conventions
 
-- Branch names: `feat/ms-*`, `fix/ms-*`, `perf/ms-*`, `docs/ms-*`, `ci/ms-*`, `chore/ms-*`.
+- Branch names: `feat/ms-*`, `fix/ms-*`, `perf/ms-*`, `docs/ms-*`, `ci/ms-*`, `chore/ms-*`; `hotfix/*` only for backports into `release/ms-vX.Y` (see `docs/release.md`). The PR policy workflow checks the title, the branch and the Verification section.
 - PR title = Conventional Commit (`feat(ai): ...`). Squash merge with the title as the commit subject; release-please reads it.
 - PR body follows `.github/PULL_REQUEST_TEMPLATE.md`; the **Verification** section must state what was actually run.
 - Tests: JUnit 5 + AssertJ; Mockito (`mockito-kotlin` in Kotlin modules). Web layer tests use `@WebMvcTest` with `HeaderAuthenticationFilter`; repository tests run on H2 in PostgreSQL mode with the real Flyway migrations. Postgres-only behavior gets a Testcontainers test (tag `integration`).

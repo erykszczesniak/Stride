@@ -1,12 +1,14 @@
 # Cuts releases from Conventional Commit PR titles: maintains a release PR that
 # bumps the version and rewrites CHANGELOG.md; merging that PR creates the tag
 # and GitHub release. Nothing is published to a registry here — the docker job
-# in ci.yml tags images by sha.
+# in ci.yml tags images by sha. The same job runs on release/ms-vX.Y
+# maintenance branches, where it cuts patch releases from backported hotfixes
+# (see docs/release.md).
 name: release-please
 
 on:
   push:
-    branches: [microservices]
+    branches: [microservices, "release/ms-**"]
 
 permissions:
   contents: write
@@ -16,8 +18,8 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
         with:
-          target-branch: microservices
+          target-branch: ${{ github.ref_name }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

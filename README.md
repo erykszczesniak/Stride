@@ -232,13 +232,14 @@ The repository keeps operational checks close to the code.
 | Area | Included |
 |---|---|
 | CI | reactor and frontend tests, JaCoCo, ArchUnit, PostgreSQL migrations and a SonarCloud quality gate |
-| Security | CodeQL, Trivy, Dependabot and gateway identity checks |
+| Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and gateway identity checks |
 | Alerts | Prometheus rules, promtool tests, owners, runbooks and Alertmanager |
 | SLOs | availability, latency, burn-rate and error-budget rules |
 | Observability | service metrics, distributed traces and Grafana dashboards |
 | AI safety | rate limits, prompt checks, PII masking, failover and evals |
 | Cost | service and AI usage attribution with dashboards and alerts |
 | Verification | compose smoke tests and nightly Playwright E2E tests |
+| Releases | release-please tags, `release/ms-vX.Y` maintenance branches, hotfix cherry-picks and a PR policy check |
 | Decisions | ADRs, runbooks and post-mortems in `docs/` |
 
 Main references: [`CHANGELOG.md`](CHANGELOG.md), [`docs/slo.md`](docs/slo.md),
@@ -286,6 +287,7 @@ These are deliberate scope choices:
 | [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | AI privacy, telemetry and evals |
 | [`docs/cost-attribution.md`](docs/cost-attribution.md) | infrastructure and AI cost model |
 | [`docs/adr/`](docs/adr) | architecture decisions and alternatives |
+| [`docs/release.md`](docs/release.md) | release lifecycle, hotfixes and PR policy |
 | [`docs/sonar.md`](docs/sonar.md) | SonarCloud setup and what the gate checks |
 | [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | REST contract |
 | [`docs/GRAPHQL_DOCUMENTATION.md`](docs/GRAPHQL_DOCUMENTATION.md) | GraphQL contract |
