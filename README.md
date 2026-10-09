@@ -362,6 +362,7 @@ limit returns HTTP 429.
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
 | Cost | service and model attribution, dashboards and spend alerts |
 | Verification | smoke tests and nightly Playwright E2E tests |
+| Releases | release-please tags, `release/vX.Y` maintenance branches, hotfix cherry-picks and a PR policy check |
 | Decisions | ADRs, runbooks and post-mortems |
 
 Useful checks:
@@ -448,6 +449,7 @@ personal records. CI runs the full flow nightly.
 | [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | AI safety, privacy and evals |
 | [`docs/cost-attribution.md`](docs/cost-attribution.md) | infrastructure and AI costs |
 | [`docs/adr/`](docs/adr) | architecture decisions |
+| [`docs/release.md`](docs/release.md) | release lifecycle, hotfixes and PR policy |
 | [`CHANGELOG.md`](CHANGELOG.md) | release history |
 | [`AGENTS.md`](AGENTS.md) | repository rules and commands |
 
