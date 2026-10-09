@@ -9,6 +9,10 @@ changelog.
 ## [Unreleased]
 
 ### Fixed
+- Frontend: the two fixable CRITICAL findings Trivy reports in the lockfile,
+  `proxy-addr` 2.0.7 → 2.0.8 (CVE-2026-90711) and `shell-quote` 1.10 → 1.12
+  (CVE-2026-102422). Both are build-time dependencies of `react-scripts`;
+  the bundle does not change.
 - Dashboard returned 500 for anyone with more than one active goal in a period
   (a weekly run goal and a weekly ride goal, as the sample data has): the query
   returned an `Optional` and threw `NonUniqueResultException`. It returns the
