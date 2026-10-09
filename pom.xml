@@ -34,6 +34,17 @@
         <jacoco.min.line>0.60</jacoco.min.line>
         <jacoco.min.branch>0.40</jacoco.min.branch>
         <jacoco.check.skip>false</jacoco.check.skip>
+        <!-- SonarCloud analysis, run by .github/workflows/sonar.yml after `verify`
+             so every module's JaCoCo XML report is picked up. Nothing here is
+             secret; the token comes from the SONAR_TOKEN repository secret. -->
+        <sonar-maven-plugin.version>5.1.0.4751</sonar-maven-plugin.version>
+        <sonar.projectKey>erykszczesniak_Stride_microservices</sonar.projectKey>
+        <sonar.projectName>Stride (microservices)</sonar.projectName>
+        <sonar.organization>erykszczesniak</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.exclusions>**/*Application.*,**/*ApplicationKt.*,**/proto/**,**/*Grpc.*,**/*OrBuilder.*,**/*Proto.*</sonar.coverage.exclusions>
+        <sonar.exclusions>**/proto/**,**/target/generated-sources/**</sonar.exclusions>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -157,6 +168,13 @@
         </pluginManagement>
 
         <plugins>
+            <!-- SonarCloud scanner; invoked explicitly as `sonar:sonar` by the Sonar
+                 workflow, never part of the default lifecycle. -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar-maven-plugin.version}</version>
+            </plugin>
             <!-- Coverage: agent on every module, XML/HTML report after the tests,
                  per-module gate in `verify`. Generated code (gRPC stubs, protobuf
                  messages) and the Spring Boot entry points are excluded so the
