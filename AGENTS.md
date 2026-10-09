@@ -53,7 +53,7 @@ cd frontend && npm run e2e                         # needs the stack on :8081 an
 
 ## Conventions
 
-- Branch names: `feat/*`, `fix/*`, `perf/*`, `docs/*`, `ci/*`, `chore/*`.
+- Branch names: `feat/*`, `fix/*`, `perf/*`, `docs/*`, `ci/*`, `chore/*`; `hotfix/*` only for backports into `release/vX.Y` (see `docs/release.md`). The PR policy workflow checks the title, the branch and the Verification section.
 - PR title = Conventional Commit; squash merge with the title as subject; release-please reads it.
 - PR body follows `.github/PULL_REQUEST_TEMPLATE.md`; the **Verification** section says what was actually run.
 - Tests: JUnit 5, AssertJ, Mockito; `@WebMvcTest` slices for controllers, `@DataJpaTest` on H2 for repositories, `AbstractIntegrationTest` (Testcontainers) for anything PostgreSQL-specific or end-to-end.

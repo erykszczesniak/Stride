@@ -359,12 +359,13 @@ limit returns HTTP 429.
 | Area | Included |
 |---|---|
 | CI | backend and frontend tests, JaCoCo, ArchUnit, PostgreSQL migrations and a SonarCloud quality gate |
-| Security | CodeQL, Trivy, Dependabot and auth rate limits |
+| Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and auth rate limits |
 | Alerts | tested Prometheus rules, owners, runbooks and Alertmanager |
 | SLOs | availability, latency, AI reliability and burn-rate alerts |
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
 | Cost | service and model attribution, dashboards and spend alerts |
 | Verification | smoke tests and nightly Playwright E2E tests |
+| Releases | release-please tags, `release/vX.Y` maintenance branches, hotfix cherry-picks and a PR policy check |
 | Decisions | ADRs, runbooks and post-mortems |
 
 Useful checks:
@@ -451,6 +452,7 @@ personal records. CI runs the full flow nightly.
 | [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | AI safety, privacy and evals |
 | [`docs/cost-attribution.md`](docs/cost-attribution.md) | infrastructure and AI costs |
 | [`docs/adr/`](docs/adr) | architecture decisions |
+| [`docs/release.md`](docs/release.md) | release lifecycle, hotfixes and PR policy |
 | [`docs/sonar.md`](docs/sonar.md) | SonarCloud setup and what the gate checks |
 | [`CHANGELOG.md`](CHANGELOG.md) | release history |
 | [`AGENTS.md`](AGENTS.md) | repository rules and commands |

@@ -1,0 +1,48 @@
+# Cuts a maintenance branch `release/vX.Y` for a line that must keep receiving
+# fixes while the default branch moves on. Hotfixes land on it through the
+# "Cherry-pick a merged PR" workflow; release-please tags patch releases from
+# it. See docs/release.md.
+name: Cut release branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Minor line to maintain, as X.Y (the branch becomes release/vX.Y, cut from the newest vX.Y.* tag, or from the default branch when no tag exists yet)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  cut:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Create and push release/v${{ inputs.version }}
+        env:
+          VERSION: ${{ inputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || { echo "::error::version must be X.Y, got '$VERSION'"; exit 1; }
+          branch="release/v$VERSION"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "::error::$branch already exists"; exit 1
+          fi
+          tag=$(git tag --list "v$VERSION.*" --sort=-v:refname | head -n 1)
+          base=${tag:-origin/$DEFAULT_BRANCH}
+          git switch -c "$branch" "$base"
+          git push origin "$branch"
+          {
+            echo "## Release branch cut"
+            echo
+            echo "- branch: \`$branch\`"
+            echo "- base: \`$base\` ($(git rev-parse --short HEAD))"
+            echo "- next: hotfixes via the *Cherry-pick a merged PR* workflow; release-please opens the \`$VERSION.z\` release PR on this branch"
+          } >> "$GITHUB_STEP_SUMMARY"
