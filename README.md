@@ -229,7 +229,7 @@ The repository keeps operational checks close to the code.
 | Area | Included |
 |---|---|
 | CI | reactor and frontend tests, JaCoCo, ArchUnit and PostgreSQL migrations |
-| Security | CodeQL, Trivy, Dependabot and gateway identity checks |
+| Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and gateway identity checks |
 | Alerts | Prometheus rules, promtool tests, owners, runbooks and Alertmanager |
 | SLOs | availability, latency, burn-rate and error-budget rules |
 | Observability | service metrics, distributed traces and Grafana dashboards |
