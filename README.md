@@ -195,6 +195,11 @@ After deployment, push backend and frontend images to the generated ECR
 repositories. Use `terraform output -raw alb_dns` to get the application address
 and `terraform destroy` to remove all resources.
 
+Every change goes through a pull request: `fmt`, `validate`, tflint, a Trivy
+misconfiguration scan and `terraform test` (mocked provider, no credentials)
+gate it, and a nightly plan detects drift once credentials are configured — see
+[`terraform/README.md`](terraform/README.md).
+
 | Resource | Free-tier example |
 |---|---|
 | EC2 | `t3.micro`, 750 hours per month |
@@ -366,6 +371,7 @@ limit returns HTTP 429.
 | Cost | service and model attribution, dashboards and spend alerts |
 | Verification | smoke tests and nightly Playwright E2E tests |
 | Releases | release-please tags, `release/vX.Y` maintenance branches, hotfix cherry-picks and a PR policy check |
+| Infrastructure | Terraform gates on every PR (`fmt`, `validate`, tflint, Trivy IaC scan, `terraform test` with a mocked provider) and nightly drift detection |
 | Decisions | ADRs, runbooks and post-mortems |
 
 Useful checks:

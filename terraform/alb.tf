@@ -5,9 +5,12 @@ resource "aws_lb" "main" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = aws_subnet.public[*].id
 
-  tags = {
+  # Malformed headers never reach the target (trivy AVD-AWS-0052).
+  drop_invalid_header_fields = true
+
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-alb"
-  }
+  })
 }
 
 resource "aws_lb_target_group" "app" {
@@ -28,9 +31,9 @@ resource "aws_lb_target_group" "app" {
     matcher             = "200"
   }
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-tg"
-  }
+  })
 }
 
 resource "aws_lb_target_group_attachment" "app" {
@@ -50,9 +53,9 @@ resource "aws_acm_certificate" "main" {
     create_before_destroy = true
   }
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-cert"
-  }
+  })
 }
 
 # --- HTTPS listener (when certificate is available) --------------------------
@@ -64,6 +67,10 @@ resource "aws_lb_listener" "https" {
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = aws_acm_certificate.main[0].arn
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-https"
+  })
 
   default_action {
     type             = "forward"
@@ -77,6 +84,10 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-http"
+  })
 
   default_action {
     type = var.domain_name != "" ? "redirect" : "forward"

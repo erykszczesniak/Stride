@@ -38,11 +38,20 @@ resource "aws_instance" "app" {
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
+    encrypted   = true # at rest, default EBS key (trivy AVD-AWS-0131)
   }
 
-  tags = {
-    Name = "${var.project_name}-app"
+  # IMDSv2 only: a token is required to read instance metadata (trivy AVD-AWS-0028).
+  # The AWS CLI in user-data.sh and the SSM agent both speak IMDSv2.
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
   }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-app"
+  })
 
   depends_on = [
     aws_db_instance.postgres,

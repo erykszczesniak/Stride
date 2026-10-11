@@ -3,9 +3,9 @@ resource "aws_ssm_parameter" "db_password" {
   type  = "SecureString"
   value = var.db_password
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-db-password"
-  }
+  })
 }
 
 resource "aws_ssm_parameter" "jwt_secret" {
@@ -13,9 +13,9 @@ resource "aws_ssm_parameter" "jwt_secret" {
   type  = "SecureString"
   value = var.jwt_secret
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-jwt-secret"
-  }
+  })
 }
 
 resource "aws_ssm_parameter" "groq_api_key" {
@@ -23,9 +23,9 @@ resource "aws_ssm_parameter" "groq_api_key" {
   type  = "SecureString"
   value = var.groq_api_key
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-groq-api-key"
-  }
+  })
 }
 
 resource "aws_ssm_parameter" "google_client_id" {
@@ -33,9 +33,9 @@ resource "aws_ssm_parameter" "google_client_id" {
   type  = "SecureString"
   value = var.google_client_id
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-google-client-id"
-  }
+  })
 }
 
 resource "aws_ssm_parameter" "google_client_secret" {
@@ -43,7 +43,7 @@ resource "aws_ssm_parameter" "google_client_secret" {
   type  = "SecureString"
   value = var.google_client_secret
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-google-client-secret"
-  }
+  })
 }

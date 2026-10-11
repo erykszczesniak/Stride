@@ -55,3 +55,10 @@ notes/
 frontend/test-results/
 frontend/playwright-report/
 frontend/playwright/.cache/
+
+### Terraform (terraform/)
+terraform/.terraform/
+terraform/.tflint.d/
+terraform/*.tfvars
+!terraform/terraform.tfvars.example
+terraform/*.tfstate*

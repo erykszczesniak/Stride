@@ -2,9 +2,9 @@ resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet"
   subnet_ids = aws_subnet.public[*].id
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-db-subnet"
-  }
+  })
 }
 
 resource "aws_db_instance" "postgres" {
@@ -17,6 +17,7 @@ resource "aws_db_instance" "postgres" {
   allocated_storage     = 20
   max_allocated_storage = 20
   storage_type          = "gp2"
+  storage_encrypted     = true # default RDS key; db.t3.micro supports it (trivy AVD-AWS-0080)
 
   db_name  = var.db_name
   username = var.db_username
@@ -34,7 +35,7 @@ resource "aws_db_instance" "postgres" {
   backup_window           = "03:00-04:00"
   maintenance_window      = "mon:04:00-mon:05:00"
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-db"
-  }
+  })
 }
