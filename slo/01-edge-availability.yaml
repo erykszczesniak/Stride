@@ -1,0 +1,130 @@
+# Edge availability: 99.5 % of backend requests (excluding /actuator) do not
+# end in 5xx. Owner: domain. Generates slo:http_error:ratio_rate{5m,30m,1h,6h},
+# slo:error_budget_remaining:ratio, SLOBurnRateFast, SLOBurnRateSlow and
+# SLOErrorBudgetExhausted. See slo/README.md for the field conventions.
+apiVersion: openslo/v1
+kind: SLO
+metadata:
+  name: edge-availability
+  displayName: Edge availability
+  labels:
+    team: domain
+    service: strava-backend
+    tier: "2"
+  annotations:
+    stride.io/recording-rule: slo:http_error:ratio_rate
+    stride.io/windows: 5m,30m,1h,6h
+    stride.io/error-budget-rule: slo:error_budget_remaining:ratio
+    stride.io/error-budget-slo-label: availability
+spec:
+  description: 99.5 % of backend requests succeed (non-5xx), /actuator excluded. The user-facing promise; there is one deployable, so the per-service SLO of the microservices branch collapses into this one.
+  service: strava-backend
+  indicator:
+    metadata:
+      name: edge-error-ratio
+      displayName: Share of backend requests ending in 5xx
+    spec:
+      ratioMetric:
+        counter: true
+        bad:
+          metricSource:
+            type: Prometheus
+            spec:
+              query: http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}
+        total:
+          metricSource:
+            type: Prometheus
+            spec:
+              query: http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}
+  timeWindow:
+    - duration: 30d
+      isRolling: true
+  budgetingMethod: Occurrences
+  objectives:
+    - displayName: 99.5 % of requests succeed
+      target: 0.995
+  alertPolicies:
+    - apiVersion: openslo/v1
+      kind: AlertPolicy
+      metadata:
+        name: edge-availability-fast-burn
+        displayName: Fast burn (page)
+        annotations:
+          stride.io/alertname: SLOBurnRateFast
+          stride.io/summary: "strava-backend burning availability budget at {{ $value | humanize }}x (1h window)"
+          stride.io/description: "The availability SLO (99.5%) is burning its 30-day error budget more than 14x faster than sustainable over both the last hour and the last 5 minutes. At this rate the whole month's budget is gone in about two days. Page."
+          stride.io/runbook-url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          stride.io/dashboard-url: http://localhost:3003/d/stride-slo
+      spec:
+        alertWhenBreaching: true
+        conditions:
+          - apiVersion: openslo/v1
+            kind: AlertCondition
+            metadata:
+              name: burn-rate-14x-over-1h
+            spec:
+              severity: critical
+              condition:
+                kind: burnrate
+                op: gt
+                threshold: 14.4
+                lookbackWindow: 1h
+                alertAfter: 2m
+        notificationTargets: []
+    - apiVersion: openslo/v1
+      kind: AlertPolicy
+      metadata:
+        name: edge-availability-slow-burn
+        displayName: Slow burn (ticket)
+        annotations:
+          stride.io/alertname: SLOBurnRateSlow
+          stride.io/summary: "strava-backend burning availability budget at {{ $value | humanize }}x (6h window)"
+          stride.io/description: "The availability SLO (99.5%) has been burning budget 6x faster than sustainable for six hours. Not an outage, but a week of this empties the monthly budget. Ticket, investigate within the working day."
+          stride.io/runbook-url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          stride.io/dashboard-url: http://localhost:3003/d/stride-slo
+      spec:
+        alertWhenBreaching: true
+        conditions:
+          - apiVersion: openslo/v1
+            kind: AlertCondition
+            metadata:
+              name: burn-rate-6x-over-6h
+            spec:
+              severity: warning
+              condition:
+                kind: burnrate
+                op: gt
+                threshold: 6
+                lookbackWindow: 6h
+                alertAfter: 15m
+        notificationTargets: []
+    - apiVersion: openslo/v1
+      kind: AlertPolicy
+      metadata:
+        name: edge-availability-budget-exhausted
+        displayName: 30-day budget spent (policy applies)
+        annotations:
+          stride.io/alertname: SLOErrorBudgetExhausted
+          stride.io/rule-kind: budget-exhausted
+          stride.io/label.tier: "1"
+          stride.io/label.service: "{{ $labels.app }}"
+          stride.io/summary: "{{ $labels.app }} has spent its 30-day error budget"
+          stride.io/description: "Less than zero budget remains for {{ $labels.app }} over the trailing 30 days. Per docs/slo.md the error-budget policy applies: reliability work before new features until the budget is back above zero."
+          stride.io/runbook-url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          stride.io/dashboard-url: http://localhost:3003/d/stride-slo
+      spec:
+        alertWhenBreaching: true
+        conditions:
+          - apiVersion: openslo/v1
+            kind: AlertCondition
+            metadata:
+              name: budget-remaining-below-zero
+            spec:
+              severity: warning
+              condition:
+                kind: burnrate
+                op: gt
+                threshold: 1
+                lookbackWindow: 30d
+                alertAfter: 1h
+        notificationTargets: []

@@ -1,0 +1,99 @@
+# Edge latency: 95 % of backend requests (excluding /actuator) complete within
+# 500 ms (the le="0.5" histogram bucket). Owner: domain. Generates
+# slo:http_slow:ratio_rate{5m,30m,1h,6h}, SLOLatencyBurnRateFast and
+# SLOLatencyBurnRateSlow. The ratio is "good" based, so the generator records
+# 1 - good/total (the share of slow requests).
+apiVersion: openslo/v1
+kind: SLO
+metadata:
+  name: edge-latency
+  displayName: Edge latency
+  labels:
+    team: domain
+    service: strava-backend
+    tier: "2"
+  annotations:
+    stride.io/recording-rule: slo:http_slow:ratio_rate
+    stride.io/windows: 5m,30m,1h,6h
+spec:
+  description: 95 % of backend requests finish under 500 ms, /actuator excluded. Buckets come from management.metrics.distribution.percentiles-histogram with SLO boundaries at 100 ms, 250 ms, 500 ms, 1 s and 2.5 s.
+  service: strava-backend
+  indicator:
+    metadata:
+      name: edge-slow-ratio
+      displayName: Share of backend requests slower than 500 ms
+    spec:
+      ratioMetric:
+        counter: true
+        good:
+          metricSource:
+            type: Prometheus
+            spec:
+              query: http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*",le="0.5"}
+        total:
+          metricSource:
+            type: Prometheus
+            spec:
+              query: http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}
+  timeWindow:
+    - duration: 30d
+      isRolling: true
+  budgetingMethod: Occurrences
+  objectives:
+    - displayName: 95 % of requests under 500 ms
+      target: 0.95
+  alertPolicies:
+    - apiVersion: openslo/v1
+      kind: AlertPolicy
+      metadata:
+        name: edge-latency-fast-burn
+        displayName: Fast burn (page)
+        annotations:
+          stride.io/alertname: SLOLatencyBurnRateFast
+          stride.io/summary: "strava-backend latency SLO burning at {{ $value | humanize }}x (1h window)"
+          stride.io/description: "More than 72% of requests are slower than 500 ms over the last hour and the last 5 minutes (14.4x the 5% budget of the 95%-under-500ms SLO). This is a user-visible slowdown, not a blip."
+          stride.io/runbook-url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          stride.io/dashboard-url: http://localhost:3003/d/stride-slo
+      spec:
+        alertWhenBreaching: true
+        conditions:
+          - apiVersion: openslo/v1
+            kind: AlertCondition
+            metadata:
+              name: burn-rate-14x-over-1h
+            spec:
+              severity: critical
+              condition:
+                kind: burnrate
+                op: gt
+                threshold: 14.4
+                lookbackWindow: 1h
+                alertAfter: 2m
+        notificationTargets: []
+    - apiVersion: openslo/v1
+      kind: AlertPolicy
+      metadata:
+        name: edge-latency-slow-burn
+        displayName: Slow burn (ticket)
+        annotations:
+          stride.io/alertname: SLOLatencyBurnRateSlow
+          stride.io/summary: "strava-backend latency SLO burning at {{ $value | humanize }}x (6h window)"
+          stride.io/description: "More than 30% of requests are slower than 500 ms sustained over six hours. Find the slow endpoint on the JVM dashboard (p95 per uri) before the fast-burn alert pages."
+          stride.io/runbook-url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          stride.io/dashboard-url: http://localhost:3003/d/stride-slo
+      spec:
+        alertWhenBreaching: true
+        conditions:
+          - apiVersion: openslo/v1
+            kind: AlertCondition
+            metadata:
+              name: burn-rate-6x-over-6h
+            spec:
+              severity: warning
+              condition:
+                kind: burnrate
+                op: gt
+                threshold: 6
+                lookbackWindow: 6h
+                alertAfter: 15m
+        notificationTargets: []

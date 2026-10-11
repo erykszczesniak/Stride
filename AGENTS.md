@@ -40,6 +40,7 @@ docker compose --profile observability up -d       # + alertmanager, alert-sink
 docker run --rm -v "$PWD/monitoring:/m" --entrypoint promtool prom/prometheus:v2.55.0 check rules /m/alerts/*.yml
 docker run --rm -v "$PWD/monitoring:/m" --entrypoint promtool prom/prometheus:v2.55.0 test rules /m/alerts/tests/*.yml
 scripts/smoke.sh                                   # post-deploy check against the running stack
+make slo-check                                     # slo/*.yaml (OpenSLO) → monitoring/alerts/slo.rules.yml is up to date
 cd frontend && npm run e2e                         # needs the stack on :8081 and the SPA on :3000
 ```
 

@@ -18,6 +18,7 @@ a change of mind is a new ADR that supersedes the old one.
 | [009](009-ai-guardrails.md) | LLM guardrails and cost telemetry in the service layer | Accepted |
 | [010](010-chat-provider-failover.md) | Chat failover Anthropic → Groq, and live evals outside the per-PR build | Accepted |
 | [011](011-sonarcloud-quality-gate.md) | SonarCloud quality gate on every pull request, scanned from CI, skipped without a token | Accepted |
+| [013](013-openslo-as-the-source-of-slo-rules.md) | OpenSLO documents in `slo/` as the single source of the generated SLO rules | Accepted |
 
 ## Format
 

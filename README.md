@@ -361,7 +361,7 @@ limit returns HTTP 429.
 | CI | backend and frontend tests, JaCoCo, ArchUnit, PostgreSQL migrations and a SonarCloud quality gate |
 | Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and auth rate limits |
 | Alerts | tested Prometheus rules, owners, runbooks and Alertmanager |
-| SLOs | availability, latency, AI reliability and burn-rate alerts |
+| SLOs | availability, latency, AI reliability and burn-rate alerts, defined as OpenSLO in `slo/` and generated into Prometheus rules (`make slo-check`) |
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
 | Cost | service and model attribution, dashboards and spend alerts |
 | Verification | smoke tests and nightly Playwright E2E tests |

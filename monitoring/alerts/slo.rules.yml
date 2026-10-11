@@ -1,25 +1,27 @@
-# Service level objectives as code.
+# GENERATED FILE — do not edit.
 #
-# Targets (docs/slo.md):
-#   edge-availability   99.5% of backend requests succeed (non-5xx)        budget 0.5%
-#   edge-latency        95%   of backend requests finish under 500 ms      budget 5%
-#   ai-availability     98%   of /api/v1/ai requests succeed               budget 2%
+# Source: slo/*.yaml (OpenSLO v1). Regenerate with `make slo` or
+#   python3 monitoring/scripts/generate_slo_rules.py
+# CI (monitoring.yml, job `rules`) regenerates and fails on drift.
 #
 # Alerting follows the multi-window, multi-burn-rate recipe from the SRE
-# workbook: a fast burn (14.4× budget, 1h and 5m windows both above) pages
-# because the 30-day budget would be gone in ~2 days; a slow burn (6× over
-# 6h and 30m) opens a ticket. The short window makes the alert stop as soon
-# as the problem does, the long window keeps a 5-minute blip from paging.
+# workbook: a fast burn (14.4x budget, 1h and 5m windows both above) pages
+# because the 30-day budget would be gone in ~2 days; a slow burn (6x over
+# 6h and 30m) opens a ticket. The short window is a twelfth of the long one:
+# it makes the alert stop as soon as the problem does, while the long window
+# keeps a 5-minute blip from paging. Recording rules carry the error ratio per
+# window; the alert divides it by the error budget (1 - target).
 #
-# One deployable, so the "per-service" SLO of the microservices branch
-# collapses into the edge SLO; the AI endpoints keep their own, looser budget
-# because two external providers sit behind them.
+# Objectives (docs/slo.md):
+#   edge-availability   99.5% target, budget 0.005  (domain)
+#   edge-latency        95% target, budget 0.05  (domain)
+#   ai-availability     98% target, budget 0.02  (ai)
 groups:
 
   - name: stride-slo-recording
     interval: 30s
     rules:
-      # ---- error ratios, four windows (job label keeps infra out)
+      # ---- Edge availability: share of requests failing, 4 window(s)
       - record: slo:http_error:ratio_rate5m
         expr: |
           sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[5m]))
@@ -41,7 +43,20 @@ groups:
             /
           sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[6h]))
 
-      # ---- latency: share of requests slower than 500 ms
+      # ---- 30d error budget remaining, 1 = untouched, 0 = spent, <0 = overspent
+      - record: slo:error_budget_remaining:ratio
+        labels:
+          slo: availability
+        expr: |
+          1 - (
+            (
+              sum by (app) (increase(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[30d]))
+                /
+              sum by (app) (increase(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[30d]))
+            ) / 0.005
+          )
+
+      # ---- Edge latency: share of requests outside the good bucket, 4 window(s)
       - record: slo:http_slow:ratio_rate5m
         expr: |
           1 - (
@@ -71,7 +86,7 @@ groups:
             sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[6h]))
           )
 
-      # ---- AI endpoints: their own error ratio (two windows are enough for a fast-burn page)
+      # ---- AI availability: share of requests failing, 2 window(s)
       - record: slo:ai_error:ratio_rate5m
         expr: |
           sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*",status=~"5.."}[5m]))
@@ -83,25 +98,14 @@ groups:
             /
           sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*"}[1h]))
 
-      # ---- 30-day error budget remaining, 1 = untouched, 0 = spent, <0 = overspent
-      - record: slo:error_budget_remaining:ratio
-        labels:
-          slo: availability
-        expr: |
-          1 - (
-            (
-              sum by (app) (increase(http_server_requests_seconds_count{job="strava-backend",status=~"5..",uri!~"/actuator.*"}[30d]))
-                /
-              sum by (app) (increase(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[30d]))
-            ) / 0.005
-          )
-
   - name: stride-slo-alerts
     rules:
 
       # ================================================================
       # Edge availability — 99.5 %, budget 0.005
+      # 99.5 % of backend requests succeed (non-5xx), /actuator excluded. The user-facing promise; there is one deployable, so the per-service SLO of the microservices branch collapses into this one.
       # ================================================================
+
       - alert: SLOBurnRateFast
         expr: |
           (slo:http_error:ratio_rate1h{app="strava-backend"} / 0.005) > 14.4
@@ -138,9 +142,26 @@ groups:
           runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
           dashboard_url: http://localhost:3003/d/stride-slo
 
+      - alert: SLOErrorBudgetExhausted
+        expr: slo:error_budget_remaining:ratio < 0
+        for: 1h
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+          slo: availability
+        annotations:
+          summary: "{{ $labels.app }} has spent its 30-day error budget"
+          description: "Less than zero budget remains for {{ $labels.app }} over the trailing 30 days. Per docs/slo.md the error-budget policy applies: reliability work before new features until the budget is back above zero."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
       # ================================================================
-      # Edge latency — 95 % under 500 ms, budget 0.05
+      # Edge latency — 95 %, budget 0.05
+      # 95 % of backend requests finish under 500 ms, /actuator excluded. Buckets come from management.metrics.distribution.percentiles-histogram with SLO boundaries at 100 ms, 250 ms, 500 ms, 1 s and 2.5 s.
       # ================================================================
+
       - alert: SLOLatencyBurnRateFast
         expr: |
           (slo:http_slow:ratio_rate1h{app="strava-backend"} / 0.05) > 14.4
@@ -178,8 +199,10 @@ groups:
           dashboard_url: http://localhost:3003/d/stride-slo
 
       # ================================================================
-      # AI availability — 98 %, budget 0.02 (two external providers)
+      # AI availability — 98 %, budget 0.02
+      # 98 % of /api/v1/ai requests succeed (non-5xx). Two external providers (chat and generation) sit behind these endpoints; their outages are routed around, not fixed here.
       # ================================================================
+
       - alert: AiSLOBurnRateFast
         expr: |
           (slo:ai_error:ratio_rate1h{app="strava-backend"} / 0.02) > 14.4
@@ -196,22 +219,4 @@ groups:
           summary: "strava-backend burning AI availability budget at {{ $value | humanize }}x (1h window)"
           description: "AI requests (/api/v1/ai) are failing 14x faster than the 98% SLO allows over the last hour and last 5 minutes. Usually a provider outage — check AiProviderErrors and the failover metric first."
           runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
-          dashboard_url: http://localhost:3003/d/stride-slo
-
-      # ================================================================
-      # Budget bookkeeping: tell the team when a month's budget is gone.
-      # ================================================================
-      - alert: SLOErrorBudgetExhausted
-        expr: slo:error_budget_remaining:ratio < 0
-        for: 1h
-        labels:
-          severity: warning
-          team: domain
-          tier: "1"
-          service: "{{ $labels.app }}"
-          slo: availability
-        annotations:
-          summary: "{{ $labels.app }} has spent its 30-day error budget"
-          description: "Less than zero budget remains for {{ $labels.app }} over the trailing 30 days. Per docs/slo.md the error-budget policy applies: reliability work before new features until the budget is back above zero."
-          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/slo-burn-rate.md
           dashboard_url: http://localhost:3003/d/stride-slo

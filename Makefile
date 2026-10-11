@@ -2,7 +2,7 @@
 # Strava Clone - Makefile
 # ============================================
 
-.PHONY: help build up down logs clean test backend frontend smoke e2e-up e2e-down
+.PHONY: help build up down logs clean test backend frontend smoke e2e-up e2e-down slo slo-check
 
 # Default target
 help:
@@ -11,6 +11,8 @@ help:
 	@echo "  make build         - Build all Docker images"
 	@echo "  make up            - Start all services"
 	@echo "  make smoke         - Post-deploy smoke test (API + monitoring pipeline)"
+	@echo "  make slo           - Regenerate monitoring/alerts/slo.rules.yml from slo/*.yaml"
+	@echo "  make slo-check     - Validate slo/*.yaml and fail if the generated rules are stale"
 	@echo "  make e2e-up        - Stack with the backend also on :8080 (SPA proxy + Playwright)"
 	@echo "  make down          - Stop all services"
 	@echo "  make logs          - View logs (all services)"
@@ -131,3 +133,11 @@ db-backup:
 # Database restore (usage: make db-restore FILE=backups/backup_xxx.sql)
 db-restore:
 	docker compose exec -T postgres psql -U strava strava < $(FILE)
+
+# SLO rules are generated from the OpenSLO documents in slo/ (docs/slo.md,
+# ADR-013). Needs python3 with PyYAML (pip install pyyaml).
+slo:
+	python3 monitoring/scripts/generate_slo_rules.py
+
+slo-check:
+	python3 monitoring/scripts/generate_slo_rules.py --check
