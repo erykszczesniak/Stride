@@ -16,6 +16,7 @@ does not exist.
 | [db-pool-exhausted.md](db-pool-exhausted.md) | `DbPoolSaturated`, `DbPoolExhausted` | warning / critical |
 | [ai-provider-degraded.md](ai-provider-degraded.md) | `AiProviderFailoverActive`, `AiProviderErrors`, `AiChatErrorRate`, `AiChatLatencyP95`, `AiSLOBurnRateFast`, `AiSpendHigh` | warning / critical |
 | [slo-burn-rate.md](slo-burn-rate.md) | `SLOBurnRateFast/Slow`, `SLOLatencyBurnRateFast/Slow`, `SLOErrorBudgetExhausted` | critical / warning |
+| [anomaly-detected.md](anomaly-detected.md) | `JvmHeapExhaustionPredicted`, `DbPoolExhaustionPredicted`, `TrafficDeviatesFromWeeklyBaseline`, `ErrorRatioDeviation` | warning |
 | [monitoring-pipeline.md](monitoring-pipeline.md) | `Watchdog`, `PrometheusTargetsMissing`, `PrometheusRuleEvaluationFailures`, `PrometheusHighCardinality`, `AlertmanagerDown`, `AlertmanagerNotificationsFailing` | critical / warning / info |
 
 ## Format

@@ -41,6 +41,13 @@ changelog.
   rewrite of 12 September.
 
 ### Added
+- Anomaly alerts (`monitoring/alerts/anomaly.rules.yml`): four `warning` rules
+  that use deviation instead of a fixed threshold — heap and DB-pool exhaustion
+  predicted with `predict_linear`, request rate against the same hour one week
+  ago (`offset 1w`), 5xx ratio as a z-score against its own 24 h mean. Unit tests
+  with fire and no-fire cases for each, runbook `docs/runbooks/anomaly-detected.md`
+  (how to confirm a deviation is real, false-positive causes such as a campaign or
+  a holiday week), and a "Deviation alerts" section in `docs/slo.md`.
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a
   documentation index.
