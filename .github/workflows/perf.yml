@@ -1,0 +1,108 @@
+# Load profile gated by the SLOs: boots the composed stack on the runner
+# (same pattern as e2e.yml), walks the signed-in user journey with k6 and
+# fails when a threshold from docs/slo.md is breached (perf/README.md).
+#
+# Too heavy for every PR (the image build runs Maven inside Docker), so it
+# runs nightly, on demand with a chosen load, and on every push to a release
+# branch — a regression there blocks the release, not the PR that caused it.
+name: Performance
+
+on:
+  workflow_dispatch:
+    inputs:
+      vus:
+        description: Virtual users at plateau
+        default: "10"
+        required: false
+      ramp:
+        description: Ramp-up duration (k6 syntax, e.g. 30s)
+        default: "30s"
+        required: false
+      hold:
+        description: Plateau duration (k6 syntax, e.g. 2m; keep ramp + hold under 25m — the login token lives 30m)
+        default: "2m"
+        required: false
+  schedule:
+    - cron: "15 3 * * *"   # nightly 03:15 UTC, after the e2e run
+  push:
+    branches: ["release/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  K6_IMAGE: grafana/k6:0.54.0
+
+jobs:
+  k6:
+    name: k6 user journey vs SLO thresholds
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # base64: the signing key is Decoders.BASE64.decode(JWT_SECRET)
+      JWT_SECRET: ZTJlLXNlY3JldC1taW4tMzItY2hhcnMtdGhpcy1pcy1vbmx5LWZvci1jaS1ydW5z
+      POSTGRES_PASSWORD: strava
+      VUS: ${{ github.event.inputs.vus || '10' }}
+      RAMP: ${{ github.event.inputs.ramp || '30s' }}
+      HOLD: ${{ github.event.inputs.hold || '2m' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Validate the k6 script
+        run: docker run --rm -v "$PWD/perf/k6:/scripts" "$K6_IMAGE" inspect /scripts/user-journey.js > /dev/null
+
+      - name: Boot the stack and wait for health checks
+        run: |
+          cp .env.example .env
+          docker compose -f docker-compose.yml up -d --build --wait --wait-timeout 900
+          docker compose ps
+
+      - name: Wait for the backend to answer and the seeded login to work
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8081/actuator/health > /dev/null && break
+            sleep 5
+          done
+          curl -sf http://localhost:8081/actuator/health
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8081/api/v1/auth/login \
+            -H 'Content-Type: application/json' -d '{"email":"john@example.com","password":"password123"}')
+          test "$code" = "200" || { echo "login returned $code"; exit 1; }
+
+      - name: Run k6 (${{ env.VUS }} VUs, ramp ${{ env.RAMP }}, hold ${{ env.HOLD }})
+        id: k6
+        run: |
+          mkdir -p perf/k6/out
+          docker run --rm --network host --user "$(id -u):$(id -g)" \
+            -v "$PWD/perf/k6:/scripts" \
+            -e BASE_URL=http://localhost:8081 -e VUS -e RAMP -e HOLD \
+            "$K6_IMAGE" run --summary-export /scripts/out/summary.json /scripts/user-journey.js
+
+      # Runs even when k6 exited 99 (threshold breached) so the numbers are
+      # visible on the run page; the step itself fails again on a breach.
+      - name: Key metrics and threshold results
+        if: always() && hashFiles('perf/k6/out/summary.json') != ''
+        run: |
+          perf/k6/summary-to-markdown.sh perf/k6/out/summary.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: k6-summary
+          path: perf/k6/out/summary.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Stack logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --since 30m --no-color backend | tail -400
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml down -v --remove-orphans

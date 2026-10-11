@@ -41,6 +41,13 @@ changelog.
   rewrite of 12 September.
 
 ### Added
+- Performance gate: `perf/k6/user-journey.js` walks the signed-in user path
+  (profile, my activities, feed, dashboard, weekly stats, user search) with k6
+  thresholds that encode the SLOs from `docs/slo.md` (failed requests < 0.5 %,
+  p95 < 500 ms overall and per endpoint, all checks green). The `Performance`
+  workflow boots the compose stack and runs it nightly, on demand and on every
+  push to `release/**`, publishing the numbers to the run summary and failing
+  on a breach; `perf/README.md` has the baseline.
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a
   documentation index.
