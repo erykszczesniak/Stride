@@ -1,0 +1,71 @@
+# AI availability: 98 % of /api/v1/ai/** requests do not end in 5xx. Owner: ai.
+# Looser than the edge SLO because two external providers sit behind these
+# endpoints. Generates slo:ai_error:ratio_rate{5m,1h} and AiSLOBurnRateFast
+# (two windows are enough for a fast-burn page; there is no slow burn).
+apiVersion: openslo/v1
+kind: SLO
+metadata:
+  name: ai-availability
+  displayName: AI availability
+  labels:
+    team: ai
+    service: strava-backend
+    tier: "2"
+  annotations:
+    stride.io/recording-rule: slo:ai_error:ratio_rate
+    stride.io/windows: 5m,1h
+spec:
+  description: 98 % of /api/v1/ai requests succeed (non-5xx). Two external providers (chat and generation) sit behind these endpoints; their outages are routed around, not fixed here.
+  service: strava-backend
+  indicator:
+    metadata:
+      name: ai-error-ratio
+      displayName: Share of AI requests ending in 5xx
+    spec:
+      ratioMetric:
+        counter: true
+        bad:
+          metricSource:
+            type: Prometheus
+            spec:
+              query: http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*",status=~"5.."}
+        total:
+          metricSource:
+            type: Prometheus
+            spec:
+              query: http_server_requests_seconds_count{job="strava-backend",uri=~"/api/v1/ai.*"}
+  timeWindow:
+    - duration: 30d
+      isRolling: true
+  budgetingMethod: Occurrences
+  objectives:
+    - displayName: 98 % of AI requests succeed
+      target: 0.98
+  alertPolicies:
+    - apiVersion: openslo/v1
+      kind: AlertPolicy
+      metadata:
+        name: ai-availability-fast-burn
+        displayName: Fast burn (page)
+        annotations:
+          stride.io/alertname: AiSLOBurnRateFast
+          stride.io/summary: "strava-backend burning AI availability budget at {{ $value | humanize }}x (1h window)"
+          stride.io/description: "AI requests (/api/v1/ai) are failing 14x faster than the 98% SLO allows over the last hour and last 5 minutes. Usually a provider outage — check AiProviderErrors and the failover metric first."
+          stride.io/runbook-url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/ai-provider-degraded.md
+          stride.io/dashboard-url: http://localhost:3003/d/stride-slo
+      spec:
+        alertWhenBreaching: true
+        conditions:
+          - apiVersion: openslo/v1
+            kind: AlertCondition
+            metadata:
+              name: burn-rate-14x-over-1h
+            spec:
+              severity: critical
+              condition:
+                kind: burnrate
+                op: gt
+                threshold: 14.4
+                lookbackWindow: 1h
+                alertAfter: 2m
+        notificationTargets: []

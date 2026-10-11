@@ -59,6 +59,13 @@ jobs:
           pip install --quiet pyyaml
           python monitoring/scripts/check_alert_rules.py monitoring/alerts
 
+      # slo.rules.yml is generated from slo/*.yaml (ADR-013): regenerate and
+      # fail if the committed file was edited by hand or not regenerated.
+      - name: SLO rules match slo/ (generated, no drift)
+        run: |
+          python monitoring/scripts/generate_slo_rules.py
+          git diff --exit-code -- monitoring/alerts/slo.rules.yml
+
   dashboards:
     name: Grafana dashboards (lint)
     runs-on: ubuntu-latest

@@ -36,11 +36,23 @@ changelog.
   infrastructure the security filter chains require (it only ever ran where Docker
   was available, i.e. on the runner).
 ### Changed
+- `monitoring/alerts/slo.rules.yml` is generated from the OpenSLO documents in
+  `slo/` by `monitoring/scripts/generate_slo_rules.py`; rule names, labels,
+  annotations and expressions are unchanged (the budget-remaining rule moved
+  next to its SLO). The `Monitoring` workflow regenerates and fails on drift;
+  `make slo` / `make slo-check` locally. ADR-013.
+- `docs/slo.md`: the error budget policy says what happens at 50 %, 25 % and
+  0 % remaining (who decides, feature freeze vs reliability work, how it is
+  lifted) and how the rules are generated.
 - ADR 006 and 007 cite the current commit of the alerts-as-code change
   (`98f7b97`); the previous SHA no longer exists on `main` after the history
   rewrite of 12 September.
 
 ### Added
+- `slo/`: one OpenSLO v1 document per SLO (edge availability, edge latency, AI
+  availability) with the indicator queries, targets, 30-day rolling window and
+  the fast/slow burn-rate alert policies; `slo/README.md` documents the fields
+  and the `stride.io/` annotations the generator reads.
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a
   documentation index.
