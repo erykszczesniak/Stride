@@ -18,6 +18,21 @@ does not exist.
 | [slo-burn-rate.md](slo-burn-rate.md) | `SLOBurnRateFast/Slow`, `SLOLatencyBurnRateFast/Slow`, `SLOErrorBudgetExhausted` | critical / warning |
 | [monitoring-pipeline.md](monitoring-pipeline.md) | `Watchdog`, `PrometheusTargetsMissing`, `PrometheusRuleEvaluationFailures`, `PrometheusHighCardinality`, `AlertmanagerDown`, `AlertmanagerNotificationsFailing` | critical / warning / info |
 
+## Verified by experiment
+
+[`chaos/`](../chaos/README.md) runs fault injections against the composed stack
+and asserts the alert in Alertmanager and the recovery
+([ADR 014](../adr/014-chaos-experiments-as-alert-tests.md)). Where a runbook's
+promise has been measured, it says so; the numbers below are from 2026-10-11.
+
+| Runbook | Experiment | Measured |
+|---|---|---|
+| [service-down.md](service-down.md) | `backend-pause` | `ServiceDown` firing in Alertmanager 142 s after the pause; smoke green 16 s after unpause |
+| [service-down.md](service-down.md) | `backend-kill` | a SIGKILLed JVM is back in ~1.5 s; at most one scrape fails and `ServiceDown` is pending for one evaluation, never firing; smoke green 22 s after the kill. `docker kill` is different: Docker ignores the restart policy and the backend stays down |
+| [high-latency.md](high-latency.md) | `postgres-netem-delay` | `EdgeHighLatencyP95` pending 34 s and firing in Alertmanager 631 s after a 400 ms delay on Postgres (the rule's own `for: 10m`); smoke green 1 s after the delay was removed, alert resolved after 309 s |
+| [slo-burn-rate.md](slo-burn-rate.md) | `postgres-netem-delay` (attempt 1) | `SLOLatencyBurnRateFast` did **not** fire: throughput collapsed to 0.4 req/s and the request-weighted slow ratio stayed below 0.72 on the 1 h window — the burn-rate alerts are not the signal for a slow database at low traffic |
+| — | `elasticsearch-pause` | no alert covers a frozen Elasticsearch: the backend stays scraped, search answers 200 via SQL after 30 s, `/actuator/health` goes 503 DOWN, and the only trace in Prometheus is the search endpoint's p95 (`EdgeHighLatencyP95` pending after 93 s) |
+
 ## Format
 
 Each runbook follows [`_template.md`](_template.md): YAML front matter that

@@ -26,6 +26,14 @@ runs on an `@Async` thread and is not in the HTTP histogram at all). Users
 stop waiting before you do: the SPA's axios client times out at 30 s
 (`frontend/src/api/ApiClient.jsx`), nginx at 60 s (`proxy_read_timeout`).
 
+**Verified by experiment** ([`chaos/experiments/postgres-netem-delay.yaml`](../../chaos/experiments/postgres-netem-delay.yaml),
+2026-10-11): a 400 ms netem delay on Postgres under 4 load workers pushed the edge
+p95 above 1 s in 24 s; `EdgeHighLatencyP95` was pending after 34 s and active in
+Alertmanager after 631 s — the ten minutes are the rule's own `for`. The
+smoke test was green 1 s after the delay was removed; the alert resolved
+309 s later, once the slow samples left the 5 m window. Report in
+[`chaos/results/`](../../chaos/results/).
+
 ## Required inputs
 
 - `uri` / `method` from the alert (endpoint rule) or the `topk` below

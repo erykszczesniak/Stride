@@ -41,6 +41,12 @@ changelog.
   rewrite of 12 September.
 
 ### Added
+- Chaos experiments as code (`chaos/`): one YAML per experiment (hypothesis,
+  fault, expected alert, expected recovery), one runner that pauses/kills a
+  container or adds netem delay to Postgres, waits for the alert in
+  Alertmanager, ends the fault and waits for the smoke test, and writes a
+  report with time-to-alert and time-to-recover. Four experiments, a weekly
+  workflow, ADR 014 and `docs/chaos/README.md` with the measured numbers.
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a
   documentation index.

@@ -1,0 +1,62 @@
+# Elasticsearch freezes. The design says user search falls back to SQL and
+# the app keeps serving (ADR 003) — but the aggregate health endpoint includes
+# the Elasticsearch indicator, so /actuator/health answers 503 DOWN (after the
+# client's 30 s socket timeout) while every other endpoint works. No alert
+# covers Elasticsearch directly (it is not scraped); this experiment pins down
+# what the monitoring does and does not see, instead of pretending an alert
+# exists.
+name: elasticsearch-pause
+hypothesis:
+  steady_state: scripts/smoke.sh passes (the search check returns 200 through Elasticsearch).
+  fault: docker pause on the elasticsearch container for up to 300 s, with 3 load workers that hit the search endpoint and one fast endpoint.
+  expected_alerts: >
+    No alert fires. up{job="strava-backend"} stays 1 the whole time (the backend is up, so ServiceDown must not move),
+    and the search endpoint produces no 5xx (the SQL fallback answers 200 after the Elasticsearch client's 30 s socket
+    timeout). What the monitoring does see: the search endpoint's p95 goes far above 1 s within 180 s, and the edge
+    p95 follows once enough 30 s searches sit in the 5 m window — EdgeHighLatencyP95 goes PENDING within 300 s
+    (measured 47 s on a quiet window and 197 s when the window still held ~600 fast requests from the previous
+    experiment). It needs 10 minutes to fire, longer than this budget, so pending is asserted and the gap is documented.
+  expected_recovery: After docker unpause, searches go back to Elasticsearch, /actuator/health is UP again and the smoke test passes within 300 s (its search and health checks have a 15 s timeout, so they fail during the fault and pass after).
+  notes: >
+    Documents a gap rather than a strength: a frozen Elasticsearch is visible as latency on one endpoint and as a
+    DOWN aggregate health (/actuator/health answered 503 {"status":"DOWN"} after 30 s, probed at +20 s and +55 s
+    during the 2026-10-11 run), and nothing alerts on either today. docs/observability.md already lists client spans
+    for Elasticsearch and freshness metrics as not done; a blackbox probe on /actuator/health or an Elasticsearch
+    scrape target would turn this into a real alert.
+action:
+  type: pause
+  service: elasticsearch
+  duration: 300
+  hold_after_expectations: 10
+load:
+  enabled: true
+  workers: 3
+  endpoints:
+    - /api/v1/users/search?query=john
+    - /api/v1/users/me
+expect:
+  queries:
+    - name: backend-still-scraped
+      expr: up{job="strava-backend"}
+      op: "=="
+      value: 1
+      within: 30
+      hold: true   # re-checked every poll until the fault ends; one 0 disproves the hypothesis
+    - name: search-p95-above-1s
+      expr: histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri="/api/v1/users/search"}[5m])))
+      op: ">"
+      value: 1
+      within: 180
+    - name: no-5xx-on-search
+      expr: sum(rate(http_server_requests_seconds_count{job="strava-backend",uri="/api/v1/users/search",status=~"5.."}[5m])) or vector(0)
+      op: "=="
+      value: 0
+      within: 180
+      hold: true   # must stay at zero for the whole fault
+  alerts:
+    - alertname: EdgeHighLatencyP95
+      state: pending
+      within: 300
+  recovery:
+    smoke_within: 300
+    alerts_resolved: true
