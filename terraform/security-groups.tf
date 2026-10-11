@@ -19,16 +19,18 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # The load balancer only ever talks to the EC2 target inside the VPC.
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description = "To targets in the VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
   }
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-alb-sg"
-  }
+  })
 
   lifecycle {
     create_before_destroy = true
@@ -48,16 +50,20 @@ resource "aws_security_group" "ec2" {
     security_groups = [aws_security_group.alb.id]
   }
 
+  # Outbound internet is needed: dnf, the Compose plugin download, ECR pulls
+  # and SSM parameter reads all go out through the internet gateway (no NAT,
+  # no VPC endpoints on the free tier). Accepted in .trivyignore.yaml.
   egress {
+    description = "Internet (packages, ECR, SSM)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-ec2-sg"
-  }
+  })
 
   lifecycle {
     create_before_destroy = true
@@ -77,16 +83,12 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.ec2.id]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # No egress block: RDS never initiates connections, so Terraform leaves the
+  # group without an outbound rule.
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-rds-sg"
-  }
+  })
 
   lifecycle {
     create_before_destroy = true

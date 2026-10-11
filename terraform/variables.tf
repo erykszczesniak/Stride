@@ -10,6 +10,17 @@ variable "project_name" {
   default     = "strava"
 }
 
+variable "environment" {
+  description = "Deployment environment, carried as the Environment tag on every resource"
+  type        = string
+  default     = "dev"
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "environment must be one of dev, staging, prod."
+  }
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string

@@ -1,0 +1,206 @@
+# Quality gates for the AWS slice in terraform/ and a nightly drift check.
+#
+#   quality  — every PR / push that touches terraform/: fmt, init (no backend),
+#              validate, tflint (AWS ruleset), trivy misconfiguration scan and
+#              `terraform test` against a mocked AWS provider. No credentials.
+#   drift    — nightly and on demand: `terraform plan -detailed-exitcode`
+#              against the real state. Runs only when credentials and a state
+#              bucket are configured; otherwise it says so in the summary and
+#              passes. Exit code 2 (drift) opens or updates an issue and fails.
+#
+# Same tools, same versions as terraform/README.md "Quality gates".
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+    paths: ["terraform/**", ".github/workflows/terraform.yml"]
+  pull_request:
+    branches: [main]
+    paths: ["terraform/**", ".github/workflows/terraform.yml"]
+  schedule:
+    - cron: "15 3 * * *"   # nightly 03:15 UTC — drift only
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TERRAFORM_VERSION: 1.9.8
+  TFLINT_VERSION: v0.53.0
+
+defaults:
+  run:
+    working-directory: terraform
+
+jobs:
+  quality:
+    name: fmt, validate, lint, scan, test
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff
+
+      - name: terraform init (no backend)
+        run: terraform init -backend=false -input=false
+
+      - name: terraform validate
+        run: terraform validate
+
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: tflint (AWS ruleset pinned in .tflint.hcl)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # plugin download rate limit
+        run: |
+          tflint --init
+          tflint --format compact
+
+      - name: trivy misconfiguration scan (HIGH, CRITICAL fail; accepted findings in .trivyignore.yaml)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: terraform
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          trivyignores: terraform/.trivyignore.yaml
+
+      - name: terraform test (mocked AWS provider)
+        run: terraform test
+
+  drift:
+    name: drift detection (nightly)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write      # OIDC role assumption
+      issues: write        # open / update the drift issue
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # Secrets are not readable in `if:`; a step copies what is needed into an output.
+      - name: Are credentials and a state bucket configured?
+        id: creds
+        working-directory: .
+        env:
+          ROLE: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          BUCKET: ${{ vars.TF_STATE_BUCKET }}
+        run: |
+          if [ -z "$BUCKET" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "reason=no state bucket configured (repository variable TF_STATE_BUCKET)" >> "$GITHUB_OUTPUT"
+          elif [ -n "$ROLE" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"; echo "mode=oidc" >> "$GITHUB_OUTPUT"
+          elif [ -n "$KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"; echo "mode=keys" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "reason=no credentials configured (AWS_ROLE_TO_ASSUME or AWS_ACCESS_KEY_ID)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skipped
+        if: steps.creds.outputs.configured != 'true'
+        working-directory: .
+        run: |
+          echo "## Terraform drift detection" >> "$GITHUB_STEP_SUMMARY"
+          echo "skipped: ${{ steps.creds.outputs.reason }}. See terraform/README.md, \"Drift detection\"." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure AWS credentials (OIDC)
+        if: steps.creds.outputs.configured == 'true' && steps.creds.outputs.mode == 'oidc'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-central-1' }}
+
+      - name: Configure AWS credentials (access keys)
+        if: steps.creds.outputs.configured == 'true' && steps.creds.outputs.mode == 'keys'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-central-1' }}
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        if: steps.creds.outputs.configured == 'true'
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      # The checked-in configuration keeps local state so `terraform init`
+      # works on a laptop; the drift job points the same configuration at the
+      # S3 state with an override file that only exists on the runner.
+      - name: terraform init (S3 state)
+        if: steps.creds.outputs.configured == 'true'
+        env:
+          BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          KEY: ${{ vars.TF_STATE_KEY || 'stride/terraform.tfstate' }}
+          REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
+        run: |
+          cat > backend_override.tf <<HCL
+          terraform {
+            backend "s3" {}
+          }
+          HCL
+          terraform init -input=false -reconfigure \
+            -backend-config="bucket=$BUCKET" -backend-config="key=$KEY" -backend-config="region=$REGION"
+
+      - name: terraform plan -detailed-exitcode
+        if: steps.creds.outputs.configured == 'true'
+        id: plan
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+          TF_VAR_groq_api_key: ${{ secrets.TF_VAR_GROQ_API_KEY }}
+          TF_VAR_google_client_id: ${{ secrets.TF_VAR_GOOGLE_CLIENT_ID }}
+          TF_VAR_google_client_secret: ${{ secrets.TF_VAR_GOOGLE_CLIENT_SECRET }}
+          TF_VAR_domain_name: ${{ vars.TF_VAR_DOMAIN_NAME }}
+          TF_VAR_environment: ${{ vars.TF_VAR_ENVIRONMENT || 'prod' }}
+        run: |
+          set +e
+          terraform plan -detailed-exitcode -lock=false -input=false -no-color -out=drift.tfplan > plan.txt 2>&1
+          code=$?
+          set -e
+          echo "exitcode=$code" >> "$GITHUB_OUTPUT"
+          echo "## Terraform drift detection" >> "$GITHUB_STEP_SUMMARY"
+          case "$code" in
+            0) echo "No drift: the real infrastructure matches \`main\`." >> "$GITHUB_STEP_SUMMARY" ;;
+            2) echo "**Drift detected** — the plan is not empty:" >> "$GITHUB_STEP_SUMMARY"
+               { echo '```'; grep -E '^(Plan:|  # |No changes)' plan.txt | head -60; echo '```'; } >> "$GITHUB_STEP_SUMMARY" ;;
+            *) echo "Plan failed (exit $code); see the step log." >> "$GITHUB_STEP_SUMMARY"; tail -50 plan.txt; exit "$code" ;;
+          esac
+
+      - name: Open or update the drift issue
+        if: steps.creds.outputs.configured == 'true' && steps.plan.outputs.exitcode == '2'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/plan.txt', 'utf8');
+            const summary = plan.split('\n').filter(l => /^(Plan:|  # )/.test(l)).join('\n');
+            const marker = '<!-- terraform-drift -->';
+            const title = 'Terraform drift detected';
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `${marker}\nThe nightly \`terraform plan\` against the real infrastructure is not empty. Someone changed something outside a PR, or a merged change was never applied.\n\n\`\`\`\n${summary}\n\`\`\`\n\nFull plan: ${run}\n\nResolve by applying \`main\` or by bringing the manual change back into Terraform through a PR (terraform/README.md, "No manual changes").`;
+            const { data: issues } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: 'drift', per_page: 20 });
+            const mine = issues.find(i => i.body && i.body.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.update({ ...context.repo, issue_number: mine.number, body });
+              await github.rest.issues.createComment({ ...context.repo, issue_number: mine.number, body: `Still drifting on ${new Date().toISOString().slice(0, 10)}: ${run}` });
+            } else {
+              await github.rest.issues.create({ ...context.repo, title, body, labels: ['drift'] });
+            }
+            core.setFailed('Terraform drift detected; see the issue labelled "drift".');

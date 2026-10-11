@@ -1,6 +1,7 @@
 # AWS
-aws_region    = "eu-central-1"
-project_name  = "strava"
+aws_region   = "eu-central-1"
+project_name = "strava"
+environment  = "dev" # dev | staging | prod, becomes the Environment tag
 
 # EC2
 ec2_instance_type = "t3.micro"

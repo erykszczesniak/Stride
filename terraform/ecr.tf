@@ -7,9 +7,9 @@ resource "aws_ecr_repository" "backend" {
     scan_on_push = true
   }
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-backend"
-  }
+  })
 }
 
 resource "aws_ecr_repository" "frontend" {
@@ -21,9 +21,9 @@ resource "aws_ecr_repository" "frontend" {
     scan_on_push = true
   }
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-frontend"
-  }
+  })
 }
 
 resource "aws_ecr_lifecycle_policy" "backend" {

@@ -36,6 +36,13 @@ changelog.
   infrastructure the security filter chains require (it only ever ran where Docker
   was available, i.e. on the runner).
 ### Changed
+- Terraform (AWS slice): every taggable resource carries `Project`,
+  `Environment` (new `environment` variable, `dev` by default) and `ManagedBy`
+  tags; RDS storage and the EC2 root volume are encrypted, the host requires
+  IMDSv2, the ALB drops invalid header fields, the ALB security group only
+  reaches the VPC and the RDS group has no egress. Existing deployments: the
+  RDS encryption change replaces the instance (restore from the final
+  snapshot), the others apply in place.
 - ADR 006 and 007 cite the current commit of the alerts-as-code change
   (`98f7b97`); the previous SHA no longer exists on `main` after the history
   rewrite of 12 September.

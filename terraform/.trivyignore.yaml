@@ -1,0 +1,16 @@
+# Accepted trivy misconfiguration findings for the AWS slice. Everything not
+# listed here fails the Terraform workflow at HIGH/CRITICAL. One entry per
+# finding, with the reason; remove the entry when the design changes.
+misconfigurations:
+  - id: AVD-AWS-0053
+    paths: ["alb.tf"]
+    statement: "The ALB is the public entry point of the application; internal = false is the design, not an accident."
+  - id: AVD-AWS-0054
+    paths: ["alb.tf"]
+    statement: "The HTTP listener redirects to HTTPS (301) whenever domain_name is set; without a domain there is no certificate, so HTTP-only is the explicit free-tier default (asserted in tests/alb.tftest.hcl)."
+  - id: AVD-AWS-0104
+    paths: ["security-groups.tf"]
+    statement: "The EC2 host needs outbound internet for dnf, the Compose plugin, ECR pulls and SSM reads; the free-tier slice has no NAT gateway or VPC endpoints. The ALB and RDS groups no longer have an open egress."
+  - id: AVD-AWS-0164
+    paths: ["vpc.tf"]
+    statement: "Single public subnet pair by design: the EC2 host needs a public IP to reach the internet without a NAT gateway, and RDS is publicly_accessible = false regardless of the subnet setting."
