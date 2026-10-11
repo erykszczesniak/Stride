@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
-"""Contract check for Prometheus alert rules (run in CI and locally).
+"""Contract check for alert rules (run in CI and locally).
 
 Every alerting rule must carry the routing labels Alertmanager matches on, the
 annotations a responder needs at 3 AM, and at least one unit-test case:
 promtool proves the YAML and PromQL parse; this proves the rule is *operable*.
 
-Usage: check_alert_rules.py [monitoring/alerts]
+Two rule sources share one Alertmanager and therefore one contract:
+
+* Prometheus rules in monitoring/alerts/*.rules.yml (PromQL), unit-tested
+  with promtool in monitoring/alerts/tests/.
+* Loki ruler rules in monitoring/loki/rules/<tenant>/*.yml (LogQL). There
+  is no promtool for LogQL, so these are exempt from the test-case rule;
+  the exemption is printed as a NOTE per rule so it never goes unnoticed, and
+  monitoring/scripts/check_loki_rules.sh covers syntax by loading the files
+  into a real Loki. Alert names must be unique across both sources.
+
+Usage: check_alert_rules.py [monitoring/alerts] [--loki-rules monitoring/loki/rules | --no-loki]
+The Loki directory defaults to <repo>/monitoring/loki/rules when it exists.
 Exit 1 on any error. Warnings (missing runbook file) do not fail the build yet.
 """
 from __future__ import annotations
@@ -38,6 +49,21 @@ def load_rules(rules_dir: str) -> list[tuple[str, dict]]:
     return out
 
 
+def load_loki_rules(loki_rules_dir: str) -> list[tuple[str, dict]]:
+    """Loki ruler layout: <dir>/<tenant>/<file>.yml, Prometheus rule-group format."""
+    out: list[tuple[str, dict]] = []
+    paths = glob.glob(os.path.join(loki_rules_dir, "*", "*.yml")) + glob.glob(os.path.join(loki_rules_dir, "*", "*.yaml"))
+    for path in sorted(paths):
+        with open(path, encoding="utf-8") as fh:
+            doc = yaml.safe_load(fh) or {}
+        tenant = os.path.basename(os.path.dirname(path))
+        for group in doc.get("groups", []):
+            for rule in group.get("rules", []):
+                if "alert" in rule:
+                    out.append((f"loki/{tenant}/{os.path.basename(path)}", rule))
+    return out
+
+
 def tested_alertnames(tests_dir: str) -> set[str]:
     names: set[str] = set()
     for path in glob.glob(os.path.join(tests_dir, "*.test.yml")):
@@ -51,17 +77,44 @@ def tested_alertnames(tests_dir: str) -> set[str]:
     return names
 
 
+def parse_args(argv: list[str]) -> tuple[str, str | None]:
+    rules_dir = "monitoring/alerts"
+    loki_dir: str | None = None
+    no_loki = False
+    positional: list[str] = []
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--loki-rules":
+            loki_dir = argv[i + 1]
+            i += 2
+        elif argv[i] == "--no-loki":
+            no_loki = True
+            i += 1
+        else:
+            positional.append(argv[i])
+            i += 1
+    if positional:
+        rules_dir = positional[0]
+    if loki_dir is None and not no_loki:
+        candidate = os.path.join(rules_dir, "..", "loki", "rules")
+        if os.path.isdir(candidate):
+            loki_dir = os.path.normpath(candidate)
+    return rules_dir, loki_dir
+
+
 def main() -> int:
-    rules_dir = sys.argv[1] if len(sys.argv) > 1 else "monitoring/alerts"
+    rules_dir, loki_dir = parse_args(sys.argv[1:])
     repo_root = os.path.abspath(os.path.join(rules_dir, "..", ".."))
     errors: list[str] = []
     warnings: list[str] = []
+    notes: list[str] = []
 
-    rules = load_rules(rules_dir)
+    rules = [("prometheus", s, r) for s, r in load_rules(rules_dir)]
+    loki_rules = [("loki", s, r) for s, r in load_loki_rules(loki_dir)] if loki_dir else []
     tested = tested_alertnames(os.path.join(rules_dir, "tests"))
     seen: dict[str, str] = {}
 
-    for source, rule in rules:
+    for kind, source, rule in rules + loki_rules:
         name = rule["alert"]
         where = f"{source}:{name}"
         if name in seen:
@@ -104,14 +157,24 @@ def main() -> int:
         }:
             warnings.append(f"{where}: critical with for: 0m — make sure this cannot flap")
 
-        if name not in tested:
+        if kind == "loki":
+            expr = str(rule.get("expr", ""))
+            if "{" not in expr or "}" not in expr:
+                errors.append(f"{where}: LogQL expr has no stream selector")
+            # No promtool for LogQL: say so for every rule rather than silently
+            # skipping, so the gap stays visible in the CI log.
+            notes.append(f"{where}: LogQL rule, no unit test (not supported); syntax covered by check_loki_rules.sh")
+        elif name not in tested:
             errors.append(f"{where}: no firing test case in {rules_dir}/tests/*.test.yml")
 
+    for n in notes:
+        print(f"NOTE  {n}")
     for w in warnings:
         print(f"WARN  {w}")
     for e in errors:
         print(f"ERROR {e}")
-    print(f"\n{len(rules)} alert rules checked, {len(errors)} error(s), {len(warnings)} warning(s)")
+    loki_summary = f" + {len(loki_rules)} Loki rules ({loki_dir})" if loki_dir else ""
+    print(f"\n{len(rules)} Prometheus alert rules{loki_summary} checked, {len(errors)} error(s), {len(warnings)} warning(s)")
     return 1 if errors else 0
 
 

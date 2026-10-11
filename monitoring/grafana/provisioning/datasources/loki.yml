@@ -1,0 +1,24 @@
+apiVersion: 1
+
+# Loki (logs). The derived field turns the `traceId` every backend line
+# carries (structured metadata, see monitoring/alloy/config.alloy) into a
+# link that opens the trace in the Jaeger datasource — "from a log line to
+# its trace in one click". The reverse direction (span → logs) is configured
+# on the Jaeger datasource (tracesToLogsV2 in jaeger.yml).
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - name: traceId
+          matcherType: label
+          matcherRegex: traceId
+          datasourceUid: jaeger
+          # $$ because provisioning expands ${...} as an environment variable.
+          url: "$${__value.raw}"
+          urlDisplayLabel: "Trace in Jaeger"

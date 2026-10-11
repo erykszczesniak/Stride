@@ -1,0 +1,108 @@
+# Log-based alerts, evaluated by the Loki ruler against the backend's JSON
+# logs and delivered to the same Alertmanager as the Prometheus rules. Same
+# label contract (severity, team, tier, service + summary/description/
+# runbook_url), checked by monitoring/scripts/check_alert_rules.py.
+#
+# `fake` is the tenant id Loki uses when auth_enabled is false.
+#
+# These rules cannot be unit-tested with promtool (LogQL): CI starts Loki with
+# this file and asserts every alert below is loaded and every expression
+# parses (monitoring/scripts/check_loki_rules.sh). Thresholds are therefore
+# documented inline and verified against a live stack, see
+# docs/runbooks/log-alerts.md.
+groups:
+  - name: stride-logs
+    interval: 1m
+    rules:
+
+      # ------------------------------------------------------------------
+      # Credential stuffing / brute force. A failed password login surfaces
+      # as LoggingAspect's ERROR line "AuthenticationController.login() threw
+      # exception: Bad credentials" (the 401 itself is not logged). An
+      # absolute count is the right shape here: 20 failures in 5 minutes is
+      # abnormal for this user base regardless of how many logins succeed.
+      # ------------------------------------------------------------------
+      - alert: LogAuthFailureSpike
+        expr: |
+          sum(count_over_time({app="strava-backend", level="ERROR"} |= "AuthenticationController.login() threw exception: Bad credentials" [5m])) > 20
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "{{ $value | printf \"%.0f\" }} failed password logins in 5m"
+          description: "More than 20 'Bad credentials' errors in five minutes on the backend. Either someone is guessing passwords (check the source IPs and whether they hit many accounts) or a client was shipped with a broken login flow. Login already rate-limits per IP; this is the signal that the limit is being probed."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/log-alerts.md
+          dashboard_url: http://localhost:3003/d/stride-logs
+
+      # ------------------------------------------------------------------
+      # One logger misbehaving. `logger` is structured metadata, so the
+      # aggregation needs no parser; the result names the class to open.
+      # LoggingAspect is excluded: it re-logs every controller exception
+      # (including expected 404s) and would always win.
+      # ------------------------------------------------------------------
+      - alert: LogExceptionRateSpikePerLogger
+        expr: |
+          sum by (logger) (count_over_time({app="strava-backend", level="ERROR"} | logger != "" | logger !~ ".*LoggingAspect" [5m])) > 30
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "{{ $labels.logger }}: {{ $value | printf \"%.0f\" }} ERROR lines in 5m"
+          description: "One logger on the backend wrote more than 30 ERROR lines in five minutes for ten minutes running. Open the dashboard's logs panel filtered on this logger, pick a line and follow its traceId to Jaeger to see which request path produces it."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/log-alerts.md
+          dashboard_url: http://localhost:3003/d/stride-logs
+
+      # ------------------------------------------------------------------
+      # ERROR volume relative to the previous hour, not an absolute number:
+      # the current 10 minutes against the average 10-minute slice of the
+      # hour before it, and at least 20 lines so a quiet night cannot trip
+      # it (ErrorLogSpike in the Prometheus rules covers the absolute case).
+      # ------------------------------------------------------------------
+      - alert: LogErrorVolumeAboveBaseline
+        expr: |
+          sum(count_over_time({app="strava-backend", level="ERROR"}[10m]))
+            > 3 * (sum(count_over_time({app="strava-backend", level="ERROR"}[1h] offset 10m)) / 6)
+          and
+          sum(count_over_time({app="strava-backend", level="ERROR"}[10m])) > 20
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "Backend ERROR lines {{ $value | printf \"%.0f\" }} in 10m, 3x the previous hour"
+          description: "The backend writes three times more ERROR lines than its own baseline from the previous hour. Compare with EdgeHighErrorRate: if that is quiet, users are not seeing it yet — find the logger (top loggers panel) before it becomes a 5xx."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/log-alerts.md
+          dashboard_url: http://localhost:3003/d/stride-logs
+
+      # ------------------------------------------------------------------
+      # Silence is a failure too. The backend logs on every request and at
+      # least on every scrape; ten minutes without a single line means the
+      # pipeline (Alloy -> Loki) is broken or the container is gone. Carries
+      # app so ServiceDown inhibits it when the backend really is down.
+      # ------------------------------------------------------------------
+      - alert: LogPipelineSilent
+        expr: |
+          absent_over_time({app="strava-backend"}[10m]) == 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: strava-backend
+          app: strava-backend
+        annotations:
+          summary: "No backend log lines reached Loki for 10m"
+          description: "Loki has not received a single line with app=strava-backend for ten minutes. If ServiceDown is not firing the backend is running and the log pipeline (Alloy docker discovery, Loki ingestion) is broken: every log-based alert in this group is blind until it is fixed."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/log-alerts.md
+          dashboard_url: http://localhost:3003/d/stride-logs

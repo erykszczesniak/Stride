@@ -9,7 +9,8 @@ Stride, `main` branch: a Strava-like fitness app as one Spring Boot 3.4
 monolith (Java 21 with a little Kotlin), a React SPA, an iOS client talking to
 `/pipeline/v1`, Postgres + Flyway, Elasticsearch for user search, Anthropic
 (activity chat) and Groq (goal/plan generation), and an observability stack
-(Prometheus, Alertmanager, Grafana, Jaeger). The `microservices` branch is the
+(Prometheus, Alertmanager, Grafana, OpenTelemetry Collector → Jaeger, Alloy →
+Loki). The `microservices` branch is the
 same product split into 12 services; product behaviour must stay identical
 between the two branches.
 
@@ -24,7 +25,7 @@ between the two branches.
 | `.../event` · `.../search` · `.../service/projection` | Spring application events, Elasticsearch sync, feed projection |
 | `src/main/resources/db/migration` | Flyway, append-only |
 | `src/test/java/.../integration` | Testcontainers PostgreSQL (`AbstractIntegrationTest`, profile `testcontainers`) |
-| `monitoring/` | Prometheus config, **alert rules + rule unit tests**, Alertmanager, Grafana dashboards |
+| `monitoring/` | Prometheus config, **alert rules + rule unit tests**, Alertmanager, Grafana dashboards; `otel/` collector policy, `loki/` config + **log-based ruler rules**, `alloy/` log shipping |
 | `docs/` | API/GraphQL docs, SLOs, ADRs, runbooks, post-mortems, AI guardrails, cost attribution |
 | `frontend/` | React SPA (CRA) + Playwright e2e in `frontend/e2e` |
 | `k8s/`, `terraform/` | manifests and the AWS slice |
@@ -48,7 +49,7 @@ cd frontend && npm run e2e                         # needs the stack on :8081 an
 1. **Entities live in `domain`, persistence goes through `repository`.** Controllers call services; the three controllers that still touch repositories directly are frozen in `src/test/resources/archunit_store` — do not add a fourth.
 2. **Identity comes from the security filter.** Controllers read the user via `BaseController.getAuthenticatedUserId()`; services take the id as a parameter, never the request.
 3. **Flyway is append-only.** New `V<n>__*.sql`, never an edited one; H2 (tests) and PostgreSQL (Testcontainers, prod) must both apply it.
-4. **Every alert has an owner and a runbook.** A rule in `monitoring/alerts/` needs `severity`, `team`, `service` labels, a `runbook_url` and a case in `monitoring/alerts/tests/`; CI rejects the rest.
+4. **Every alert has an owner and a runbook.** A rule in `monitoring/alerts/` needs `severity`, `team`, `service` labels, a `runbook_url` and a case in `monitoring/alerts/tests/`; CI rejects the rest. Log-based rules in `monitoring/loki/rules/` carry the same labels and runbook, are exempt from the test case (no promtool for LogQL — CI loads them into Loki instead) and must not reuse a Prometheus alert name.
 5. **Public contract parity with `microservices`.** A DTO or path change lands on both branches.
 
 ## Conventions

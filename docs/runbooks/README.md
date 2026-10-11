@@ -1,6 +1,7 @@
 # Runbooks
 
 One document per alert family. Every alert in `monitoring/alerts/*.rules.yml`
+(Prometheus) and `monitoring/loki/rules/*/*.yml` (Loki ruler, log-based)
 links here through its `runbook_url` annotation, and the CI contract check
 (`monitoring/scripts/check_alert_rules.py`, run by
 `.github/workflows/monitoring.yml`) warns when a link points at a file that
@@ -17,6 +18,7 @@ does not exist.
 | [ai-provider-degraded.md](ai-provider-degraded.md) | `AiProviderFailoverActive`, `AiProviderErrors`, `AiChatErrorRate`, `AiChatLatencyP95`, `AiSLOBurnRateFast`, `AiSpendHigh` | warning / critical |
 | [slo-burn-rate.md](slo-burn-rate.md) | `SLOBurnRateFast/Slow`, `SLOLatencyBurnRateFast/Slow`, `SLOErrorBudgetExhausted` | critical / warning |
 | [monitoring-pipeline.md](monitoring-pipeline.md) | `Watchdog`, `PrometheusTargetsMissing`, `PrometheusRuleEvaluationFailures`, `PrometheusHighCardinality`, `AlertmanagerDown`, `AlertmanagerNotificationsFailing` | critical / warning / info |
+| [log-alerts.md](log-alerts.md) | `LogAuthFailureSpike`, `LogExceptionRateSpikePerLogger`, `LogErrorVolumeAboveBaseline`, `LogPipelineSilent` (Loki ruler) | warning |
 
 ## Format
 
@@ -39,9 +41,11 @@ the backend, the frontend and Postgres, nothing else.
 | Prometheus | http://localhost:9091 | not deployed |
 | Alertmanager | http://localhost:9093 | not deployed |
 | Grafana | http://localhost:3003 (`stride-jvm`, `stride-slo`, `stride-cost`) | not deployed |
-| Jaeger | http://localhost:16686 | not deployed |
+| Jaeger | http://localhost:16686 (traces arrive via the OpenTelemetry Collector: redacted, tail-sampled) | not deployed |
+| OpenTelemetry Collector | metrics at http://localhost:8888/metrics (`otelcol_receiver_accepted_spans`, `otelcol_exporter_sent_spans`) | not deployed |
+| Loki + Alloy (`--profile observability`) | http://localhost:3100 (`/ready`, `/loki/api/v1/rules`), Alloy UI http://localhost:12345; Grafana Explore → Loki, dashboard `stride-logs` | not deployed |
 | Alert deliveries | `docker compose logs -f alert-sink` | — |
-| Backend logs | `docker compose logs --since 15m backend` | `kubectl -n strava logs deploy/backend --since=15m` |
+| Backend logs | `docker compose logs --since 15m backend` (JSON) or Loki `{app="strava-backend"} \|= "<traceId>"` | `kubectl -n strava logs deploy/backend --since=15m` |
 | Actuator | `curl -s localhost:8081/actuator/health` | `kubectl -n strava port-forward svc/backend 8080:8080`, then `localhost:8080` |
 | Postgres | `docker compose exec postgres psql -U strava -d strava` (`make shell-db`) | `kubectl -n strava exec deploy/postgres -- psql -U strava -d strava` |
 | Elasticsearch | http://localhost:9200 | not deployed (user search falls back to SQL) |
@@ -49,7 +53,8 @@ the backend, the frontend and Postgres, nothing else.
 
 Ports, host → container: backend 8081 → 8080, frontend 80, Postgres
 127.0.0.1:5433 → 5432, Elasticsearch 9200, Jaeger 16686 (UI) / 4318 (OTLP
-HTTP), Prometheus 9091 → 9090, Alertmanager 9093, Grafana 3003 → 3000.
+HTTP), Prometheus 9091 → 9090, Alertmanager 9093, Grafana 3003 → 3000,
+Loki 3100, collector metrics 127.0.0.1:8888, Alloy UI 127.0.0.1:12345.
 
 Actuator access: `/actuator/health/**` and `/actuator/prometheus` are public.
 Health *components* (db, elasticsearch, diskSpace) appear only with a Bearer

@@ -1,0 +1,134 @@
+# OpenTelemetry Collector (contrib) between the backend and Jaeger.
+#
+# The backend exports every span over OTLP/HTTP to this collector; nothing
+# else talks to Jaeger directly. The collector is where the policies live, so
+# they are versioned here instead of in each application:
+#
+#   memory_limiter   -> never let a trace burst take the collector down
+#   attributes/pii   -> drop or hash attributes that identify a person
+#   redaction        -> mask secrets and e-mail addresses inside any value
+#   tail_sampling    -> keep every error and every slow trace, 10 % of the rest
+#   batch            -> fewer, larger exports
+#
+# docs/observability.md (Tracing, "What is redacted and why") explains the
+# choices; docs/adr/012-logs-as-a-pipeline.md records the decision.
+# Validate: docker run --rm -v "$PWD/monitoring/otel:/c:ro" otel/opentelemetry-collector-contrib:0.115.1 validate --config=/c/otel-collector.yml
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # First in the pipeline: refuse data instead of being OOM-killed.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+  # Attribute-level PII policy. Keys are the OpenTelemetry semantic
+  # conventions plus the names Spring's observation convention emits.
+  attributes/pii:
+    actions:
+      # Who the user is stays useful for "all spans of one user" when hashed;
+      # the raw id never leaves the application network.
+      - key: enduser.id
+        action: hash
+      - key: user.id
+        action: hash
+      - key: user.email
+        action: delete
+      - key: enduser.email
+        action: delete
+      # Credentials and session material are never useful in a trace.
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+      - key: http.response.header.set-cookie
+        action: delete
+      - key: http.request.header.x-api-key
+        action: delete
+      # Query strings carry OAuth codes/state and tokens on the callback routes.
+      - key: url.query
+        action: delete
+
+  # Value-level policy: whatever the key, mask tokens, e-mail addresses and
+  # credential-bearing query parameters inside attribute values. Spring puts
+  # the full request URL (including the query string) into `http.url`.
+  redaction:
+    allow_all_keys: true
+    blocked_values:
+      # Bearer / JWT tokens
+      - "(?i)bearer\\s+[a-z0-9._~+/=-]+"
+      - "eyJ[a-zA-Z0-9_-]{8,}\\.[a-zA-Z0-9_-]{8,}\\.[a-zA-Z0-9_-]{8,}"
+      # Credential-bearing query parameters (OAuth callbacks, password reset)
+      - "(?i)(access_token|refresh_token|id_token|token|code|state|password|secret|api[_-]?key|client_secret)=[^&\\s]+"
+      # E-mail addresses (the login identifier in this application)
+      - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+    summary: silent
+
+  # Tail-based sampling: the decision is taken per trace once all its spans
+  # have arrived (decision_wait), so an error deep in an async listener keeps
+  # the whole request. Policies are OR-ed: any match keeps the trace.
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 50000
+    expected_new_traces_per_sec: 100
+    policies:
+      - name: keep-errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      # Spring marks the server span ERROR only for unhandled exceptions /
+      # 5xx. A handled 401/404 still produces an ERROR log line (LoggingAspect),
+      # and that line must link to a trace — so keep every request whose
+      # Micrometer `outcome` is a client or server error.
+      - name: keep-http-errors
+        type: string_attribute
+        string_attribute:
+          key: outcome
+          values: [CLIENT_ERROR, SERVER_ERROR]
+      - name: keep-slow
+        type: latency
+        latency:
+          threshold_ms: 1000
+      - name: baseline-10-percent
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+    send_batch_max_size: 1024
+
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+service:
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      # Scraped by Prometheus (job `otel-collector`): otelcol_receiver_accepted_spans,
+      # otelcol_exporter_sent_spans, otelcol_processor_tail_sampling_count_traces_sampled
+      # (no _total suffix in this version).
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/pii, redaction, tail_sampling, batch]
+      exporters: [otlp/jaeger]

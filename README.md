@@ -361,6 +361,7 @@ limit returns HTTP 429.
 | CI | backend and frontend tests, JaCoCo, ArchUnit, PostgreSQL migrations and a SonarCloud quality gate |
 | Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and auth rate limits |
 | Alerts | tested Prometheus rules, owners, runbooks and Alertmanager |
+| Logs and traces | OpenTelemetry Collector (PII redaction, tail sampling) → Jaeger, Alloy → Loki with trace ↔ log links in Grafana, log-based alerts as code |
 | SLOs | availability, latency, AI reliability and burn-rate alerts |
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
 | Cost | service and model attribution, dashboards and spend alerts |

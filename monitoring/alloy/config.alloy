@@ -1,0 +1,104 @@
+// Grafana Alloy: tail the containers of this compose stack and ship them to
+// Loki with two labels, `app` and `level`. Everything else the backend puts in
+// its JSON line (logger, traceId, spanId) is attached as structured metadata,
+// so it is searchable without becoming an index label (traceId is unique per
+// request — as a label it would create one stream per request).
+//
+// docs/observability.md (Logs) describes the pipeline; the Loki side is
+// monitoring/loki/loki.yml. Format check: docker run --rm -v "$PWD/monitoring/alloy:/c:ro" grafana/alloy:v1.5.1 fmt /c/config.alloy
+
+logging {
+	level  = "info"
+	format = "logfmt"
+}
+
+// Containers of this stack: every compose service attached to strava-network,
+// whatever the compose project is called. One target per container+network;
+// loki.source.docker de-duplicates by container id.
+discovery.docker "stack" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
+}
+
+discovery.relabel "stack" {
+	targets = discovery.docker.stack.targets
+
+	rule {
+		source_labels = ["__meta_docker_network_name"]
+		regex         = ".*strava-network"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		regex         = ".+"
+		action        = "keep"
+	}
+
+	// `app` matches the Prometheus label (app="strava-backend") so a Grafana
+	// variable, a derived field and a Jaeger service name all line up.
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		target_label  = "app"
+	}
+
+	rule {
+		source_labels = ["app"]
+		regex         = "backend"
+		replacement   = "strava-backend"
+		target_label  = "app"
+	}
+}
+
+loki.source.docker "stack" {
+	host             = "unix:///var/run/docker.sock"
+	targets          = discovery.relabel.stack.output
+	forward_to       = [loki.process.json.receiver]
+	refresh_interval = "15s"
+}
+
+loki.process "json" {
+	forward_to = [loki.write.local.receiver]
+
+	// The backend logs JSON (logstash-logback-encoder under the `json` profile).
+	// Lines that are not JSON (Postgres, Prometheus, nginx) fall through this
+	// stage untouched and keep only the `app` label.
+	stage.json {
+		expressions = {
+			level   = "level",
+			logger  = "logger_name",
+			traceId = "traceId",
+			spanId  = "spanId",
+		}
+	}
+
+	// Other JSON-logging containers (Jaeger) use lowercase levels; one spelling.
+	stage.template {
+		source   = "level"
+		template = "{{ ToUpper .Value }}"
+	}
+
+	// Index label: five possible values.
+	stage.labels {
+		values = {
+			level = "",
+		}
+	}
+
+	// Searchable, not indexed. Grafana's derived field reads `traceId` from
+	// here to link a line to its trace in Jaeger.
+	stage.structured_metadata {
+		values = {
+			logger  = "",
+			traceId = "",
+			spanId  = "",
+		}
+	}
+}
+
+loki.write "local" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+	external_labels = {}
+}

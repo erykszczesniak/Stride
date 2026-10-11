@@ -1,0 +1,371 @@
+{
+  "uid": "stride-logs",
+  "title": "Stride — Logs & traces",
+  "description": "Backend logs from Loki with a click-through to the trace in Jaeger, the log-based alerts' signals, and the trace pipeline (OpenTelemetry Collector) health.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["stride", "logs", "traces"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "version": 1,
+  "links": [
+    {
+      "title": "Jaeger: backend traces (service 'strava')",
+      "type": "link",
+      "url": "http://localhost:16686/search?service=strava",
+      "targetBlank": true
+    },
+    {
+      "title": "Runbook: log alerts",
+      "type": "link",
+      "url": "https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/log-alerts.md",
+      "targetBlank": true
+    },
+    {
+      "title": "docs/observability.md",
+      "type": "link",
+      "url": "https://github.com/erykszczesniak/Stride/blob/main/docs/observability.md",
+      "targetBlank": true
+    }
+  ],
+  "annotations": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "name": "loki_datasource",
+        "label": "Loki data source",
+        "type": "datasource",
+        "query": "loki",
+        "current": { "selected": false, "text": "Loki", "value": "Loki" },
+        "hide": 0,
+        "refresh": 1
+      },
+      {
+        "name": "prometheus_datasource",
+        "label": "Prometheus data source",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "refresh": 1
+      },
+      {
+        "name": "app",
+        "label": "App",
+        "type": "query",
+        "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+        "definition": "label_values(app)",
+        "query": { "label": "app", "refId": "LokiVariableQueryEditor-VariableQuery", "stream": "", "type": 1 },
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "refresh": 2,
+        "sort": 1,
+        "current": { "selected": true, "text": ["strava-backend"], "value": ["strava-backend"] }
+      },
+      {
+        "name": "level",
+        "label": "Level",
+        "type": "custom",
+        "query": "ERROR,WARN,INFO,DEBUG",
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "options": [
+          { "selected": true, "text": "All", "value": "$__all" },
+          { "selected": false, "text": "ERROR", "value": "ERROR" },
+          { "selected": false, "text": "WARN", "value": "WARN" },
+          { "selected": false, "text": "INFO", "value": "INFO" },
+          { "selected": false, "text": "DEBUG", "value": "DEBUG" }
+        ],
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Logs — what the log-based alerts see (Loki)",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "ERROR lines per second, by app",
+      "description": "rate of level=ERROR lines. LogErrorVolumeAboveBaseline fires when the last 10 minutes exceed 3x the previous hour's average; the Prometheus ErrorLogSpike reads the same signal from logback_events_total.",
+      "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 15, "showPoints": "never" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "expr": "sum by (app) (rate({app=~\"$app\", level=\"ERROR\"}[$__auto]))",
+          "legendFormat": "{{app}}",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Log volume by level",
+      "description": "Lines per interval per level for the selected apps. A level that disappears is as interesting as one that spikes: no lines at all for 10 minutes is LogPipelineSilent.",
+      "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "lineWidth": 1, "fillOpacity": 60, "stacking": { "mode": "normal", "group": "A" } }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "ERROR" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "WARN" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "INFO" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "DEBUG" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "expr": "sum by (level) (count_over_time({app=~\"$app\", level=~\".+\"}[$__auto]))",
+          "legendFormat": "{{level}}",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "bargauge",
+      "title": "Top loggers by ERROR lines (selected range)",
+      "description": "Which class is writing the errors. LogExceptionRateSpikePerLogger fires per logger above 30 lines in 5 minutes; LoggingAspect is excluded there because it re-logs every controller exception, expected 404s included.",
+      "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "color": { "mode": "continuous-RdYlGr" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "expr": "topk(10, sum by (logger) (count_over_time({app=~\"$app\", level=\"ERROR\"} | logger != \"\" [$__auto])))",
+          "legendFormat": "{{logger}}",
+          "queryType": "instant",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Failed password logins (selected range)",
+      "description": "'Bad credentials' errors from AuthenticationController.login(). LogAuthFailureSpike fires above 20 in 5 minutes: credential stuffing, or a client shipped with a broken login flow.",
+      "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 9 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 10 }, { "color": "red", "value": 20 }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "expr": "sum(count_over_time({app=~\"$app\", level=\"ERROR\"} |= \"AuthenticationController.login() threw exception: Bad credentials\" [$__auto]))",
+          "legendFormat": "failed logins",
+          "queryType": "instant",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Lines with a traceId (selected range)",
+      "description": "How many backend lines carry a trace id and can be followed into Jaeger. Lines written outside a request (startup, schedulers) have none.",
+      "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 9 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "color": { "mode": "fixed", "fixedColor": "blue" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "expr": "sum(count_over_time({app=~\"$app\"} | traceId != \"\" [$__auto]))",
+          "legendFormat": "lines with traceId",
+          "queryType": "instant",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "logs",
+      "title": "Backend logs — expand a line, click 'Trace in Jaeger' next to traceId",
+      "description": "Live tail of the selected apps and levels. Every backend line carries traceId/spanId/logger as structured metadata; the Loki datasource's derived field turns traceId into a link to the trace in Jaeger, and Jaeger's 'Logs for this span' comes back here.",
+      "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 17 },
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "expr": "{app=~\"$app\", level=~\"$level\"} | json | line_format \"{{.level}} {{.logger_name}} — {{.message}}\"",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "id": 200,
+      "title": "Traces — the collector between the backend and Jaeger (Prometheus)",
+      "type": "row"
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Spans per second: received from the backend vs sent to Jaeger",
+      "description": "The gap is tail sampling: every error-status or 4xx/5xx trace and every trace slower than 1 s is kept, the rest is sampled at 10 % (monitoring/otel/otel-collector.yml). Received at zero while the backend serves traffic means the backend is not reaching the collector.",
+      "datasource": { "type": "prometheus", "uid": "${prometheus_datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${prometheus_datasource}" },
+          "expr": "sum(rate(otelcol_receiver_accepted_spans{app=\"otel-collector\"}[$__rate_interval]))",
+          "legendFormat": "received"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "${prometheus_datasource}" },
+          "expr": "sum(rate(otelcol_exporter_sent_spans{app=\"otel-collector\"}[$__rate_interval]))",
+          "legendFormat": "sent to Jaeger"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "prometheus", "uid": "${prometheus_datasource}" },
+          "expr": "sum(rate(otelcol_receiver_refused_spans{app=\"otel-collector\"}[$__rate_interval]))",
+          "legendFormat": "refused (memory limiter)"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Tail sampling decisions per second, by policy",
+      "description": "Traces kept by each policy (keep-errors = ERROR span status, keep-http-errors = 4xx/5xx outcome, keep-slow = over 1 s, baseline-10-percent) and traces dropped. A rising 'keep-errors' line is an incident signal in itself.",
+      "datasource": { "type": "prometheus", "uid": "${prometheus_datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${prometheus_datasource}" },
+          "expr": "sum by (policy, sampled) (rate(otelcol_processor_tail_sampling_count_traces_sampled{app=\"otel-collector\"}[$__rate_interval]))",
+          "legendFormat": "{{policy}} sampled={{sampled}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "text",
+      "title": "From an alert to the trace to the logs",
+      "description": "The three clicks a responder makes; the long version is in docs/observability.md.",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 40 },
+      "options": {
+        "mode": "markdown",
+        "content": "1. **Alert → dashboard.** Every log-based alert (`LogAuthFailureSpike`, `LogExceptionRateSpikePerLogger`, `LogErrorVolumeAboveBaseline`, `LogPipelineSilent`) links here via `dashboard_url`; set *Level* to `ERROR` and, for the per-logger alert, add `| logger=\"<logger from the alert>\"` to the logs panel.\n2. **Log line → trace.** Expand a line in the logs panel: `traceId` shows a **Trace in Jaeger** button (Loki derived field → Jaeger datasource). The trace shows the request span and its async children, after PII redaction and tail sampling in the collector — errors and slow traces are always kept.\n3. **Trace → logs.** In the trace view, a span's **Logs for this span** runs `{app=\"strava-backend\"} |= \"<traceId>\"` in Loki, ±5 minutes around the span, so lines from async listeners are included.\n\nPipeline: backend (JSON, `traceId`/`spanId` in MDC) → Alloy (Docker discovery, labels `app`+`level`, structured metadata `logger`/`traceId`/`spanId`) → Loki (3 days, ruler → Alertmanager). Traces: backend → OpenTelemetry Collector (redaction, tail sampling) → Jaeger."
+      }
+    }
+  ]
+}
