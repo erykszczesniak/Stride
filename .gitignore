@@ -55,3 +55,6 @@ notes/
 frontend/test-results/
 frontend/playwright-report/
 frontend/playwright/.cache/
+
+# k6 summaries written by perf/k6 runs
+perf/k6/out/

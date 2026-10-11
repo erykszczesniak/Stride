@@ -365,6 +365,7 @@ limit returns HTTP 429.
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
 | Cost | service and model attribution, dashboards and spend alerts |
 | Verification | smoke tests and nightly Playwright E2E tests |
+| Performance | k6 user-journey load profile gated by the SLO thresholds, nightly and on release branches ([`perf/`](perf/README.md)) |
 | Releases | release-please tags, `release/vX.Y` maintenance branches, hotfix cherry-picks and a PR policy check |
 | Decisions | ADRs, runbooks and post-mortems |
 
