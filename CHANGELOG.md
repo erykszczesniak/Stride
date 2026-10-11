@@ -41,6 +41,14 @@ changelog.
   rewrite of 12 September.
 
 ### Added
+- Outside-in availability: `blackbox-exporter` in compose probes the frontend,
+  the API health and docs endpoints, Grafana, Prometheus, Postgres (TCP) and
+  Elasticsearch every 15 s; targets are data in
+  `monitoring/prometheus/targets/blackbox.json`. Six tested rules
+  (`ProbeFailed`, `InternalProbeFailed`, `ProbeSlow`, `ProbeHttpStatusUnexpected`,
+  `TlsCertificateExpiringSoon`, `ProbeTargetsMissing`), the
+  `synthetic-probe-failed` runbook, the `stride-availability-outside-in`
+  dashboard and a "Measured from outside" section in `docs/observability.md`.
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a
   documentation index.

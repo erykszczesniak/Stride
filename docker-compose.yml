@@ -123,6 +123,7 @@ services:
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/alerts:/etc/prometheus/rules:ro
+      - ./monitoring/prometheus/targets:/etc/prometheus/targets:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -153,6 +154,27 @@ services:
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
       - --storage.path=/alertmanager
+    networks:
+      - strava-network
+
+  # ============================================
+  # Blackbox exporter (outside-in probes)
+  # ============================================
+  # Prometheus scrapes it with ?target=...&module=... (job `blackbox`); the
+  # exporter opens a real HTTP/TCP connection to the frontend, the API, Grafana,
+  # Prometheus, Postgres and Elasticsearch and reports probe_success,
+  # probe_duration_seconds and friends. Modules: monitoring/blackbox/blackbox.yml,
+  # targets: monitoring/prometheus/targets/blackbox.json, rules: synthetic.rules.yml.
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.27.0
+    container_name: strava-blackbox-exporter
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9115:9115"
+    volumes:
+      - ./monitoring/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    command:
+      - --config.file=/etc/blackbox_exporter/config.yml
     networks:
       - strava-network
 

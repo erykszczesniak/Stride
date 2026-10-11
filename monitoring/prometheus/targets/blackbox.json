@@ -1,0 +1,30 @@
+[
+  {
+    "targets": ["http://frontend:80/"],
+    "labels": {"module": "http_2xx", "service": "frontend", "tier": "1", "team": "domain"}
+  },
+  {
+    "targets": ["http://backend:8080/actuator/health"],
+    "labels": {"module": "http_2xx_json", "service": "strava-backend", "tier": "1", "team": "domain"}
+  },
+  {
+    "targets": ["http://backend:8080/api-docs"],
+    "labels": {"module": "http_2xx", "service": "strava-backend", "tier": "1", "team": "domain"}
+  },
+  {
+    "targets": ["http://grafana:3000/api/health"],
+    "labels": {"module": "http_2xx", "service": "grafana", "tier": "2", "team": "platform"}
+  },
+  {
+    "targets": ["http://prometheus:9090/-/healthy"],
+    "labels": {"module": "http_2xx", "service": "prometheus", "tier": "2", "team": "platform"}
+  },
+  {
+    "targets": ["postgres:5432"],
+    "labels": {"module": "tcp_connect", "service": "postgres", "tier": "2", "team": "platform"}
+  },
+  {
+    "targets": ["http://elasticsearch:9200/_cluster/health"],
+    "labels": {"module": "http_2xx", "service": "elasticsearch", "tier": "2", "team": "platform"}
+  }
+]

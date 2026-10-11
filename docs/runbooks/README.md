@@ -16,6 +16,7 @@ does not exist.
 | [db-pool-exhausted.md](db-pool-exhausted.md) | `DbPoolSaturated`, `DbPoolExhausted` | warning / critical |
 | [ai-provider-degraded.md](ai-provider-degraded.md) | `AiProviderFailoverActive`, `AiProviderErrors`, `AiChatErrorRate`, `AiChatLatencyP95`, `AiSLOBurnRateFast`, `AiSpendHigh` | warning / critical |
 | [slo-burn-rate.md](slo-burn-rate.md) | `SLOBurnRateFast/Slow`, `SLOLatencyBurnRateFast/Slow`, `SLOErrorBudgetExhausted` | critical / warning |
+| [synthetic-probe-failed.md](synthetic-probe-failed.md) | `ProbeFailed`, `InternalProbeFailed`, `ProbeSlow`, `ProbeHttpStatusUnexpected`, `TlsCertificateExpiringSoon`, `ProbeTargetsMissing` | critical / warning |
 | [monitoring-pipeline.md](monitoring-pipeline.md) | `Watchdog`, `PrometheusTargetsMissing`, `PrometheusRuleEvaluationFailures`, `PrometheusHighCardinality`, `AlertmanagerDown`, `AlertmanagerNotificationsFailing` | critical / warning / info |
 
 ## Format
@@ -40,6 +41,7 @@ the backend, the frontend and Postgres, nothing else.
 | Alertmanager | http://localhost:9093 | not deployed |
 | Grafana | http://localhost:3003 (`stride-jvm`, `stride-slo`, `stride-cost`) | not deployed |
 | Jaeger | http://localhost:16686 | not deployed |
+| Blackbox exporter | http://127.0.0.1:9115 (`/probe?module=http_2xx&target=http://frontend:80/`) | not deployed |
 | Alert deliveries | `docker compose logs -f alert-sink` | — |
 | Backend logs | `docker compose logs --since 15m backend` | `kubectl -n strava logs deploy/backend --since=15m` |
 | Actuator | `curl -s localhost:8081/actuator/health` | `kubectl -n strava port-forward svc/backend 8080:8080`, then `localhost:8080` |
