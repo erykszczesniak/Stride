@@ -34,3 +34,23 @@ scrape_configs:
       - targets: ['alertmanager:9093']
         labels:
           app: 'alertmanager'
+
+  # Outside-in probes (synthetic.rules.yml). Prometheus asks blackbox-exporter
+  # to open an HTTP/TCP connection to each target as a user would; the
+  # `instance` label is rewritten to the probed URL. Targets are data:
+  # add a line to targets/blackbox.json, then raise the expected count in
+  # ProbeTargetsMissing. One label per target chooses the exporter module.
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    file_sd_configs:
+      - files: ['/etc/prometheus/targets/blackbox.json']
+        refresh_interval: 1m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [module]
+        target_label: __param_module
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

@@ -1,0 +1,215 @@
+rule_files:
+  - ../synthetic.rules.yml
+
+evaluation_interval: 15s
+
+tests:
+
+  # --------------------------------------------------------------- ProbeFailed
+  # The frontend probe fails for 3 minutes and recovers; the internal Grafana
+  # probe keeps failing but is a tier-2 target, so it opens a ticket
+  # (InternalProbeFailed), never a page.
+  - interval: 15s
+    input_series:
+      - series: 'probe_success{job="blackbox",instance="http://frontend:80/",module="http_2xx",service="frontend",tier="1",team="domain"}'
+        values: '0x12 1x30'
+      - series: 'probe_success{job="blackbox",instance="http://backend:8080/actuator/health",module="http_2xx_json",service="strava-backend",tier="1",team="domain"}'
+        values: '1x20'
+      - series: 'probe_success{job="blackbox",instance="http://grafana:3000/api/health",module="http_2xx",service="grafana",tier="2",team="platform"}'
+        values: '0x40'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ProbeFailed
+        exp_alerts:
+          - exp_labels:
+              job: blackbox
+              instance: http://frontend:80/
+              module: http_2xx
+              service: frontend
+              tier: "1"
+              team: domain
+              severity: critical
+            exp_annotations:
+              summary: "http://frontend:80/ is failing its outside-in probe"
+              description: "The blackbox probe (http_2xx) against http://frontend:80/ has failed for 2 minutes: no connection, a non-2xx status, or a health body that does not say UP. This is what a user sees, regardless of what the application metrics report. Page."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+              dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+      # Frontend recovered, Grafana still down: no page, one ticket.
+      - eval_time: 6m
+        alertname: ProbeFailed
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: InternalProbeFailed
+        exp_alerts:
+          - exp_labels:
+              job: blackbox
+              instance: http://grafana:3000/api/health
+              module: http_2xx
+              service: grafana
+              tier: "2"
+              team: platform
+              severity: warning
+            exp_annotations:
+              summary: "http://grafana:3000/api/health is failing its outside-in probe"
+              description: "The blackbox probe (http_2xx) against the internal target http://grafana:3000/api/health has failed for 5 minutes. Not user-facing by itself, but the backend health check includes Postgres and Elasticsearch, and a dead Prometheus or Grafana means nobody sees the next incident."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+              dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+  # A single failed scrape (one 0 in a run of 1s) is below the 2-minute `for`.
+  - interval: 15s
+    input_series:
+      - series: 'probe_success{job="blackbox",instance="http://frontend:80/",module="http_2xx",service="frontend",tier="1",team="domain"}'
+        values: '1 1 1 0 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ProbeFailed
+        exp_alerts: []
+
+  # ----------------------------------------------------------------- ProbeSlow
+  # 1.5 s per probe for 25 minutes on the API docs target; the backend health
+  # probe stays at 20 ms and must not alert.
+  - interval: 15s
+    input_series:
+      - series: 'probe_duration_seconds{job="blackbox",instance="http://backend:8080/api-docs",module="http_2xx",service="strava-backend",tier="1",team="domain"}'
+        values: '1.5x100'
+      - series: 'probe_duration_seconds{job="blackbox",instance="http://backend:8080/actuator/health",module="http_2xx_json",service="strava-backend",tier="1",team="domain"}'
+        values: '0.02x100'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: ProbeSlow
+        exp_alerts:
+          - exp_labels:
+              job: blackbox
+              instance: http://backend:8080/api-docs
+              module: http_2xx
+              service: strava-backend
+              tier: "2"
+              team: domain
+              severity: warning
+            exp_annotations:
+              summary: "http://backend:8080/api-docs answers probes in 1.5s on average"
+              description: "The outside-in probe against http://backend:8080/api-docs has averaged more than 1 s over the last 10 minutes. The target is up but slow; the request-based latency SLO only sees requests that reached the application, this sees connection setup and the proxy in front as well."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+              dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+  # ------------------------------------------------- ProbeHttpStatusUnexpected
+  # The API docs path answers 404 (moved behind a different prefix); the
+  # frontend's 200 and a 302 are both fine.
+  - interval: 15s
+    input_series:
+      - series: 'probe_http_status_code{job="blackbox",instance="http://backend:8080/api-docs",module="http_2xx",service="strava-backend",tier="1",team="domain"}'
+        values: '404x40'
+      - series: 'probe_http_status_code{job="blackbox",instance="http://frontend:80/",module="http_2xx",service="frontend",tier="1",team="domain"}'
+        values: '200x40'
+      - series: 'probe_http_status_code{job="blackbox",instance="http://grafana:3000/api/health",module="http_2xx",service="grafana",tier="2",team="platform"}'
+        values: '302x40'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ProbeHttpStatusUnexpected
+        exp_alerts:
+          - exp_labels:
+              job: blackbox
+              instance: http://backend:8080/api-docs
+              module: http_2xx
+              service: strava-backend
+              tier: "2"
+              team: domain
+              severity: warning
+            exp_annotations:
+              summary: "http://backend:8080/api-docs returns HTTP 404"
+              description: "The probe against http://backend:8080/api-docs has received HTTP 404 for 5 minutes. 4xx: the path moved or needs a token now (fix the target or the app); 502/503: the reverse proxy has nothing healthy behind it; 500: the endpoint itself is broken."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+              dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+  # ----------------------------------------------------- TlsCertificateExpiringSoon
+  # Test clock starts at the epoch, so time() at 90m is 5400. A certificate
+  # expiring at 864000 (10 days later) is inside the 14-day window; one at
+  # 3000000 (~34 days) is not.
+  - interval: 15s
+    input_series:
+      - series: 'probe_ssl_earliest_cert_expiry{job="blackbox",instance="https://stride.example.com/",module="http_2xx",service="frontend",tier="1",team="domain"}'
+        values: '864000x400'
+      - series: 'probe_ssl_earliest_cert_expiry{job="blackbox",instance="https://api.stride.example.com/actuator/health",module="http_2xx_json",service="strava-backend",tier="1",team="domain"}'
+        values: '3000000x400'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: TlsCertificateExpiringSoon
+        exp_alerts:
+          - exp_labels:
+              job: blackbox
+              instance: https://stride.example.com/
+              module: http_2xx
+              service: frontend
+              tier: "1"
+              team: platform
+              severity: warning
+            exp_annotations:
+              summary: "Certificate for https://stride.example.com/ expires in 9d 22h 30m 0s"
+              description: "The TLS certificate served at https://stride.example.com/ expires in less than 14 days. Renew it before the browsers do the alerting for you; an expired certificate is a full outage for every user and no request-based metric will show it."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+              dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+  # ------------------------------------------------------- ProbeTargetsMissing
+  # Only two targets are scraped (the file lost five entries).
+  - interval: 15s
+    input_series:
+      - series: 'up{job="blackbox",instance="http://frontend:80/",module="http_2xx",service="frontend",tier="1",team="domain"}'
+        values: '1x40'
+      - series: 'up{job="blackbox",instance="http://backend:8080/actuator/health",module="http_2xx_json",service="strava-backend",tier="1",team="domain"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ProbeTargetsMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              tier: "2"
+              service: prometheus
+            exp_annotations:
+              summary: "Only 2 of 7 blackbox probe targets are configured"
+              description: "Prometheus has fewer `blackbox` targets than monitoring/prometheus/targets/blackbox.json defines (expected 7). The file is missing, not mounted into the Prometheus container, or lost entries; every probe alert for the missing targets is blind. If a target was removed on purpose, lower the expected count in this rule and its test."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+              dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+  # No blackbox job at all (file not mounted): `or vector(0)` makes it 0 of 7.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="strava-backend",app="strava-backend",instance="backend:8080"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ProbeTargetsMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              tier: "2"
+              service: prometheus
+            exp_annotations:
+              summary: "Only 0 of 7 blackbox probe targets are configured"
+              description: "Prometheus has fewer `blackbox` targets than monitoring/prometheus/targets/blackbox.json defines (expected 7). The file is missing, not mounted into the Prometheus container, or lost entries; every probe alert for the missing targets is blind. If a target was removed on purpose, lower the expected count in this rule and its test."
+              runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+              dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+  # All seven targets present (down or up, `up` exists): quiet.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="blackbox",instance="http://frontend:80/",service="frontend",tier="1",team="domain"}'
+        values: '1x40'
+      - series: 'up{job="blackbox",instance="http://backend:8080/actuator/health",service="strava-backend",tier="1",team="domain"}'
+        values: '1x40'
+      - series: 'up{job="blackbox",instance="http://backend:8080/api-docs",service="strava-backend",tier="1",team="domain"}'
+        values: '1x40'
+      - series: 'up{job="blackbox",instance="http://grafana:3000/api/health",service="grafana",tier="2",team="platform"}'
+        values: '1x40'
+      - series: 'up{job="blackbox",instance="http://prometheus:9090/-/healthy",service="prometheus",tier="2",team="platform"}'
+        values: '1x40'
+      - series: 'up{job="blackbox",instance="postgres:5432",service="postgres",tier="2",team="platform"}'
+        values: '0x40'
+      - series: 'up{job="blackbox",instance="http://elasticsearch:9200/_cluster/health",service="elasticsearch",tier="2",team="platform"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ProbeTargetsMissing
+        exp_alerts: []

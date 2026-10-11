@@ -1,0 +1,117 @@
+# Availability measured from outside the process.
+#
+# The SLO rules (slo.rules.yml) count requests the backend itself served, so
+# they are blind to the failures users feel most: the container is gone, nginx
+# does not answer, the health endpoint says DOWN, a certificate expired. The
+# blackbox exporter (compose service `blackbox-exporter`, job `blackbox`) opens
+# a real HTTP or TCP connection to each target in
+# monitoring/prometheus/targets/blackbox.json and these rules alert on what it
+# saw. Target labels decide the blast radius: tier "1" targets are the ones a
+# user touches (frontend, API) and page; tier "2" targets are internal and
+# open a ticket. `team` and `service` come from the target too.
+groups:
+  - name: stride-synthetic
+    rules:
+
+      # A user-facing target did not answer a well-formed request for 2 minutes.
+      # With a 15 s scrape interval that is eight consecutive failed probes.
+      - alert: ProbeFailed
+        expr: probe_success{job="blackbox",tier="1"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: domain
+          tier: "1"
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "{{ $labels.instance }} is failing its outside-in probe"
+          description: "The blackbox probe ({{ $labels.module }}) against {{ $labels.instance }} has failed for 2 minutes: no connection, a non-2xx status, or a health body that does not say UP. This is what a user sees, regardless of what the application metrics report. Page."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+          dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+      # Same check for the internal targets (Grafana, Prometheus, Postgres,
+      # Elasticsearch). Users may not notice yet; the team should.
+      - alert: InternalProbeFailed
+        expr: probe_success{job="blackbox",tier="2"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "{{ $labels.instance }} is failing its outside-in probe"
+          description: "The blackbox probe ({{ $labels.module }}) against the internal target {{ $labels.instance }} has failed for 5 minutes. Not user-facing by itself, but the backend health check includes Postgres and Elasticsearch, and a dead Prometheus or Grafana means nobody sees the next incident."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+          dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+      # The probe succeeds but takes more than a second on average over 10 minutes.
+      # A single GET of a health endpoint or a static page should be tens of ms;
+      # one second means a saturated service, a slow dependency or a bad network.
+      - alert: ProbeSlow
+        expr: avg_over_time(probe_duration_seconds{job="blackbox"}[10m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: "{{ $labels.team }}"
+          tier: "2"
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "{{ $labels.instance }} answers probes in {{ $value | humanizeDuration }} on average"
+          description: "The outside-in probe against {{ $labels.instance }} has averaged more than 1 s over the last 10 minutes. The target is up but slow; the request-based latency SLO only sees requests that reached the application, this sees connection setup and the proxy in front as well."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+          dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+      # The HTTP status is outside 2xx/3xx. Names the code, which ProbeFailed
+      # does not: a 404 is a routing or deploy mistake, a 502/503 is the proxy
+      # with nothing behind it, a 401 means the probed path is no longer public.
+      - alert: ProbeHttpStatusUnexpected
+        expr: |
+          probe_http_status_code{job="blackbox"} > 0
+            and
+          (probe_http_status_code{job="blackbox"} < 200 or probe_http_status_code{job="blackbox"} >= 400)
+        for: 5m
+        labels:
+          severity: warning
+          team: "{{ $labels.team }}"
+          tier: "2"
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "{{ $labels.instance }} returns HTTP {{ $value }}"
+          description: "The probe against {{ $labels.instance }} has received HTTP {{ $value }} for 5 minutes. 4xx: the path moved or needs a token now (fix the target or the app); 502/503: the reverse proxy has nothing healthy behind it; 500: the endpoint itself is broken."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+          dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+      # Only present for https targets (the ingress), absent in compose where
+      # everything is plain HTTP. 14 days is enough for a renewal with a weekend
+      # in between.
+      - alert: TlsCertificateExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry{job="blackbox"} - time()) < 14 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+          team: platform
+          tier: "1"
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "Certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}"
+          description: "The TLS certificate served at {{ $labels.instance }} expires in less than 14 days. Renew it before the browsers do the alerting for you; an expired certificate is a full outage for every user and no request-based metric will show it."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+          dashboard_url: http://localhost:3003/d/stride-availability-outside-in
+
+      # Fewer probe targets than the targets file is supposed to contain: the
+      # file was deleted, truncated or not mounted, so the probes above are
+      # silently not running. Keep the number in sync with targets/blackbox.json.
+      - alert: ProbeTargetsMissing
+        expr: (count(up{job="blackbox"}) or vector(0)) < 7
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: prometheus
+        annotations:
+          summary: "Only {{ $value }} of 7 blackbox probe targets are configured"
+          description: "Prometheus has fewer `blackbox` targets than monitoring/prometheus/targets/blackbox.json defines (expected 7). The file is missing, not mounted into the Prometheus container, or lost entries; every probe alert for the missing targets is blind. If a target was removed on purpose, lower the expected count in this rule and its test."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/synthetic-probe-failed.md
+          dashboard_url: http://localhost:3003/d/stride-availability-outside-in

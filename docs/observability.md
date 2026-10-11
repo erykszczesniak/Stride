@@ -100,6 +100,53 @@ in CI ([ADR-006](adr/006-alerts-as-code.md)), routed by Alertmanager
 channel would receive. Every alert links to a runbook in
 [`runbooks/`](runbooks/).
 
+## Measured from outside
+
+Everything above is reported by the process itself. A request that never
+reached the backend — nginx down, the container restarting, a wrong port
+after a deploy, an expired certificate at the ingress — leaves no trace in
+`http_server_requests_seconds_count`, so the SLO rules in
+[`slo.md`](slo.md) stay green while users see an error page. The blackbox
+exporter (compose service `blackbox-exporter`, `prom/blackbox-exporter`)
+closes that gap: Prometheus asks it every 15 s to open a real HTTP or TCP
+connection to each target in
+[`monitoring/prometheus/targets/blackbox.json`](../monitoring/prometheus/targets/blackbox.json)
+and records `probe_success`, `probe_duration_seconds`,
+`probe_http_status_code` and `probe_ssl_earliest_cert_expiry` per target.
+
+| Target | Module (`monitoring/blackbox/blackbox.yml`) | Tier |
+|---|---|---|
+| `http://frontend:80/` | `http_2xx` — GET, follows redirects, IPv4 | 1 (pages) |
+| `http://backend:8080/actuator/health` | `http_2xx_json` — 200 **and** body says `"status":"UP"` | 1 |
+| `http://backend:8080/api-docs` | `http_2xx` — a public API endpoint through the security filter | 1 |
+| `http://grafana:3000/api/health`, `http://prometheus:9090/-/healthy`, `http://elasticsearch:9200/_cluster/health` | `http_2xx` | 2 (tickets) |
+| `postgres:5432` | `tcp_connect` — handshake only, no credentials in the exporter | 2 |
+
+Rules in `monitoring/alerts/synthetic.rules.yml`: `ProbeFailed` (tier-1
+target down 2 min, critical), `InternalProbeFailed` (tier-2, 5 min,
+warning), `ProbeSlow` (10-minute average above 1 s), `ProbeHttpStatusUnexpected`
+(status outside 200–399, names the code), `TlsCertificateExpiringSoon`
+(< 14 days; only present for https targets, i.e. the ingress, not compose)
+and `ProbeTargetsMissing` (fewer targets than the file defines — the probes
+are silently not running). Runbook:
+[`runbooks/synthetic-probe-failed.md`](runbooks/synthetic-probe-failed.md);
+dashboard **Stride — Availability (outside-in)** (`stride-availability-outside-in`).
+
+How this complements the request-based SLI: `probe_success` is a binary
+"could a client get a correct answer right now" from one vantage point,
+every 15 s, with no dependence on traffic — it catches the total outage
+and the misconfiguration that the error ratio cannot see, and it works
+when nobody is using the app. The error ratio is the better measure of
+*partial* failure under real traffic (one endpoint returning 500 for 3 %
+of users never fails a probe). Both feed the same question; only the
+request-based SLI carries an error budget.
+
+Not covered: anything behind a login (no authenticated journeys — the
+nightly Playwright run is the synthetic user, see `.github/workflows/e2e.yml`),
+probing from more than one location, and DNS as the public resolver sees
+it. Adding a target is a data change (`blackbox.json`) plus bumping the
+expected count in `ProbeTargetsMissing`; the runbook has the steps.
+
 ## Logs
 
 Two profiles in `logback-spring.xml`:

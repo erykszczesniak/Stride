@@ -362,6 +362,7 @@ limit returns HTTP 429.
 | Security | CodeQL, Trivy, Dependabot, actions pinned to commit SHAs, `SECURITY.md` and auth rate limits |
 | Alerts | tested Prometheus rules, owners, runbooks and Alertmanager |
 | SLOs | availability, latency, AI reliability and burn-rate alerts |
+| Synthetic probes | blackbox-exporter checks of the frontend, API, Grafana, Prometheus, Postgres and Elasticsearch from outside the process, with alerts and a dashboard |
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
 | Cost | service and model attribution, dashboards and spend alerts |
 | Verification | smoke tests and nightly Playwright E2E tests |
