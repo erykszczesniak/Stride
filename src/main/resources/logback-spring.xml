@@ -8,8 +8,11 @@
     <property name="CONSOLE_LOG_PATTERN"
               value="%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([${spring.application.name:-},%X{traceId:-},%X{spanId:-}]){yellow} %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
 
-    <!-- Dev & default: colored console output with traceId -->
-    <springProfile name="default | dev | test | testcontainers">
+    <!-- Dev & default: colored console output with traceId. Adding the `json`
+         profile (SPRING_PROFILES_INCLUDE=json, as docker-compose.yml does)
+         switches the same levels to the JSON appender below so the log
+         pipeline (Alloy -> Loki) can parse level/logger/traceId per line. -->
+    <springProfile name="(default | dev | test | testcontainers) &amp; !json">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
         <root level="INFO">
@@ -21,8 +24,13 @@
         <logger name="org.hibernate.SQL" level="DEBUG"/>
     </springProfile>
 
-    <!-- Prod: structured JSON output -->
-    <springProfile name="prod">
+    <!-- Prod, or any profile combined with `json`: structured JSON output.
+         Field names are the encoder defaults (@timestamp, level, logger_name,
+         thread_name, message, stack_trace) plus the MDC keys listed; the
+         Alloy pipeline and the Loki rules depend on `level`, `logger_name`
+         and `traceId`. Logger levels under `dev,json` still come from
+         application-dev.yml (Spring applies logging.level after this file). -->
+    <springProfile name="prod | json">
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <includeMdcKeyName>requestId</includeMdcKeyName>

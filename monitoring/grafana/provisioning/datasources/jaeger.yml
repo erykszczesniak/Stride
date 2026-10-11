@@ -7,3 +7,18 @@ datasources:
     access: proxy
     url: http://jaeger:16686
     editable: false
+    jsonData:
+      # "Logs for this span": the trace id as a line filter on the backend's
+      # stream in Loki (every backend line carries its traceId, see
+      # monitoring/alloy/config.alloy). A custom query rather than a
+      # service.name -> app tag mapping: the span's service.name is
+      # spring.application.name (`strava`, application.properties) while the
+      # log label is the compose service (`strava-backend`). The window is
+      # widened by 5 minutes either side to catch async listeners.
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+        customQuery: true
+        # $$ because provisioning expands ${...} as an environment variable.
+        query: '{app="strava-backend"} |= "$${__trace.traceId}"'

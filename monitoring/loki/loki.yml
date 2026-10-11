@@ -1,0 +1,88 @@
+# Loki for the compose stack: one binary, filesystem storage, a few days of
+# retention, and the ruler evaluating monitoring/loki/rules/<tenant>/*.yml
+# against the same Alertmanager the Prometheus rules use.
+#
+# auth_enabled: false means a single tenant whose id is literally `fake`, so
+# rule files live in monitoring/loki/rules/fake/. Structured metadata (traceId,
+# spanId, logger on every line) needs the tsdb store with schema v13.
+# Validate: docker run --rm -v "$PWD/monitoring/loki/loki.yml:/etc/loki/loki.yml:ro" grafana/loki:3.3.2 -config.file=/etc/loki/loki.yml -verify-config
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: info
+
+common:
+  path_prefix: /loki
+  replication_factor: 1
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules-temp
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: "2024-01-01"
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  tsdb_shipper:
+    active_index_directory: /loki/tsdb-index
+    cache_location: /loki/tsdb-cache
+  filesystem:
+    directory: /loki/chunks
+
+limits_config:
+  # Retention is enforced by the compactor below; 3 days is enough to work an
+  # incident and write the post-mortem. Prometheus keeps 15 days of metrics.
+  retention_period: 72h
+  allow_structured_metadata: true
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  # Alloy sends `app` and `level` only; anything above this is a bug in the
+  # pipeline config, not a reason to raise the limit.
+  max_label_names_per_series: 10
+  # Loki 3 would otherwise copy `app` into a third label, service_name.
+  discover_service_name: []
+  ingestion_rate_mb: 8
+  ingestion_burst_size_mb: 16
+  volume_enabled: true
+
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 10
+  delete_request_store: filesystem
+  compaction_interval: 10m
+
+ruler:
+  # Rule files are mounted read-only from the repo; the ruler copies them to
+  # rule_path when loading. Alerts go to the stack's Alertmanager and carry the
+  # same label contract as the Prometheus rules (check_alert_rules.py).
+  storage:
+    type: local
+    local:
+      directory: /loki/rules
+  rule_path: /loki/rules-temp
+  alertmanager_url: http://alertmanager:9093
+  enable_alertmanager_v2: true
+  enable_api: true
+  evaluation_interval: 1m
+  poll_interval: 1m
+  ring:
+    kvstore:
+      store: inmemory
+
+analytics:
+  reporting_enabled: false

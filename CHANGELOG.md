@@ -41,6 +41,20 @@ changelog.
   rewrite of 12 September.
 
 ### Added
+- Logs as a pipeline (ADR 012): an OpenTelemetry Collector between the backend
+  and Jaeger (drops/hashes PII attributes, masks tokens and e-mail addresses in
+  values, keeps every error-status or 4xx/5xx trace and every trace over 1 s,
+  samples the rest at 10 %);
+  JSON logs in compose via the `json` profile; Grafana Alloy → Loki (3 days,
+  labels `app` + `level`, `traceId`/`spanId`/`logger` as structured metadata)
+  under `--profile observability`; Loki ↔ Jaeger links in Grafana and a
+  `stride-logs` dashboard; four log-based alerts in `monitoring/loki/rules`
+  (`LogAuthFailureSpike`, `LogExceptionRateSpikePerLogger`,
+  `LogErrorVolumeAboveBaseline`, `LogPipelineSilent`) under the Prometheus
+  label contract, with `check_alert_rules.py` covering both sources,
+  `check_loki_rules.sh` loading them into a real Loki in CI, collector and
+  Alloy config validation in the Monitoring workflow, and
+  `docs/runbooks/log-alerts.md`.
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a
   documentation index.

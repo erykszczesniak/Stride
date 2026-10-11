@@ -24,6 +24,17 @@ Alertmanager (`monitoring/alertmanager/alertmanager.yml`) and `alert-sink`,
 an HTTP echo container that logs every delivery. There is no monitoring in
 `k8s/`.
 
+Two more hops exist since ADR-012 and are **not** covered by these alerts:
+the OpenTelemetry Collector between the backend and Jaeger
+(`monitoring/otel/otel-collector.yml`; its own metrics are scraped as job
+`otel-collector`, so a dead collector shows up as `up{job="otel-collector"} == 0`
+on the Prometheus targets page, and Jaeger simply stops receiving traces),
+and the log pipeline Alloy → Loki → ruler → Alertmanager, whose silence is
+reported by `LogPipelineSilent` and handled in [log-alerts.md](log-alerts.md).
+A Loki alert never arriving while `Watchdog` does means the Loki ruler, not
+Alertmanager: `curl -s localhost:3100/loki/api/v1/rules` and
+`docker compose logs --since 15m loki | grep -i ruler`.
+
 ## Required inputs
 
 - Which alert (or: the Watchdog stopped — how long ago at the receiver)

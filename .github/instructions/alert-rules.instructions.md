@@ -8,6 +8,7 @@ applyTo: "monitoring/**"
 
 - `monitoring/alerts/<area>.rules.yml` — Prometheus rule groups (alerts + recording rules). One file per area: `platform`, `services`, `kafka`, `ai`, `slo`, `self-observability`, `cost`.
 - `monitoring/alerts/tests/<area>.test.yml` — `promtool test rules` cases. Every alert needs at least one firing case and one non-firing case.
+- `monitoring/loki/rules/<tenant>/*.yml` — Loki ruler groups (LogQL alerts on the backend logs). Same labels/annotations as above, delivered to the same Alertmanager; no promtool tests exist for LogQL, so `monitoring/scripts/check_loki_rules.sh` loads them into Loki instead and `check_alert_rules.py` prints a NOTE per rule.
 - `monitoring/alertmanager/alertmanager.yml` — routing. Routes match on `severity` and `team`.
 - `monitoring/grafana/dashboards/*.json` — provisioned dashboards. Datasource must be referenced by type (`{"type":"prometheus","uid":"${DS_PROMETHEUS}"}`), never by a hardcoded uid.
 

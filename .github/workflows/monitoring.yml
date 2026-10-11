@@ -18,6 +18,10 @@ permissions:
 env:
   PROMETHEUS_IMAGE: prom/prometheus:v2.55.0
   ALERTMANAGER_IMAGE: prom/alertmanager:v0.27.0
+  # Same tags as docker-compose.yml, so CI validates what the stack runs.
+  LOKI_IMAGE: grafana/loki:3.3.2
+  OTELCOL_IMAGE: otel/opentelemetry-collector-contrib:0.115.1
+  ALLOY_IMAGE: grafana/alloy:v1.5.1
 
 jobs:
   rules:
@@ -57,7 +61,26 @@ jobs:
       - name: Alert contract (labels, annotations, runbook, test coverage)
         run: |
           pip install --quiet pyyaml
+          # Also covers monitoring/loki/rules (same contract; LogQL rules are
+          # exempt from the promtool test-case rule and say so with a NOTE).
           python monitoring/scripts/check_alert_rules.py monitoring/alerts
+
+      # LogQL has no promtool and the Loki image ships no lokitool: the script
+      # starts Loki with the repo's config and rule files, then asserts every
+      # alert is listed by /loki/api/v1/rules and every expr is accepted by
+      # /loki/api/v1/query (a parse error is a 400).
+      - name: Loki config + ruler rules (loki -verify-config, live load, LogQL parse)
+        run: |
+          pip install --quiet pyyaml
+          LOKI_IMAGE="$LOKI_IMAGE" monitoring/scripts/check_loki_rules.sh monitoring/loki
+
+      - name: OpenTelemetry Collector config (otelcol-contrib validate)
+        run: |
+          docker run --rm -v "$PWD/monitoring/otel:/c:ro" "$OTELCOL_IMAGE" validate --config=/c/otel-collector.yml
+
+      - name: Alloy config (alloy fmt must be a no-op)
+        run: |
+          docker run --rm -v "$PWD/monitoring/alloy:/c:ro" "$ALLOY_IMAGE" fmt /c/config.alloy | diff - monitoring/alloy/config.alloy
 
   dashboards:
     name: Grafana dashboards (lint)

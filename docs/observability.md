@@ -1,15 +1,21 @@
 # Observability
 
-Three pillars for one deployable: **metrics** (Prometheus + Grafana +
-Alertmanager), **traces** (OpenTelemetry + Jaeger), **logs** (structured
-JSON under the `prod` profile). Everything below runs from
-`docker-compose.yml`; `k8s/` deploys the app with health probes only.
+Three pillars for one deployable, joined by the trace id: **metrics**
+(Prometheus + Grafana + Alertmanager), **traces** (OpenTelemetry Collector →
+Jaeger), **logs** (JSON → Alloy → Loki, with log-based alerts). Everything
+below runs from `docker-compose.yml` (`--profile observability` adds Loki
+and Alloy); `k8s/` deploys the app with health probes only. The design and
+its alternatives are in [ADR-012](adr/012-logs-as-a-pipeline.md).
 
 ## Tracing
 
 The backend has Micrometer Tracing on the OpenTelemetry bridge
 (`micrometer-tracing-bridge-otel`, `opentelemetry-exporter-otlp`), exporting
-spans over OTLP HTTP to Jaeger. Configuration in `application.yml`:
+spans over OTLP HTTP to the **OpenTelemetry Collector**, which forwards them
+to Jaeger. In compose `OTEL_EXPORTER_OTLP_ENDPOINT` points at
+`otel-collector:4318`; a backend started outside compose (`make dev-backend`)
+still hits Jaeger's published `localhost:4318` directly. Configuration in
+`application.yml`:
 
 ```yaml
 management:
@@ -33,18 +39,53 @@ builds its own `RestTemplate`; the Anthropic SDK brings its own HTTP
 client). A long server span with no children means time spent in one of
 those — the runbooks say how to tell which.
 
-Jaeger UI at http://localhost:16686 — one service besides `jaeger-query`.
-Grafana has Jaeger as a datasource too (`monitoring/grafana/provisioning/datasources/jaeger.yml`).
+### The collector: what is redacted, what is kept
 
-The console log pattern in `logback-spring.xml` injects `traceId` / `spanId`
-into every line:
+`monitoring/otel/otel-collector.yml` (image
+`otel/opentelemetry-collector-contrib:0.115.1`, validated in CI with
+`otelcol-contrib validate`) is the one place where trace policy lives:
 
 ```
-%d %5p [<application name>,%X{traceId:-},%X{spanId:-}] ...
+backend ──OTLP/HTTP──▶ otel-collector ──OTLP/gRPC──▶ jaeger
+                        memory_limiter
+                        attributes/pii      delete authorization/cookie/set-cookie/x-api-key
+                                            headers and url.query; hash enduser.id / user.id
+                        redaction           mask bearer/JWT tokens, token/code/state/password/
+                                            secret/api_key query params, e-mail addresses — in
+                                            any attribute value (Spring puts the full URL with
+                                            its query string in http.url)
+                        tail_sampling       keep every trace with an ERROR span, every request
+                                            whose outcome is CLIENT_ERROR/SERVER_ERROR (4xx/5xx —
+                                            a handled 401/404 still writes an ERROR log line that
+                                            must link somewhere), every trace slower than 1 s;
+                                            10 % of the rest (decision 10 s after the first span)
+                        batch
 ```
 
-So `docker compose logs backend | grep <traceId>` assembles one request's
-path, including its async listeners.
+Why: the e-mail address is the login identifier here, so it would otherwise
+appear in a span the moment an instrumentation records a request body or a
+query; OAuth callback routes carry `code`/`state` in the query string; and
+head sampling at 10 % in the application (what `prod` used to do) throws
+away 90 % of the errors — the traces a responder actually wants. The
+backend therefore samples at 100 % and lets the collector decide. The cost:
+a span count in Jaeger is no longer a request count — use Prometheus for
+counts, and the collector's own metrics (job `otel-collector`,
+`otelcol_receiver_accepted_spans` vs `otelcol_exporter_sent_spans`,
+`otelcol_processor_tail_sampling_count_traces_sampled` by policy) to
+see what the sampler kept. The `stride-logs` dashboard shows both.
+
+Jaeger UI at http://localhost:16686 — one service besides `jaeger-query`,
+named `strava` (`spring.application.name` in `application.properties`; the
+log label `app` is the compose service, `strava-backend`). Grafana has Jaeger
+as a datasource too (`monitoring/grafana/provisioning/datasources/jaeger.yml`),
+with **Logs for this span** wired to Loki (`tracesToLogsV2`, custom query
+`{app="strava-backend"} |= "<traceId>"`, ±5 min).
+
+Every log line carries `traceId` / `spanId` — in the console pattern for a
+local `dev` run, as JSON fields in compose and `prod` (see Logs) — so one
+request's path, including its async listeners, is one query:
+`{app="strava-backend"} |= "<traceId>"` in Loki, or `docker compose logs
+backend | grep <traceId>` without the profile.
 
 ## Metrics
 
@@ -89,12 +130,15 @@ and `http.server.requests` records a latency histogram with SLO buckets at
 Dashboards (provisioned from `monitoring/grafana/dashboards/`): `stride-jvm`
 (HTTP rate / errors / p95, JVM heap, GC, threads, CPU, HikariCP),
 `stride-slo` (SLIs, burn rates, budget), `stride-cost` (modelled infra cost,
-AI spend). Grafana at http://localhost:3003 (`admin` / `admin`).
+AI spend), `stride-logs` (error lines, top loggers, log volume, a logs panel
+with trace links, collector throughput and sampling decisions). Grafana at
+http://localhost:3003 (`admin` / `admin`).
 
 ### Alerting
 
 30 rules in `monitoring/alerts/*.rules.yml`, unit-tested and contract-checked
-in CI ([ADR-006](adr/006-alerts-as-code.md)), routed by Alertmanager
+in CI ([ADR-006](adr/006-alerts-as-code.md)), plus four log-based rules in
+`monitoring/loki/rules/` (see Logs), all routed by Alertmanager
 (http://localhost:9093) to `alert-sink`, an echo container:
 `docker compose logs -f alert-sink` shows exactly what a pager or a Teams
 channel would receive. Every alert links to a runbook in
@@ -102,22 +146,87 @@ channel would receive. Every alert links to a runbook in
 
 ## Logs
 
-Two profiles in `logback-spring.xml`:
+```
+backend (JSON, one line per event, traceId/spanId/requestId/userId from MDC)
+   │  stdout → Docker json-file log driver
+   ▼
+alloy  (grafana/alloy:v1.5.1, --profile observability)      monitoring/alloy/config.alloy
+   │  discovery.docker over /var/run/docker.sock, keep containers on *strava-network
+   │  app = compose service (backend → strava-backend, same value as Prometheus)
+   │  stage.json: level, logger_name, traceId, spanId
+   │  labels: app, level            structured metadata: logger, traceId, spanId
+   ▼
+loki   (grafana/loki:3.3.2, :3100)                           monitoring/loki/loki.yml
+   │  tsdb/v13, filesystem, retention 72 h (compactor)
+   │  ruler: monitoring/loki/rules/fake/*.yml, 1 m ──▶ alertmanager:9093
+   ▼
+grafana  Explore → Loki; dashboard stride-logs; derived field traceId → Jaeger
+```
 
-- `default | dev | test | testcontainers`: coloured console with the
-  trace pattern above; `com.strava`, Spring Security and Hibernate SQL at
-  DEBUG.
-- `prod`: JSON via `logstash-logback-encoder` (`LogstashEncoder`), UTC,
-  with the MDC keys `requestId`, `userId`, `traceId`, `spanId`; `com.strava`
-  at INFO, Spring Security at WARN.
+**Format.** `logback-spring.xml` has two appenders. `(default | dev | test |
+testcontainers) & !json` is the coloured console with the trace pattern;
+`prod | json` is `logstash-logback-encoder` (`LogstashEncoder`, UTC, MDC
+keys `requestId`, `userId`, `traceId`, `spanId`, logger names shortened to
+36 characters). Compose adds `SPRING_PROFILES_INCLUDE=json`, so the stack
+logs JSON with the `dev` levels; `prod` is unchanged; a local `make
+dev-backend` keeps the console. The encoder's field names are the ones the
+pipeline and the rules depend on: `level`, `logger_name`, `message`,
+`stack_trace`, `traceId`.
 
-Drop the JSON into ELK, Loki, CloudWatch Logs, or any structured log
-aggregator without preprocessing. Locally, `docker compose logs --since 15m backend`
-is sufficient. Two things that shape the ERROR stream: `LoggingAspect` logs
-every exception thrown through a controller at ERROR (including expected
-404s), and `ApiExceptionHandler` logs `Unexpected error` with a stack trace
-for every 500. The `ai.audit` logger adds one JSON line per provider call
-([`ai-guardrails.md`](ai-guardrails.md)).
+**Labels.** Only `app` and `level` are index labels — five levels times a
+handful of containers. `traceId` is unique per request; as a label it would
+create one stream per request, so it is *structured metadata*: filterable
+(`| traceId="…"`), aggregatable, linkable, not indexed. `logger` likewise
+(`sum by (logger)` works without a parser). Lines from the other containers
+(Postgres, Prometheus, nginx) are not JSON and keep only `app`; so do the
+backend's own non-JSON lines — `spring.jpa.show-sql: true` in `dev` prints
+SQL through `System.out` — which is why the rules and panels select
+`level="…"` rather than the bare stream.
+
+**Retention** is 72 hours (`limits_config.retention_period`, enforced by the
+compactor) — enough to work an incident and write the post-mortem;
+Prometheus keeps 15 days of the metrics.
+
+**From an alert to the trace to the logs.**
+
+1. A log alert (`LogAuthFailureSpike`, `LogExceptionRateSpikePerLogger`,
+   `LogErrorVolumeAboveBaseline`, `LogPipelineSilent` —
+   [`runbooks/log-alerts.md`](runbooks/log-alerts.md)) or a metric alert
+   links to a dashboard. On `stride-logs`, set *Level* to `ERROR`, pick the
+   logger from the top-loggers panel.
+2. Expand a line in the logs panel: next to `traceId` there is a **Trace in
+   Jaeger** button (Loki datasource, derived field → Jaeger datasource). The
+   trace is always there for an error — tail sampling keeps every trace with
+   an ERROR span.
+3. In the trace, **Logs for this span** runs `{app="strava-backend"} |=
+   "<traceId>"` in Loki, ±5 minutes, so the async listeners' lines show up
+   too.
+
+Useful queries:
+
+| LogQL | Meaning |
+|---|---|
+| `{app="strava-backend"} \|= "<traceId>"` | every line of one request, async work included |
+| `sum by (level) (count_over_time({app="strava-backend"}[5m]))` | volume per level |
+| `topk(10, sum by (logger) (count_over_time({app="strava-backend", level="ERROR"}[1h])))` | who writes the errors |
+| `{app="strava-backend", level="ERROR"} \|= "AuthenticationController.login() threw exception: Bad credentials"` | failed password logins (the 401 itself is not logged) |
+| `{app="strava-backend"} \| json \| logger_name=~".*ai.audit"` | one line per provider call ([`ai-guardrails.md`](ai-guardrails.md)) |
+
+Two things that shape the ERROR stream: `LoggingAspect` logs every exception
+thrown through a controller at ERROR (including expected 404s and the
+`Bad credentials` of a failed login), and `ApiExceptionHandler` logs
+`Unexpected error` with a stack trace for every 500.
+
+**Log alerts as code.** `monitoring/loki/rules/fake/stride-logs.rules.yml`
+(`fake` is Loki's tenant id when `auth_enabled: false`) carries the same
+labels and annotations as the Prometheus rules and is routed by the same
+Alertmanager; `check_alert_rules.py` checks both sources and rejects a
+duplicate alert name across them. There is no promtool for LogQL, so the
+rules are exempt from the unit-test rule — explicitly: the check prints a
+`NOTE` per rule — and `monitoring/scripts/check_loki_rules.sh` instead starts
+Loki with the repo's config and rule files and asserts every alert is listed
+by `/loki/api/v1/rules` and every expression is accepted by
+`/loki/api/v1/query`. Both run in `.github/workflows/monitoring.yml`.
 
 ## Health & readiness
 
@@ -139,8 +248,13 @@ Components are shown only to an authenticated caller
 
 ## What's not done yet
 
-- **No monitoring in `k8s/`** — Prometheus, Alertmanager and Grafana exist
-  only in compose; a cluster deployment runs blind except for probes.
+- **No monitoring in `k8s/`** — Prometheus, Alertmanager, Grafana, the
+  collector, Loki and Alloy exist only in compose; a cluster deployment runs
+  blind except for probes.
+- **Logs are tailed from Docker, not sent over OTLP** — resource attributes
+  on a line come from compose labels; the collector handles traces only.
+- **No behavioural tests for the Loki rules** — parse + load in CI, thresholds
+  tuned on compose traffic ([ADR-012](adr/012-logs-as-a-pipeline.md), Known gaps).
 - **Client spans** for JDBC, Elasticsearch and the two providers.
 - **Freshness metrics** for the in-process event paths (feed projection,
   SSE delivery, search-index sync) — today their failures are WARN or ERROR
