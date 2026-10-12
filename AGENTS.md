@@ -1,6 +1,6 @@
 # AGENTS.md — working in this repository
 
-Instructions for coding agents (Claude Code, Copilot, Codex) and humans alike.
+Instructions for coding agents and humans alike.
 Keep it factual; if something here stops being true, fix it in the same PR.
 
 ## What this repo is
