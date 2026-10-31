@@ -30,7 +30,7 @@ spring:
 # /pipeline/v1/** accepts Stride JWTs next to tri_ tokens — same signing
 # secret as the gateway/user-service.
 jwt:
-  secret: ${JWT_SECRET:dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
+  secret: ${JWT_SECRET}
 
 # Tighter Resilience4j thresholds for prod — break the circuit faster, recover faster.
 resilience4j:

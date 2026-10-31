@@ -41,6 +41,15 @@ strava_session_backup.jsonl
 *.env.local
 application-local.yml
 src/main/resources/application-local.yml
+*.pem
+*.key
+*.p12
+*.jks
+
+### Terraform state ###
+*.tfstate
+*.tfstate.*
+.terraform/
 
 ### Uploads ###
 uploads/
