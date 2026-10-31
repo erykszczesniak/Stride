@@ -81,12 +81,14 @@ Requirements: Docker and Docker Compose. Make is optional.
 ```bash
 git clone https://github.com/erykszczesniak/Stride.git
 cd Stride
+cp .env.example .env   # compose refuses to start without POSTGRES_PASSWORD and JWT_SECRET
 make up
 ```
 
 Without Make:
 
 ```bash
+cp .env.example .env
 docker compose up -d --build
 ```
 
