@@ -293,4 +293,10 @@ These are deliberate scope choices:
 
 ## License
 
-Same license as the monolith. See `LICENSE` on `main`.
+Copyright (c) 2026 Eryk Szczesniak. All rights reserved.
+
+This repository is source-available for viewing only. You may read the code,
+and clone and run it locally, solely to review or evaluate the author's work.
+Copying, modifying, reusing, distributing or deploying it, in whole or in
+part, is not permitted without written permission from the copyright holder.
+See [LICENSE](LICENSE).
