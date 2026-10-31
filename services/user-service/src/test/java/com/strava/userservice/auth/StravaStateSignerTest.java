@@ -4,6 +4,7 @@ import com.strava.userservice.exception.ApiRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -82,5 +83,21 @@ class StravaStateSignerTest {
                 .isInstanceOf(ApiRequestException.class);
         assertThatThrownBy(() -> signer.verifyLoginState("login.notanumber.sig"))
                 .isInstanceOf(ApiRequestException.class);
+    }
+
+    @Test
+    void refusesWithoutAnySecret() {
+        StravaProperties properties = new StravaProperties();
+        properties.setStateSecret("");
+        StravaStateSigner unconfigured = new StravaStateSigner(properties);
+        unconfigured.setJwtSecretFallback("");
+
+        assertThatThrownBy(unconfigured::signLoginState)
+                .isInstanceOf(ApiRequestException.class)
+                .hasMessageContaining("not configured")
+                .extracting("status").isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThatThrownBy(() -> unconfigured.verifyLoginState("login.1.sig"))
+                .isInstanceOf(ApiRequestException.class)
+                .extracting("status").isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
     }
 }
