@@ -8,6 +8,15 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Fixed
+- club-event-service: `GET /api/v1/clubs` failed with `LazyInitializationException`
+  (`Club.memberIds` read after the read-only transaction) and surfaced as a
+  403; the collection is now loaded eagerly in batches.
+- shared-security: `HeaderAuthenticationFilter` also runs on the ERROR
+  dispatch, so a 405 or 500 of an authenticated call is reported as such
+  instead of an anonymous 403 on `/error`.
+- `scripts/smoke.sh`: checks `/api/v1/activities/my` (the public contract has
+  no `GET /api/v1/activities`) and takes `SMOKE_ACTIVITY` (default 7, owned by
+  the smoke user) for the AI chat, as the `main` script does.
 - Frontend: `dompurify` 3.4.16 → 3.4.17 (GHSA-cg2g-xh64-v4q7, SAFE_FOR_TEMPLATES
   bypass), a transitive dependency of `jspdf`; the fixable CRITICAL Trivy
   gate reported on the lockfile.
