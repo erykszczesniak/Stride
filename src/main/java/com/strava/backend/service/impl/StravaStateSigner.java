@@ -27,8 +27,12 @@ public class StravaStateSigner {
 
     private final StravaProperties stravaProperties;
 
-    /** Fall back to the JWT secret when {@code app.strava.state-secret} is blank. */
-    @Value("${jwt.secret:changeme}")
+    /**
+     * Fall back to the JWT secret when {@code app.strava.state-secret} is blank. There is no
+     * built-in default: with both blank, signing fails instead of keying the HMAC on a value
+     * anyone can read in the repository.
+     */
+    @Value("${jwt.secret:}")
     private String jwtSecretFallback;
 
     /** Marker payload used on the unauthenticated login/signup flow where no userId exists yet. */
@@ -111,10 +115,7 @@ public class StravaStateSigner {
     }
 
     private String hmacBase64Url(String payload) {
-        String secret = stravaProperties.getStateSecret();
-        if (secret == null || secret.isBlank()) {
-            secret = jwtSecretFallback;
-        }
+        String secret = resolveSecret();
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
@@ -132,5 +133,18 @@ public class StravaStateSigner {
             result |= a.charAt(i) ^ b.charAt(i);
         }
         return result == 0;
+    }
+
+    private String resolveSecret() {
+        String secret = stravaProperties.getStateSecret();
+        if (secret == null || secret.isBlank()) {
+            secret = jwtSecretFallback;
+        }
+        if (secret == null || secret.isBlank()) {
+            throw new ApiRequestException(
+                    "Strava integration is not configured: set STRAVA_STATE_SECRET",
+                    HttpStatus.SERVICE_UNAVAILABLE);
+        }
+        return secret;
     }
 }
