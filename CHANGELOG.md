@@ -8,6 +8,15 @@ changelog.
 
 ## [Unreleased]
 
+### Security
+- Strava OAuth `state` is no longer signed with the literal `changeme` when
+  neither `STRAVA_STATE_SECRET` nor `jwt.secret` is set; the connect flow now
+  answers 503 "Strava integration is not configured" instead of issuing a
+  forgeable state. The `dev` profile falls back to an obviously-dev JWT key
+  (the one from `.env.example`) instead of a random-looking one, and
+  `.gitignore` covers key material (`*.pem`, `*.key`, `*.p12`, `*.jks`) and
+  Terraform state.
+
 ### Fixed
 - Frontend: the two fixable CRITICAL findings Trivy reports in the lockfile,
   `proxy-addr` 2.0.7 → 2.0.8 (CVE-2026-90711) and `shell-quote` 1.10 → 1.12
