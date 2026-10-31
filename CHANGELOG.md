@@ -8,6 +8,9 @@ Conventional Commit PR titles.
 ## [Unreleased]
 
 ### Fixed
+- Frontend: `dompurify` 3.4.16 → 3.4.17 (GHSA-cg2g-xh64-v4q7, SAFE_FOR_TEMPLATES
+  bypass), a transitive dependency of `jspdf`; the fixable CRITICAL Trivy
+  gate reported on the lockfile.
 - Frontend: the fixable CRITICAL findings Trivy reports in the lockfile, the
   same set `main` patched in `bbc96d5`: `jspdf` 2.5 → 4.2 and `jspdf-autotable`
   3.8 → 5.0 (CVE-2025-68428, CVE-2026-31938), `proxy-addr` 2.0.8
