@@ -18,6 +18,9 @@ changelog.
   Terraform state.
 
 ### Fixed
+- Frontend: `dompurify` 3.4.15 → 3.4.17 (GHSA-cg2g-xh64-v4q7, SAFE_FOR_TEMPLATES
+  bypass), a transitive dependency of `jspdf`; the fixable CRITICAL Trivy
+  gate reported on the lockfile.
 - Frontend: the two fixable CRITICAL findings Trivy reports in the lockfile,
   `proxy-addr` 2.0.7 → 2.0.8 (CVE-2026-90711) and `shell-quote` 1.10 → 1.12
   (CVE-2026-102422). Both are build-time dependencies of `react-scripts`;
