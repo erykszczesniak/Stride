@@ -9,9 +9,6 @@ branch provides the same product as 12 services.
 **Built with:** Java 21, Kotlin, Spring Boot, React, PostgreSQL, Elasticsearch,
 Docker, Kubernetes and Terraform.
 
-[![Quality gate](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride&metric=coverage)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride)
-
 <img width="1985" height="1239" alt="Stride dashboard" src="https://github.com/user-attachments/assets/eb45b949-40b1-4a08-b218-1cc0d3e0896c" />
 
 > The project is under active development. Features and UI may change.
