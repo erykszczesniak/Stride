@@ -4,6 +4,8 @@ import com.strava.clubevent.common.ActivityType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -103,5 +105,14 @@ class ClubRepositoryTest {
     void shouldCountPublicClubsAndSumMembers() {
         assertThat(clubRepository.countPublicClubs()).isEqualTo(2);
         assertThat(clubRepository.sumAllMembers()).isEqualTo(4); // 3 runners + 1 cyclist
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @DisplayName("Member count is readable after the repository transaction ended (controller mapping)")
+    void memberCountReadableOutsideTransaction() {
+        List<Club> result = clubRepository.findPublicClubsOrderByMembersCount(PageRequest.of(0, 20)).getContent();
+
+        assertThat(result).extracting(Club::getMembersCount).containsExactly(3, 1);
     }
 }

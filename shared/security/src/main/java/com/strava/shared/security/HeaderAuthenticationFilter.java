@@ -34,6 +34,16 @@ import java.util.List;
  */
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
+    /**
+     * Also run on the ERROR dispatch. Spring Security authorizes {@code /error} like
+     * any other request, so without the identity re-established there every 405/500
+     * of an authenticated call surfaced as an anonymous 403.
+     */
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

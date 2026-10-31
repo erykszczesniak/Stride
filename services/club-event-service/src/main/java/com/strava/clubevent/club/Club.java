@@ -2,6 +2,7 @@ package com.strava.clubevent.club;
 
 import com.strava.clubevent.common.ActivityType;
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -55,7 +56,13 @@ public class Club {
     @Column(name = "owner_id", nullable = false)
     private Long ownerId;
 
-    @ElementCollection
+    /**
+     * Loaded eagerly (in batches) because {@link #getMembersCount()} is read by the
+     * controller after the read-only transaction has ended; a lazy collection there
+     * throws LazyInitializationException, which the error dispatch turned into a 403.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @BatchSize(size = 100)
     @CollectionTable(name = "club_members", joinColumns = @JoinColumn(name = "club_id"))
     @Column(name = "user_id")
     @Builder.Default
