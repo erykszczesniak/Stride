@@ -17,7 +17,7 @@ server:
 # secret the gateway/user-service sign with. Overridden by config-server in
 # composed environments.
 jwt:
-  secret: ${JWT_SECRET:dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod}
+  secret: ${JWT_SECRET}
 
 # Resilience4j tuning for the REST composition (applies in every profile;
 # config-server overlays tighten it for prod). Downstream failures either
@@ -108,3 +108,7 @@ spring:
 eureka:
   client:
     enabled: false
+jwt:
+  # Explicit dev value for the no-config-server profile only; every other
+  # profile requires JWT_SECRET (see .env.example).
+  secret: dev-secret-min-32-chars-this-is-only-for-development-do-not-use-in-prod

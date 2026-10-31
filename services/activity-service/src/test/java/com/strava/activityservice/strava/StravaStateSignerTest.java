@@ -103,4 +103,21 @@ class StravaStateSignerTest {
 
         assertThat(fallbackSigner.verify(state)).isEqualTo(7L);
     }
+
+    @Test
+    @DisplayName("refuses to sign or verify when neither secret is configured")
+    void refusesWithoutAnySecret() {
+        StravaProperties blank = new StravaProperties();
+        blank.setStateSecret("");
+        StravaStateSigner unconfigured = new StravaStateSigner(blank);
+        ReflectionTestUtils.setField(unconfigured, "jwtSecretFallback", "");
+
+        assertThatThrownBy(() -> unconfigured.sign(7L))
+                .isInstanceOf(ApiRequestException.class)
+                .hasMessageContaining("not configured")
+                .extracting("status").isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThatThrownBy(() -> unconfigured.verify("7.1.sig"))
+                .isInstanceOf(ApiRequestException.class)
+                .extracting("status").isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    }
 }

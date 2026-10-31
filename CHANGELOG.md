@@ -7,6 +7,20 @@ Conventional Commit PR titles.
 
 ## [Unreleased]
 
+### Security
+- `JWT_SECRET` has no built-in fallback any more: Config Server (`api-gateway`,
+  `user-service`, `pipeline-service`) and `docker-compose.yml` require it,
+  the same way `main` does (`cp .env.example .env` sets a dev value). The
+  `standalone` profile keeps its explicit dev secret.
+- Strava OAuth `state` is no longer signed with the literal `changeme` when
+  neither `STRAVA_STATE_SECRET` nor `jwt.secret` is set; user-service and
+  activity-service answer 503 "Strava integration is not configured" instead
+  of issuing a forgeable state.
+- `/actuator/env` is no longer exposed by the shared actuator config; the
+  dashboards and alerts only read `/actuator/prometheus`.
+- `.gitignore` covers key material (`*.pem`, `*.key`, `*.p12`, `*.jks`) and
+  Terraform state.
+
 ### Fixed
 - Frontend: `dompurify` 3.4.16 → 3.4.17 (GHSA-cg2g-xh64-v4q7, SAFE_FOR_TEMPLATES
   bypass), a transitive dependency of `jspdf`; the fixable CRITICAL Trivy
