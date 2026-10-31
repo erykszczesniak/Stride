@@ -467,10 +467,13 @@ personal records. CI runs the full flow nightly.
 
 ## License
 
-Copyright (c) 2026 Eryk Szczesniak. Licensed under the
-[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
-Portfolio review and personal or educational use are allowed. Commercial use
-requires written permission from the copyright holder.
+Copyright (c) 2026 Eryk Szczesniak. All rights reserved.
+
+This repository is source-available for viewing only. You may read the code,
+and clone and run it locally, solely to review or evaluate the author's work.
+Copying, modifying, reusing, distributing or deploying it, in whole or in
+part, is not permitted without written permission from the copyright holder.
+See [LICENSE](LICENSE).
 
 ## Acknowledgments
 
