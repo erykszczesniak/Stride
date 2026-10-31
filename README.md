@@ -8,9 +8,6 @@ provides the same features as a monolith.
 **Built with:** Java 21, Kotlin, Spring Boot, React, PostgreSQL, Kafka, gRPC,
 Redis, Elasticsearch, Docker and Kubernetes.
 
-[![Quality gate](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride_microservices&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride_microservices)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride_microservices&metric=coverage)](https://sonarcloud.io/summary/new_code?id=erykszczesniak_Stride_microservices)
-
 The React frontend and iOS `/pipeline/v1` client use the same public contract on
 both branches: `/api/v1`, `/graphql` and `/pipeline/v1`.
 

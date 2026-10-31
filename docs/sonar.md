@@ -36,8 +36,11 @@ gates agree on what counts (the exclusions in `pom.xml` are the same).
 4. **My Account → Security → Generate token**, then add it to the repository
    as the `SONAR_TOKEN` secret (**Settings → Secrets and variables →
    Actions**).
-5. Push any commit to `microservices`, or re-run the Sonar workflow on an open PR. The badges in
-   `README.md` turn live once the first analysis is in.
+5. Push any commit to `microservices`, or re-run the Sonar workflow on an open PR. Once the first
+   analysis is in, add the quality-gate and coverage badges to `README.md`
+   (`https://sonarcloud.io/api/project_badges/measure?project=erykszczesniak_Stride_microservices&metric=alert_status`
+   and the same URL with `metric=coverage`). Until the project exists the
+   badges render "Project not found", so the README does not carry them yet.
 
 Without the secret the workflow's first job reports "SONAR_TOKEN not
 available" and the scan job is skipped, so pull requests from forks and
