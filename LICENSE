@@ -1,0 +1,30 @@
+Stride View-Only License
+
+Copyright (c) 2026 Eryk Szczesniak. All rights reserved.
+
+1. Permission. You may view and read the source code in this repository, and
+   you may clone and run it on your own machine, solely to review or evaluate
+   the author's work (for example, code review or recruitment).
+
+2. No other rights. Except as stated in section 1, no license is granted.
+   Without the prior written permission of the copyright holder you may not:
+   a. copy, reproduce or redistribute the code or any part of it;
+   b. modify it or create derivative works;
+   c. use it, or any part of it, in another project, product or service,
+      whether commercial or not;
+   d. deploy or run it for any purpose other than evaluation;
+   e. use it to train, fine-tune or evaluate machine-learning models;
+   f. sublicense, sell, rent or lend it.
+
+3. Termination. Any breach of these terms ends the permission in section 1
+   immediately. Delete all copies when your evaluation ends or on request.
+
+4. Third-party components. Dependencies pulled in by the build keep their own
+   licenses; this license covers only the code written for this repository.
+
+5. No warranty. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+   KIND, EXPRESS OR IMPLIED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+   CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
+
+Contact the copyright holder through the GitHub profile for any permission
+beyond this license.
