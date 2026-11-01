@@ -1,0 +1,178 @@
+# Anomaly alerts: deviation from the service's own recent behaviour instead of
+# a fixed threshold (docs/slo.md, "Deviation alerts").
+#
+# The static rules in services.rules.yml / platform.rules.yml and the
+# burn-rate rules in slo.rules.yml say "this is bad now". The rules here say
+# "this is heading somewhere bad" (predict_linear on heap and on the DB pool)
+# or "this does not look like last week" (request rate against the same hour
+# seven days ago, error ratio against its own 24 h mean and spread). They buy
+# lead time and catch the failures a level threshold is blind to: a slow leak
+# that is still under 90 %, a traffic drop that is not quite zero, an error
+# ratio that is unusual for this service but still under the SLO budget.
+#
+# Every rule has a floor or a guard so that a quiet service, a cold start or
+# a division by (almost) zero cannot fire it:
+#   - predictions require the current value to already be above a level
+#     (0.6 of heap, 0.5 of the pool) so a startup slope is not extrapolated;
+#   - the weekly ratio clamps its denominator to 0.1 req/s and needs real
+#     traffic on at least one side of the comparison;
+#   - the z-score clamps the standard deviation to 0.005 (half a percentage
+#     point of error ratio) and needs the error ratio itself to be above 1 %.
+#
+# All metrics are the backend's own Micrometer meters, scraped by the
+# strava-backend job: jvm_memory_*_bytes, hikaricp_connections_*,
+# http_server_requests_seconds_count. The error z-score builds on the
+# slo:http_error:ratio_rate5m recording rule from slo.rules.yml.
+groups:
+
+  - name: stride-anomaly-recording
+    interval: 30s
+    rules:
+      # ---- JVM heap: share of max, and where that share is heading in 4 h
+      #      (linear regression over the last hour)
+      - record: anomaly:jvm_heap_used:ratio
+        expr: |
+          sum by (app, instance) (jvm_memory_used_bytes{area="heap"})
+            /
+          sum by (app, instance) (jvm_memory_max_bytes{area="heap"})
+      - record: anomaly:jvm_heap_used:ratio_predict4h
+        expr: predict_linear(anomaly:jvm_heap_used:ratio[1h], 4 * 3600)
+
+      # ---- HikariCP: share of the pool in use, and where it is heading in 1 h
+      #      (regression over the last 30 min; the pool moves faster than heap)
+      - record: anomaly:db_pool_active:ratio
+        expr: |
+          sum by (app, instance) (hikaricp_connections_active)
+            /
+          sum by (app, instance) (hikaricp_connections_max)
+      - record: anomaly:db_pool_active:ratio_predict1h
+        expr: predict_linear(anomaly:db_pool_active:ratio[30m], 3600)
+
+      # ---- Request rate now vs. the same hour one week ago. The baseline is
+      #      taken from the raw counter (not from a recorded series) so the
+      #      comparison works as soon as the TSDB holds seven days of data.
+      - record: anomaly:http_requests:rate1h
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[1h]))
+      - record: anomaly:http_requests:rate1h_1w
+        expr: |
+          sum by (app) (rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[1h] offset 1w))
+      - record: anomaly:http_requests:weekly_ratio
+        expr: |
+          anomaly:http_requests:rate1h
+            /
+          clamp_min(anomaly:http_requests:rate1h_1w, 0.1)
+
+      # ---- Error ratio as a z-score against its own last 24 h.
+      #      stddev is floored at 0.005 so a service with a flat zero error
+      #      ratio does not produce an infinite score on its first 5xx.
+      - record: anomaly:http_error:ratio_zscore24h
+        expr: |
+          (
+            slo:http_error:ratio_rate5m
+              -
+            avg_over_time(slo:http_error:ratio_rate5m[24h])
+          )
+            /
+          clamp_min(stddev_over_time(slo:http_error:ratio_rate5m[24h]), 0.005)
+
+  - name: stride-anomaly-alerts
+    rules:
+
+      # ------------------------------------------------------------------
+      # Heap will cross its max within 4 hours if the last hour's trend
+      # holds. JvmHeapHigh fires at 90 % regardless of direction; this one
+      # fires earlier, only when the heap is both high (> 60 %) and climbing.
+      # ------------------------------------------------------------------
+      - alert: JvmHeapExhaustionPredicted
+        expr: |
+          anomaly:jvm_heap_used:ratio_predict4h > 1
+            and
+          anomaly:jvm_heap_used:ratio > 0.6
+        for: 30m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} heap on course for {{ $value | humanizePercentage }} of max within 4 h"
+          description: "A linear fit over the last hour of heap usage on {{ $labels.instance }} crosses 100% of max heap within four hours, and usage is already above 60%. A steady climb like this is a leak or a batch job (import, export, weekly summary) that outgrew the limit; a stable high heap does not fire this alert."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/anomaly-detected.md
+          dashboard_url: http://localhost:3003/d/stride-jvm
+
+      # ------------------------------------------------------------------
+      # Connection pool will be fully busy within 1 hour on the current
+      # 30-minute trend. DbPoolSaturated fires at 90 %; this one says the
+      # pool is filling before it is full.
+      # ------------------------------------------------------------------
+      - alert: DbPoolExhaustionPredicted
+        expr: |
+          anomaly:db_pool_active:ratio_predict1h > 1
+            and
+          anomaly:db_pool_active:ratio > 0.5
+        for: 15m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: "{{ $labels.app }} DB pool on course for {{ $value | humanizePercentage }} in use within 1 h"
+          description: "Active HikariCP connections on {{ $labels.instance }} have been climbing for 30 minutes and the trend reaches the pool maximum within an hour; more than half the pool is already busy. Connections that are checked out and not returned (a long transaction, a leaked EntityManager) look exactly like this before DbPoolExhausted fires."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/anomaly-detected.md
+          dashboard_url: http://localhost:3003/d/stride-jvm
+
+      # ------------------------------------------------------------------
+      # Weekly seasonality: the same hour last week is the baseline. Less
+      # than half of it (with a real baseline) or more than three times it
+      # (with real current traffic) is worth a look; both branches carry the
+      # ratio as the alert value.
+      # ------------------------------------------------------------------
+      - alert: TrafficDeviatesFromWeeklyBaseline
+        expr: |
+          (
+            anomaly:http_requests:weekly_ratio < 0.5
+              and
+            anomaly:http_requests:rate1h_1w > 0.5
+          )
+            or
+          (
+            anomaly:http_requests:weekly_ratio > 3
+              and
+            anomaly:http_requests:rate1h > 1
+          )
+        for: 30m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: '{{ $labels.app }} traffic is {{ printf "%.2f" $value }}x the same hour last week'
+          description: "The request rate over the last hour is below half or above three times what it was at the same hour seven days ago (baseline floored at 0.1 req/s; the low branch needs a baseline above 0.5 req/s, the high branch needs current traffic above 1 req/s). Below: a client, a login flow or a route may be broken while the backend reports healthy. Above: capacity and the DB pool are the next things to watch."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/anomaly-detected.md
+          dashboard_url: http://localhost:3003/d/stride-slo
+
+      # ------------------------------------------------------------------
+      # Error ratio unusual for this service: more than three standard
+      # deviations above its own 24 h mean, and above 1 % in absolute terms.
+      # A service that always runs at 3 % errors does not fire this; one
+      # that jumps from 0.1 % to 2 % does, long before the burn-rate rules.
+      # ------------------------------------------------------------------
+      - alert: ErrorRatioDeviation
+        expr: |
+          anomaly:http_error:ratio_zscore24h > 3
+            and
+          slo:http_error:ratio_rate5m > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          team: domain
+          tier: "1"
+          service: "{{ $labels.app }}"
+        annotations:
+          summary: '{{ $labels.app }} 5xx ratio is {{ printf "%.1f" $value }} standard deviations above its 24 h mean'
+          description: "The 5-minute 5xx ratio is more than 3 standard deviations above its own average of the last 24 hours and above 1% in absolute terms. This is a change, not necessarily an SLO breach yet: the burn-rate alerts fire at 3% and 7.2%. Correlate with the last deploy and the per-endpoint error alert first."
+          runbook_url: https://github.com/erykszczesniak/Stride/blob/main/docs/runbooks/anomaly-detected.md
+          dashboard_url: http://localhost:3003/d/stride-slo

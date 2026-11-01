@@ -63,6 +63,42 @@ Alertmanager inhibits `SLOBurnRateSlow` while `SLOBurnRateFast` is firing
 for the same `app` and `slo`, so a real outage produces one page, not two.
 The latency pair is not inhibited (ADR-007, known gap).
 
+## Deviation alerts
+
+Burn-rate alerts answer one question well — *is the budget being spent too
+fast?* — and are blind to two things: a problem that is still under the
+budget (an error ratio that jumps from 0.1 % to 2 % never reaches the 3 %
+slow-burn line) and a problem that has no error at all yet (a heap that will
+be full in three hours, traffic that is half of what it should be while
+every request succeeds). [`monitoring/alerts/anomaly.rules.yml`](../monitoring/alerts/anomaly.rules.yml)
+covers that gap by comparing the service with its own recent behaviour
+instead of a fixed line:
+
+| Alert | Deviation | Baseline |
+|---|---|---|
+| `JvmHeapExhaustionPredicted` | `predict_linear` of heap used / max over the last hour crosses 100 % within 4 h, and usage is already > 60 % | the service's own last hour |
+| `DbPoolExhaustionPredicted` | `predict_linear` of pool active / max over 30 min crosses 100 % within 1 h, and > 50 % is already busy | the last 30 minutes |
+| `TrafficDeviatesFromWeeklyBaseline` | request rate over the last hour < 0.5× or > 3× the rate at the same hour one week ago | `offset 1w` |
+| `ErrorRatioDeviation` | 5-minute 5xx ratio > 3 standard deviations above its 24 h mean, and > 1 % | `avg_over_time` / `stddev_over_time` over 24 h |
+
+**Why the weekly baseline.** A fitness app has a strong weekly rhythm
+(weekend rides, Monday-evening runs, the Monday 09:00 summary mail), so
+"the same hour yesterday" compares a Sunday with a Saturday and "the last
+hour" compares a peak with the shoulder before it. The same hour seven days
+ago is the shortest offset that compares like with like. It is also the
+simplest: no model to train, one `offset 1w`, readable in the alert. Its
+known weakness is that a holiday, an outage or a load test a week ago
+becomes the baseline for today — the runbook lists those cases, and the
+alert resolves by itself once the odd week rolls out of the window.
+
+**Guards.** Each rule carries a floor so that a quiet service or a cold start
+cannot fire it: the predictions need the current level to already be high,
+the weekly ratio clamps its denominator to 0.1 req/s and needs real traffic
+on one side, the z-score floors the standard deviation at 0.005 and needs
+the ratio itself above 1 %. All four are `warning` — they buy lead time, they
+do not page; the burn-rate alerts keep that job. Runbook:
+[`runbooks/anomaly-detected.md`](runbooks/anomaly-detected.md).
+
 ## Error-budget policy
 
 - **Budget above zero:** ship features. Reliability work competes on merit.
