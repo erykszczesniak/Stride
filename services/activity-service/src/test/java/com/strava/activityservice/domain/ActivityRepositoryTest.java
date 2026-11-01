@@ -1,26 +1,42 @@
 package com.strava.activityservice.domain;
 
+import com.strava.activityservice.client.UserVisibilityClient;
+import com.strava.activityservice.event.ActivityEventPublisher;
+import com.strava.activityservice.pr.PersonalRecordService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Runs against H2 (MODE=PostgreSQL) with the real Flyway migrations —
- * including the sample seeds (activities 1..24, streams, PRs) — so this both
- * exercises the non-trivial queries and proves the migrations are
- * H2-compatible end to end.
+ * including the sample seeds (activities 1..24 with streams and PRs, plus the
+ * 166 history rows of V10) — so this both exercises the non-trivial queries
+ * and proves the migrations are H2-compatible end to end.
  */
 @DataJpaTest
+@Import(PersonalRecordService.class)
 @DisplayName("ActivityRepository (H2 + Flyway migrations)")
 class ActivityRepositoryTest {
+
+    private static final int SEEDED_ACTIVITIES = 24;
+    private static final int HISTORY_ACTIVITIES = 166;
+    private static final int USER_1_ACTIVITIES = 6 + 39;
+    private static final List<Long> SAMPLE_USERS = List.of(1L, 2L, 3L, 4L);
 
     @Autowired
     private ActivityRepository activityRepository;
@@ -31,10 +47,19 @@ class ActivityRepositoryTest {
     @Autowired
     private UserCacheRepository userCacheRepository;
 
+    @Autowired
+    private PersonalRecordService personalRecordService;
+
+    @MockitoBean
+    private UserVisibilityClient userVisibilityClient;
+
+    @MockitoBean
+    private ActivityEventPublisher activityEventPublisher;
+
     @Test
-    @DisplayName("sample seeds land: 24 activities with fixed ids, PRs, user cache")
+    @DisplayName("sample seeds land: 24 fixed-id activities + 166 history rows, PRs, user cache")
     void sampleSeedsLand() {
-        assertThat(activityRepository.count()).isEqualTo(24);
+        assertThat(activityRepository.count()).isEqualTo(SEEDED_ACTIVITIES + HISTORY_ACTIVITIES);
         assertThat(activityRepository.findById(1L)).hasValueSatisfying(a -> {
             assertThat(a.getTitle()).isEqualTo("Morning Trail Run");
             assertThat(a.getUserId()).isEqualTo(1L);
@@ -88,7 +113,7 @@ class ActivityRepositoryTest {
     @DisplayName("findByUserId orders by createdAt desc and pages")
     void findByUserIdOrdersByCreatedAtDesc() {
         Page<Activity> page = activityRepository.findByUserId(1L, PageRequest.of(0, 3));
-        assertThat(page.getTotalElements()).isEqualTo(6);
+        assertThat(page.getTotalElements()).isEqualTo(USER_1_ACTIVITIES);
         assertThat(page.getContent()).hasSize(3);
         assertThat(page.getContent().get(0).getCreatedAt())
                 .isAfterOrEqualTo(page.getContent().get(1).getCreatedAt());
@@ -113,9 +138,18 @@ class ActivityRepositoryTest {
     void lifetimeSums() {
         assertThat(activityRepository.sumDistanceByUserId(12345L)).isEqualTo(0.0);
         assertThat(activityRepository.sumDurationByUserId(12345L)).isEqualTo(0L);
-        assertThat(activityRepository.countByUserId(1L)).isEqualTo(6);
-        // user 1: 8.5 + 45.2 + 1.5 + 6.0 + 22.0 + 5.0
-        assertThat(activityRepository.sumDistanceByUserId(1L)).isCloseTo(88.2, org.assertj.core.data.Offset.offset(0.001));
+        assertThat(activityRepository.countByUserId(1L)).isEqualTo(USER_1_ACTIVITIES);
+        double expected = user1Distance(LocalDateTime.MIN, LocalDateTime.MAX);
+        assertThat(expected).isGreaterThan(88.2); // 88.2 km from V3 plus the V10 history
+        assertThat(activityRepository.sumDistanceByUserId(1L)).isCloseTo(expected, org.assertj.core.data.Offset.offset(0.001));
+    }
+
+    /** Sum of user 1's distances with start_time in [from, to], computed entity-side as the oracle. */
+    private double user1Distance(LocalDateTime from, LocalDateTime to) {
+        return activityRepository.findAllByUserIdOrderByStartTimeAsc(1L).stream()
+                .filter(a -> !a.getStartTime().isBefore(from) && !a.getStartTime().isAfter(to))
+                .mapToDouble(Activity::getDistance)
+                .sum();
     }
 
     @Test
@@ -132,7 +166,7 @@ class ActivityRepositoryTest {
             assertThat(dow).isBetween(0, 6);
             total += ((Number) row[1]).doubleValue();
         }
-        assertThat(total).isCloseTo(88.2, org.assertj.core.data.Offset.offset(0.001));
+        assertThat(total).isCloseTo(user1Distance(from, to), org.assertj.core.data.Offset.offset(0.001));
     }
 
     @Test
@@ -145,15 +179,18 @@ class ActivityRepositoryTest {
                 ? (Object[]) raw[0] : raw;
 
         assertThat(stats).hasSize(5);
-        assertThat(((Number) stats[0]).doubleValue()).isCloseTo(88.2, org.assertj.core.data.Offset.offset(0.001));
-        assertThat(((Number) stats[4]).intValue()).isEqualTo(6);
+        assertThat(((Number) stats[0]).doubleValue()).isCloseTo(user1Distance(from, to), org.assertj.core.data.Offset.offset(0.001));
+        long expectedCount = activityRepository.findAllByUserIdOrderByStartTimeAsc(1L).stream()
+                .filter(a -> !a.getStartTime().isBefore(from) && !a.getStartTime().isAfter(to))
+                .count();
+        assertThat(((Number) stats[4]).intValue()).isEqualTo((int) expectedCount);
     }
 
     @Test
     @DisplayName("PR recalculation source query orders by startTime ascending")
     void recalculationSourceOrdered() {
         List<Activity> activities = activityRepository.findAllByUserIdOrderByStartTimeAsc(1L);
-        assertThat(activities).hasSize(6);
+        assertThat(activities).hasSize(USER_1_ACTIVITIES);
         for (int i = 1; i < activities.size(); i++) {
             assertThat(activities.get(i).getStartTime())
                     .isAfterOrEqualTo(activities.get(i - 1).getStartTime());
@@ -197,5 +234,55 @@ class ActivityRepositoryTest {
                     assertThat(pr.getTimeInSeconds()).isEqualTo(1500);
                     assertThat(pr.getPreviousTimeInSeconds()).isEqualTo(1694);
                 });
+    }
+
+    @Test
+    @DisplayName("V10 history covers the previous month and at least 10 of the last 12 weeks for every sample user")
+    void historyCoversTheDashboardWindows() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate thisMonday = now.toLocalDate().with(DayOfWeek.MONDAY);
+        LocalDateTime chartStart = thisMonday.minusWeeks(11).atStartOfDay();
+        LocalDateTime monthStart = now.toLocalDate().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime previousMonthStart = monthStart.minusMonths(1);
+
+        for (Long userId : SAMPLE_USERS) {
+            List<Activity> all = activityRepository.findAllByUserIdOrderByStartTimeAsc(userId);
+            assertThat(all).as("user %d", userId).allSatisfy(a -> assertThat(a.getStartTime()).isBeforeOrEqualTo(now));
+
+            long previousMonth = all.stream()
+                    .filter(a -> !a.getStartTime().isBefore(previousMonthStart) && a.getStartTime().isBefore(monthStart))
+                    .count();
+            assertThat(previousMonth).as("user %d, previous calendar month", userId).isGreaterThanOrEqualTo(4);
+
+            long weeks = all.stream()
+                    .filter(a -> !a.getStartTime().isBefore(chartStart))
+                    .map(a -> a.getStartTime().toLocalDate().with(DayOfWeek.MONDAY))
+                    .distinct()
+                    .count();
+            assertThat(weeks).as("user %d, distinct weeks in the 12-week chart", userId).isGreaterThanOrEqualTo(10);
+
+            assertThat(all.stream().filter(a -> a.getId() > SEEDED_ACTIVITIES))
+                    .as("history rows are plain manual entries without streams")
+                    .allSatisfy(a -> assertThat(a.getRoutePolyline()).isNull());
+        }
+    }
+
+    @Test
+    @DisplayName("recalculating personal records over the history still yields exactly the seeded V4 rows")
+    void historyDoesNotRewriteSeededRecords() {
+        Map<Long, Set<String>> seeded = personalRecordSnapshot();
+        assertThat(seeded.values().stream().mapToInt(Set::size).sum()).isEqualTo(17);
+
+        SAMPLE_USERS.forEach(personalRecordService::recalculateAllPRs);
+
+        assertThat(personalRecordSnapshot()).isEqualTo(seeded);
+    }
+
+    private Map<Long, Set<String>> personalRecordSnapshot() {
+        return SAMPLE_USERS.stream().collect(Collectors.toMap(
+                userId -> userId,
+                userId -> personalRecordRepository.findByUserId(userId).stream()
+                        .map(pr -> pr.getActivityType() + "/" + pr.getDistanceType() + "/" + pr.getTimeInSeconds())
+                        .collect(Collectors.toSet())));
     }
 }
