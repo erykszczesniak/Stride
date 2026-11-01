@@ -39,8 +39,8 @@ Docker, Kubernetes and Terraform.
 - **Data:** PostgreSQL 16 and Elasticsearch 8 with SQL fallback
 - **AI and integrations:** Anthropic, Groq, Google OAuth and Strava OAuth
 - **Observability:** OpenTelemetry, Jaeger, Prometheus, Alertmanager and Grafana
-- **Delivery:** Maven, Docker Compose, Nginx, Kubernetes, Terraform and GitHub Actions
-- **Quality:** JUnit 5, Mockito, Testcontainers, JaCoCo, ArchUnit, Playwright,
+- **Deployment:** Maven, Docker Compose, Nginx, Kubernetes, Terraform and GitHub Actions
+- **QA:** JUnit 5, Mockito, Testcontainers, JaCoCo, ArchUnit, Playwright,
   CodeQL and Trivy
 
 ## Project structure
@@ -48,24 +48,34 @@ Docker, Kubernetes and Terraform.
 ```text
 .
 ├── src/main/java/com/strava/backend/
+│   ├── ai/                         # AI coach, guardrails and cost tracking
 │   ├── configuration/              # Spring configuration
 │   ├── controller/                 # REST endpoints
-│   ├── domain/                     # JPA entities
-│   ├── dto/                        # API models
+│   ├── domain/                     # JPA entities and enums
+│   ├── dto/ mapper/                # API models and mapping
+│   ├── event/                      # application events
+│   ├── exception/                  # error handling
 │   ├── graphql/                    # GraphQL resolvers
 │   ├── repository/                 # data access
+│   ├── search/                     # Elasticsearch with SQL fallback
 │   ├── security/                   # JWT and pipeline tokens
 │   └── service/                    # business logic
 ├── src/main/kotlin/                # selected Kotlin services
 ├── src/main/resources/
 │   ├── db/migration/               # Flyway migrations
+│   ├── graphql/                    # GraphQL schema
 │   └── templates/                  # email templates
+├── src/test/                       # unit, integration and ArchUnit tests
 ├── frontend/                       # React SPA and Playwright tests
-├── monitoring/                     # alerts, dashboards and provisioning
-├── docs/                           # API docs, ADRs, SLOs and runbooks
+├── monitoring/                     # Prometheus, alerts and Grafana dashboards
+├── docs/                           # API docs, ADRs, SLOs, runbooks, screenshots
 ├── k8s/                            # Kubernetes manifests
-├── terraform/                      # AWS infrastructure
+├── terraform/aws/                  # AWS free-tier infrastructure
+├── scripts/smoke.sh                # post-deployment smoke test
+├── .github/workflows/              # CI, CodeQL, Trivy, e2e, release
 ├── docker-compose.yml              # local stack
+├── Dockerfile                      # backend image
+├── Makefile                        # common commands
 └── pom.xml                         # Maven build
 ```
 
@@ -203,23 +213,90 @@ and `terraform destroy` to remove all resources.
 
 ## Screenshots
 
-The preview above shows the main dashboard. The complete screenshot plan covers:
-
-| Area | Features shown |
-|---|---|
-| Authentication | login, registration and password strength |
-| Dashboard | stats, weekly chart, recent activities and user menu |
-| Activities | feed, recording, route map, analysis, photos and comments |
-| Profile | athlete details, statistics and personal records |
-| Goals and challenges | progress, deadlines and leaderboards |
-| Social | clubs, events, follows, likes and reactions |
-| Training | templates and AI-generated plans |
-| Settings | profile, notifications, units, gear and theme |
-| Admin | overview, users, activities and exports |
-| Responsive UI | light mode, dark mode and mobile layout |
-
-Capture names and routes are listed in
+Captured from the local Docker Compose stack with the sample accounts. Images
+live in [`docs/screenshots/`](docs/screenshots/) and are listed in
 [`docs/SCREENSHOTS_CHECKLIST.md`](docs/SCREENSHOTS_CHECKLIST.md).
+
+### Authentication
+
+| Login | Register |
+|---|---|
+| ![Login](docs/screenshots/login.png) | ![Register](docs/screenshots/register.png) |
+| Email and password sign-in, or Strava OAuth. | Password strength is shown while you type. |
+
+### Dashboard
+
+| Light mode | Dark mode |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Dashboard in dark mode](docs/screenshots/dark-mode.png) |
+| Monthly stats, recent activities, weekly goals and upcoming events. | The same view with the dark theme from the sidebar toggle. |
+
+### Activities
+
+| Feed | Record |
+|---|---|
+| ![Activities](docs/screenshots/activities.png) | ![Record activity](docs/screenshots/record-activity.png) |
+| Feed with scope and sport filters, search and challenge progress. | Manual entry or GPX, TCX and FIT upload. |
+
+| Details | Details in dark mode |
+|---|---|
+| ![Activity details](docs/screenshots/activity-details.png) | ![Activity details in dark mode](docs/screenshots/activity-details-dark.png) |
+| Route map, pace, heart rate, elevation, splits, likes and comments. | Leaflet map and charts follow the theme. |
+
+### Profile
+
+| Overview | Personal records |
+|---|---|
+| ![Profile](docs/screenshots/profile.png) | ![Personal records](docs/screenshots/profile-personal-records.png) |
+| All-time stats, followers and achievements. | Best times per distance with improvement deltas. |
+
+### Goals, challenges and training
+
+| Goals | Challenges |
+|---|---|
+| ![Goals](docs/screenshots/goals.png) | ![Challenges](docs/screenshots/challenges.png) |
+| Weekly and monthly targets with progress bars. | Joined challenges, explore tab and leaderboard. |
+
+| Training plans | Reports |
+|---|---|
+| ![Training plans](docs/screenshots/training-plans.png) | ![Reports](docs/screenshots/reports.png) |
+| Ready-made plans and an AI generator. | Report builder with CSV and PDF export. |
+
+### Social
+
+| Clubs | Events |
+|---|---|
+| ![Clubs](docs/screenshots/clubs.png) | ![Events](docs/screenshots/events.png) |
+| Club discovery with categories and membership. | Upcoming events with capacity and registration. |
+
+| Create event | Mobile |
+|---|---|
+| ![Create event](docs/screenshots/create-event.png) | <img src="docs/screenshots/mobile-view.png" alt="Mobile dashboard" width="260"> |
+| Event form with type, date, location and capacity. | Collapsed sidebar at phone width. |
+
+### Settings
+
+| Profile | Preferences |
+|---|---|
+| ![Settings profile](docs/screenshots/settings-profile.png) | ![Settings preferences](docs/screenshots/settings-preferences.png) |
+| Personal data, bio, weight and height. | Units, default sport, language and theme. |
+
+| Gear | |
+|---|---|
+| ![Settings gear](docs/screenshots/settings-gear.png) | |
+| Shoes and bikes with mileage tracking. | |
+
+### Admin
+
+| Overview | Users |
+|---|---|
+| ![Admin overview](docs/screenshots/admin-overview.png) | ![Admin users](docs/screenshots/admin-users.png) |
+| Platform totals and the activity table. | User list with roles, status and actions. |
+
+| Export | |
+|---|---|
+| ![Admin export](docs/screenshots/admin-export.png) | |
+| Export activities or users as TXT, XLSX or PDF. | |
 
 ## Features
 
