@@ -53,6 +53,13 @@ changelog.
   rewrite of 12 September.
 
 ### Added
+- Sample data: eleven weeks of training history for the four sample users
+  (`V23`, 166 manual activities dated relative to the first start), so the
+  dashboard month cards, the month-over-month trend and the 12-week volume
+  chart have data on any day. Seeded personal records are unchanged;
+  `SampleActivityHistoryIntegrationTest` runs the full Flyway set on
+  PostgreSQL and recalculates the records to prove it. `make db-reset`
+  re-dates the sample data.
 - README: table of contents, `Operations & quality` overview with the local
   verification commands, alerting section, `verify`-based test instructions and a
   documentation index.

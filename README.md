@@ -119,6 +119,10 @@ Sample accounts use password `password123`:
 | `jane@example.com` | USER |
 | `admin@example.com` | ADMIN |
 
+Sample activities cover the last 12 weeks and are dated relative to the first
+start of the database. If the stack has been running for weeks, `make db-reset`
+drops the volumes and re-seeds them from today.
+
 Useful commands:
 
 ```bash
