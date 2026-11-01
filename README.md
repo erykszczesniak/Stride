@@ -34,8 +34,8 @@ both branches: `/api/v1`, `/graphql` and `/pipeline/v1`.
 - **Communication:** REST at the edge, gRPC between services, Kafka events
 - **Resilience:** Resilience4j, retries, circuit breakers and timeouts
 - **Observability:** OpenTelemetry, Jaeger, Prometheus, Alertmanager and Grafana
-- **Delivery:** Maven, Docker Compose, Kubernetes, Terraform and GitHub Actions
-- **Quality:** JUnit 5, AssertJ, Mockito, JaCoCo, ArchUnit, Testcontainers,
+- **Deployment:** Maven, Docker Compose, Kubernetes, Terraform and GitHub Actions
+- **QA:** JUnit 5, AssertJ, Mockito, JaCoCo, ArchUnit, Testcontainers,
   CodeQL and Trivy
 
 ## Project structure
@@ -63,11 +63,12 @@ both branches: `/api/v1`, `/graphql` and `/pipeline/v1`.
 │   ├── events/                     # Kafka event contracts
 │   ├── grpc-contracts/             # internal protobuf contracts
 │   └── security/                   # shared identity filters
-├── monitoring/                     # dashboards, alerts and tests
-├── docs/                           # ADRs, SLOs, runbooks and guides
+├── monitoring/                     # Prometheus, alerts, rule tests, Grafana
+├── docs/                           # ADRs, SLOs, runbooks, screenshots
 ├── k8s/                            # Kubernetes manifests
 ├── terraform/aws/                  # AWS free-tier example
 ├── scripts/smoke.sh                # post-deployment smoke test
+├── .github/workflows/              # CI, CodeQL, Trivy, PR policy, release
 ├── docker-compose.yml              # local stack
 └── pom.xml                         # Maven reactor
 ```
@@ -140,22 +141,91 @@ Kubernetes demo.
 
 ## Screenshots
 
-Screenshots use the same React frontend on both branches. The planned gallery
-covers:
+The React frontend is shared with `main`, so both branches look the same.
+Captured from the local Docker Compose stack with the sample accounts. Images
+live in [`docs/screenshots/`](docs/screenshots/) and are listed in
+[`docs/SCREENSHOTS_CHECKLIST.md`](docs/SCREENSHOTS_CHECKLIST.md).
 
-| View | Features shown |
+### Authentication
+
+| Login | Register |
 |---|---|
-| Dashboard | recent activity, weekly progress, goals and events |
-| Activities | list, details, route map, stats and personal records |
-| AI Coach | activity analysis and saved conversations |
-| Social | personalized feed, likes, comments and emoji reactions |
-| Clubs and events | discovery, membership and event registration |
-| Goals and challenges | progress, leaderboards and training plans |
-| Profile and settings | user data, privacy and notification preferences |
-| Admin | platform statistics, users, activities and exports |
+| ![Login](docs/screenshots/login.png) | ![Register](docs/screenshots/register.png) |
+| Email and password sign-in, or Strava OAuth. | Password strength is shown while you type. |
 
-See [`docs/SCREENSHOTS_CHECKLIST.md`](docs/SCREENSHOTS_CHECKLIST.md) for file
-names, routes and capture guidelines. Add final images to `docs/screenshots/`.
+### Dashboard
+
+| Light mode | Dark mode |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Dashboard in dark mode](docs/screenshots/dark-mode.png) |
+| Monthly stats, recent activities, weekly goals and upcoming events. | The same view with the dark theme from the sidebar toggle. |
+
+### Activities
+
+| Feed | Record |
+|---|---|
+| ![Activities](docs/screenshots/activities.png) | ![Record activity](docs/screenshots/record-activity.png) |
+| Feed with scope and sport filters, search and challenge progress. | Manual entry or GPX, TCX and FIT upload. |
+
+| Details | Details in dark mode |
+|---|---|
+| ![Activity details](docs/screenshots/activity-details.png) | ![Activity details in dark mode](docs/screenshots/activity-details-dark.png) |
+| Route map, pace, heart rate, elevation, splits, likes and comments. | Leaflet map and charts follow the theme. |
+
+### Profile
+
+| Overview | Personal records |
+|---|---|
+| ![Profile](docs/screenshots/profile.png) | ![Personal records](docs/screenshots/profile-personal-records.png) |
+| All-time stats, followers and achievements. | Best times per distance with improvement deltas. |
+
+### Goals, challenges and training
+
+| Goals | Challenges |
+|---|---|
+| ![Goals](docs/screenshots/goals.png) | ![Challenges](docs/screenshots/challenges.png) |
+| Weekly and monthly targets with progress bars. | Joined challenges, explore tab and leaderboard. |
+
+| Training plans | Reports |
+|---|---|
+| ![Training plans](docs/screenshots/training-plans.png) | ![Reports](docs/screenshots/reports.png) |
+| Ready-made plans and an AI generator. | Report builder with CSV and PDF export. |
+
+### Social
+
+| Clubs | Events |
+|---|---|
+| ![Clubs](docs/screenshots/clubs.png) | ![Events](docs/screenshots/events.png) |
+| Club discovery with categories and membership. | Upcoming events with capacity and registration. |
+
+| Create event | Mobile |
+|---|---|
+| ![Create event](docs/screenshots/create-event.png) | <img src="docs/screenshots/mobile-view.png" alt="Mobile dashboard" width="260"> |
+| Event form with type, date, location and capacity. | Collapsed sidebar at phone width. |
+
+### Settings
+
+| Profile | Preferences |
+|---|---|
+| ![Settings profile](docs/screenshots/settings-profile.png) | ![Settings preferences](docs/screenshots/settings-preferences.png) |
+| Personal data, bio, weight and height. | Units, default sport, language and theme. |
+
+| Gear | |
+|---|---|
+| ![Settings gear](docs/screenshots/settings-gear.png) | |
+| Shoes and bikes with mileage tracking. | |
+
+### Admin
+
+| Overview | Users |
+|---|---|
+| ![Admin overview](docs/screenshots/admin-overview.png) | ![Admin users](docs/screenshots/admin-users.png) |
+| Platform totals and the activity table. | User list with roles, status and actions. |
+
+| Export | |
+|---|---|
+| ![Admin export](docs/screenshots/admin-export.png) | |
+| Export activities or users as TXT, XLSX or PDF. | |
 
 ## Architecture at a glance
 
