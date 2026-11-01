@@ -1,0 +1,34 @@
+# The backend freezes (SIGSTOP) but the container stays "running": the
+# process is there, nothing answers. This is the shape of a JVM in a GC death
+# spiral or a deadlocked thread pool, and the one case the restart policy
+# cannot fix on its own.
+name: backend-pause
+hypothesis:
+  steady_state: scripts/smoke.sh passes (API, Prometheus scrapes the backend, Watchdog in Alertmanager, no critical alert).
+  fault: docker pause on the backend container, up to 300 s.
+  expected_alerts: >
+    ServiceDown (critical, team platform) is firing in Prometheus and active in Alertmanager within 240 s:
+    the scrape fails after the 10 s scrape timeout (≤ 25 s after the pause), the rule has for: 2m, groups are
+    evaluated every 15 s, and Alertmanager shows the alert as soon as it arrives (group_wait only delays the
+    notification). Expected ~165 s, budget 240 s.
+  expected_recovery: After docker unpause the backend answers immediately; the smoke test passes within 300 s and ServiceDown resolves in Alertmanager (the smoke test refuses to pass while a critical alert is active).
+  notes: >
+    The runbook promise this verifies: docs/runbooks/service-down.md — "a dead backend keeps its up series at 0
+    and this alert fires after 2 minutes". A paused container is the strictest version of "dead": Docker reports
+    it as running, so only the scrape can see it.
+action:
+  type: pause
+  service: backend
+  duration: 300
+  hold_after_expectations: 10
+load:
+  enabled: true
+  workers: 2
+expect:
+  alerts:
+    - alertname: ServiceDown
+      state: firing
+      within: 240
+  recovery:
+    smoke_within: 300
+    alerts_resolved: true

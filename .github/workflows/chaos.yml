@@ -1,0 +1,123 @@
+# Chaos experiments as alert tests (docs/chaos/README.md, ADR 014). Boots the
+# composed stack on the runner the way the E2E workflow does, then runs each
+# experiment in chaos/experiments/: inject a fault into one container, wait
+# for the alert the hypothesis names, end the fault, wait for the smoke test
+# to pass again. A disproven hypothesis fails the job.
+#
+# Each experiment takes 5–15 minutes, so this is weekly and on demand, never
+# per PR. Results land in chaos/results/ (uploaded as an artifact) and in the
+# step summary.
+name: Chaos
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiment:
+        description: Which experiment to run
+        type: choice
+        default: all
+        options: [all, backend-pause, backend-kill, postgres-netem-delay, elasticsearch-pause]
+  schedule:
+    - cron: "30 3 * * 0"   # weekly, Sunday 03:30 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  chaos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # base64: the signing key is Decoders.BASE64.decode(JWT_SECRET) — same values as e2e.yml
+      JWT_SECRET: ZTJlLXNlY3JldC1taW4tMzItY2hhcnMtdGhpcy1pcy1vbmx5LWZvci1jaS1ydW5z
+      POSTGRES_PASSWORD: strava
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Boot the stack and wait for health checks
+        run: |
+          cp .env.example .env
+          docker compose --profile observability up -d --build --wait --wait-timeout 900
+          docker compose ps
+
+      - name: Pull the chaos tooling (so pulls do not count against the time budgets)
+        run: |
+          docker pull -q mikefarah/yq:4.44.3
+          docker pull -q gaiaadm/pumba:0.10.1
+          docker pull -q gaiadocker/iproute2
+
+      - name: Steady state
+        run: scripts/smoke.sh
+
+      - name: Run the experiments
+        id: run
+        run: |
+          set +e
+          choice="${{ github.event.inputs.experiment || 'all' }}"
+          if [ "$choice" = "all" ]; then
+            files=(chaos/experiments/*.yaml)
+          else
+            files=("chaos/experiments/$choice.yaml")
+          fi
+          failed=0
+          : > chaos/results/summary.txt
+          for f in "${files[@]}"; do
+            echo "::group::$f"
+            chaos/run.sh "$f" 2>&1 | tee "chaos/results/$(basename "$f" .yaml).log" | grep -v '^RESULT ' 
+            code=${PIPESTATUS[0]}
+            grep '^RESULT ' "chaos/results/$(basename "$f" .yaml).log" >> chaos/results/summary.txt
+            echo "::endgroup::"
+            if [ "$code" -ne 0 ]; then failed=$((failed + 1)); fi
+            # let the 5 m rate windows drain so one experiment's traffic does not dilute or
+            # inflate the next one's ratios (measured: the previous experiment's fast requests
+            # delayed EdgeHighLatencyP95 from 47 s to 197 s)
+            sleep 300
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Chaos experiments"
+            echo
+            echo "| Experiment | Verdict | Time to alert | Time to recover |"
+            echo "|---|---|---|---|"
+            while read -r _ name verdict tta ttr; do
+              echo "| $name | $verdict | ${tta#time_to_alert=} | ${ttr#time_to_recover=} |"
+            done < chaos/results/summary.txt
+            echo
+            for r in chaos/results/*-20*.md; do
+              [ -f "$r" ] || continue
+              echo "<details><summary>$(basename "$r")</summary>"; echo; cat "$r"; echo; echo "</details>"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: chaos-results
+          path: |
+            chaos/results/*.md
+            chaos/results/*.log
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Stack logs on failure
+        if: steps.run.outputs.failed != '0'
+        run: |
+          docker compose ps
+          docker compose logs --since 60m --no-color backend | tail -300
+          docker compose logs --since 60m --no-color alert-sink | tail -100
+
+      - name: Fail if a hypothesis was disproven
+        if: steps.run.outputs.failed != '0'
+        run: |
+          echo "${{ steps.run.outputs.failed }} experiment(s) disproved their hypothesis; see the summary and the chaos-results artifact."
+          exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose --profile observability down -v --remove-orphans

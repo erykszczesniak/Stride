@@ -1,0 +1,69 @@
+# The database gets slow, not dead: every packet leaving Postgres is delayed
+# by ~400 ms (netem on the container's interface, via pumba). Each query round
+# trip costs at least that much; the read endpoints run many queries per
+# request, so a request that took 50 ms takes seconds.
+#
+# First attempt (2026-10-11, report kept as
+# chaos/results/postgres-netem-delay-2026-10-11-attempt1-disproven.md) expected
+# SLOLatencyBurnRateFast. It was disproven, and the reason is the lesson:
+# throughput collapses under a slow dependency (4 workers managed ~0.4 req/s
+# instead of ~20), so the request-weighted slow ratio moved slowly — the 5 m
+# ratio needed 321 s to pass 0.72 and the 1 h ratio never did. The alert that
+# does react is the p95 one, with its 10-minute "for".
+name: postgres-netem-delay
+hypothesis:
+  steady_state: scripts/smoke.sh passes; edge p95 is well under 1 s.
+  fault: pumba netem delay 400 ms ± 50 ms (normal distribution) on the postgres container for up to 780 s, with 4 load workers cycling through the authenticated read endpoints.
+  expected_alerts: >
+    Edge p95 (histogram_quantile over all non-actuator requests, 5 m window) crosses 1 s within 120 s and
+    EdgeHighLatencyP95 (warning, team domain) goes PENDING within 120 s; it FIRES and is active in Alertmanager
+    within 720 s — the rule has for: 10m, evaluation every 15 s, and Alertmanager shows it on arrival (group_wait
+    only delays the notification). Expected ~680 s, budget 720 s. SLOLatencyBurnRateFast is not expected: with
+    throughput collapsed the request-weighted slow ratio stays dominated by the pre-fault traffic in its 1 h window
+    (measured 0.27 after 5 minutes of fault); the ratios are recorded below instead of asserted.
+  expected_recovery: After the qdisc is removed, latency is normal immediately. The smoke test passes right away (the alert is a warning, not critical); EdgeHighLatencyP95 resolves once the slow samples leave its 5 m window — within 420 s.
+  notes: >
+    Verifies docs/runbooks/high-latency.md ("the app feels slow … for 10 minutes") and measures the real
+    time-to-page for a slow database: ~11 minutes, all of it the rule's own "for". Also seen: EndpointHighLatencyP95
+    goes pending in 20 s and then drops out again because the throughput collapse puts every endpoint below its
+    0.1 req/s traffic floor; DbPoolSaturated does not move (4 of 10 connections busy at this load); the SLO
+    latency burn-rate alerts are the wrong tool for this fault at this traffic level.
+action:
+  type: netem-delay
+  service: postgres
+  delay_ms: 400
+  jitter_ms: 50
+  duration: 780
+  hold_after_expectations: 10
+load:
+  enabled: true
+  workers: 4
+expect:
+  queries:
+    - name: edge-p95-above-1s
+      expr: histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*"}[5m])))
+      op: ">"
+      value: 1
+      within: 120
+  alerts:
+    - alertname: EdgeHighLatencyP95
+      state: pending
+      within: 120
+    - alertname: EdgeHighLatencyP95
+      state: firing
+      within: 720
+  observe:
+    - name: slo:http_slow:ratio_rate5m
+      expr: slo:http_slow:ratio_rate5m{app="strava-backend"}
+    - name: slo:http_slow:ratio_rate1h
+      expr: slo:http_slow:ratio_rate1h{app="strava-backend"}
+    - name: requests per second (5m, non-actuator)
+      expr: sum(rate(http_server_requests_seconds_count{job="strava-backend",uri!~"/actuator.*"}[5m]))
+    - name: edge p95 seconds (5m)
+      expr: histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job="strava-backend",uri!~"/actuator.*"}[5m])))
+    - name: HikariCP active connections
+      expr: sum(hikaricp_connections_active)
+  recovery:
+    smoke_within: 300
+    alerts_resolved: true
+    alerts_resolve_within: 420

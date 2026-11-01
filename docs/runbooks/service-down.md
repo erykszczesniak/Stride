@@ -23,6 +23,16 @@ from nginx for `/api/` and `/graphql`, the iOS client gets nothing from
 `app` while this fires; `PrometheusTargetsMissing` inhibits *this* alert when
 the scrape config itself is gone.
 
+**Verified by experiment** ([`chaos/experiments/backend-pause.yaml`](../../chaos/experiments/backend-pause.yaml),
+[`backend-kill.yaml`](../../chaos/experiments/backend-kill.yaml), 2026-10-11): a paused
+backend reached Alertmanager as `ServiceDown` after 142 s and the smoke test
+was green 16 s after unpause; a SIGKILLed JVM was restarted by the compose
+restart policy in about 1.5 s and green again 22 s after the kill, with at
+most one failed scrape and `ServiceDown` pending for a single evaluation. Note
+for the mitigation steps: `docker kill` is a manual stop and Docker does **not**
+apply the restart policy afterwards — use `docker compose restart backend`.
+Reports in [`chaos/results/`](../../chaos/results/).
+
 ## Required inputs
 
 - `instance` from the labels (`backend:8080` in compose)

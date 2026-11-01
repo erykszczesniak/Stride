@@ -1,0 +1,61 @@
+# The backend process dies (SIGKILL to the JVM: an OOM-kill, a crash). The
+# compose restart policy (unless-stopped) restarts the container; the question
+# is whether the gap is visible and whether the stack is whole again afterwards.
+#
+# Two earlier attempts on 2026-10-11 are kept in chaos/results as
+# backend-kill-…-attempt1/2-disproven.md. Attempt 1 used `docker kill`: Docker
+# treats that as a manual stop and ignores the restart policy (exit 137,
+# RestartCount 0, container down until started by hand) — an operator who
+# "restarts" the backend that way leaves the stack down. Attempt 2 sent
+# `kill -9 1` from inside the container: the kernel drops SIGKILL aimed at the
+# init of a PID namespace from within it; nothing happened and ServiceDown never
+# moved. The runner now sends the SIGKILL from the host PID namespace (a helper
+# container with --pid=host), which Docker sees as the process dying.
+name: backend-kill
+hypothesis:
+  steady_state: scripts/smoke.sh passes.
+  fault: SIGKILL to the backend's main process (the JVM is PID 1 of the container) from the host PID namespace; nothing else — the restart policy is the recovery mechanism under test.
+  expected_alerts: >
+    None. ServiceDown must never fire (asserted for the whole run through the ALERTS series), and in practice it does
+    barely goes pending: Docker restarts the container within a second and the JVM serves /actuator/prometheus again
+    within about 15 s, so `up` records at most one 0 (2026-10-11: one run with no failed scrape at all, one run with a
+    single failed scrape and ServiceDown pending for exactly one evaluation). The restart itself is proven through
+    process_uptime_seconds dropping below 60 s within 60 s of the kill; whether a scrape failed is recorded
+    (min_over_time of up), not asserted.
+  expected_recovery: The container is running again within seconds and the smoke test passes within 120 s of the kill.
+  notes: >
+    Verifies the restart policy in docker-compose.yml and the "for: 2m" choice in monitoring/alerts/platform.rules.yml
+    (docs/runbooks/service-down.md): a single crash is not a page, and it is not even a pending alert at a 15 s scrape
+    interval. The flip side is a gap: a crash *loop* would also be invisible to ServiceDown as long as each restart beats
+    the scrape; `changes(process_start_time_seconds[1h])` would catch it and is not alerted on today.
+    Attempt 1 showed what `docker kill` does (nothing restarts; ServiceDown would have fired after 2 minutes), attempt 2
+    that `kill -9 1` inside a container is a no-op.
+action:
+  type: kill
+  service: backend
+  duration: 75
+  hold_after_expectations: 0
+load:
+  enabled: true
+  workers: 2
+expect:
+  queries:
+    - name: service-down-never-fires
+      expr: absent(ALERTS{alertname="ServiceDown", alertstate="firing"})
+      op: "=="
+      value: 1
+      within: 5
+      hold: true   # re-checked every poll until the fault window ends
+    - name: jvm-restarted
+      expr: process_uptime_seconds{job="strava-backend"}
+      op: "<"
+      value: 60
+      within: 60
+  observe:
+    - name: min up over the last 2 m (0 = a scrape failed)
+      expr: min_over_time(up{job="strava-backend"}[2m])
+    - name: ServiceDown pending or firing at the end of the fault window (1 = yes)
+      expr: count(ALERTS{alertname="ServiceDown"}) or vector(0)
+  recovery:
+    smoke_within: 120
+    alerts_resolved: true

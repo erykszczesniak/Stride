@@ -29,6 +29,14 @@ cause; start there. If a burn-rate alert fires *without* a symptom alert,
 the errors are spread thin (many endpoints, each under the symptom
 threshold) — step 1 finds them.
 
+**Checked by experiment** ([`postgres-netem-delay`, attempt 1](../../chaos/results/postgres-netem-delay-2026-10-11-attempt1-disproven.md)):
+a slow database (400 ms per query, light traffic) did **not** trigger
+`SLOLatencyBurnRateFast`. Throughput collapsed to 0.4 req/s, so the
+request-weighted slow ratio was dominated by the fast requests before the
+fault (0.5 after five minutes, 1 h window 0.27). Expect the p95 alerts
+([high-latency.md](high-latency.md)) first in that scenario; a burn-rate alert
+here means many requests are slow *and* still arriving.
+
 ## Required inputs
 
 - `slo` label; the `stride-slo` dashboard

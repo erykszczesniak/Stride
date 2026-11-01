@@ -364,6 +364,7 @@ limit returns HTTP 429.
 | AI safety | prompt checks, PII masking, rate limits, failover and evals |
 | Cost | service and model attribution, dashboards and spend alerts |
 | Verification | smoke tests and nightly Playwright E2E tests |
+| Chaos | experiments as code that prove the alerts fire and the stack recovers (`chaos/`, weekly; [`docs/chaos/README.md`](docs/chaos/README.md)) |
 | Releases | release-please tags, `release/vX.Y` maintenance branches, hotfix cherry-picks and a PR policy check |
 | Decisions | ADRs, runbooks and post-mortems |
 
