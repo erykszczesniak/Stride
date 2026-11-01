@@ -1,66 +1,41 @@
-# Screenshots Checklist
+# Screenshots
 
-Zapisuj screenshoty w folderze `docs/screenshots/` z podanymi nazwami plików.
+All images live in `docs/screenshots/` and are embedded in the README.
+They were captured from the Docker Compose stack with the sample accounts
+(`john@example.com` and `admin@example.com`, password `password123`).
 
-## Authentication
-- [ ] `login.png` - Strona logowania (`/login`)
-- [ ] `register.png` - Strona rejestracji (`/register`)
-- [ ] `register-password-strength.png` - Wskaznik sily hasla (opcjonalnie)
+## Captured
 
-## Dashboard
-- [ ] `dashboard.png` - Glowny widok (`/`)
-- [ ] `dashboard-user-menu.png` - Rozwiniety dropdown avatara
+| File | Route | Shows |
+|---|---|---|
+| `login.png` | `/login` | Sign-in form and Strava OAuth button |
+| `register.png` | `/register` | Registration form with password strength |
+| `dashboard.png` | `/` | Stats, recent activities, weekly goals, upcoming events |
+| `activities.png` | `/activities` | Activity feed with filters and search |
+| `record-activity.png` | `/activities/new` | Manual entry and file import |
+| `activity-details.png` | `/activities/:id` | Route map, splits, elevation, likes and comments |
+| `profile.png` | `/profile` | Athlete overview and statistics |
+| `profile-personal-records.png` | `/profile` | Personal Records tab |
+| `goals.png` | `/goals` | Goal progress and deadlines |
+| `challenges.png` | `/challenges` | Challenges and leaderboards |
+| `training-plans.png` | `/training` | Templates and AI-generated plans |
+| `reports.png` | `/reports` | Weekly report and PDF export |
+| `clubs.png` | `/clubs` | Club discovery and membership |
+| `events.png` | `/events` | Event list and registration |
+| `create-event.png` | `/events/new` | Event creation form |
+| `settings-profile.png` | `/settings` | Profile settings |
+| `settings-preferences.png` | `/settings` | Units, language and theme |
+| `settings-gear.png` | `/settings` | Gear tracking |
+| `dark-mode.png` | `/` | Dashboard in dark mode |
+| `activity-details-dark.png` | `/activities/:id` | Activity details in dark mode |
+| `mobile-view.png` | `/` | Dashboard at phone width |
+| `admin-overview.png` | `/admin` | Platform statistics and activities |
+| `admin-users.png` | `/admin` | Users tab |
+| `admin-export.png` | `/admin` | Export tab |
 
-## Activities
-- [ ] `activities.png` - Lista aktywnosci (`/activities`)
-- [ ] `record-activity.png` - Nowa aktywnosc (`/activities/new`)
-- [ ] `activity-details.png` - Szczegoly aktywnosci (`/activities/:id`)
+## How to refresh
 
-## Profile
-- [ ] `profile.png` - Profil uzytkownika (`/profile`)
-- [ ] `profile-stats.png` - Zakladka Stats na profilu
-
-## Goals & Challenges
-- [ ] `goals.png` - Cele (`/goals`)
-- [ ] `challenges.png` - Wyzwania (`/challenges`)
-
-## Social
-- [ ] `clubs.png` - Kluby (`/clubs`)
-- [ ] `events.png` - Wydarzenia (`/events`)
-- [ ] `create-event.png` - Tworzenie wydarzenia (`/events/new`)
-
-## Training
-- [ ] `training-plans.png` - Plany treningowe (`/training`)
-
-## Settings
-- [ ] `settings-profile.png` - Ustawienia - Profile (`/settings`)
-- [ ] `settings-preferences.png` - Ustawienia - Preferences
-
-## Admin
-- [ ] `admin-overview.png` - Panel admina (`/admin`)
-- [ ] `admin-users.png` - Zakladka Users
-- [ ] `admin-export.png` - Zakladka Export
-
-## Theme
-- [ ] `light-mode.png` - Dashboard w jasnym motywie
-- [ ] `dark-mode.png` - Dashboard w ciemnym motywie
-
-## Responsive (opcjonalnie)
-- [ ] `mobile-view.png` - Widok mobilny (375px)
-
----
-
-## Wskazowki
-
-1. **Rozdzielczosc:** 1920x1080 dla desktopa
-2. **Przegladarka:** Uzyj trybu incognito (czyste UI)
-3. **Dane testowe:** Dodaj kilka przykladowych aktywnosci przed screenshotami
-4. **Dark mode:** Przelacz w sidebarze (ikona ksiezyca/slonca)
-5. **Narzedzie:** Chrome DevTools (F12) > Device toolbar do mobile view
-
-## Jak zrobic screenshot w Chrome
-
-1. Otworz DevTools (F12)
-2. Kliknij 3 kropki > Run command (Ctrl+Shift+P)
-3. Wpisz "screenshot"
-4. Wybierz "Capture full size screenshot" lub "Capture screenshot"
+1. Start the stack: `cp .env.example .env && docker compose up -d --build`.
+2. Open `http://localhost` in a 1920x1080 window and sign in with a sample account.
+3. Capture the viewport only, without the browser frame.
+4. Scale images to 1600 px wide and keep the file names above.
