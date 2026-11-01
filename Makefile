@@ -2,7 +2,7 @@
 # Strava Clone - Makefile
 # ============================================
 
-.PHONY: help build up down logs clean test backend frontend smoke e2e-up e2e-down
+.PHONY: help build up down logs clean db-reset test backend frontend smoke e2e-up e2e-down
 
 # Default target
 help:
@@ -17,6 +17,7 @@ help:
 	@echo "  make logs-backend  - View backend logs"
 	@echo "  make logs-frontend - View frontend logs"
 	@echo "  make clean         - Remove containers, volumes, images"
+	@echo "  make db-reset      - Drop the volumes and re-seed sample data from today"
 	@echo "  make restart       - Restart all services"
 	@echo "  make shell-backend - Open shell in backend container"
 	@echo "  make shell-db      - Open psql shell"
@@ -59,6 +60,10 @@ logs-db:
 clean:
 	docker compose down -v --rmi local
 	docker system prune -f
+
+db-reset:
+	docker compose down -v
+	docker compose up -d --build
 
 shell-backend:
 	docker compose exec backend sh
