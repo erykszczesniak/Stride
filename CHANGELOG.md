@@ -42,6 +42,11 @@ Conventional Commit PR titles.
   `autoTable(doc, …)` like the other pages.
 
 ### Added
+- activity-service: eleven weeks of training history for the four sample
+  users (`V10`, 166 manual activities dated relative to the first start, same
+  rows as `main`), so the dashboard month cards, the month-over-month trend
+  and the 12-week volume chart have data on any day. Seeded personal records
+  are unchanged; `ActivityRepositoryTest` recalculates them on H2 to prove it.
 - Chat provider failover (Anthropic → Groq on 502/503, open breaker or no
   key) with `ai_failover_total` and the `AiProviderFailoverActive` alert;
   live rubric evals for chat and generation (JUnit tag `live-eval`, weekly

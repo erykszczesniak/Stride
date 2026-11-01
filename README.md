@@ -95,6 +95,12 @@ docker compose --profile observability --profile search up -d
 scripts/smoke.sh
 ```
 
+The sample accounts (`pan@example.com`, `john@example.com`, `jane@example.com`,
+`admin@example.com`, password `password123`) come with 12 weeks of activities
+dated relative to the first start of the databases. If the stack has been
+running for weeks, `docker compose down -v && docker compose up -d` re-seeds
+them from today.
+
 | URL | Purpose |
 |---|---|
 | [localhost:8080](http://localhost:8080) | API Gateway |

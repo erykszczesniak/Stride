@@ -47,20 +47,22 @@ class ActivityRepositoryPostgresContainerTest {
     @Test
     @DisplayName("production migration set applies cleanly and seeds land")
     void migrationsApplyAndSeedsLand() {
-        assertThat(activityRepository.count()).isEqualTo(24);
+        // 24 fixed-id rows (V3) + 166 history rows (V10)
+        assertThat(activityRepository.count()).isEqualTo(190);
         Integer applied = jdbc.queryForObject(
                 "select count(*) from flyway_schema_history where success", Integer.class);
-        assertThat(applied).isGreaterThanOrEqualTo(9);
+        assertThat(applied).isGreaterThanOrEqualTo(10);
     }
 
     @Test
     @DisplayName("identity sequence continues after the fixed-id sample inserts")
     void identitySequenceIsPastTheSeeds() {
         // The postgresql/ flavor restarts the identity after the seeded ids; on a
-        // broken restart the first real insert would collide with activity 24.
+        // broken restart the V10 history inserts (and then the first real insert)
+        // would collide with activity 24. V10 itself consumes 166 identity values.
         Long next = jdbc.queryForObject(
                 "select nextval(pg_get_serial_sequence('activities', 'id'))", Long.class);
-        assertThat(next).isGreaterThan(24L);
+        assertThat(next).isGreaterThan(190L);
     }
 
     @Test
